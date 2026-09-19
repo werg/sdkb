@@ -27,8 +27,18 @@ def pool_worlds(worlds, target, size):
     return frozenset([target, *others[:size - 1]])
 
 
+def query_subset(episodes, query_worlds):
+    """Select evaluation questions without removing any candidate-bank worlds."""
+    worlds = list(dict.fromkeys(e.environment for e in episodes))
+    count = len(worlds) if query_worlds is None else query_worlds
+    if not isinstance(count, int) or isinstance(count, bool) or not 1 <= count <= len(worlds):
+        raise ValueError('Query-world count must select a nonempty prefix of the corpus')
+    selected = frozenset(worlds[:count])
+    return [e for e in episodes if e.environment in selected], selected
+
+
 @torch.no_grad()
-def run(source, bank_path, episodes_file, routing_probe, count_policy, output, pools=(1, 4, 16, 32), generation_worlds=8):
+def run(source, bank_path, episodes_file, routing_probe, count_policy, output, pools=(1, 4, 16, 32), generation_worlds=8, query_worlds=None):
     if generation_worlds < 1:
         raise ValueError('Positive generation world count required')
     if not bank_path.is_file():
@@ -60,7 +70,9 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
             raise ValueError('Stored-bank source/data/address/count identity differs')
         episodes = load_episodes(episodes_file)
         worlds = list(dict.fromkeys(e.environment for e in episodes))
-        identity['generation_worlds'] = min(generation_worlds, len(worlds))
+        evaluated, query_names = query_subset(episodes, query_worlds)
+        identity['query_worlds'] = len(query_names)
+        identity['generation_worlds'] = min(generation_worlds, len(query_names))
         world_ids = {w: frozenset(s.record_id for e in episodes if e.environment == w for s in e.supports) for w in worlds}
         universe = frozenset().union(*world_ids.values())
         if len(universe) != sum(map(len, world_ids.values())):
@@ -91,7 +103,7 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
                 continue
             rows, generations = [], []
             with autocast_context(config):
-                for index, e in enumerate(episodes, 1):
+                for index, e in enumerate(evaluated, 1):
                     if stop_requested(output):
                         raise RuntimeError('Stopped; completed pool results remain reusable')
                     eligible_worlds = pool_worlds(worlds, e.environment, size)
@@ -123,9 +135,9 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
                             generations.append({'episode': e.episode_id, 'environment': e.environment,
                                 'task_family': e.task_family, 'condition': condition, 'answer': e.answer,
                                 'prediction': prediction, 'exact_match': prediction == e.answer})
-                    if index % 32 == 0 or index == len(episodes):
+                    if index % 32 == 0 or index == len(evaluated):
                         print(json.dumps({'pool_worlds': size, 'completed_queries': index}), flush=True)
-            families = sorted({e.task_family for e in episodes})
+            families = sorted({e.task_family for e in evaluated})
             if file_sha256(bank_path) != identity['bank_sha256']:
                 raise ValueError('Stored input bank changed during evaluation')
             atomic_json(destination, {'inputs': identity, 'pool_worlds': size,
@@ -143,5 +155,6 @@ if __name__ == '__main__':
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--pools', nargs='+', type=int, default=[1, 4, 16, 32])
     parser.add_argument('--generation-worlds', type=int, default=8)
+    parser.add_argument('--query-worlds', type=int, help='Score first N worlds while retaining the entire candidate corpus')
     args = parser.parse_args()
-    run(args.source, args.bank, args.episodes, args.routing_probe, args.count_policy, args.output, args.pools, args.generation_worlds)
+    run(args.source, args.bank, args.episodes, args.routing_probe, args.count_policy, args.output, args.pools, args.generation_worlds, args.query_worlds)
