@@ -14,6 +14,7 @@ from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes, make_multiuse_world, save_episodes
 from sdkb.operations import atomic_json, run_lock, stop_requested
+from sdkb.runtime import available_host_memory, configure_memory, memory_metrics
 from sdkb.training import autocast_context, config_from_run
 from sdkb.trajectories import file_sha256
 
@@ -71,6 +72,8 @@ def extract(agent, episodes, config, root):
                 if len(captured) != 1:
                     raise ValueError('Expected one writer key')
                 sources[source.record_id] = (source.text, captured[0][0].cpu())
+                if len(sources) % 256 == 0:
+                    print(json.dumps({'extracted_sources': len(sources)}), flush=True)
             if stop_requested(root):
                 raise RuntimeError('Probe stopped during reproducible feature extraction')
     finally:
@@ -124,25 +127,43 @@ def score(model, features, episodes, config):
     return {'loss': loss, 'by_family': families}
 
 
-def run(checkpoint, root, steps):
+def run(checkpoint, root, steps, train_worlds=0, batch_size=0):
     root.mkdir(parents=True, exist_ok=True)
     with run_lock(root, clear_stop=False):
         checkpoint = resolve_checkpoint(checkpoint, verify=True)
         config = config_from_run(checkpoint)
+        configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
         torch.manual_seed(43)
         agent = SDKBAgent(config).to(config.train.device).eval()
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
         if config.memory.read_steps != 1 or len(config.memory.payload_dims) != 1:
             raise ValueError('Probe is limited to first-read single-space models')
-        train = load_episodes(config.train.episodes_file)
-        heldout = [e for i in range(32) for e in make_multiuse_world(i, split='routing-feature-probe-20260919', bindings=2)]
-        save_episodes(root / 'heldout.jsonl', heldout)
+        if train_worlds:
+            train = [e for i in range(train_worlds) for e in make_multiuse_world(
+                i, split='routing-feature-breadth-train-20260919', bindings=2)]
+            train_path = root / 'train.jsonl'
+            if train_path.exists():
+                if load_episodes(train_path) != train:
+                    raise ValueError('Synthetic training data changed')
+            else:
+                save_episodes(train_path, train)
+        else:
+            train_path = Path(config.train.episodes_file)
+            train = load_episodes(train_path)
+        heldout = [e for i in range(32) for e in make_multiuse_world(i, split=('routing-feature-breadth-heldout-20260919' if train_worlds
+                                                        else 'routing-feature-probe-20260919'), bindings=2)]
+        if (root / 'heldout.jsonl').exists():
+            if load_episodes(root / 'heldout.jsonl') != heldout:
+                raise ValueError('Held-out data changed')
+        else:
+            save_episodes(root / 'heldout.jsonl', heldout)
         identity = {'checkpoint_manifest_sha256': file_sha256(checkpoint / 'manifest.json'),
-                    'train_sha256': file_sha256(config.train.episodes_file),
+                    'train_sha256': file_sha256(train_path),
                     'heldout_sha256': file_sha256(root / 'heldout.jsonl'), 'steps': steps,
                     'train_config': vars(config.train), 'seed': 43, 'learning_rate': config.train.learning_rate,
-                    'optimizer': 'native Muon', 'batch': 'all training queries per update',
+                    'optimizer': 'native Muon', 'batch': batch_size or 'all training queries per update', 'train_worlds': train_worlds,
+                    'script_sha256': file_sha256(__file__),
                     'notice': 'Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim.'}
         identity_path = root / 'inputs.json'
         if identity_path.exists() and json.loads(identity_path.read_text()) != identity:
@@ -159,8 +180,11 @@ def run(checkpoint, root, steps):
             features[split] = {k: v.to(config.train.device) for k, v in load_file(str(path)).items()}
         models = {name: AddressProbe(agent, raw).to(config.train.device)
                   for name, raw in [('compressed_query', False), ('full_state_query', True)]}
+        if train_worlds > 128:
+            models.update({f'narrow128_{name}': AddressProbe(agent, raw).to(config.train.device)
+                           for name, raw in [('compressed_query', False), ('full_state_query', True)]})
         with torch.no_grad(), autocast_context(config):
-            a, b = [model(features['train']) for model in models.values()]
+            a, b = [models[name](features['train']) for name in ['compressed_query', 'full_state_query']]
         if not torch.equal(a, b):
             raise ValueError(f'Initial scores differ: {(a-b).abs().max().item()}')
         with torch.no_grad(), autocast_context(config):
@@ -170,6 +194,9 @@ def run(checkpoint, root, steps):
         report = {'identity': identity, 'initial_scores_exact': True,
                   'batched_vs_single_query_max_abs': drift, 'arms': {}}
         for name, model in models.items():
+            count = 1280 if name.startswith('narrow128_') else len(train)
+            train_features = {k: v[:count] for k, v in features['train'].items()}
+            generator = torch.Generator().manual_seed(43)
             optimizer = torch.optim.Muon([p for p in model.parameters() if p.requires_grad], lr=config.train.learning_rate,
                 momentum=config.train.muon_momentum, ns_steps=config.train.muon_ns_steps,
                 weight_decay=config.train.weight_decay, adjust_lr_fn='match_rms_adamw')
@@ -182,27 +209,35 @@ def run(checkpoint, root, steps):
                 model.load_state_dict(state['model'])
                 optimizer.load_state_dict(state['optimizer'])
                 start = state['step']
+                generator.set_state(state['sampling_rng'].cpu())
             def save(step):
                 temporary = state_path.with_suffix('.tmp')
                 torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(),
-                            'step': step, 'identity': identity}, temporary)
+                            'step': step, 'identity': identity, 'sampling_rng': generator.get_state()}, temporary)
                 temporary.replace(state_path)
-            initial = score(model, features['train'], train, config) if start == 0 else None
+            initial = score(model, train_features, train[:count], config) if start == 0 else None
             for step in range(start, steps):
-                if stop_requested(root):
+                available = available_host_memory()
+                if stop_requested(root) or (available is not None and available < config.train.min_system_available_bytes):
                     save(step)
                     raise RuntimeError('Probe stopped; address optimizer state saved')
                 optimizer.zero_grad(set_to_none=True)
+                if batch_size:
+                    indices = torch.randint(count, (batch_size,), generator=generator, device='cpu').to(config.train.device)
+                    batch = {k: v[indices] for k, v in train_features.items()}
+                else:
+                    batch = train_features
                 with autocast_context(config):
-                    loss = pair_loss(model(features['train']), features['train']['required'], features['train']['lengths'])
+                    loss = pair_loss(model(batch), batch['required'], batch['lengths'])
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.train.clip_grad_norm)
                 optimizer.step()
                 if (step + 1) % 100 == 0:
-                    print(json.dumps({'arm': name, 'step': step + 1, 'loss': loss.item()}), flush=True)
+                    print(json.dumps({'arm': name, 'step': step + 1, 'loss': loss.item(), **memory_metrics(config.train.device)}), flush=True)
             save(steps)
             report['arms'][name] = {'parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
-                'initial_train': initial, 'train': score(model, features['train'], train, config),
+                'initial_train': initial, 'training_queries': count,
+                'train': score(model, train_features, train[:count], config),
                 'heldout': score(model, features['heldout'], heldout, config)}
             atomic_json(root / 'results.json', report)
         print(json.dumps(report), flush=True)
@@ -213,7 +248,11 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--steps', type=int, default=800)
+    parser.add_argument('--train-worlds', type=int, default=0)
+    parser.add_argument('--batch-size', type=int, default=0)
     args = parser.parse_args()
+    if args.train_worlds < 0 or args.batch_size < 0:
+        parser.error('World and batch counts must be nonnegative')
     if args.steps < 1:
         parser.error('--steps must be positive')
     from sdkb.operations import control_dir
@@ -221,4 +260,4 @@ if __name__ == '__main__':
         (control_dir(args.output) / 'STOP').touch()
     signal.signal(signal.SIGTERM, request_stop)
     signal.signal(signal.SIGINT, request_stop)
-    run(args.checkpoint, args.output, args.steps)
+    run(args.checkpoint, args.output, args.steps, args.train_worlds, args.batch_size)

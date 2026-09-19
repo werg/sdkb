@@ -38,3 +38,19 @@ compressed-query arm. This preserves identical initial scores and the intended
 trainable-parameter difference. The report records the query rounding difference
 against captured single-query outputs. Feature caches from the aborted extraction
 remain valid; neither arm trained in that attempt.
+
+
+## Completed narrow-data probe
+
+Initial arm scores match exactly. The frozen-versus-adaptable query-head arms own
+73,728 and 139,264 trainable parameters. After 800 full-batch updates, the adaptable
+head fits all 512 training action pairs; the compressed arm fits 258/512. On 32
+new worlds, full-pair recall is 38/128 versus 17/128. Direct permission/restoration
+first-record correctness is 34/64 and 51/64 for the full-state arm versus 30/64 and
+34/64 for the compressed arm. This is a training-fit improvement with limited
+held-out transfer, not solved routing. All exact counts are in `results.json`.
+
+The arms were fit from frozen `8e1fe59` using features extracted by `19a23a2`.
+The single-versus-batch normalized query maximum absolute difference is 0.001268;
+both trained arms use the same batched computation. No production model interface
+has changed, and no downstream evaluation is claimed.
