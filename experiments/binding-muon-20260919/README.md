@@ -57,7 +57,7 @@ Aggregate summaries and world-paired diagnostic intervals are the
 external. These validation results motivate a reader control; they are not a final
 held-out confirmation and do not justify selecting a winning training seed.
 
-## Attention reader control (planned launch)
+## Attention reader control (running)
 
 `recipes/looped_binding_muon_attention.yaml` changes only the selected-support
 recipe's reader from pooled MLP to the existing fixed-slot attention comparator.
@@ -71,3 +71,9 @@ implementations retain contribution-compaction support for later experiments.
 Primary question: can the attention system combine permission and restoration
 to choose actions while responding correctly to changing and unchanged
 counterfactual branches? Permission fact accuracy alone is insufficient.
+
+The isolated training source is `f737e7a`; prepared train/validation hashes match
+the MLP runs exactly (`attention-inputs.json`). A separate queued driver,
+`compare_attention.py`, waits for both selected-support systems to finish before
+creating 32 new common worlds. It evaluates their text-bootstrap and final latent
+stages with source removal and counterfactual controls. All artifacts are external.
