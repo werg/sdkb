@@ -1,0 +1,13 @@
+{
+  "source_commit": "97a9ded",
+  "isolated_checkout": ".sdkb/attention-context",
+  "container": "sdkb-causal-pilot",
+  "study": "/archive/runs/binding-attention-context-20260919",
+  "console": "/archive/runs/.sdkb-control/6a8b0e7a5c033040a150f739/console.log",
+  "order": [
+    "selected_supports",
+    "all_world"
+  ],
+  "queued_evaluation_console": "/archive/runs/binding-attention-context-20260919/comparison-console.log",
+  "status": "launched; results pending"
+}

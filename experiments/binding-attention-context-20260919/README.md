@@ -1,4 +1,4 @@
-# Attention continuation with distractor records (prepared)
+# Attention continuation with distractor records (running)
 
 The selected-support attention model composes permission and restoration correctly
 on unseen worlds, including action counterfactuals, but action accuracy falls from
@@ -31,4 +31,5 @@ Use the validated sequential driver in
 `experiments/binding-continuation-20260919/run.py --study EXTERNAL_STUDY_ROOT`.
 Stop through `sdkb runs stop --output EXTERNAL_STUDY_ROOT`; resume explicitly with
 `--resume`. Source/config/data hashes are checked, and an interrupted first arm
-prevents advancing to the second. Training has not launched yet.
+prevents advancing to the second. Training and queued evaluation launched from frozen source `97a9ded` in
+`.sdkb/attention-context`. The selected-support control runs first.

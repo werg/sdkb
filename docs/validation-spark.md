@@ -96,6 +96,6 @@ frontier showing substitution for resident model parameters.
 
 These are research outcomes to establish, not implemented-module checkboxes. The
 current work is a paired MLP continuation (extra training versus broader backbone
-adaptation) following the confirmed attention result and its measured failure under entity
-distractors. No paid teacher
+adaptation) and a matched attention continuation with/without entity distractors,
+following its confirmed selected-support composition and measured binding failure. No paid teacher
 collection, license change or public-visibility change has been initiated.
