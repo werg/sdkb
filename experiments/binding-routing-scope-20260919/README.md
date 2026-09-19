@@ -46,3 +46,12 @@ three address projections; initial model bytes equal the shared source. All weig
 remain on the external disk. `launch.json` and `initialization-check.json` record
 the process, environment, optimizer and first update. Capability and endpoint
 invariance results remain pending.
+
+
+Training completed all 800 updates. The initially queued comparison exited during
+a startup registration race (`not_managed` before the trainer registered). The
+waiting helper now gives initial registration a bounded 60-second grace period;
+stop requests, failed runs and loss of already-registered state still fail promptly.
+Four regressions and the full 259-test suite pass. Evaluation is restarted from a
+new frozen checkout with this orchestration fix; training code and weights are
+unchanged. The failed comparison created no evaluation worlds or result files.

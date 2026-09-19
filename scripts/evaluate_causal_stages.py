@@ -18,13 +18,26 @@ from sdkb.launch import file_sha256
 from sdkb.operations import atomic_json, run_lock, run_status, stop_requested
 
 
-def wait_for_completion(run):
+def wait_for_completion(run, *, startup_timeout=60):
+    if startup_timeout < 0:
+        raise ValueError('Startup timeout must be nonnegative')
     print('Waiting for the managed curriculum to complete', flush=True)
+    deadline = time.monotonic() + startup_timeout
+    registered = False
     while True:
         state = run_status(run)
+        if state['stop_requested']:
+            raise RuntimeError(f"Curriculum did not complete: {state['status']}")
         if state['status'] == 'complete' and not state['running']:
             return
-        if state['status'] not in {'running', 'starting', 'complete'} or state['stop_requested']:
+        if state['status'] == 'not_managed' and not registered:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RuntimeError('Curriculum did not register within the startup timeout')
+            time.sleep(min(10, remaining))
+            continue
+        registered = True
+        if state['status'] not in {'running', 'starting', 'complete'}:
             raise RuntimeError(f"Curriculum did not complete: {state['status']}")
         time.sleep(10)
 
