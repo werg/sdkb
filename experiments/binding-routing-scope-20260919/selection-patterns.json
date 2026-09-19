@@ -1,0 +1,149 @@
+{
+  "source": {
+    "multiuse/action": {
+      "n": 128,
+      "source_kinds": {
+        "permission,restoration": 46,
+        "permission,permission": 80,
+        "restoration,restoration": 2
+      },
+      "required_records_selected": {
+        "0": 6,
+        "2": 6,
+        "1": 116
+      },
+      "first_required": 63
+    },
+    "multiuse/identifier": {
+      "n": 64,
+      "source_kinds": {
+        "permission,restoration": 38,
+        "permission,permission": 25,
+        "restoration,restoration": 1
+      },
+      "required_records_selected": {
+        "1": 44,
+        "0": 20
+      },
+      "first_required": 26
+    },
+    "multiuse/permission": {
+      "n": 64,
+      "source_kinds": {
+        "permission,restoration": 38,
+        "permission,permission": 19,
+        "restoration,restoration": 7
+      },
+      "required_records_selected": {
+        "0": 27,
+        "1": 37
+      },
+      "first_required": 15
+    },
+    "multiuse/restoration": {
+      "n": 64,
+      "source_kinds": {
+        "permission,restoration": 36,
+        "permission,permission": 25,
+        "restoration,restoration": 3
+      },
+      "required_records_selected": {
+        "0": 44,
+        "1": 20
+      },
+      "first_required": 9
+    }
+  },
+  "joint_routing": {
+    "multiuse/action": {
+      "n": 128,
+      "source_kinds": {
+        "restoration,restoration": 116,
+        "permission,restoration": 8,
+        "permission,permission": 4
+      },
+      "required_records_selected": {
+        "1": 125,
+        "2": 1,
+        "0": 2
+      },
+      "first_required": 65
+    },
+    "multiuse/identifier": {
+      "n": 64,
+      "source_kinds": {
+        "permission,permission": 64
+      },
+      "required_records_selected": {
+        "1": 64
+      },
+      "first_required": 34
+    },
+    "multiuse/permission": {
+      "n": 64,
+      "source_kinds": {
+        "permission,permission": 64
+      },
+      "required_records_selected": {
+        "1": 64
+      },
+      "first_required": 34
+    },
+    "multiuse/restoration": {
+      "n": 64,
+      "source_kinds": {
+        "restoration,restoration": 64
+      },
+      "required_records_selected": {
+        "1": 64
+      },
+      "first_required": 34
+    }
+  },
+  "routing_only": {
+    "multiuse/action": {
+      "n": 128,
+      "source_kinds": {
+        "permission,restoration": 69,
+        "permission,permission": 48,
+        "restoration,restoration": 11
+      },
+      "required_records_selected": {
+        "0": 9,
+        "2": 9,
+        "1": 110
+      },
+      "first_required": 66
+    },
+    "multiuse/identifier": {
+      "n": 64,
+      "source_kinds": {
+        "permission,permission": 64
+      },
+      "required_records_selected": {
+        "1": 64
+      },
+      "first_required": 32
+    },
+    "multiuse/permission": {
+      "n": 64,
+      "source_kinds": {
+        "permission,permission": 64
+      },
+      "required_records_selected": {
+        "1": 64
+      },
+      "first_required": 31
+    },
+    "multiuse/restoration": {
+      "n": 64,
+      "source_kinds": {
+        "restoration,restoration": 64
+      },
+      "required_records_selected": {
+        "1": 64
+      },
+      "first_required": 32
+    }
+  }
+}

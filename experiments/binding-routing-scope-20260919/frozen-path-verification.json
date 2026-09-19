@@ -1,0 +1,14 @@
+{
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "target_manifest_sha256": "97432f8f9a13205f5641f0ef2a383f61fc25574f650da9d2fdab584670d898a6",
+  "episodes_sha256": "3fb52c7e6006bc56574c3520a1a59472efd2f1d1f7893c61654db74054297619",
+  "frozen_tensors_equal": 206,
+  "changed_address_tensors": [
+    "address_maps.0.weight",
+    "key_head.weight",
+    "query_maps.0.weight"
+  ],
+  "identical_control_rows": 640,
+  "identical_payload_rows": 384,
+  "notice": "Exact invariance check, not evidence of learned routing capability."
+}
