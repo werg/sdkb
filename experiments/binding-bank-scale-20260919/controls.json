@@ -1,0 +1,5 @@
+{
+  "original_records_byte_identical_in_both_banks": 128,
+  "oracle_no_memory_scores_identical_per_bank": 640,
+  "ignored_score_field": "candidate_records"
+}

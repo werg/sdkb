@@ -1,0 +1,12 @@
+{
+  "source_commit": "148933e",
+  "endpoint_sha256": "f3486d631acc97bb54835679396ca5529facbe2f07d52f3856f73027bc04feb9",
+  "feature_sha256": "57d586707dd7939c365ebaa522f848d9ced007379af56b05a7a4069538b8e646",
+  "device": "native CUDA BF16 projection / FP32 exact cosine",
+  "queries": 320,
+  "records": 128,
+  "max_cosine_abs_error_vs_diskstore": 2.384185791015625e-07,
+  "identical_top_two_rankings": 320,
+  "driver_sha256": "5e297f236d888ea0d04ef5a1b4a88232f38942fd4c8788be0c5a0941a3bb8e8b",
+  "notice": "Shared batched projected vectors serialized/reloaded. Does not assert single-writer versus batched GEMM bit identity."
+}

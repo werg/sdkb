@@ -68,3 +68,12 @@ for every other ID and the exact original learned selection. Both banks' visibil
 and provenance are checked. If the target was not selected, scores and generation
 must equal the original exactly. Keep this stricter result separate from the original
 whole-bank rule-flip record; do not silently replace its numbers.
+
+The targeted follow-up completed from `0b29195`. Global versus within-world
+training gives 40/128 versus 5/128 both-correct permission pairs, 32/64 versus
+9/64 restoration-change pairs, and 20/64 versus 8/64 false changes on invariant
+restoration pairs. Choice and free generation agree. Every intervention on an
+unselected target leaves all candidate scores and generated output exactly equal
+to the original. Targeted control changes the interpretation of the type-wide
+numbers; it confirms some specific-source dependence and exposes remaining
+conditional-gating errors rather than establishing reliable composition.

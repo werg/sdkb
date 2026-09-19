@@ -10,7 +10,11 @@ Reliable competing-entity composition and exact unseen identifiers remain unreso
 the first [learned routing intervention](experiments/binding-routing-20260919/README.md)
 learned source types but did not solve entity selection.
 Later [global retrieval tests](experiments/binding-global-routing-20260919/README.md)
-exposed the dependence on supplied world membership.
+exposed the dependence on supplied world membership. Later
+[cross-world training](experiments/binding-global-stored-long-20260919/README.md)
+reaches 101/128 generated actions on a fresh 128-record bank, but
+[adding distractors](experiments/binding-bank-scale-20260919/README.md) reduces this
+to 76/128 at 4,096 records, with uncertain benefit over no memory.
 [Persistent compaction](experiments/binding-compaction-20260919/README.md) preserves
 sampled attention-system actions, while the MLP still loses conditional behavior.
 The [bgkit audit](docs/bgkit-audit.md) records storage, recovery and runtime adoption.

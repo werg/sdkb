@@ -1,0 +1,8 @@
+{
+  "identical_oracle_no_memory_rows": 640,
+  "arms": [
+    "world_long",
+    "global_short",
+    "global_long"
+  ]
+}

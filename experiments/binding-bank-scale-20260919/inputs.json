@@ -1,0 +1,17 @@
+{
+  "router_sha256": "f3486d631acc97bb54835679396ca5529facbe2f07d52f3856f73027bc04feb9",
+  "original_episodes_sha256": "2c538db936b41d8e2fae0573f85db5c346f90b7f3b6663f780b7582c84a39ba7",
+  "extended_corpus_sha256": {
+    "128": "6bdf6b18ad5d88702d806acc8fe6d028ebab1b1cd5dc99baaa45c4282ebea890",
+    "1024": "4c9cd6091b9422c688a4e92d04a74325b4131f699c944d5dd2c5f3c33ff296aa"
+  },
+  "query_worlds": 32,
+  "generation_worlds": 32,
+  "candidate_records": [
+    128,
+    512,
+    4096
+  ],
+  "original_queries_equal": true,
+  "writer_calls_allowed": "offline creation only"
+}

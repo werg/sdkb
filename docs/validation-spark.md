@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **314 tests**, with four existing dependency/runtime
+The latest full suite passed **324 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -247,5 +247,21 @@ zero/no-memory controls are 64/128 and 65/128, oracle 128/128. Counterfactual fr
 permission pairs retain both correct answers for 52/128, restoration for 25/64,
 with 14/64 false restoration changes. This is a narrow, unreliable learned-global
 memory benefit, not robust composition. See [stored confirmation](../experiments/binding-global-stored-20260919/README.md).
-A longer matched feature run reaches 86/128 global development action-pair recall;
-its separate fresh stored confirmation is pending.
+The longer run's [fresh stored confirmation](../experiments/binding-global-stored-long-20260919/README.md)
+generates 101/128 actions versus 76/128 short-global and 54/128 long-within-world.
+Targeted-source counterfactuals retain both answers for 73/128 permission pairs
+and 47/64 restoration-change pairs, with 10/64 false invariant restoration changes.
+Earlier type-wide flips affect the whole bank and are weaker evidence of dependence
+on the intended source; targeted interventions leave unrelated payloads unchanged.
+
+[Fixed-query bank scaling](../experiments/binding-bank-scale-20260919/README.md)
+reduces free actions from 101/128 at 128 records to 91/128 at 512 and 76/128 at
+4,096. The 4,096-record advantage over no memory has an interval crossing zero.
+Exact identifiers remain 0/64 with oracle supports. Scalability and exact-detail
+recall are still open.
+
+A [precision audit](../experiments/binding-routing-precision-20260919/README.md)
+corrected BF16 feature-score approximation to match the writer's key normalization
+and FP32 search. Native comparison matches all 320 top-two rankings with maximum
+cosine error 2.39e-7 on shared serialized projected vectors. Corrected fitting uses
+new run identities; historical stored outcomes remain unchanged.
