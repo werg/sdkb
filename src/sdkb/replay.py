@@ -2,7 +2,8 @@
 
 No optimizer step may occur between capture and replay. Source computations must
 be pure apart from torch RNG. Mutable buffers, changed training modes and changed
-parameters are rejected. No differentiation through historical environment actions.
+parameters are rejected. Autocast dtype, enabled state and weight-cache policy are
+restored. No differentiation through historical environment actions.
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ class _Record:
     buffer_values: tuple[tuple[Tensor, Tensor], ...]
     modes: tuple[tuple[nn.Module, bool], ...]
     autocast: dict[str, tuple[bool, torch.dtype]]
+    autocast_cache_enabled: bool
 
 
 @contextmanager
@@ -35,7 +37,8 @@ def _record_context(record: _Record) -> Iterator[None]:
         for device, state in enumerate(record.cuda_rng):
             torch.cuda.set_rng_state(state, device)
         for device, (enabled, dtype) in record.autocast.items():
-            stack.enter_context(torch.autocast(device, enabled=enabled, dtype=dtype))
+            stack.enter_context(torch.autocast(device, enabled=enabled, dtype=dtype,
+                                              cache_enabled=record.autocast_cache_enabled))
         yield
 
 
@@ -62,6 +65,7 @@ class ReplayTape:
         modes = tuple((m, m.training) for m in module.modules())
         devices = ["cpu"] + (["cuda"] if cuda_rng else [])
         autocast = {d: (torch.is_autocast_enabled(d), torch.get_autocast_dtype(d)) for d in devices}
+        cache_enabled = torch.is_autocast_cache_enabled()
         with torch.no_grad():
             outputs = producer()
         if not isinstance(outputs, tuple) or not outputs or not all(
@@ -77,7 +81,7 @@ class ReplayTape:
             raise RuntimeError("Producer mutated parameters")
         leaves = tuple(x.detach().requires_grad_(True) for x in outputs)
         self.records.append(_Record(module, producer, leaves, cpu_rng, cuda_rng,
-                                    versions, buffers, modes, autocast))
+                                    versions, buffers, modes, autocast, cache_enabled))
         return leaves
 
     def backward(self) -> None:

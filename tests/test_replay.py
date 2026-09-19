@@ -98,3 +98,26 @@ def test_cpu_autocast_replayed_under_original_precision():
     loss.backward()
     tape.backward()
     assert model.linear.weight.grad is not None
+
+
+@pytest.mark.parametrize('cache_enabled', [False, True])
+def test_replay_restores_autocast_cache_policy_for_shared_parameter_paths(cache_enabled):
+    reference = nn.Linear(16, 16)
+    replayed = copy.deepcopy(reference)
+    x = torch.randn(4, 16)
+    def produce(model):
+        return (model(x).sin() + model(x * 1.7).cos(),)
+    with torch.autocast('cpu', dtype=torch.bfloat16, cache_enabled=cache_enabled):
+        output = produce(reference)[0]
+    output.float().square().mean().backward()
+    tape = ReplayTape(verify_outputs=True)
+    with torch.autocast('cpu', dtype=torch.bfloat16, cache_enabled=cache_enabled):
+        captured = tape.capture(replayed, lambda: produce(replayed))
+    captured[0].float().square().mean().backward()
+    # The caller may now be outside its original autocast context or have changed
+    # cache policy. Replay must restore the producer's original accumulation graph.
+    with torch.autocast('cpu', enabled=False, cache_enabled=not cache_enabled):
+        tape.backward()
+        assert torch.is_autocast_cache_enabled() == (not cache_enabled)
+    for a, b in zip(reference.parameters(), replayed.parameters(), strict=True):
+        torch.testing.assert_close(a.grad, b.grad, rtol=0, atol=0)
