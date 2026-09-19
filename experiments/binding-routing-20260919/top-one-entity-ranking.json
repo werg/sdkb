@@ -1,0 +1,84 @@
+{
+  "notice": "Post-hoc top-one ranking diagnostic. Same-type top-two recall does not show entity discrimination. World-pair counts use two entity queries per world.",
+  "episodes_sha256": "23e81149612ee2587681e90d557df323c3dc50e0865d112ada02f85732c8c1c2",
+  "arms": {
+    "source": {
+      "raw_results_sha256": "3591b925c892fd1043c03908486d77ba32166668f386c0d157bb9fe3a7693ee0",
+      "by_family": {
+        "multiuse/permission": {
+          "n": 64,
+          "first_required": 17,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 28,
+          "both_entities_ranked_correctly": 1
+        },
+        "multiuse/restoration": {
+          "n": 64,
+          "first_required": 5,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 31,
+          "both_entities_ranked_correctly": 0
+        },
+        "multiuse/identifier": {
+          "n": 64,
+          "first_required": 27,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 30,
+          "both_entities_ranked_correctly": 0
+        }
+      }
+    },
+    "no_routing_loss": {
+      "raw_results_sha256": "26b36cb3ce1ed892631b1a95761db9f09ea7299b4359c3cd55f12189fbfecf8d",
+      "by_family": {
+        "multiuse/permission": {
+          "n": 64,
+          "first_required": 33,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 29,
+          "both_entities_ranked_correctly": 2
+        },
+        "multiuse/restoration": {
+          "n": 64,
+          "first_required": 0,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 28,
+          "both_entities_ranked_correctly": 0
+        },
+        "multiuse/identifier": {
+          "n": 64,
+          "first_required": 6,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 31,
+          "both_entities_ranked_correctly": 0
+        }
+      }
+    },
+    "group_routing": {
+      "raw_results_sha256": "989d6327c261e2d36b129cc30dd366e8cc8685f3ae6c0a55c5a87b2f4c366373",
+      "by_family": {
+        "multiuse/permission": {
+          "n": 64,
+          "first_required": 32,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 32,
+          "both_entities_ranked_correctly": 0
+        },
+        "multiuse/restoration": {
+          "n": 64,
+          "first_required": 36,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 26,
+          "both_entities_ranked_correctly": 5
+        },
+        "multiuse/identifier": {
+          "n": 64,
+          "first_required": 34,
+          "worlds": 32,
+          "same_first_record_for_both_entities": 30,
+          "both_entities_ranked_correctly": 2
+        }
+      }
+    }
+  }
+}

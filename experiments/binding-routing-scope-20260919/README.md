@@ -55,3 +55,11 @@ stop requests, failed runs and loss of already-registered state still fail promp
 Four regressions and the full 259-test suite pass. Evaluation is restarted from a
 new frozen checkout with this orchestration fix; training code and weights are
 unchanged. The failed comparison created no evaluation worlds or result files.
+
+
+The comparison restarted successfully from `46bcedb`, with new worlds created only
+after training finished. Its numerical model/evaluation code is unchanged from
+the declared source; only the startup wait was fixed. `completed-training.json`
+and `evaluation-restart.json` preserve the final state and both attempt identities.
+After training released its locks, the redundant initial weight copy was verified
+and deduplicated against the source, preserving the complete initial checkpoint.

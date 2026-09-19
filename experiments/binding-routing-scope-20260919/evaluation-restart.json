@@ -1,0 +1,6 @@
+{
+  "pid": 33924,
+  "source_commit": "46bcedb",
+  "console": "/archive/runs/binding-muon-routing-scope-20260919/comparison-restart-console.log",
+  "reason": "Restart after initial comparison exited before trainer registration; training unchanged."
+}

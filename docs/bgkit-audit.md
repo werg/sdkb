@@ -60,3 +60,9 @@ resume validation runs were then deduplicated (1.90 GiB), bringing this maintena
 pass to about 15.19 GiB of redundant weight copies removed. Their original
 checkpoint paths and validation evidence remain intact. The current active run's
 initial copy was explicitly excluded until training completes.
+
+
+After the projection-only run finished, its byte-identical initial weights were
+also deduplicated (another 0.95 GiB). Total verified redundant weight removal is
+now about 16.1 GiB. This is additional to the earlier roughly 48 GiB removed from
+the internal run tree by verified relocation.

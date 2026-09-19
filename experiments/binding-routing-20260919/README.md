@@ -108,3 +108,10 @@ action accuracy is 65.625% and sufficient-support recall only 12.5%, versus cont
 on held-out worlds. Direct-fact recall is again 100%; identifier choice reaches
 93.75% in both continued arms. This is explicitly training fit, not generalization.
 `training-fit.json` records the subset and result hashes.
+
+
+The first-ranked direct-fact record is also weak on held-out worlds: supervised
+permission 32/64, restoration 36/64, identifier 34/64. For permission, both entity
+queries choose the same first record in all 32 worlds, with no world ranking both
+entities correctly. This confirms that top-two fact recall was not concealing
+reliable entity ranking. `top-one-entity-ranking.json` records all arms and hashes.

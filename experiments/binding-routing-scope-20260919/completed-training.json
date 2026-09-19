@@ -1,0 +1,96 @@
+{
+  "checkpoint": "step-000000800-d6f941113015",
+  "manifest": {
+    "format": 1,
+    "step": 800,
+    "dataset_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+    "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "sha256": {
+      "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+      "config.json": "61e282172c351acbee6708a677242d9bede4dcec8a033c50eb655d8a2b625ab4",
+      "run-identity.json": "219e040fa84cc78f2410cad415bb761a3b7df3ac8faf33bdb2f1ffa02a9a821e",
+      "model.safetensors": "4270a1fd4c708fcab9f37222e550fcdafa62938d223a277ecd3cbc54fe1e62a4",
+      "training_state.pt": "b5e52f14ff68f8f8c97750ccee0291a64809e2508d8ef0726f776a171e4a94ad"
+    }
+  },
+  "steps": 800,
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "a60da7e5c445e125a83d824c230670bfcad8f2cb",
+    "git_dirty": false,
+    "transformers": "5.17.0",
+    "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "runtime_limits": {
+      "host_available_bytes": 117052874752,
+      "cuda_memory_fraction": 0.35,
+      "min_system_available_bytes": 8589934592
+    },
+    "total_parameters": 254331335,
+    "trainable_parameters": 73728,
+    "notice": "Prototype measurements; not evidence of capacity substitution.",
+    "recurrence": {
+      "mode": "middle_block",
+      "prelude": [
+        0,
+        4
+      ],
+      "core": [
+        4,
+        10
+      ],
+      "coda": [
+        10,
+        14
+      ],
+      "loops": 3,
+      "layer_visits": 26,
+      "layer_types": [
+        "conv",
+        "conv",
+        "full_attention",
+        "conv",
+        "full_attention",
+        "conv",
+        "full_attention",
+        "conv",
+        "full_attention",
+        "conv",
+        "full_attention",
+        "conv",
+        "full_attention",
+        "conv"
+      ],
+      "new_bridge_parameters": 3148803,
+      "input_mix": 0.10681643337011337,
+      "update_mix": 0.108786441385746,
+      "memory_mix": 0.10746510326862335,
+      "cache": "disabled; no KV or convolution state crosses a depth boundary",
+      "training_depths": [
+        2,
+        3
+      ],
+      "writer_loops": 1
+    },
+    "resume": false,
+    "attempt": "d4147a29ed9c"
+  },
+  "resources": {
+    "process_peak_rss_bytes": 4103344128,
+    "rss_scope": "process lifetime; not phase-isolated",
+    "cuda_peak_allocated_bytes": 2035708928,
+    "cuda_peak_reserved_bytes": 2107637760,
+    "system_mem_available_bytes": 76477767680
+  },
+  "last_update_elapsed_seconds": 862.8715499869868
+}
