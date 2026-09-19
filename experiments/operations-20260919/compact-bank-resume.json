@@ -1,0 +1,18 @@
+{
+  "code_commit": "897d657",
+  "model": "native LFM BF16",
+  "interrupted_after_bank_commit": true,
+  "resumed_with_writer_forbidden": true,
+  "stored_bank_sha256_unchanged": {
+    "permission.sqlite": "29b082a02b48ba933fda84eb70dcd91fea185ddaa90981258dfe249c6b829403",
+    "restoration.sqlite": "1fd820150c388fbd4592ef5a233f78729d47fb697f2b0740cd4a7a0ac9657308",
+    "all.sqlite": "48d0c604f5f7bffcfef55cbd48fc6b4a3c741a8cadb0b9560941d74b18ada397"
+  },
+  "completed_restart_preserved_reports": {
+    "mean.json": "ae9cf94633daeb9902ac66419eb1cb0210318f6ce51b22c39263b0334a4e576f",
+    "inputs.json": "9de724f1ee61feae54b2e1fa6d33567e94a9ae935cced4a4f489beedbf2ad293",
+    "trained.json": "d8086435c413e3cfc320de794b2df84dbb8d902ae578149a8ac2e33eb1e2846c",
+    "raw.json": "12d8f7fc25487daae41595034c32f43f92f332b6e0b1d05ca1b7069e6594aad3"
+  },
+  "driver_sha256": "311518e1c4387ba71552fd3b6bc4a6b520d8e6ca85e8dbe6f3b7c5d7bc65ae03"
+}

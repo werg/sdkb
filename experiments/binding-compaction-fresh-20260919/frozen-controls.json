@@ -1,0 +1,17 @@
+{
+  "identical_scoring_rows_per_arm": 1088,
+  "methods": [
+    "raw",
+    "mean",
+    "trained",
+    "statistics",
+    "task"
+  ],
+  "conditions": [
+    "none",
+    "zero_values",
+    "drop_0",
+    "drop_1"
+  ],
+  "excluded_field": "payload_accounting (raw and code routes intentionally differ)"
+}

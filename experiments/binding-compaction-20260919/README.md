@@ -49,3 +49,21 @@ metadata explicit and add compute-only stack diagnostics/progress reports.
 
 Counterfactual and candidate-free confirmation is running separately from
 `e69de72`, under `/archive/probes/posthoc-compaction-confirmation-20260919`.
+
+## Counterfactual and free-generation confirmation
+
+Completed from `e69de72`; summaries and input identities are retained here. MLP
+raw/mean/fitted action choices are 128/96/103 out of 128; ordinary candidate-free
+actions are 32/25/27 out of 32. Both-correct permission-change pairs are 128/64/80
+out of 128, and restoration-change pairs 64/0/15 out of 64. Compact MLP behavior
+is therefore not preserved even when ordinary actions often remain correct.
+
+For attention, raw/mean/fitted action choices are 127/128/128 out of 128, and free
+actions are 32/32 in every arm. Choice-based permission-change pairs are
+126/128/127 out of 128; restoration pairs are 64/64 in all arms. A separate
+candidate-free counterfactual check (`d7c0acf`) answers all 64 changed-world
+questions correctly in each arm, with both answers correct on every changed pair
+and no false change on invariant pairs. This supports full-pair compaction for
+this particular frozen attention system and synthetic distribution. Architecture
+training budgets differ, raw fallback remains, and this is neither a net-disk
+saving nor a global-retrieval, agent or parameter-substitution result.

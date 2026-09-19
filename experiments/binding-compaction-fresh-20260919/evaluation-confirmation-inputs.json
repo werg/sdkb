@@ -1,0 +1,63 @@
+{
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "compactor_state_sha256": "164a0c78919bbe900f1df367560f30b155779a50c9dade31a160b8a97c69aac6",
+  "episodes_sha256": "c6c4215a5cc90573e766ff5cb11da19ab5100c9d00578a217fa2511f9a536eb6",
+  "endpoints": {
+    "trained": {
+      "sha256": "164a0c78919bbe900f1df367560f30b155779a50c9dade31a160b8a97c69aac6",
+      "steps": 400,
+      "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+      "reader_hash": "04d1ae8a1153d12c2ab685efca4dea561f7c00b918a3e6d2e2e459bc1a51f0cc"
+    },
+    "statistics": {
+      "sha256": "4346a8eb7b8203b66ff221fa23985f884d8a57145fd61b67803976579d91ca5c",
+      "steps": 200,
+      "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+      "reader_hash": "04d1ae8a1153d12c2ab685efca4dea561f7c00b918a3e6d2e2e459bc1a51f0cc"
+    },
+    "task": {
+      "sha256": "45ac939176cdabe45cb4b7590ce04f68ed6798382a01a27d0d838d65a2e217ad",
+      "steps": 200,
+      "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+      "reader_hash": "04d1ae8a1153d12c2ab685efca4dea561f7c00b918a3e6d2e2e459bc1a51f0cc"
+    }
+  },
+  "script_sha256": "7b600bdc4cae43a1fb9029bfab609d857e0ee1857b69430d781ae2fd39bf808b",
+  "max_new_tokens": 24,
+  "generation_worlds": 8,
+  "reuse_decoder": true,
+  "selected_worlds": [
+    "world_10ad0f50",
+    "world_17f29926",
+    "world_1bef21a4",
+    "world_2136cea0",
+    "world_215bb906",
+    "world_31a084ce",
+    "world_37100c04",
+    "world_3f3fd1ab",
+    "world_4f90e621",
+    "world_621aec07",
+    "world_6e1bf4cc",
+    "world_77a6fad9",
+    "world_7a3bf137",
+    "world_80ed6fda",
+    "world_8956bcb1",
+    "world_8cc3a615",
+    "world_953c27c3",
+    "world_994ae01e",
+    "world_99b2c19d",
+    "world_b585dc0b",
+    "world_b897b4ad",
+    "world_b93fcb7c",
+    "world_bc6572d8",
+    "world_c6c2f897",
+    "world_cab78e83",
+    "world_d1184164",
+    "world_d2fe5202",
+    "world_d668b97b",
+    "world_de03fe23",
+    "world_e066a1a6",
+    "world_f5ae1d4d",
+    "world_f899ef66"
+  ]
+}

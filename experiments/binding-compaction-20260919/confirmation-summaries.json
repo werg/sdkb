@@ -1,0 +1,1834 @@
+{
+  "mlp": {
+    "raw": {
+      "method": "raw",
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.3355507452683084e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.4765625,
+            "mean_target_nll": 0.7992527282853449,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.484375,
+            "mean_target_nll": 1.351592737557534,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.75,
+            "mean_target_nll": 1.0587544890703013,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5234375,
+            "mean_target_nll": 1.7869345330869666,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.2608457614396795e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.389334033313703e-06,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.633141124674252,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.34375,
+            "mean_target_nll": 6.130297317107519,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.648382178126346,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.34375,
+            "mean_target_nll": 6.130297317107519,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.623120543821937,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.633141124674252,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.8998936310854475e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.349195777717832,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.562511706592268,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.349195777717832,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.673583053252159e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.8998936310854475e-06,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.939709695226611e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 1.0825456476966906,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.515625,
+            "mean_target_nll": 2.0914489819058026,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 1.0825456476966906,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.939709695226611e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.935984905860778e-06,
+            "complete_support_recall": 1.0
+          }
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.125
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        }
+      },
+      "generation_by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 32,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 32,
+            "exact_match": 0.5
+          },
+          "zero_values": {
+            "n": 32,
+            "exact_match": 0.5
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5625
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.5625
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.4375
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.4375
+          }
+        }
+      },
+      "code_storage": null,
+      "notice": "Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.",
+      "report_sha256": "6f3ca945b086b10d07df3762d40a7ceb1c5f424f5dcf79a8420516e5cef10312",
+      "score_rows": 2048,
+      "generation_rows": 240
+    },
+    "mean": {
+      "method": "mean",
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.75,
+            "mean_target_nll": 0.8837585081614439,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.4765625,
+            "mean_target_nll": 0.7992527282853449,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.484375,
+            "mean_target_nll": 1.351592737557534,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.75,
+            "mean_target_nll": 1.0587544890703013,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5234375,
+            "mean_target_nll": 1.7869345330869666,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 128,
+            "choice_accuracy": 0.75,
+            "mean_target_nll": 0.9109918139698864,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 128,
+            "choice_accuracy": 0.75,
+            "mean_target_nll": 0.8244990846943209,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.633141124674252,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.34375,
+            "mean_target_nll": 6.130297317107519,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.648382178126346,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.34375,
+            "mean_target_nll": 6.130297317107519,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.623120543821937,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.633141124674252,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.8998936310854475e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.349195777717832,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.562511706592268,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.349195777717832,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.673583053252159e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.8998936310854475e-06,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.939709695226611e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 1.0825456476966906,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.515625,
+            "mean_target_nll": 2.0914489819058026,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 1.0825456476966906,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.939709695226611e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.935984905860778e-06,
+            "complete_support_recall": 1.0
+          }
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.5,
+            "appropriate_prediction_change": 0.90625,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.265625,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.125
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        }
+      },
+      "generation_by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 32,
+            "exact_match": 0.78125
+          },
+          "none": {
+            "n": 32,
+            "exact_match": 0.5
+          },
+          "zero_values": {
+            "n": 32,
+            "exact_match": 0.5
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5625
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.5625
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.4375
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.4375
+          }
+        }
+      },
+      "code_storage": {
+        "all": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        }
+      },
+      "notice": "Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.",
+      "report_sha256": "3924e718b89d7a79eb3c24bd03db3656da9902de3f801b76bd931d8123c55b80",
+      "score_rows": 2048,
+      "generation_rows": 240
+    },
+    "trained": {
+      "method": "trained",
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.8046875,
+            "mean_target_nll": 0.640395987849896,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.4765625,
+            "mean_target_nll": 0.7992527282853449,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.484375,
+            "mean_target_nll": 1.351592737557534,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.75,
+            "mean_target_nll": 1.0587544890703013,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5234375,
+            "mean_target_nll": 1.7869345330869666,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 128,
+            "choice_accuracy": 0.8203125,
+            "mean_target_nll": 0.6811119909692731,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 128,
+            "choice_accuracy": 0.8125,
+            "mean_target_nll": 0.58979875444545,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.633141124674252,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.34375,
+            "mean_target_nll": 6.130297317107519,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.648382178126346,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.34375,
+            "mean_target_nll": 6.130297317107519,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.623120543821937,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 0.328125,
+            "mean_target_nll": 4.633141124674252,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.8998936310854475e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.349195777717832,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.562511706592268,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 2.349195777717832,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.673583053252159e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.8998936310854475e-06,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.939709695226611e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 1.0825456476966906,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.515625,
+            "mean_target_nll": 2.0914489819058026,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 1.0825456476966906,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.939709695226611e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 2.935984905860778e-06,
+            "complete_support_recall": 1.0
+          }
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.625,
+            "appropriate_prediction_change": 0.9609375,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.234375,
+            "appropriate_prediction_change": 0.40625,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.125
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        }
+      },
+      "generation_by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 32,
+            "exact_match": 0.84375
+          },
+          "none": {
+            "n": 32,
+            "exact_match": 0.5
+          },
+          "zero_values": {
+            "n": 32,
+            "exact_match": 0.5
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5625
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.5625
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.4375
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.4375
+          }
+        }
+      },
+      "code_storage": {
+        "all": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        }
+      },
+      "notice": "Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.",
+      "report_sha256": "706bba790cbd65e7496bda0da5b2a84fa9a26eb016837e492a821a239a8323d0",
+      "score_rows": 2048,
+      "generation_rows": 240
+    }
+  },
+  "attention": {
+    "raw": {
+      "method": "raw",
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.9921875,
+            "mean_target_nll": 0.006078967499944166,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 1.4512757676121446,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.4140625,
+            "mean_target_nll": 1.1850748052537863,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.7421875,
+            "mean_target_nll": 0.391999819491608,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 0.9522154996994778,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 128,
+            "choice_accuracy": 0.9921875,
+            "mean_target_nll": 0.009216587864335409,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 0.005365128499485243,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.8216043852801835,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.25162251098525,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 2.8228244573232675,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.25162251098525,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 2.8157245906868154,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.8216043852801835,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.757912827699442e-07,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 4.527343985624551,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 4.5517590660596365,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 4.527343985624551,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.515769118171534e-07,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.757912827699442e-07,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.86939274174847e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 0.42486694350373,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.515625,
+            "mean_target_nll": 1.7864669029030438,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 0.42486694350373,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.86939274174847e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.81956744585932e-06,
+            "complete_support_recall": 1.0
+          }
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.984375,
+            "appropriate_prediction_change": 0.984375,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.015625
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.125
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        }
+      },
+      "generation_by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 32,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 32,
+            "exact_match": 0.375
+          },
+          "zero_values": {
+            "n": 32,
+            "exact_match": 0.4375
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5625
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.4375
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.5
+          }
+        }
+      },
+      "code_storage": null,
+      "notice": "Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.",
+      "report_sha256": "bb56d8ae57aa7033510b84034494b639b8a0ff213d6e1414b9ae4c5fc668b421",
+      "score_rows": 2048,
+      "generation_rows": 240
+    },
+    "mean": {
+      "method": "mean",
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 0.0018964452710279257,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 1.4512757676121446,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.4140625,
+            "mean_target_nll": 1.1850748052537863,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.7421875,
+            "mean_target_nll": 0.391999819491608,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 0.9522154996994778,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 0.004169596303421756,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 0.0022312375588631724,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.8216043852801835,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.25162251098525,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 2.8228244573232675,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.25162251098525,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 2.8157245906868154,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.8216043852801835,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.757912827699442e-07,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 4.527343985624551,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 4.5517590660596365,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 4.527343985624551,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.515769118171534e-07,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.757912827699442e-07,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.86939274174847e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 0.42486694350373,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.515625,
+            "mean_target_nll": 1.7864669029030438,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 0.42486694350373,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.86939274174847e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.81956744585932e-06,
+            "complete_support_recall": 1.0
+          }
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.125
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        }
+      },
+      "generation_by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 32,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 32,
+            "exact_match": 0.375
+          },
+          "zero_values": {
+            "n": 32,
+            "exact_match": 0.4375
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5625
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.4375
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.5
+          }
+        }
+      },
+      "code_storage": {
+        "all": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        }
+      },
+      "notice": "Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.",
+      "report_sha256": "bb336ee2077c07293222a176a385bbb53109edac31991449a9bf235f6c7c60b4",
+      "score_rows": 2048,
+      "generation_rows": 240
+    },
+    "trained": {
+      "method": "trained",
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 0.004210592713384304,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 1.4512757676121446,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.4140625,
+            "mean_target_nll": 1.1850748052537863,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.7421875,
+            "mean_target_nll": 0.391999819491608,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 0.9522154996994778,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 128,
+            "choice_accuracy": 0.9921875,
+            "mean_target_nll": 0.007122461560630286,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 128,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 0.003952473964234503,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.8216043852801835,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.25162251098525,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 2.8228244573232675,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.359375,
+            "mean_target_nll": 4.25162251098525,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 2.8157245906868154,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.8216043852801835,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.757912827699442e-07,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 4.527343985624551,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 4.5517590660596365,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 4.527343985624551,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.515769118171534e-07,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 7.757912827699442e-07,
+            "complete_support_recall": 1.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.86939274174847e-06,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 0.42486694350373,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.515625,
+            "mean_target_nll": 1.7864669029030438,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 0.42486694350373,
+            "complete_support_recall": 0.0
+          },
+          "cf_permission": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.86939274174847e-06,
+            "complete_support_recall": 1.0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.81956744585932e-06,
+            "complete_support_recall": 1.0
+          }
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.9921875,
+            "appropriate_prediction_change": 0.9921875,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.125
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        }
+      },
+      "generation_by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 32,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 32,
+            "exact_match": 0.375
+          },
+          "zero_values": {
+            "n": 32,
+            "exact_match": 0.4375
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.0
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5625
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.4375
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 16,
+            "exact_match": 1.0
+          },
+          "none": {
+            "n": 16,
+            "exact_match": 0.5
+          },
+          "zero_values": {
+            "n": 16,
+            "exact_match": 0.5
+          }
+        }
+      },
+      "code_storage": {
+        "all": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained."
+        }
+      },
+      "notice": "Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.",
+      "report_sha256": "2b0114dc2f92cab93f4d88a347950228b0e4c704705a531f9da6a358aae10677",
+      "score_rows": 2048,
+      "generation_rows": 240
+    }
+  }
+}

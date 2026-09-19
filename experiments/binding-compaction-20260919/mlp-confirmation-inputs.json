@@ -1,0 +1,8 @@
+{
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "compactor_state_sha256": "164a0c78919bbe900f1df367560f30b155779a50c9dade31a160b8a97c69aac6",
+  "episodes_sha256": "842108f3b3b2447965f0dff72e01b1d03d6fe85d85965709dec7b6b66aef1896",
+  "script_sha256": "9d202c19d8f366b3d8880a17af660708af770a6506fa3c37a886f9626587e5c2",
+  "max_new_tokens": 24,
+  "generation_worlds": 8
+}

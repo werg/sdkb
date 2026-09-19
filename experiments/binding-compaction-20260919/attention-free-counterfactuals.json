@@ -1,0 +1,88 @@
+{
+  "source_inputs": {
+    "source_manifest_sha256": "f90b27924a9f0815f38ac525737041850c260a159e6f3241447676ba13181e81",
+    "compactor_state_sha256": "060fa805d19d44b0caaa6a004aa3d22385b45439863e51383ab0b4cf8c76d544",
+    "episodes_sha256": "842108f3b3b2447965f0dff72e01b1d03d6fe85d85965709dec7b6b66aef1896",
+    "script_sha256": "9d202c19d8f366b3d8880a17af660708af770a6506fa3c37a886f9626587e5c2",
+    "max_new_tokens": 24,
+    "generation_worlds": 8
+  },
+  "worlds": 8,
+  "bank_sha256": {
+    "permission": "24bc73d411fbe9468db7317764d9fbbecb0b42e88edf819afc7fe8e528bfb2e5",
+    "restoration": "ed9c2cabae6cfcf7a54c5c17a6f29f8dbc9d70dfb9c85d18e5aff518143dacf8"
+  },
+  "reference_report_sha256": {
+    "raw": "bb56d8ae57aa7033510b84034494b639b8a0ff213d6e1414b9ae4c5fc668b421",
+    "mean": "bb336ee2077c07293222a176a385bbb53109edac31991449a9bf235f6c7c60b4",
+    "trained": "2b0114dc2f92cab93f4d88a347950228b0e4c704705a531f9da6a358aae10677"
+  },
+  "by_method": {
+    "raw": {
+      "permission": {
+        "queries": 32,
+        "exact_correct": 32,
+        "changed_pairs": 32,
+        "both_correct_on_change": 32,
+        "unchanged_pairs": 0,
+        "false_changes": 0
+      },
+      "restoration": {
+        "queries": 32,
+        "exact_correct": 32,
+        "changed_pairs": 16,
+        "both_correct_on_change": 16,
+        "unchanged_pairs": 16,
+        "false_changes": 0
+      }
+    },
+    "mean": {
+      "permission": {
+        "queries": 32,
+        "exact_correct": 32,
+        "changed_pairs": 32,
+        "both_correct_on_change": 32,
+        "unchanged_pairs": 0,
+        "false_changes": 0
+      },
+      "restoration": {
+        "queries": 32,
+        "exact_correct": 32,
+        "changed_pairs": 16,
+        "both_correct_on_change": 16,
+        "unchanged_pairs": 16,
+        "false_changes": 0
+      }
+    },
+    "trained": {
+      "permission": {
+        "queries": 32,
+        "exact_correct": 32,
+        "changed_pairs": 32,
+        "both_correct_on_change": 32,
+        "unchanged_pairs": 0,
+        "false_changes": 0
+      },
+      "restoration": {
+        "queries": 32,
+        "exact_correct": 32,
+        "changed_pairs": 16,
+        "both_correct_on_change": 16,
+        "unchanged_pairs": 16,
+        "false_changes": 0
+      }
+    }
+  },
+  "decoder_reuse": {
+    "hits": {
+      "score": 0,
+      "generation": 0
+    },
+    "unique_score_inputs": 0,
+    "unique_generation_inputs": 192,
+    "notice": "Serial decoder results reused only after matching full prompt/memory bytes and scoring controls; stored reads and visibility checks still execute."
+  },
+  "notice": "Greedy counterfactual action strings; no candidate answers, writer, compactor or agent execution.",
+  "report_sha256": "101c9d6318c4d101bd46f78ba245d8c0ae5b5321daf02625346b163720073b49",
+  "generation_code_commit": "d7c0acf"
+}

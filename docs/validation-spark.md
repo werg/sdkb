@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **283 tests**, with four existing dependency/runtime
+The latest full suite passed **300 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -211,3 +211,24 @@ A fixed one-versus-two-record fact diagnostic improves restoration generation
 from 45/64 to 59/64: 15/19 opposed-rule worlds answer both entities correctly with
 one record versus zero with two. This identifies interference and narrow binding;
 it does not implement a learned stopping policy or solve action routing.
+
+
+The fresh learned-count confirmation predicts the one/two-record budget correctly
+for all 320 queries and improves single-fact retrieval, but generated actions remain
+19/32. See [the count study](../experiments/binding-count-stored-20260919/README.md).
+World eligibility is still supplied in that study.
+
+Persistent full-pair compaction now runs at native recurrent boundaries. Attention
+mean and fitted codes preserve all 64 sampled candidate-free counterfactual action
+answers. MLP statistics-only continuation reaches 116/128 action choices on fresh
+worlds versus 128/128 raw, and only 8/16 candidate-free restoration-change pairs
+retain both correct answers. Adding decoder answer loss does not improve accuracy
+on this confirmation. See [initial compaction](../experiments/binding-compaction-20260919/README.md)
+and [fresh confirmation](../experiments/binding-compaction-fresh-20260919/README.md).
+All use stored payloads with writer/compactor disabled at inference; partial
+selections use raw fallback and no net storage reduction is claimed.
+
+Standalone bank and compact-code publication now survive interruption atomically.
+Native BF16 validation interrupted after bank creation, resumed with writer calls
+forbidden, and preserved every bank hash and completed report on another restart.
+Evidence: `experiments/operations-20260919/compact-bank-resume.json`.
