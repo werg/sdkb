@@ -1,0 +1,40 @@
+{
+  "environment": {
+    "python": "3.13.5",
+    "machine": "x86_64",
+    "torch": "2.10.0+cpu",
+    "cuda_runtime": null,
+    "cuda_available": false,
+    "git_commit": "b87e730a5b6cd7bb01bd7e0f35fe868cbabaa3f9",
+    "transformers": null
+  },
+  "records": 128,
+  "payload_dim": 256,
+  "payload_dtype": "bfloat16",
+  "key_dim": 64,
+  "neighbors": 16,
+  "reads": 8,
+  "sqlite_cache_mib_per_connection": 32,
+  "write_seconds": 0.09032845499996256,
+  "search": {
+    "p50_ms": 0.9979159999602416,
+    "p95_ms": 1.9838223500528323
+  },
+  "fetch": {
+    "p50_ms": 0.6102519998876232,
+    "p95_ms": 0.8216816499839297
+  },
+  "storage": {
+    "records": 128,
+    "serialized_payload_bytes": 75776,
+    "key_bytes": 32768,
+    "physical_sqlite_bytes": 172032,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "ideal_value_bytes_per_read": 8192,
+  "notice": "Exact CPU key scan; freshly populated/warm OS cache, NOT a cold-NVMe or ANN result.",
+  "resources": {
+    "process_peak_rss_bytes": 266711040,
+    "system_mem_available_bytes": 4898123776
+  }
+}

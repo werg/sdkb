@@ -1,7 +1,7 @@
 # Bootstrap validation
 
-This file records executable checks from the bootstrap environment. Final numerical
-results and the exact implementation commit are recorded below before handoff.
+This file records executable checks from the bootstrap environment. Numerical results
+and the implementation commit are recorded below.
 
 ## Scope
 
@@ -32,3 +32,59 @@ redundant-cluster loss does not improve.
 
 The SQLite timing uses only 128 records and an uncontrolled warm page cache. It is
 a runtime-path check, not an NVMe, ANN, throughput or VRAM-substitution benchmark.
+
+## Executed results — 19 September 2026
+
+Implementation commit: `b87e730a5b6cd7bb01bd7e0f35fe868cbabaa3f9`.
+The following commit adds this report and artifacts without changing the implementation.
+
+| Check | Result |
+|---|---|
+| Unit/integration collection | **75 passed, 1 skipped** (2.25 s on this CPU run) |
+| Skipped test | Random LFM architecture integration; Transformers unavailable |
+| Editable install and CLI | Installed and exercised |
+| Tiny support/query training | 30 steps; finite gradients, checkpoint saved/reloaded |
+| Tiny training loss | First step 5.624008; final step 4.131498 (different sampled tasks; not a held-out learning curve) |
+| Frozen stored-only evaluation | 8 new worlds × 8 interventions; actual BF16 payload serialization/reload |
+| Choice accuracy, all/none support | 0.125 / 0.125; **no memory-dependent accuracy benefit established** |
+| Temporary synthetic compaction training | 12 steps; 5 steps used nonzero compaction loss |
+| Compaction optimizers | 100 steps each for MLP and attention fixed-reader probes |
+| SQLite harness | 128 records; exact scan and reload path exercised |
+| Shell scripts | `bash -n` passed |
+| Python syntax | `compileall` passed |
+| Ruff | Not run locally; configured for CI |
+| Spark/LFM weights/Docker | Not run; hardware/environment validation remains required |
+| Remote GitHub creation/push | Not performed; available connector was read-only |
+
+### Held-out probe losses
+
+These losses live in each random reader's own feature space; they must **not** be
+compared as a ranking between reader architectures. The sample is small and unseeded
+variance beyond seed 7 has not been studied.
+
+| Probe | Redundant-cluster loss before | After |
+|---|---:|---:|
+| MLP synthetic-record compactor | 0.00111555 | 0.00097559 |
+| Attention synthetic-record compactor | 0.01531088 | 0.01545538 |
+
+### Artifacts and reproduction
+
+Raw environment, test output/JUnit, training metrics, eight-condition evaluation,
+compaction probe outputs and SQLite timing are in `experiments/bootstrap/`.
+Model weights and database caches are intentionally not committed.
+
+```bash
+python -m pytest -q --disable-warnings
+elm train --config configs/tiny_cpu.yaml --output runs/reproduce-tiny --steps 30
+elm evaluate --run runs/reproduce-tiny --count 8
+elm train --config configs/tiny_compaction_cpu.yaml --output runs/reproduce-compact --steps 12
+elm compact-probe --steps 100 --reader mlp --output runs/mlp-probe.json
+elm compact-probe --steps 100 --reader attention --output runs/attention-probe.json
+elm io-bench --path runs/reproduce-io.sqlite --records 128 --reads 8 --output runs/io.json
+```
+
+Wall-clock times and allocator counters are environment-specific. Neither timing
+reproducibility nor a scientific capability result follows from deterministic CPU
+unit tests. The next meaningful result is causal support dependence with the actual
+pretrained student, not increasing this tiny model's step count and relabeling it
+as a capacity-substitution experiment.

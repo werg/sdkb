@@ -1,0 +1,36 @@
+{
+  "steps": 12,
+  "last": {
+    "step": 12,
+    "loss": 4.880247592926025,
+    "nll": 4.880247592926025,
+    "routing_loss": 0.0,
+    "compaction_loss": 0.0,
+    "grad_norm": 2.758373975753784,
+    "elapsed_seconds": 0.3432655410001644
+  },
+  "environment": {
+    "python": "3.13.5",
+    "machine": "x86_64",
+    "torch": "2.10.0+cpu",
+    "cuda_runtime": null,
+    "cuda_available": false,
+    "git_commit": "b87e730a5b6cd7bb01bd7e0f35fe868cbabaa3f9",
+    "transformers": null,
+    "resolved_model_revision": "local-tiny",
+    "total_parameters": 104304,
+    "trainable_parameters": 104304,
+    "notice": "Prototype measurements; not evidence of capacity substitution."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 334532608,
+    "system_mem_available_bytes": 4850028544
+  },
+  "store": {
+    "records": 28,
+    "serialized_payload_bytes": 3360,
+    "key_bytes": 1344,
+    "physical_sqlite_bytes": 40960,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  }
+}

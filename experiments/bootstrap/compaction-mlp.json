@@ -1,0 +1,30 @@
+{
+  "seed": 7,
+  "steps": 100,
+  "reader": "mlp",
+  "original_records": 8,
+  "synthetic_records": 2,
+  "before": {
+    "redundant": {
+      "mean_contribution_loss": 0.0011162861483171582,
+      "synthetic_contribution_loss": 0.0011155545944347978
+    },
+    "independent": {
+      "mean_contribution_loss": 0.002157400129362941,
+      "synthetic_contribution_loss": 0.0021564175840467215
+    }
+  },
+  "after": {
+    "redundant": {
+      "mean_contribution_loss": 0.0011162861483171582,
+      "synthetic_contribution_loss": 0.0009755915962159634
+    },
+    "independent": {
+      "mean_contribution_loss": 0.002157400129362941,
+      "synthetic_contribution_loss": 0.001489587128162384
+    }
+  },
+  "first_training_loss": 0.0013547829585149884,
+  "last_training_loss": 0.0010918584885075688,
+  "notice": "Random fixed reader/tensor probe only; no language-task quality or capacity claim."
+}

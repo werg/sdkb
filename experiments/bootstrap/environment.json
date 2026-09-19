@@ -1,0 +1,12 @@
+{
+  "python": "3.13.5",
+  "machine": "x86_64",
+  "torch": "2.10.0+cpu",
+  "cuda_runtime": null,
+  "cuda_available": false,
+  "git_commit": "b87e730a5b6cd7bb01bd7e0f35fe868cbabaa3f9",
+  "transformers": null,
+  "process_peak_rss_bytes": 262594560,
+  "system_mem_available_bytes": 4914335744,
+  "unified_memory_note": "On DGX Spark, CPU allocations, GPU allocations, and host caches share physical memory. Do not add reported CUDA total and host RAM as independent capacity."
+}

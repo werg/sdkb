@@ -1,0 +1,19 @@
+{
+  "implementation_commit": "b87e730a5b6cd7bb01bd7e0f35fe868cbabaa3f9",
+  "validation_date": "2026-09-19",
+  "tests_passed": 75,
+  "tests_skipped": 1,
+  "model_weights_executed": false,
+  "spark_executed": false,
+  "github_published": false,
+  "architecture_sha256": "7940f31605442d4661955d4f1c2a9270464e1038beb913f0b6f4c07b4a933ba0",
+  "commands": [
+    "python -m pytest -q --disable-warnings",
+    "elm train --config configs/tiny_cpu.yaml --output runs/validated-tiny --steps 30",
+    "elm evaluate --run runs/validated-tiny --count 8",
+    "elm train --config configs/tiny_compaction_cpu.yaml --output runs/validated-compact --steps 12",
+    "elm compact-probe --steps 100 --reader mlp",
+    "elm compact-probe --steps 100 --reader attention",
+    "elm io-bench --path runs/validated-io.sqlite --records 128 --reads 8"
+  ]
+}

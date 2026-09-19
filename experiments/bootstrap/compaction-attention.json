@@ -1,0 +1,30 @@
+{
+  "seed": 7,
+  "steps": 100,
+  "reader": "attention",
+  "original_records": 8,
+  "synthetic_records": 2,
+  "before": {
+    "redundant": {
+      "mean_contribution_loss": 0.015313941985368729,
+      "synthetic_contribution_loss": 0.015310879796743393
+    },
+    "independent": {
+      "mean_contribution_loss": 0.021916212514042854,
+      "synthetic_contribution_loss": 0.02190186269581318
+    }
+  },
+  "after": {
+    "redundant": {
+      "mean_contribution_loss": 0.015313941985368729,
+      "synthetic_contribution_loss": 0.01545538380742073
+    },
+    "independent": {
+      "mean_contribution_loss": 0.021916212514042854,
+      "synthetic_contribution_loss": 0.02167179249227047
+    }
+  },
+  "first_training_loss": 0.008962740190327168,
+  "last_training_loss": 0.03734609857201576,
+  "notice": "Random fixed reader/tensor probe only; no language-task quality or capacity claim."
+}
