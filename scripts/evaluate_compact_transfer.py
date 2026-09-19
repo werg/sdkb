@@ -12,6 +12,7 @@ from sdkb.compaction import SyntheticCompactor
 from sdkb.data import load_episodes, counterfactual_multiuse, save_episodes
 from sdkb.evaluation import build_shared_bank, score_answers
 from sdkb.evaluation_adapter import load_frozen_agent
+from sdkb.frozen_scoring import FrozenScorer
 from sdkb.metrics import summarize_rows, counterfactual_metrics
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.sessions import read_session
@@ -21,7 +22,9 @@ from sdkb.trajectories import file_sha256
 
 
 @torch.no_grad()
-def run(source, fit, output):
+def run(source, fit, output, *, reuse_decoder=False, worlds=32):
+    if worlds < 1:
+        raise ValueError('Positive world count required')
     output.mkdir(parents=True, exist_ok=True)
     with run_lock(output, clear_stop=False):
         if not all((fit / f'{method}-stored.json').exists() for method in ('mean', 'trained')):
@@ -41,12 +44,15 @@ def run(source, fit, output):
         compactor = SyntheticCompactor(config.memory.payload_dims[0], identity['compactor']['width'], 1).to(agent.device).eval()
         compactor.load_state_dict(state['compactor'])
         episodes = load_episodes(fit / 'heldout/episodes.jsonl')
+        selected_worlds = set(list(dict.fromkeys(e.environment for e in episodes))[:worlds])
+        episodes = [e for e in episodes if e.environment in selected_worlds]
         groups = {'all': episodes, **{kind: [counterfactual_multiuse(e, kind) for e in episodes]
                                     for kind in ('permission', 'restoration')}}
         inputs = {'source_manifest_sha256': file_sha256(checkpoint / 'manifest.json'),
                   'compactor_state_sha256': file_sha256(fit / 'resume.pt'),
                   'episodes_sha256': file_sha256(fit / 'heldout/episodes.jsonl'),
-                  'script_sha256': file_sha256(__file__), 'max_new_tokens': 24, 'generation_worlds': 8}
+                  'script_sha256': file_sha256(__file__), 'max_new_tokens': 24, 'generation_worlds': min(8, len(selected_worlds))}
+        inputs.update(reuse_decoder=reuse_decoder, selected_worlds=sorted(selected_worlds))
         if (output / 'inputs.json').exists() and json.loads((output / 'inputs.json').read_text()) != inputs:
             raise ValueError('Confirmation inputs changed')
         atomic_json(output / 'inputs.json', inputs)
@@ -66,6 +72,7 @@ def run(source, fit, output):
             raise AssertionError('Writer or compactor invoked during stored-only confirmation')
         agent.produce = forbidden
         compactor.forward = forbidden
+        scorer = FrozenScorer(agent) if reuse_decoder else None
         worlds = list(dict.fromkeys(e.environment for e in episodes))[:8]
         originals = {e.episode_id: e for e in episodes}
         for method in ('raw', 'mean', 'trained'):
@@ -98,12 +105,14 @@ def run(source, fit, output):
                                    'selected_ids': list(ids), 'payload_accounting': accounting,
                                    'complete_support': any(set(g) <= set(ids) for g in
                                                            (episode.sufficient_groups or (episode.required_ids,))),
-                                   **score_answers(agent, prompt, memory, episode.answer, episode.choices)}
+                                   **(scorer.score(prompt, memory, episode.answer, episode.choices) if scorer else
+                                      score_answers(agent, prompt, memory, episode.answer, episode.choices))}
                             if kind != 'all':
                                 row['counterfactual_should_change'] = episode.answer != originals[episode.episode_id].answer
                             rows.append(row)
                             if kind == 'all' and episode.environment in worlds and condition in {'all', 'none', 'zero_values'}:
-                                prediction = agent.generate_from_memory(prompt, memory, max_new_tokens=24)
+                                prediction = (scorer.generate(prompt, memory, max_new_tokens=24) if scorer else
+                                              agent.generate_from_memory(prompt, memory, max_new_tokens=24))
                                 generations.append({k: row[k] for k in ('episode', 'environment', 'task_family', 'condition', 'answer')} |
                                                    {'prediction': prediction, 'exact_match': prediction == episode.answer})
                         if (index + 1) % 64 == 0:
@@ -117,6 +126,7 @@ def run(source, fit, output):
                      for c in ('all', 'none', 'zero_values')
                      if (selected := [r for r in generations if r['task_family'] == f and r['condition'] == c])} for f in families},
                 'code_storage': {kind: banks[kind][method].sizes() for kind in groups} if method != 'raw' else None,
+                'decoder_reuse': scorer.report() if scorer else None,
                 'notice': 'Oracle selected clusters; exact raw subset fallback. No learned routing, net disk savings or agent claim.'})
             print(json.dumps({'completed': method}), flush=True)
 
@@ -126,5 +136,7 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--fit', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--reuse-decoder', action='store_true')
+    parser.add_argument('--worlds', type=int, default=32)
     args = parser.parse_args()
-    run(args.source, args.fit, args.output)
+    run(args.source, args.fit, args.output, reuse_decoder=args.reuse_decoder, worlds=args.worlds)
