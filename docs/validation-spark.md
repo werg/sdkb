@@ -153,3 +153,12 @@ pair. Even oracle-support action accuracy regresses to 69.5%, so joint adaptatio
 also interferes with composition. Candidate-free action generation is 17/32 in
 both continued arms; identifiers remain 0/16. This does not establish entity-aware
 routing. See [the full study](../experiments/binding-routing-20260919/README.md).
+
+
+Freezing the composition path and training only the three address projections
+preserves 206 frozen tensors, 384 serialized payloads and 640 oracle/no-memory
+rows exactly. Oracle action accuracy stays 100%. Learned action accuracy is
+51.6%, with no established gain over the source or joint-routing control;
+candidate-free actions are 14/32 versus 15/32 with zero payloads. This isolates
+address learning as an unresolved problem without sacrificing working composition.
+See [the projection-only study](../experiments/binding-routing-scope-20260919/README.md).

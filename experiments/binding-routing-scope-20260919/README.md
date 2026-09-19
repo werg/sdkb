@@ -44,8 +44,7 @@ Launched from frozen `a60da7e`, with its common-world comparison queued from the
 same checkout. Native ownership reports exactly 73,728 trainable parameters in the
 three address projections; initial model bytes equal the shared source. All weights
 remain on the external disk. `launch.json` and `initialization-check.json` record
-the process, environment, optimizer and first update. Capability and endpoint
-invariance results remain pending.
+the process, environment, optimizer and first update. Completed capability and invariance results are recorded below.
 
 
 Training completed all 800 updates. The initially queued comparison exited during
@@ -63,3 +62,25 @@ the declared source; only the startup wait was fixed. `completed-training.json`
 and `evaluation-restart.json` preserve the final state and both attempt identities.
 After training released its locks, the redundant initial weight copy was verified
 and deduplicated against the source, preserving the complete initial checkpoint.
+
+
+## Completed result
+
+Training source `a60da7e`; evaluation source `46bcedb`. On 32 new common worlds,
+projection-only routing scores 51.56% action accuracy, versus 51.56% for joint
+routing and 46.88% for the source. Paired differences are 0 points (95% world
+bootstrap interval [−9.38, 7.81]) and +4.69 points ([−5.47, 14.06]), respectively.
+This does not establish an action improvement. Sufficient-support recall is
+35.94%, and only 9/128 action queries retrieve both required records.
+
+The preservation test passes exactly: 206 frozen tensors, 384 serialized payload
+records and 640 oracle/no-memory scoring rows match the source. Oracle action
+accuracy remains 100%, versus 68.75% after joint routing adaptation. Freezing the
+composition path prevents its regression but does not solve entity addressing.
+
+Candidate-free generation on the first eight worlds gives 14/32 correct actions,
+versus 15/32 with zero payloads and 16/32 without memory. Unseen identifiers remain
+0/16. Permission and restoration top-one entity selection is 31/64 and 32/64.
+These are one-seed synthetic results with supplied world eligibility, not global
+retrieval or agent success. Compact results and exact invariant checks are in the
+adjacent JSON records; full rows, banks and checkpoints remain external.
