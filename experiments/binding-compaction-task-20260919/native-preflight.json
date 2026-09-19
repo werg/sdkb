@@ -1,0 +1,12 @@
+{
+  "source_commit": "13aeb05",
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "compactor_sha256": "164a0c78919bbe900f1df367560f30b155779a50c9dade31a160b8a97c69aac6",
+  "episode": "4ddb9b2deb0ddba3",
+  "nll": 3.267722058808431e-05,
+  "exact_loss": true,
+  "exact_all_compactor_gradients": true,
+  "maximum_gradient_error": 0.0,
+  "base_parameter_gradients": 0,
+  "gradient_absolute_sum": 0.9718331010080874
+}

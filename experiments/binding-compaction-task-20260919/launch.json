@@ -1,0 +1,18 @@
+{
+  "source_commit": "13aeb05",
+  "worktree": ".sdkb/compaction-task",
+  "output": "/archive/probes/posthoc-compaction-task-20260919",
+  "steps": 200,
+  "batch_size": 4,
+  "seed": 61,
+  "initial_compactor_sha256": "164a0c78919bbe900f1df367560f30b155779a50c9dade31a160b8a97c69aac6",
+  "all_base_parameters_frozen": true,
+  "arms": {
+    "statistics": {
+      "task_nll_weight": 0
+    },
+    "task": {
+      "task_nll_weight": 1
+    }
+  }
+}
