@@ -53,3 +53,20 @@ def test_counterfactual_requires_both_original_and_changed_answer_correct():
     new['rows'][0]['choice_correct'] = True
     result = compare_transfer_results(old, new)['overall']
     assert result['counterfactual_both_correct_gain']['cf_permission']['mean_gain'] == 1.
+
+
+def test_unchanged_counterfactual_delta_counts_spurious_prediction_changes():
+    old = report()
+    for row in old['rows']:
+        row['predicted_action'] = 'no'
+    row = deepcopy(old['rows'][0])
+    row.update(condition='cf_permission', counterfactual_should_change=False)
+    old['rows'].append(row)
+    new = deepcopy(old)
+    new['rows'][-1]['predicted_action'] = 'yes'
+    result = compare_transfer_results(old, new)['overall']
+    delta = result['counterfactual_false_change_rate_delta']['cf_permission']
+    assert delta['mean_gain'] == 1.
+    assert delta['ci95'] == [1., 1.]
+    assert delta['n_queries'] == 1
+    assert 'cf_permission' not in result['counterfactual_both_correct_gain']

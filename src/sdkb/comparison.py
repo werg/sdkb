@@ -59,6 +59,7 @@ def compare_transfer_results(baseline: dict, candidate: dict) -> dict:
             if pairs:
                 memory[control] = interval(pairs)
         cf = {}
+        false_changes = {}
         for condition in conditions:
             selected = [k for k in keys if k[1] == condition and
                         old[k].get('counterfactual_should_change')]
@@ -68,12 +69,22 @@ def compare_transfer_results(baseline: dict, candidate: dict) -> dict:
                      new[(e, c)]['choice_correct'] and new[(e, 'all')]['choice_correct'],
                      old[(e, c)]['choice_correct'] and old[(e, 'all')]['choice_correct'])
                     for e, c in selected])
+            unchanged = [k for k in keys if k[1] == condition and
+                         old[k].get('counterfactual_should_change') is False]
+            if unchanged:
+                false_changes[condition] = interval([
+                    (e, old[(e, c)]['environment'],
+                     new[(e, c)]['predicted_action'] != new[(e, 'all')]['predicted_action'],
+                     old[(e, c)]['predicted_action'] != old[(e, 'all')]['predicted_action'])
+                    for e, c in unchanged])
         return dict(accuracy_gain=gains, memory_advantage_gain=memory,
-                    counterfactual_both_correct_gain=cf)
+                    counterfactual_both_correct_gain=cf,
+                    counterfactual_false_change_rate_delta=false_changes)
 
     families = sorted({r['task_family'] for r in old.values()})
     return {
         'direction': 'candidate minus baseline',
+        'false_change_direction': 'Positive false-change rate delta means more spurious changes (worse).',
         'overall': summarize(set(old)),
         'by_family': {f: summarize({k for k, r in old.items() if r['task_family'] == f})
                       for f in families},

@@ -79,6 +79,32 @@ scores are not a paired comparison. Candidate-free generation has not been run o
 this final model. Both MLP evaluation migrations preserved every stage's checkpoint
 name and model/optimizer-state hashes (`evaluation-migration.json`).
 
+## Common-world selected-support stage comparison
+
+All four selected-support checkpoints have now been evaluated on the same 32
+confirmation worlds. Text bootstrap and the text recurrence bridge both achieve
+100% across all four families, with correct changing and unchanged counterfactual
+behavior. Their zero-payload condition still supplies source text, so its 100%
+score is expected; it is not evidence of latent-memory use.
+
+Warmup achieves 100% restoration recall but 57.8% permission recall and 50% action
+accuracy. Joint training raises permission recall to 100%, while action accuracy
+reaches only 54.7%. The paired action gain is 4.7 percentage points, with a
+world-bootstrap 95% interval of −1.6 to +11.7 points. Permission action flips have
+both answers correct in 4/128 pairs. Restoration action flips have both correct
+in 43/64 changing pairs, but change predictions on **all 64 unchanged branches**.
+
+The zero-payload action control falls from 50% to 29.7% during joint adaptation.
+Consequently, the increasing gap over zeros exaggerates progress on actions; the
+no-memory control stays at 50%. This is evidence of a latent-interface composition
+bottleneck despite successful text interpretation and single-fact retrieval.
+
+`selected-common-stages.json` retains each checkpoint and shared dataset identity;
+`selected-common-joint-gain.json` records paired gains and false-change deltas,
+including raw-report hashes. Positive false-change deltas mean worse behavior.
+Intervals resample worlds, not training seeds, and are not multiplicity-corrected.
+The all-context arm and matched attention confirmation remain in progress.
+
 ## Short adaptation diagnostic (completed)
 
 A separate diagnostic compared the original AdamW selected-support warmup with
