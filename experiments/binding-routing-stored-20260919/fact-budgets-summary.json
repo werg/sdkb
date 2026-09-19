@@ -1,0 +1,132 @@
+{
+  "episodes_sha256": "99f0e9e0f15ffac183a0c71301270ff50b25362a68e485ebcfa8820fbdfe7df3",
+  "by_budget": {
+    "1": {
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "exact_match": 0.765625
+        },
+        "zero_values": {
+          "n": 64,
+          "exact_match": 0.53125
+        },
+        "none": {
+          "n": 64,
+          "exact_match": 0.53125
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "exact_match": 0.921875
+        },
+        "zero_values": {
+          "n": 64,
+          "exact_match": 0.53125
+        },
+        "none": {
+          "n": 64,
+          "exact_match": 0.453125
+        }
+      }
+    },
+    "2": {
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "exact_match": 0.703125
+        },
+        "zero_values": {
+          "n": 64,
+          "exact_match": 0.53125
+        },
+        "none": {
+          "n": 64,
+          "exact_match": 0.53125
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "exact_match": 0.703125
+        },
+        "zero_values": {
+          "n": 64,
+          "exact_match": 0.53125
+        },
+        "none": {
+          "n": 64,
+          "exact_match": 0.453125
+        }
+      }
+    }
+  },
+  "one_minus_two": {
+    "multiuse/permission": {
+      "all": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0625,
+        "ci95": [
+          0.015625,
+          0.125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.21875,
+        "ci95": [
+          0.125,
+          0.3125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    }
+  },
+  "notice": "Single-fact subset and fixed budgets; not an adaptive learned read-count policy. No action questions scored."
+}

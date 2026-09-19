@@ -30,3 +30,32 @@ for these single-required-record questions, while fixed top-two execution can
 also return a conflicting entity's fact. This diagnostic tests whether that extra
 record interferes. It does not implement or claim an adaptive read-count policy,
 and it excludes two-record action questions explicitly.
+
+## Completed stored confirmation
+
+All three arms completed from `23d54fc` on 32 new worlds. Action choice accuracy
+is 52.34% for the source, 48.44% for compressed routing, and 60.94% for full-state
+routing. Full-state minus source is +8.59 points with a paired interval
+[−3.91, 20.31]; full-state minus compressed is +12.50 points [0.78, 24.22]. The
+source comparison does not establish an improvement. Candidate-free actions are
+14/32, 16/32 and 17/32, respectively; all zero/no-memory action controls are 16/32.
+Unseen identifiers remain 0/16. This is not reliable learned action composition.
+
+The native preservation gate passes: 640 oracle/no-memory rows and 384 serialized
+payload/provenance records are identical across all three arms. Oracle action
+accuracy remains 100%. No extra full-model checkpoint was written.
+
+The planned fact-budget diagnostic completed from `0c6c875`. With the same full-state
+router, reader and stored bank, one record versus two improves candidate-free
+permission answers from 45/64 to 49/64 (+6.25 points [1.56, 12.50]) and restoration
+from 45/64 to 59/64 (+21.88 points [12.50, 31.25]). Zero/no-memory accuracies are
+unchanged. The first record is actually required in 40/64 permission and 55/64
+restoration queries; answer accuracy alone overstates addressing correctness when
+two entities share a rule.
+
+Among opposed-rule worlds, one-record reads answer both entities correctly in
+3/18 permission worlds and 15/19 restoration worlds, versus zero jointly correct
+worlds for both families with two records. This demonstrates a narrow restoration
+binding behavior and interference from the extra record. Read count was a fixed
+experimental intervention on a single-fact subset; an adaptive stopping policy
+remains unimplemented. The action experiment retains its two-record budget.

@@ -178,6 +178,16 @@ See [the breadth study](../experiments/binding-routing-breadth-20260919/README.m
 An opt-in independent routing head now preserves the original reader query while
 using that full-state projection for address search. Native LFM preflight from
 `38a2634` gives zero one-pass identity and causal-prefix error and a nonzero routing
-head gradient. The frozen stored-memory confirmation is running; source-bound
-small address overlays avoid writing redundant backbone checkpoints. Its protocol
+head gradient. The frozen stored-memory confirmation completed; source-bound
+small address overlays avoided writing redundant backbone checkpoints. Its protocol
 and preflight are in [the stored study](../experiments/binding-routing-stored-20260919/README.md).
+
+
+Stored confirmation gives 60.94% action choice accuracy for the full-state adapter,
+versus 52.34% for its source and 48.44% for compressed routing. The paired gain over
+source remains uncertain, and candidate-free actions are only 17/32. All 640
+oracle/no-memory rows and 384 payload/provenance records remain exactly equal.
+A fixed one-versus-two-record fact diagnostic improves restoration generation
+from 45/64 to 59/64: 15/19 opposed-rule worlds answer both entities correctly with
+one record versus zero with two. This identifies interference and narrow binding;
+it does not implement a learned stopping policy or solve action routing.

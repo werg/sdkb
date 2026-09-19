@@ -1,0 +1,34 @@
+{
+  "1": {
+    "multiuse/permission": {
+      "queries": 64,
+      "first_record_required": 40,
+      "opposed_worlds": 18,
+      "opposed_both_correct": 3,
+      "opposed_identical_predictions": 15
+    },
+    "multiuse/restoration": {
+      "queries": 64,
+      "first_record_required": 55,
+      "opposed_worlds": 19,
+      "opposed_both_correct": 15,
+      "opposed_identical_predictions": 3
+    }
+  },
+  "2": {
+    "multiuse/permission": {
+      "queries": 64,
+      "first_record_required": 40,
+      "opposed_worlds": 18,
+      "opposed_both_correct": 0,
+      "opposed_identical_predictions": 18
+    },
+    "multiuse/restoration": {
+      "queries": 64,
+      "first_record_required": 55,
+      "opposed_worlds": 19,
+      "opposed_both_correct": 0,
+      "opposed_identical_predictions": 19
+    }
+  }
+}

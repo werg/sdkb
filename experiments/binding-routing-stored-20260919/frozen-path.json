@@ -1,0 +1,19 @@
+{
+  "identical_control_rows_per_arm": 640,
+  "identical_payload_rows_per_arm": 384,
+  "arms": [
+    "source",
+    "compressed_query",
+    "full_state_query"
+  ],
+  "identity": {
+    "source_checkpoint": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+    "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "9f1e2c6fe4d066c2c997e3317a6260308a72f2b7ca6442da0dc550fa1f621fc9",
+    "probes": {
+      "source": null,
+      "compressed_query": "d6b2628f99dc1f314cb96442a6622c82ab5b661834f10a5dc48cba3ab047273d",
+      "full_state_query": "2884bf2ef50fd26cfa4619e72e48595bb5eea29cb3ea1909e968cc93cb23d15c"
+    }
+  }
+}
