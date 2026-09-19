@@ -101,6 +101,9 @@ are implied by the first-order tests.
 ## Training cache and stored-only evaluation
 
 The training cache stores the first payload produced for an immutable source ID.
+A fully live run (`live_fraction: 1`) skips unused cache reads, writes and the
+extra population forward. Mixed cached/live runs retain the original stale-cache
+semantics and checkpointed recovery behavior.
 A selected live read re-encodes the source with current parameters; an unselected
 cached read truly uses the old serialized value. This intentionally exposes a
 stale/live mixture. It is not a sophisticated generational refresh policy.

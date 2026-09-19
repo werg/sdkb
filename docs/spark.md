@@ -1,5 +1,9 @@
 # SDKB on NVIDIA DGX Spark
 
+See [portable operations](operations.md) for named detached containers, W&B,
+configurable run/archive mounts and checkpoint retention. These features also work
+through the Python CLI on other CPU/CUDA hosts.
+
 
 > **v0.4 update:** the recommended entry points are `recipes/looped_smoke.yaml`,
 > `recipes/looped_starter.yaml` and `recipes/looped_causal.yaml`. They add native
@@ -78,7 +82,7 @@ not prove the learned model solves tasks. The separate controlled curriculum is:
 
 The container uses the caller's UID/GID, a mounted checkout at `/workspace/sdkb`,
 8 GiB shared memory, unlimited memlock, a 64 MiB stack limit, an init process, and a
-120-second graceful stop interval. No service port is opened. A hard kill resumes
+600-second graceful stop interval. No service port is opened. A hard kill resumes
 from the last committed checkpoint, not a partially written optimizer state.
 Only one launcher should use a given output directory.
 

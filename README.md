@@ -1,5 +1,9 @@
 # SDKB
 
+Run ownership, detached start/stop/resume, optional W&B and verified external-disk
+archives are documented in [portable training operations](docs/operations.md).
+See [local GPU revalidation](docs/validation-local.md) for tested behavior and remaining limits.
+
 **Spatially Superposed Differentiable Knowledge Base**
 
 SDKB trains a small language model to write experiences into stored latent values,

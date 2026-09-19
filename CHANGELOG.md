@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — Evaluation correctness and portable operations
+
+Persisted-compaction evaluation is wired into curricula. Payload and source
+counterfactuals reuse captured read plans, including native recurrent boundaries.
+Unverified or uninformative learned-routing training is rejected before updates.
+Fully live training avoids unused cache population and I/O.
+
+Added run locks, detached process control, cooperative stop/resume, optional W&B,
+disk-space guards, and bounded checksum-verified checkpoint archives with restore.
+Spark wrappers expose run/archive mounts and named detached containers. Operational
+logic is independent of Spark and Docker. See `docs/operations.md` and the separate
+local validation report; historical results are unchanged.
+
 ## 0.4.0 — Pretrained recurrent-core conversion and in-loop memory
 
 Added native prelude/core/coda conversion preserving every parent layer and the

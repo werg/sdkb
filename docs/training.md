@@ -1,5 +1,8 @@
 # SDKB training and causal-transfer protocol
 
+Detached runs, graceful stops, W&B and external-disk checkpoint archives are
+described in [portable operations](operations.md).
+
 
 > **v0.4 update:** the recommended entry points are `recipes/looped_smoke.yaml`,
 > `recipes/looped_starter.yaml` and `recipes/looped_causal.yaml`. They add native
@@ -116,6 +119,18 @@ or stops a recipe silently. The goal is to obtain interpretable measurements.
 
 ## Real-trajectory evaluation
 
+Payload interventions replay the original selected IDs and scores at every read
+boundary, including native recurrent reads. They measure the value channel without
+changing later routing decisions. Learned-routing counterfactual evaluation uses
+these captured plans rather than requiring an oracle-trained checkpoint.
+
+The current group-routing loss requires verified support labels and competing
+candidates. The runner rejects `retrieval: learned` on `provided_context` teacher
+episodes, and rejects training sets in which every candidate is required. Use oracle
+training for the teacher bootstrap; learning retrieval from these data needs an
+explicit utility/sufficiency supervision protocol. Supplied context is not relabeled
+as sufficient merely to make the objective run.
+
 `sdkb evaluate-teachers --run RUN --episodes FILE` measures complete next-message
 likelihood using a serialized stored-only bank and fixed-ID/key value ablations.
 It reports both token-weighted and per-example scores, plus trajectory-clustered
@@ -127,6 +142,13 @@ environment would be needed to assess tool/patch success. No live teacher endpoi
 tracking service is necessary for the implemented imitation curriculum.
 
 ## Compaction and comparisons
+
+Compaction stages receive an additional teacher evaluation using persisted codes,
+with raw fallback and payload accounting. Final causal/binding evaluations also
+include persistent codes. Reports state when no profitable clusters were built.
+Set `compact_records: 1` on a compaction stage for two-record groups; compactor-only
+training rejects an oracle dataset where no group can be reduced. Native in-loop
+compaction remains explicitly unsupported; use the prefix-mode comparison recipes.
 
 Copy a recipe and add a stage with `compaction: true` and `init_from: latent_joint`
 to initialize synthetic compaction with all existing writer/reader/controller weights
