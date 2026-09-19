@@ -27,7 +27,7 @@ not appropriate for these short pilots.
 | Stalls need diagnostic evidence | Compute-only stack watchdog, disarmed for slow saves; no automatic destructive restart loop. |
 | Spark RAM and VRAM share physical memory | Optional allocator fraction plus host `MemAvailable` reserve and checkpointed pressure stop; no summing capacities. |
 | Source/config drift invalidates run interpretation | Immutable launch/data checksums, isolated checkouts for live experiments, per-attempt environment history. Operational checkpoint policy is recorded separately. |
-| Profile before changing checkpointing/batching | Representative GPU comparison still required before choosing the next training performance preset. Do not infer speed from unused memory. |
+| Profile before changing checkpointing/batching | Two 100-update native Muon profiles: checkpointing off cut median update time 18%, raised peak CUDA allocation 2.14→2.53 GiB, and preserved every training metric and final weight-file hash. Applied only to this short binding distribution. |
 | Runtime compatibility must be verified on the actual machine | Native ARM64 NVIDIA Torch preserved; actual pretrained preflight and GPU training exercised. No x86 emulation or Torch replacement. |
 | Model-specific acceleration is not universal | bgkit's DeltaNet/FLA patches and LoRA training topology are not imported into LFM2. No matching operations exist here. |
 | Capability metrics must remain separate | Teacher NLL, choice transfer/counterfactuals and actual agent success are distinct; this project has not established agent success or parameter substitution. |
@@ -39,5 +39,6 @@ contract. Explicit warm-start forks are used for optimizer or objective changes.
 
 GPU emergency validation is recorded in
 `experiments/operations-20260919/muon-emergency-resume.json`.
-The representative speed comparison remains a gate before selecting the next
-training performance preset.
+The performance comparison is recorded in
+`experiments/operations-20260919/checkpointing-profile.json`; compressed operator
+traces and training artifacts remain on the external disk.

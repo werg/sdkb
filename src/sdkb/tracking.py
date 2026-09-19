@@ -32,7 +32,7 @@ class Tracking:
             directory = self.output / 'tracking'
             directory.mkdir(exist_ok=True)
             self.run = wandb.init(project=t.wandb_project, entity=t.wandb_entity,
-                group=t.wandb_group, name=self.output.name, id=identity, resume='allow',
+                group=t.wandb_group, name=f'{self.output.parent.name}/{self.output.name}', id=identity, resume='allow',
                 mode=t.wandb_mode, dir=str(directory), config=asdict(self.config), save_code=False,
                 allow_val_change=True, settings={'console': 'off', 'disable_git': True})
             self.run.define_metric('optimizer_step')

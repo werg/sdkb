@@ -1,0 +1,46 @@
+{
+  "profiles": [
+    {
+      "checkpointing": true,
+      "optimizer": "muon",
+      "source": "/runs/binding-pilot-20260919/latent_warmup",
+      "updates": 100,
+      "warmed_updates": 70,
+      "median_update_seconds": 1.5789149240008555,
+      "p95_update_seconds": 1.9591103792190552,
+      "resources": {
+        "process_peak_rss_bytes": 7412482048,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2293050368,
+        "cuda_peak_reserved_bytes": 2512388096,
+        "system_mem_available_bytes": 105797971968
+      },
+      "trace": true,
+      "notice": "Synthetic binding distribution, shared GPU, warm model/cache; not a general throughput claim."
+    },
+    {
+      "checkpointing": false,
+      "optimizer": "muon",
+      "source": "/runs/binding-pilot-20260919/latent_warmup",
+      "updates": 100,
+      "warmed_updates": 70,
+      "median_update_seconds": 1.2946443605032982,
+      "p95_update_seconds": 1.4088551998138428,
+      "resources": {
+        "process_peak_rss_bytes": 6619967488,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2715853312,
+        "cuda_peak_reserved_bytes": 2740977664,
+        "system_mem_available_bytes": 105803984896
+      },
+      "trace": true,
+      "notice": "Synthetic binding distribution, shared GPU, warm model/cache; not a general throughput claim."
+    }
+  ],
+  "all_training_metrics_exactly_equal": true,
+  "final_weight_files_identical": true,
+  "final_weights_sha256": "0cb02ddbae644897c1bb93e9a7150397c91e7b1147a70d17cd5a9bdc4da08d87",
+  "median_update_time_reduction": 0.18004172306968658,
+  "decision": "Disable activation/chunk checkpointing for this short binding distribution only",
+  "limitation": "Sequential runs with an existing bgkit workload; not dedicated-device or long-context measurements"
+}
