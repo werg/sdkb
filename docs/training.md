@@ -226,3 +226,21 @@ mode while the top-level training flag preserves the configured routing warmup.
 This preserves oracle-supported behavior and payload content while changing stored
 keys and their ranking. The same replay, Muon ownership, checkpoint and exact-resume
 contracts apply. Use a new warm-start fork when changing this scientific setting.
+
+
+## Temporary compaction inside the recurrent reader
+
+For a single-space, single-read native recurrent memory run, set `memory.compaction`
+to `mean` or `synthetic`, `compact_records: 1`, and
+`compaction_objective: interleaved`. `compaction_probability` chooses compact task
+examples after `compaction_warmup`; other examples preserve the raw task objective.
+Start an explicit warm-start fork when changing this objective. New synthetic
+compactor parameters initialize separately; the source writer/reader state is retained.
+
+The compact read consumes all selected records before its shared-state update and
+matches the configured serialized value precision plus FP32 multiplicities. Its
+auxiliary loss preserves conditional pre-normalization numerator and mass. Native
+paired objectives and scheduled multi-read compaction remain unsupported and fail
+validation. Both MLP and attention readers support this same intervention. This
+implementation and its gradient/storage checks do not establish useful compression;
+compare held-out raw/compact counterfactual behavior at a declared update budget.

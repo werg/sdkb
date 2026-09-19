@@ -155,8 +155,10 @@ class Config:
         if r.read_timing == "loop_boundary":
             if m.recurrence_mode != "middle_block":
                 raise ValueError("In-loop reads require the native recurrent core")
-            if r.compaction != "none" or r.stream_reads or t.arm == "direct_latent":
-                raise ValueError("Initial in-loop experiment uses raw materialized set reads")
+            if r.stream_reads or t.arm == "direct_latent":
+                raise ValueError("In-loop training requires materialized set reads")
+            if r.compaction != "none" and r.compaction_objective != "interleaved":
+                raise ValueError("In-loop temporary compaction supports the interleaved objective")
             counts = t.loop_counts or [m.loops]
             if t.arm in {"memory", "shared_compute"} and min(counts) < 2:
                 raise ValueError("Memory training requires a read followed by another core pass")

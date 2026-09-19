@@ -133,7 +133,8 @@ def test_compactor_only_does_not_move_raw_system(tmp_path, tiny_config):
     assert any(not torch.equal(initial[k], after[k]) for k in after if k.startswith('compactor.'))
 
 
-def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monkeypatch):
+@pytest.mark.parametrize('native_compaction', [False, True])
+def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monkeypatch, native_compaction):
     from sdkb.operations import request_stop
     from sdkb.replay import ReplayTape
     config = copy.deepcopy(tiny_config)
@@ -142,6 +143,17 @@ def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monke
     config.train.checkpoint_every = 1000
     config.train.live_fraction = .5
     config.memory.noise_std = .03
+    if native_compaction:
+        config.model.tiny_layers = 4
+        config.model.recurrence_mode = 'middle_block'
+        config.model.recurrent_start, config.model.recurrent_end = 1, 3
+        config.model.loops, config.model.writer_loops = 3, 1
+        config.train.loop_counts = [2, 3]
+        config.memory.read_timing, config.memory.read_steps = 'loop_boundary', 1
+        config.memory.compaction, config.memory.compact_records = 'synthetic', 1
+        config.memory.compaction_warmup = 0
+        config.memory.compaction_probability = .5
+        config.memory.compaction_grouping = 'random'
     full, interrupted = tmp_path / 'full', tmp_path / 'interrupted'
     train(config, full)
     original = ReplayTape.backward

@@ -170,9 +170,15 @@ class SDKBAgent(nn.Module):
 
     def _compact_values(self, value: Tensor, weights: Tensor):
         r = self.config.memory
-        return compact_view(value, weights, method=r.compaction, compactor=self.compactor,
+        view = compact_view(value, weights, method=r.compaction, compactor=self.compactor,
                             grouping=r.compaction_grouping, group_size=r.compaction_group_size,
                             memberships=r.field_memberships)
+        if r.read_timing == "loop_boundary":
+            # Match offline full-cluster code values and FP32 multiplicities.
+            # This differentiable cast is part of the consumer/replay graph.
+            view.values = view.values.to(getattr(torch, r.storage_dtype)).float()
+            view.weights = view.weights.float()
+        return view
 
     def read_tokens(self, payloads: list[Tensor], query: Tensor, *, compact: bool = False,
                     ablate_values: bool = False) -> tuple[Tensor, Tensor]:
@@ -297,7 +303,7 @@ class SDKBAgent(nn.Module):
     def forward_loop_memory(self, prompt: Tensor, target: Tensor,
                             records: list[tuple[Tensor, ...]], required: list[int], *,
                             step: int = 0, ablate_values: bool = False,
-                            shared_compute: bool = False) -> ForwardResult:
+                            shared_compute: bool = False, compact: bool = False) -> ForwardResult:
         """Single integrated consumer graph: compute -> retrieve -> inject -> compute.
 
         Only prefix states determine queries, even though causal teacher-forced
@@ -339,7 +345,7 @@ class SDKBAgent(nn.Module):
                     values = [records[i][2 * space + 1] for i in selected[space]]
                     payloads.append(torch.cat(values, 0) if values else query.new_empty(0, dim))
                 if progressed:
-                    memory, local_auxiliary = self.read_tokens(payloads, query, ablate_values=ablate_values)
+                    memory, local_auxiliary = self.read_tokens(payloads, query, compact=compact, ablate_values=ablate_values)
                     auxiliary = auxiliary + local_auxiliary
                     read_count += 1
             return None if memory is None else LoopWrite(length, memory)
@@ -349,8 +355,10 @@ class SDKBAgent(nn.Module):
         nll = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1))
         routing = routing / max(1, read_count)
         auxiliary = auxiliary / max(1, read_count)
-        return ForwardResult(nll + t.routing_weight * routing + r.merge_loss_weight * auxiliary,
-                             nll, routing, auxiliary, selected, raw_nll=nll, read_count=read_count)
+        weight = r.compaction_loss_weight if compact else r.merge_loss_weight
+        return ForwardResult(nll + t.routing_weight * routing + weight * auxiliary,
+                             nll, routing, auxiliary, selected, raw_nll=None if compact else nll,
+                             compact_nll=nll if compact else None, read_count=read_count)
 
     def target_ids(self, answer: str) -> Tensor:
         ids = self.tokenizer.encode(answer, add_special_tokens=False)
@@ -381,10 +389,9 @@ class SDKBAgent(nn.Module):
             nll = self.conditioned_nll(prompt, target, None)
             return ForwardResult(nll, nll, zero, zero, [], read_count=0)
         if r.read_timing == "loop_boundary":
-            if compact:
-                raise ValueError("Compaction is a separate prefix-reader comparison for now")
             return self.forward_loop_memory(prompt, target, records, required, step=step,
-                                            ablate_values=ablate_values, shared_compute=arm == "shared_compute")
+                                            ablate_values=ablate_values, shared_compute=arm == "shared_compute",
+                                            compact=compact)
         if arm == "shared_compute":
             nll = self.conditioned_nll(prompt, target, self.shared_compute_tokens(prompt))
             return ForwardResult(nll, nll, zero, zero, [], raw_nll=nll)

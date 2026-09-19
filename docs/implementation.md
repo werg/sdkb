@@ -80,7 +80,7 @@ floating leaves. The consumer accumulates cotangents on these leaves, including
 multiple uses of the same leaf. `backward` replays only records with a cotangent
 and backpropagates their vector–Jacobian products.
 
-The tape preserves PyTorch CPU/CUDA RNG, autocast mode/dtype, parameter versions,
+The tape preserves PyTorch CPU/CUDA RNG, autocast mode/dtype/weight-cache policy, parameter versions,
 module training flags and buffers. It rejects parameter updates, changed modes
 and mutable buffers before replay. Buffer-mutating producers are unsupported rather
 than approximately replayed. Inputs/closure contents must remain immutable until
@@ -93,7 +93,15 @@ entries are detached and absent from the tape. This is the exact gradient of the
 chosen mixed cached/live computation, not an unbiased all-fresh objective.
 
 Reader dropout/noise is replayed by checkpointing where applicable; producer RNG
-belongs to the producer tape. The first implementation does not replay nested
+belongs to the producer tape. Native BF16 full-graph and replay accumulation can differ slightly when a shared
+autocast weight cast collects contributions before conversion to FP32. The native
+compaction diagnostic measured at most 0.24% per-parameter relative L2 difference;
+disabling the autocast weight cache reduced the maximum absolute difference to
+3.7e-9. This is not a claim of bit-identical BF16 accumulation across graph layouts.
+The tape restores each producer's captured cache policy, even if the caller changes
+it before replay. Default training cache policy is unchanged.
+
+The first implementation does not replay nested
 historical read dependencies, support higher-order gradients or sharded distributed
 optimizers, or differentiate through historical tool actions. No such guarantees
 are implied by the first-order tests.
@@ -152,9 +160,15 @@ or persistent overlapping-field decoding is not implemented.
 Stored single-space codes also work at native recurrent read boundaries. Each
 boundary fetches the complete cumulative selection, including code multiplicity,
 before updating shared reader state; a partial cluster still uses raw fallback.
-Per-boundary accounting records codes, fallback IDs and payload bytes. Runtime
-re-compaction and streaming in-loop reads remain unsupported; offline compactor
-fitting and code creation are separate operations from recurrent training.
+Per-boundary accounting records codes, fallback IDs and payload bytes. Runtime re-compaction and streaming in-loop reads remain unsupported.
+Single-read, single-space recurrent training now supports interleaved temporary
+mean or synthetic compaction: the complete selected group is replaced before the
+shared reader update, with a differentiable storage-precision value cast and FP32
+multiplicity. Uncompacted examples retain their task objective; compact examples
+add conditional numerator/mass and rollout matching. Logs distinguish raw and
+compact NLL. Native paired raw/compact objectives and multi-read compaction remain
+rejected. Offline creation of persistent codes is still separate from inference;
+partial cluster selections retain exact raw fallback.
 
 ## Persistence and concurrency
 
