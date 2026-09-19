@@ -1,0 +1,20 @@
+{
+  "model": "LiquidAI/LFM2.5-230M",
+  "dtype": "BF16 serialized payloads and native CUDA autocast",
+  "worlds": 2,
+  "queries": 20,
+  "scored_rows": 148,
+  "all_rows_exactly_equal": true,
+  "comparison": "Progress-instrumented evaluation versus matching rows of the earlier frozen evaluation; all controls/counterfactuals included.",
+  "inputs": {
+    "original": {
+      "path": "/mnt/external/sdkb-archive/runs/binding-muon-attention-20260919/all-world-context/results.json",
+      "sha256": "36acf9dc4f443fdd7e32716583075c20a790757d7957537b26c94cc296eee6ca"
+    },
+    "progress": {
+      "path": "/mnt/external/sdkb-archive/runs/binding-muon-attention-20260919/progress-check/results.json",
+      "sha256": "c65659d3b52d9a205428e2df90f9d56d09301de42378ce4d43fa31120e36bdda"
+    }
+  },
+  "scope": "Operational telemetry parity, not a new capability claim."
+}

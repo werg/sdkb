@@ -25,6 +25,14 @@ from sdkb.training import config_from_run, autocast_context, resource_report, re
 from sdkb.trajectories import file_sha256
 
 
+def progress(event, **fields):
+    """Console-only telemetry; a disconnected log must not lose an evaluation."""
+    try:
+        print(json.dumps({'event': event, **fields}), flush=True)
+    except OSError:
+        pass
+
+
 @torch.no_grad()
 def evaluate(run, episodes_file, output):
     config = config_from_run(run)
@@ -35,6 +43,7 @@ def evaluate(run, episodes_file, output):
     episodes = load_episodes(episodes_file)
     variants = {kind: [counterfactual_multiuse(e, kind) for e in episodes]
                 for kind in ('restoration', 'permission')}
+    progress('evaluation_checkpoint_verify', run=str(run))
     checkpoint = resolve_checkpoint(run, verify=True)
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
@@ -43,8 +52,10 @@ def evaluate(run, episodes_file, output):
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     output.mkdir(parents=True, exist_ok=False)
     store = DiskStore(output / 'bank.sqlite')
+    progress('evaluation_offline_write', variant='all', queries=len(episodes))
     writes = {'all': build_shared_bank(agent, store, episodes)}
     for kind, changed in variants.items():
+        progress('evaluation_offline_write', variant=kind, queries=len(changed))
         writes[kind] = build_shared_bank(agent, store, changed, namespace=kind)
     def forbidden(*args, **kwargs):
         raise AssertionError('Writer invoked after offline bank creation')
@@ -54,7 +65,8 @@ def evaluate(run, episodes_file, output):
     start = time.perf_counter()
     with autocast_context(config):
         for kind, group in [('all', episodes), *variants.items()]:
-            for e in group:
+            progress('evaluation_stored_reads', variant=kind, queries=len(group))
+            for index, e in enumerate(group, 1):
                 conditions = (['all', 'selected_pair', 'none', 'zero_values'] +
                               [f'drop_{i}' for i in range(len(e.required_ids))]) if kind == 'all' else ['cf_' + kind]
                 for condition in conditions:
@@ -86,6 +98,10 @@ def evaluate(run, episodes_file, output):
                     if kind != 'all':
                         row['counterfactual_should_change'] = e.answer != originals[e.episode_id].answer
                     rows.append(row)
+                if index % 32 == 0 or index == len(group):
+                    progress('evaluation_progress', variant=kind, completed_queries=index,
+                             total_queries=len(group), scored_rows=len(rows),
+                             elapsed_read_seconds=time.perf_counter() - start)
     names = ('cf_restoration', 'cf_permission')
     families = sorted({e.task_family for e in episodes})
     result = dict(protocol='World-scoped evidence, competing entities, frozen stored-only read.',
@@ -102,6 +118,7 @@ def evaluate(run, episodes_file, output):
                'Zero-payload interventions apply only to latent arms; text stays unchanged.')
     atomic_json(output / 'results.json', result)
     atomic_json(output / 'summary.json', {k: v for k, v in result.items() if k != 'rows'})
+    progress('evaluation_committed', output=str(output), scored_rows=len(rows))
     return output / 'summary.json'
 
 
