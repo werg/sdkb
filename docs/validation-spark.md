@@ -68,8 +68,10 @@ of permission, restoration, exact identifiers and their combination:
   accuracy was 55.5%. Restoration changes spuriously changed actions in 63/64
   branches that should remain fixed; permission flips had only 7/128 both-correct
   pairs. The 69.4% overall score does not establish conditional composition.
-- Common-world stage comparisons and the matched attention control are in progress,
-  separately from each launcher's independently generated tests.
+- Common-world MLP stage comparisons are complete. Selected-support text controls
+  solve every family; all-context text controls score only 50% on actions despite
+  perfect direct facts. Final latent action accuracy is 54.7% versus 49.2%, with
+  a paired interval including zero. The matched attention control remains in progress.
 
 The all-context model's lower NLL versus no memory did not translate into a benefit
 over zeroed payloads. Tests, falling losses, linear probes and successful execution

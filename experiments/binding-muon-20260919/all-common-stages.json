@@ -1,0 +1,1086 @@
+{
+  "text_bootstrap": {
+    "identity": {
+      "episodes_sha256": "00bc05045b289db6b3a798056eb2532f6998aea4c04894e48420e5adcef64a46",
+      "checkpoint_manifest_sha256": "9a2c9ed593384e66d917bddc8ff3d6a706903125f662a1ef101a7f610ad6148a"
+    },
+    "report": {
+      "schema_version": 2,
+      "protocol": "write-once, serialize/reload, global stored-only bank",
+      "choice_scoring": "sum of target token NLL including EOS",
+      "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+      "payload_intervention_routing": "Captured original plans; payload changes never reroute later reads.",
+      "summary": {
+        "all": {
+          "n": 320,
+          "choice_accuracy": 0.8,
+          "mean_target_nll": 0.24059795606637097,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 320,
+          "choice_accuracy": 0.478125,
+          "mean_target_nll": 1.3934132875751017,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 320,
+          "choice_accuracy": 0.8,
+          "mean_target_nll": 0.24059795606637097,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 320,
+          "choice_accuracy": 0.39375,
+          "mean_target_nll": 2.111342176147319,
+          "complete_support_recall": 0.2
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 0.6278526357462051,
+          "complete_support_recall": 0.0
+        }
+      },
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.6014373555090493,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.41220785893563605,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.6014373555090493,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.6062845388388225,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.6278526357462051,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.1767133791265462e-05,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.3125,
+            "mean_target_nll": 4.794582569137925,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.1767133791265462e-05,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.0,
+            "mean_target_nll": 5.277627716497296,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 3.732802922140621e-05,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.484375,
+            "mean_target_nll": 0.40006296313367784,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 3.732802922140621e-05,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.53125,
+            "mean_target_nll": 2.9803272591379937,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.597415074338642e-05,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.59375,
+            "mean_target_nll": 0.9480051877326332,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.597415074338642e-05,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.4375,
+            "mean_target_nll": 1.08618682742366,
+            "complete_support_recall": 0.0
+          }
+        }
+      },
+      "paired_memory_benefit": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": 0.321875,
+        "ci95": [
+          0.271875,
+          0.371875
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "resources": {
+        "process_peak_rss_bytes": 4703653888,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2046192640,
+        "cuda_peak_reserved_bytes": 2084569088,
+        "system_mem_available_bytes": 95887196160
+      },
+      "counterfactuals": {
+        "cf_restoration": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.5,
+          "appropriate_prediction_change": 0.5,
+          "unchanged_pairs": 192,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 192,
+          "both_correct_on_change": 0.3333333333333333,
+          "appropriate_prediction_change": 0.3333333333333333,
+          "unchanged_pairs": 128,
+          "false_change_rate": 0.0
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/identifier": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/restoration": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+      "write_phase": {
+        "unique_sources": 128,
+        "writer_calls": 0,
+        "queries": 320,
+        "worlds": 32
+      },
+      "store": {
+        "records": 0,
+        "serialized_payload_bytes": 0,
+        "key_bytes": 0,
+        "physical_sqlite_bytes": 32768,
+        "sqlite_cache_budget_bytes_per_connection": 33554432
+      },
+      "directory": "/archive/runs/binding-muon-all-20260919/text_bootstrap/transfer-v2-1789826570073074812"
+    }
+  },
+  "recurrence_bridge": {
+    "identity": {
+      "episodes_sha256": "00bc05045b289db6b3a798056eb2532f6998aea4c04894e48420e5adcef64a46",
+      "checkpoint_manifest_sha256": "e89cef1736fc52b201578f6db26db61185aff2efdfdf3ec477d74fc9664ed180"
+    },
+    "report": {
+      "schema_version": 2,
+      "protocol": "write-once, serialize/reload, global stored-only bank",
+      "choice_scoring": "sum of target token NLL including EOS",
+      "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+      "payload_intervention_routing": "Captured original plans; payload changes never reroute later reads.",
+      "summary": {
+        "all": {
+          "n": 320,
+          "choice_accuracy": 0.8,
+          "mean_target_nll": 0.20082756603168117,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 320,
+          "choice_accuracy": 0.478125,
+          "mean_target_nll": 1.38123272673748,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 320,
+          "choice_accuracy": 0.8,
+          "mean_target_nll": 0.20082756603168117,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 320,
+          "choice_accuracy": 0.396875,
+          "mean_target_nll": 2.061832142550437,
+          "complete_support_recall": 0.2
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 0.5328909103014406,
+          "complete_support_recall": 0.0
+        }
+      },
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.5020095388040534,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.3745414747363178,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.5020095388040534,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.5090023832741454,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.5328909103014406,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.2498548520530524e-05,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.3125,
+            "mean_target_nll": 4.795322590108428,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 1.2498548520530524e-05,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.0,
+            "mean_target_nll": 5.232373138162352,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 4.039543195233364e-05,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.484375,
+            "mean_target_nll": 0.4027854617452249,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 4.039543195233364e-05,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.53125,
+            "mean_target_nll": 2.9792979492267477,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.585856982610494e-05,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.59375,
+            "mean_target_nll": 0.9589726323611103,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 1.0,
+            "mean_target_nll": 6.585856982610494e-05,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.453125,
+            "mean_target_nll": 1.0794848588147943,
+            "complete_support_recall": 0.0
+          }
+        }
+      },
+      "paired_memory_benefit": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": 0.321875,
+        "ci95": [
+          0.271875,
+          0.371875
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "resources": {
+        "process_peak_rss_bytes": 4703653888,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2046192640,
+        "cuda_peak_reserved_bytes": 2084569088,
+        "system_mem_available_bytes": 95941857280
+      },
+      "counterfactuals": {
+        "cf_restoration": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.5,
+          "appropriate_prediction_change": 0.5,
+          "unchanged_pairs": 192,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 192,
+          "both_correct_on_change": 0.3333333333333333,
+          "appropriate_prediction_change": 0.3333333333333333,
+          "unchanged_pairs": 128,
+          "false_change_rate": 0.0
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/identifier": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/restoration": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+      "write_phase": {
+        "unique_sources": 128,
+        "writer_calls": 0,
+        "queries": 320,
+        "worlds": 32
+      },
+      "store": {
+        "records": 0,
+        "serialized_payload_bytes": 0,
+        "key_bytes": 0,
+        "physical_sqlite_bytes": 32768,
+        "sqlite_cache_budget_bytes_per_connection": 33554432
+      },
+      "directory": "/archive/runs/binding-muon-all-20260919/recurrence_bridge/transfer-v2-1789826612033990909"
+    }
+  },
+  "latent_warmup": {
+    "identity": {
+      "episodes_sha256": "00bc05045b289db6b3a798056eb2532f6998aea4c04894e48420e5adcef64a46",
+      "checkpoint_manifest_sha256": "d4fd5c69549814520c2c144d43c7853a6c9bd4effae546b9c4f29a4813716358"
+    },
+    "report": {
+      "schema_version": 2,
+      "protocol": "write-once, serialize/reload, global stored-only bank",
+      "choice_scoring": "sum of target token NLL including EOS",
+      "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+      "payload_intervention_routing": "Captured original plans; payload changes never reroute later reads.",
+      "summary": {
+        "all": {
+          "n": 320,
+          "choice_accuracy": 0.440625,
+          "mean_target_nll": 0.8524329665664672,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 320,
+          "choice_accuracy": 0.475,
+          "mean_target_nll": 1.3523114604549205,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 320,
+          "choice_accuracy": 0.44375,
+          "mean_target_nll": 0.8518869537944418,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 320,
+          "choice_accuracy": 0.44375,
+          "mean_target_nll": 0.8517383775103926,
+          "complete_support_recall": 0.2
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 0.2751645286611858,
+          "complete_support_recall": 0.0
+        }
+      },
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.2758987564981605,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.3724411752440834,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.27478635253473405,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.27592009977282334,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.2751645286611858,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.25,
+            "mean_target_nll": 3.0164308651217393,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.3125,
+            "mean_target_nll": 4.740110448712394,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.25,
+            "mean_target_nll": 3.015412696202596,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.265625,
+            "mean_target_nll": 3.014123410128412,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 0.34645499754697084,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 0.3833649018779397,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.5625,
+            "mean_target_nll": 0.3470703305210918,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.546875,
+            "mean_target_nll": 0.34571026964113116,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 0.34748145716730505,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.59375,
+            "mean_target_nll": 0.8931996011961019,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 0.34737903717905283,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 0.3470180082367733,
+            "complete_support_recall": 0.0
+          }
+        }
+      },
+      "paired_memory_benefit": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.034375,
+        "ci95": [
+          -0.109375,
+          0.040625
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "resources": {
+        "process_peak_rss_bytes": 4703653888,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2046192640,
+        "cuda_peak_reserved_bytes": 2084569088,
+        "system_mem_available_bytes": 96012120064
+      },
+      "counterfactuals": {
+        "cf_restoration": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.0,
+          "appropriate_prediction_change": 0.0,
+          "unchanged_pairs": 192,
+          "false_change_rate": 0.010416666666666666
+        },
+        "cf_permission": {
+          "change_pairs": 192,
+          "both_correct_on_change": 0.005208333333333333,
+          "appropriate_prediction_change": 0.026041666666666668,
+          "unchanged_pairs": 128,
+          "false_change_rate": 0.03125
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/identifier": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.015625
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0625
+          }
+        },
+        "multiuse/permission": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.015625
+          },
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.015625,
+            "appropriate_prediction_change": 0.078125,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/restoration": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+      "write_phase": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "store": {
+        "records": 384,
+        "serialized_payload_bytes": 1603584,
+        "key_bytes": 98304,
+        "physical_sqlite_bytes": 1855488,
+        "sqlite_cache_budget_bytes_per_connection": 33554432
+      },
+      "directory": "/archive/runs/binding-muon-all-20260919/latent_warmup/transfer-v2-1789826691399131923"
+    }
+  },
+  "recurrent_joint": {
+    "identity": {
+      "episodes_sha256": "00bc05045b289db6b3a798056eb2532f6998aea4c04894e48420e5adcef64a46",
+      "checkpoint_manifest_sha256": "efdcdabbfbe0a0ea3fd28ee6ca01b00670401cda1401304b6f922d4823fda2ec"
+    },
+    "report": {
+      "schema_version": 2,
+      "protocol": "write-once, serialize/reload, global stored-only bank",
+      "choice_scoring": "sum of target token NLL including EOS",
+      "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+      "payload_intervention_routing": "Captured original plans; payload changes never reroute later reads.",
+      "summary": {
+        "all": {
+          "n": 320,
+          "choice_accuracy": 0.440625,
+          "mean_target_nll": 0.7884298413089986,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 320,
+          "choice_accuracy": 0.471875,
+          "mean_target_nll": 1.0967567054506036,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 320,
+          "choice_accuracy": 0.440625,
+          "mean_target_nll": 0.8036454083433464,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 320,
+          "choice_accuracy": 0.44375,
+          "mean_target_nll": 0.848977362584223,
+          "complete_support_recall": 0.2
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 0.24473018805119431,
+          "complete_support_recall": 0.0
+        }
+      },
+      "by_family": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "choice_accuracy": 0.4921875,
+            "mean_target_nll": 0.24396823296722556,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.24963425965757952,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 128,
+            "choice_accuracy": 0.4921875,
+            "mean_target_nll": 0.2495764094637707,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 128,
+            "choice_accuracy": 0.4921875,
+            "mean_target_nll": 0.2548996068847676,
+            "complete_support_recall": 0.5
+          },
+          "drop_1": {
+            "n": 128,
+            "choice_accuracy": 0.5,
+            "mean_target_nll": 0.24473018805119431,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 2.8532127786250343,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.28125,
+            "mean_target_nll": 4.32759094110557,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 2.852652302029587,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 2.8538305241791977,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 0.39748245116788894,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.46875,
+            "mean_target_nll": 0.3703977186232805,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 0.39673025300726295,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.421875,
+            "mean_target_nll": 0.3977045121137053,
+            "complete_support_recall": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 0.20351751081761904,
+            "complete_support_recall": 1.0
+          },
+          "none": {
+            "n": 64,
+            "choice_accuracy": 0.609375,
+            "mean_target_nll": 0.2865263482090086,
+            "complete_support_recall": 0.0
+          },
+          "zero_values": {
+            "n": 64,
+            "choice_accuracy": 0.40625,
+            "mean_target_nll": 0.26969166775234044,
+            "complete_support_recall": 1.0
+          },
+          "drop_0": {
+            "n": 64,
+            "choice_accuracy": 0.390625,
+            "mean_target_nll": 0.48355256285867654,
+            "complete_support_recall": 0.0
+          }
+        }
+      },
+      "paired_memory_benefit": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.03125,
+        "ci95": [
+          -0.090625,
+          0.025
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "resources": {
+        "process_peak_rss_bytes": 4703653888,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2046192640,
+        "cuda_peak_reserved_bytes": 2084569088,
+        "system_mem_available_bytes": 96065159168
+      },
+      "counterfactuals": {
+        "cf_restoration": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.0,
+          "appropriate_prediction_change": 0.015625,
+          "unchanged_pairs": 192,
+          "false_change_rate": 0.010416666666666666
+        },
+        "cf_permission": {
+          "change_pairs": 192,
+          "both_correct_on_change": 0.0,
+          "appropriate_prediction_change": 0.010416666666666666,
+          "unchanged_pairs": 128,
+          "false_change_rate": 0.0078125
+        }
+      },
+      "counterfactuals_by_family": {
+        "multiuse/action": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.03125,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.03125
+          },
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.015625,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/identifier": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.015625
+          }
+        },
+        "multiuse/permission": {
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/restoration": {
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+      "write_phase": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "store": {
+        "records": 384,
+        "serialized_payload_bytes": 1603584,
+        "key_bytes": 98304,
+        "physical_sqlite_bytes": 1855488,
+        "sqlite_cache_budget_bytes_per_connection": 33554432
+      },
+      "directory": "/archive/runs/binding-muon-all-20260919/recurrent_joint/transfer-v2-1789826795274703177"
+    }
+  }
+}

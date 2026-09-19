@@ -103,7 +103,7 @@ bottleneck despite successful text interpretation and single-fact retrieval.
 `selected-common-joint-gain.json` records paired gains and false-change deltas,
 including raw-report hashes. Positive false-change deltas mean worse behavior.
 Intervals resample worlds, not training seeds, and are not multiplicity-corrected.
-The all-context arm and matched attention confirmation remain in progress.
+The all-context comparison is complete; matched attention confirmation remains in progress.
 
 ## Short adaptation diagnostic (completed)
 
@@ -198,3 +198,31 @@ across the source transition; earlier checkpoint hashes are retained in
 `attention-source-transition.json`. The training loop and scientific settings are
 unchanged. This records an explicit stage-boundary storage/operations update,
 rather than changing a live checkout invisibly.
+
+## Completed common-world evidence-policy comparison
+
+Both MLP arms have now completed all four stage evaluations on the same 32 new
+worlds. `all-common-stages.json` and `selected-common-stages.json` preserve the
+shared episode checksum and each checkpoint identity.
+
+| Stage / task | Selected supports | All world records |
+|---|---:|---:|
+| Text bootstrap: action | 100.0% | 50.0% |
+| Text bootstrap: each direct fact / identifier | 100.0% | 100.0% |
+| Joint latent: action | 54.7% | 49.2% |
+| Joint latent: identifier | 34.4% | 40.6% |
+| Joint latent: permission | 100.0% | 42.2% |
+| Joint latent: restoration | 100.0% | 39.1% |
+
+The text recurrence bridge preserves its own arm's bootstrap results. Thus the
+all-context action failure already occurs with source text: it cannot be assigned
+solely to latent encoding. The selected-support arm is the cleaner text-to-latent
+composition test, because its text control passes the task.
+
+For final action accuracy, selected minus all-context is +5.5 percentage points,
+with a paired world-bootstrap 95% interval of −0.8 to +12.5 points. The strong
+between-policy differences are in fact recall; neither system establishes reliable
+action composition. Identifier choice has no reliable selected-support advantage.
+`common-evidence-policy-comparison.json` retains all paired statistics, source-report
+hashes and the common episode checksum. Evidence access differs deliberately;
+these are trained-system comparisons, not an inference-only retrieval ablation.
