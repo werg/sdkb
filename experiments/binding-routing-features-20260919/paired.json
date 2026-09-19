@@ -1,0 +1,222 @@
+{
+  "identity": {
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "train_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+    "heldout_sha256": "9bbff4a845ebb495adfe32d5a23eaf83dbedebf07a99bcd82de18a4695387bee",
+    "steps": 800,
+    "train_config": {
+      "seed": 29,
+      "steps": 1600,
+      "learning_rate": 0.0001,
+      "backbone_learning_rate": 5e-06,
+      "optimizer": "muon",
+      "weight_decay": 0.01,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "adam_eps": 1e-08,
+      "muon_momentum": 0.95,
+      "muon_ns_steps": 5,
+      "gradient_accumulation": 4,
+      "clip_grad_norm": 1.0,
+      "precision": "bf16",
+      "device": "cuda",
+      "replay": true,
+      "verify_replay": false,
+      "live_fraction": 1.0,
+      "train_worlds": 128,
+      "distractors": 2,
+      "eval_worlds": 16,
+      "log_every": 10,
+      "max_source_tokens": 512,
+      "max_prompt_tokens": 4096,
+      "arm": "memory",
+      "retrieval": "oracle",
+      "routing_weight": 0.1,
+      "routing_warmup": 100,
+      "threads": 8,
+      "cuda_memory_fraction": 0.35,
+      "min_system_available_bytes": 8589934592,
+      "stall_timeout_seconds": 300,
+      "optimization_scope": "all",
+      "checkpoint_every": 1000,
+      "keep_checkpoints": 2,
+      "max_target_tokens": 512,
+      "loop_counts": [
+        2,
+        3
+      ],
+      "oracle_anchor_loops": 1,
+      "allow_recurrence_conversion": false,
+      "parent_kl_weight": 0.0,
+      "oracle_anchor_weight": 0.1,
+      "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+      "evidence_scope": "required",
+      "archive_dir": null,
+      "archive_keep_checkpoints": 3,
+      "min_free_disk_bytes": 10737418240,
+      "wandb_mode": "offline",
+      "wandb_project": "sdkb",
+      "wandb_entity": null,
+      "wandb_group": "binding-muon-continuation"
+    },
+    "seed": 43,
+    "learning_rate": 0.0001,
+    "optimizer": "native Muon",
+    "batch": "all training queries per update",
+    "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+  },
+  "endpoint_sha256": {
+    "compressed_query": "e0881f472919634f4f3ff9b335a677e10921f3b9f5242a17754339ef5780089f",
+    "full_state_query": "5cfb82e3c336ce20d7c78aebf0c2b8bdeb49856c359a94b0d8f559b751d1c8c6"
+  },
+  "features_sha256": "56040254881a1a56f905b720c0dd1307ce1416e63bdeb4b69bbd14f5f55c4da7",
+  "paired": [
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": 0.1640625,
+      "world_bootstrap_95": [
+        0.0625,
+        0.265625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": 0.0546875,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.1640625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": 0.1484375,
+      "world_bootstrap_95": [
+        0.0625,
+        0.234375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.1875,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.1875,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": 0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.140625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": -0.046875,
+      "world_bootstrap_95": [
+        -0.109375,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": -0.046875,
+      "world_bootstrap_95": [
+        -0.109375,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": 0.0625,
+      "world_bootstrap_95": [
+        -0.03125,
+        0.15625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": 0.265625,
+      "world_bootstrap_95": [
+        0.171875,
+        0.34375
+      ],
+      "worlds": 32
+    }
+  ],
+  "notice": "Feature-space routing only; one training seed, world bootstrap, no downstream capability claim."
+}

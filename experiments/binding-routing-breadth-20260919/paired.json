@@ -1,0 +1,946 @@
+{
+  "identity": {
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+    "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+    "steps": 800,
+    "train_config": {
+      "seed": 29,
+      "steps": 1600,
+      "learning_rate": 0.0001,
+      "backbone_learning_rate": 5e-06,
+      "optimizer": "muon",
+      "weight_decay": 0.01,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "adam_eps": 1e-08,
+      "muon_momentum": 0.95,
+      "muon_ns_steps": 5,
+      "gradient_accumulation": 4,
+      "clip_grad_norm": 1.0,
+      "precision": "bf16",
+      "device": "cuda",
+      "replay": true,
+      "verify_replay": false,
+      "live_fraction": 1.0,
+      "train_worlds": 128,
+      "distractors": 2,
+      "eval_worlds": 16,
+      "log_every": 10,
+      "max_source_tokens": 512,
+      "max_prompt_tokens": 4096,
+      "arm": "memory",
+      "retrieval": "oracle",
+      "routing_weight": 0.1,
+      "routing_warmup": 100,
+      "threads": 8,
+      "cuda_memory_fraction": 0.35,
+      "min_system_available_bytes": 8589934592,
+      "stall_timeout_seconds": 300,
+      "optimization_scope": "all",
+      "checkpoint_every": 1000,
+      "keep_checkpoints": 2,
+      "max_target_tokens": 512,
+      "loop_counts": [
+        2,
+        3
+      ],
+      "oracle_anchor_loops": 1,
+      "allow_recurrence_conversion": false,
+      "parent_kl_weight": 0.0,
+      "oracle_anchor_weight": 0.1,
+      "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+      "evidence_scope": "required",
+      "archive_dir": null,
+      "archive_keep_checkpoints": 3,
+      "min_free_disk_bytes": 10737418240,
+      "wandb_mode": "offline",
+      "wandb_project": "sdkb",
+      "wandb_entity": null,
+      "wandb_group": "binding-muon-continuation"
+    },
+    "seed": 43,
+    "learning_rate": 0.0001,
+    "optimizer": "native Muon",
+    "batch": 1280,
+    "train_worlds": 1024,
+    "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+    "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+  },
+  "endpoint_sha256": {
+    "compressed_query": "d6b2628f99dc1f314cb96442a6622c82ab5b661834f10a5dc48cba3ab047273d",
+    "full_state_query": "2884bf2ef50fd26cfa4619e72e48595bb5eea29cb3ea1909e968cc93cb23d15c",
+    "narrow128_compressed_query": "7ab0fb7a953d33a4ce59912f9c20c85ea01cb874008db38cef108d113e74967c",
+    "narrow128_full_state_query": "d679c664330a4605443df5174b6f5fcc97f515bacbf7580ee181cdcd54883e68"
+  },
+  "features_sha256": "57d586707dd7939c365ebaa522f848d9ced007379af56b05a7a4069538b8e646",
+  "paired": [
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": 0.34375,
+      "world_bootstrap_95": [
+        0.2421875,
+        0.4375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": 0.2734375,
+      "world_bootstrap_95": [
+        0.1640625,
+        0.375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": 0.21875,
+      "world_bootstrap_95": [
+        0.1328125,
+        0.3046875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": 0.078125,
+      "world_bootstrap_95": [
+        0.015625,
+        0.140625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": 0.203125,
+      "world_bootstrap_95": [
+        0.109375,
+        0.296875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": 0.34375,
+      "world_bootstrap_95": [
+        0.25,
+        0.4375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": 0.0390625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.1328125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": 0.0859375,
+      "world_bootstrap_95": [
+        0.0078125,
+        0.1640625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": -0.0546875,
+      "world_bootstrap_95": [
+        -0.125,
+        0.0078125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.046875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.046875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": -0.0625,
+      "world_bootstrap_95": [
+        -0.140625,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": 0.203125,
+      "world_bootstrap_95": [
+        0.0859375,
+        0.328125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": 0.1015625,
+      "world_bootstrap_95": [
+        -0.03125,
+        0.234375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": 0.2109375,
+      "world_bootstrap_95": [
+        0.125,
+        0.296875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.171875,
+        -0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.171875,
+        -0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        -0.09375,
+        0.09375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": -0.0625,
+      "world_bootstrap_95": [
+        -0.125,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": -0.0625,
+      "world_bootstrap_95": [
+        -0.125,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": 0.125,
+      "world_bootstrap_95": [
+        0.015625,
+        0.234375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": -0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": -0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": 0.234375,
+      "world_bootstrap_95": [
+        0.140625,
+        0.328125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": -0.3046875,
+      "world_bootstrap_95": [
+        -0.40625,
+        -0.203125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": -0.1875,
+      "world_bootstrap_95": [
+        -0.28125,
+        -0.0859375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": -0.2734375,
+      "world_bootstrap_95": [
+        -0.359375,
+        -0.1875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": -0.015625,
+      "world_bootstrap_95": [
+        -0.046875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.1875,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": 0.015625,
+      "world_bootstrap_95": [
+        0.0,
+        0.046875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": 0.015625,
+      "world_bootstrap_95": [
+        0.0,
+        0.046875
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": -0.21875,
+      "world_bootstrap_95": [
+        -0.3125,
+        -0.140625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": 0.0,
+      "world_bootstrap_95": [
+        0.0,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_compressed_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": -0.40625,
+      "world_bootstrap_95": [
+        -0.484375,
+        -0.328125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": -0.140625,
+      "world_bootstrap_95": [
+        -0.25,
+        -0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": -0.171875,
+      "world_bootstrap_95": [
+        -0.2734375,
+        -0.0703125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": -0.0078125,
+      "world_bootstrap_95": [
+        -0.09375,
+        0.0703125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.171875,
+        -0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": -0.09375,
+      "world_bootstrap_95": [
+        -0.171875,
+        -0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": -0.078125,
+      "world_bootstrap_95": [
+        -0.1875,
+        0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": -0.046875,
+      "world_bootstrap_95": [
+        -0.109375,
+        0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": -0.046875,
+      "world_bootstrap_95": [
+        -0.109375,
+        0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": -0.078125,
+      "world_bootstrap_95": [
+        -0.171875,
+        0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": -0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": -0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "full_state_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": -0.109375,
+      "world_bootstrap_95": [
+        -0.1875,
+        -0.03125
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "full_required",
+      "b_minus_a": 0.1640625,
+      "world_bootstrap_95": [
+        0.0390625,
+        0.2890625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "sufficient",
+      "b_minus_a": 0.015625,
+      "world_bootstrap_95": [
+        -0.1015625,
+        0.140625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/action",
+      "metric": "top_one_required",
+      "b_minus_a": 0.265625,
+      "world_bootstrap_95": [
+        0.1796875,
+        0.3515625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "full_required",
+      "b_minus_a": -0.078125,
+      "world_bootstrap_95": [
+        -0.140625,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "sufficient",
+      "b_minus_a": -0.078125,
+      "world_bootstrap_95": [
+        -0.140625,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/identifier",
+      "metric": "top_one_required",
+      "b_minus_a": 0.015625,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.109375
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "full_required",
+      "b_minus_a": -0.0625,
+      "world_bootstrap_95": [
+        -0.125,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "sufficient",
+      "b_minus_a": -0.0625,
+      "world_bootstrap_95": [
+        -0.125,
+        -0.015625
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/permission",
+      "metric": "top_one_required",
+      "b_minus_a": 0.140625,
+      "world_bootstrap_95": [
+        0.03125,
+        0.25
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "full_required",
+      "b_minus_a": -0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "sufficient",
+      "b_minus_a": -0.03125,
+      "world_bootstrap_95": [
+        -0.078125,
+        0.0
+      ],
+      "worlds": 32
+    },
+    {
+      "a": "narrow128_compressed_query",
+      "b": "narrow128_full_state_query",
+      "family": "multiuse/restoration",
+      "metric": "top_one_required",
+      "b_minus_a": 0.296875,
+      "world_bootstrap_95": [
+        0.21875,
+        0.375
+      ],
+      "worlds": 32
+    }
+  ],
+  "notice": "Feature-space routing only; one training seed, world bootstrap, no downstream capability claim."
+}

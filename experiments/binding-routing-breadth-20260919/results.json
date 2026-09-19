@@ -1,0 +1,440 @@
+{
+  "identity": {
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+    "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+    "steps": 800,
+    "train_config": {
+      "seed": 29,
+      "steps": 1600,
+      "learning_rate": 0.0001,
+      "backbone_learning_rate": 5e-06,
+      "optimizer": "muon",
+      "weight_decay": 0.01,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "adam_eps": 1e-08,
+      "muon_momentum": 0.95,
+      "muon_ns_steps": 5,
+      "gradient_accumulation": 4,
+      "clip_grad_norm": 1.0,
+      "precision": "bf16",
+      "device": "cuda",
+      "replay": true,
+      "verify_replay": false,
+      "live_fraction": 1.0,
+      "train_worlds": 128,
+      "distractors": 2,
+      "eval_worlds": 16,
+      "log_every": 10,
+      "max_source_tokens": 512,
+      "max_prompt_tokens": 4096,
+      "arm": "memory",
+      "retrieval": "oracle",
+      "routing_weight": 0.1,
+      "routing_warmup": 100,
+      "threads": 8,
+      "cuda_memory_fraction": 0.35,
+      "min_system_available_bytes": 8589934592,
+      "stall_timeout_seconds": 300,
+      "optimization_scope": "all",
+      "checkpoint_every": 1000,
+      "keep_checkpoints": 2,
+      "max_target_tokens": 512,
+      "loop_counts": [
+        2,
+        3
+      ],
+      "oracle_anchor_loops": 1,
+      "allow_recurrence_conversion": false,
+      "parent_kl_weight": 0.0,
+      "oracle_anchor_weight": 0.1,
+      "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+      "evidence_scope": "required",
+      "archive_dir": null,
+      "archive_keep_checkpoints": 3,
+      "min_free_disk_bytes": 10737418240,
+      "wandb_mode": "offline",
+      "wandb_project": "sdkb",
+      "wandb_entity": null,
+      "wandb_group": "binding-muon-continuation"
+    },
+    "seed": 43,
+    "learning_rate": 0.0001,
+    "optimizer": "native Muon",
+    "batch": 1280,
+    "train_worlds": 1024,
+    "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+    "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+  },
+  "initial_scores_exact": true,
+  "batched_vs_single_query_max_abs": 0.0013618171215057373,
+  "arms": {
+    "compressed_query": {
+      "parameters": 73728,
+      "initial_train": {
+        "loss": 2.1431503295898438,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 2048,
+            "full_required": 1282,
+            "sufficient": 1282,
+            "top_one_required": 650
+          },
+          "multiuse/restoration": {
+            "count": 2048,
+            "full_required": 612,
+            "sufficient": 612,
+            "top_one_required": 250
+          },
+          "multiuse/identifier": {
+            "count": 2048,
+            "full_required": 1489,
+            "sufficient": 1489,
+            "top_one_required": 833
+          },
+          "multiuse/action": {
+            "count": 4096,
+            "full_required": 299,
+            "sufficient": 1894,
+            "top_one_required": 2052
+          }
+        }
+      },
+      "training_queries": 10240,
+      "train": {
+        "loss": 1.128909945487976,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 2048,
+            "full_required": 2048,
+            "sufficient": 2048,
+            "top_one_required": 1152
+          },
+          "multiuse/restoration": {
+            "count": 2048,
+            "full_required": 2048,
+            "sufficient": 2048,
+            "top_one_required": 1225
+          },
+          "multiuse/identifier": {
+            "count": 2048,
+            "full_required": 2048,
+            "sufficient": 2048,
+            "top_one_required": 1260
+          },
+          "multiuse/action": {
+            "count": 4096,
+            "full_required": 712,
+            "sufficient": 1432,
+            "top_one_required": 2324
+          }
+        }
+      },
+      "heldout": {
+        "loss": 1.1367534399032593,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 33
+          },
+          "multiuse/restoration": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 36
+          },
+          "multiuse/identifier": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 38
+          },
+          "multiuse/action": {
+            "count": 128,
+            "full_required": 22,
+            "sufficient": 43,
+            "top_one_required": 71
+          }
+        }
+      }
+    },
+    "full_state_query": {
+      "parameters": 139264,
+      "initial_train": {
+        "loss": 2.1431503295898438,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 2048,
+            "full_required": 1282,
+            "sufficient": 1282,
+            "top_one_required": 650
+          },
+          "multiuse/restoration": {
+            "count": 2048,
+            "full_required": 612,
+            "sufficient": 612,
+            "top_one_required": 250
+          },
+          "multiuse/identifier": {
+            "count": 2048,
+            "full_required": 1489,
+            "sufficient": 1489,
+            "top_one_required": 833
+          },
+          "multiuse/action": {
+            "count": 4096,
+            "full_required": 299,
+            "sufficient": 1894,
+            "top_one_required": 2052
+          }
+        }
+      },
+      "training_queries": 10240,
+      "train": {
+        "loss": 0.4830758273601532,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 2048,
+            "full_required": 2048,
+            "sufficient": 2048,
+            "top_one_required": 1869
+          },
+          "multiuse/restoration": {
+            "count": 2048,
+            "full_required": 2048,
+            "sufficient": 2048,
+            "top_one_required": 1930
+          },
+          "multiuse/identifier": {
+            "count": 2048,
+            "full_required": 2047,
+            "sufficient": 2047,
+            "top_one_required": 1904
+          },
+          "multiuse/action": {
+            "count": 4096,
+            "full_required": 3074,
+            "sufficient": 3286,
+            "top_one_required": 3854
+          }
+        }
+      },
+      "heldout": {
+        "loss": 0.8321337699890137,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 64,
+            "full_required": 63,
+            "sufficient": 63,
+            "top_one_required": 46
+          },
+          "multiuse/restoration": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 58
+          },
+          "multiuse/identifier": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 43
+          },
+          "multiuse/action": {
+            "count": 128,
+            "full_required": 66,
+            "sufficient": 78,
+            "top_one_required": 99
+          }
+        }
+      }
+    },
+    "narrow128_compressed_query": {
+      "parameters": 73728,
+      "initial_train": {
+        "loss": 2.186669111251831,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 256,
+            "full_required": 174,
+            "sufficient": 174,
+            "top_one_required": 85
+          },
+          "multiuse/restoration": {
+            "count": 256,
+            "full_required": 63,
+            "sufficient": 63,
+            "top_one_required": 23
+          },
+          "multiuse/identifier": {
+            "count": 256,
+            "full_required": 196,
+            "sufficient": 196,
+            "top_one_required": 111
+          },
+          "multiuse/action": {
+            "count": 512,
+            "full_required": 38,
+            "sufficient": 238,
+            "top_one_required": 256
+          }
+        }
+      },
+      "training_queries": 1280,
+      "train": {
+        "loss": 1.0754903554916382,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 256,
+            "full_required": 256,
+            "sufficient": 256,
+            "top_one_required": 179
+          },
+          "multiuse/restoration": {
+            "count": 256,
+            "full_required": 256,
+            "sufficient": 256,
+            "top_one_required": 174
+          },
+          "multiuse/identifier": {
+            "count": 256,
+            "full_required": 256,
+            "sufficient": 256,
+            "top_one_required": 225
+          },
+          "multiuse/action": {
+            "count": 512,
+            "full_required": 167,
+            "sufficient": 260,
+            "top_one_required": 363
+          }
+        }
+      },
+      "heldout": {
+        "loss": 1.1885665655136108,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 32
+          },
+          "multiuse/restoration": {
+            "count": 64,
+            "full_required": 64,
+            "sufficient": 64,
+            "top_one_required": 32
+          },
+          "multiuse/identifier": {
+            "count": 64,
+            "full_required": 63,
+            "sufficient": 63,
+            "top_one_required": 37
+          },
+          "multiuse/action": {
+            "count": 128,
+            "full_required": 27,
+            "sufficient": 54,
+            "top_one_required": 64
+          }
+        }
+      }
+    },
+    "narrow128_full_state_query": {
+      "parameters": 139264,
+      "initial_train": {
+        "loss": 2.186669111251831,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 256,
+            "full_required": 174,
+            "sufficient": 174,
+            "top_one_required": 85
+          },
+          "multiuse/restoration": {
+            "count": 256,
+            "full_required": 63,
+            "sufficient": 63,
+            "top_one_required": 23
+          },
+          "multiuse/identifier": {
+            "count": 256,
+            "full_required": 196,
+            "sufficient": 196,
+            "top_one_required": 111
+          },
+          "multiuse/action": {
+            "count": 512,
+            "full_required": 38,
+            "sufficient": 238,
+            "top_one_required": 256
+          }
+        }
+      },
+      "training_queries": 1280,
+      "train": {
+        "loss": 0.04841291531920433,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 256,
+            "full_required": 256,
+            "sufficient": 256,
+            "top_one_required": 256
+          },
+          "multiuse/restoration": {
+            "count": 256,
+            "full_required": 256,
+            "sufficient": 256,
+            "top_one_required": 256
+          },
+          "multiuse/identifier": {
+            "count": 256,
+            "full_required": 256,
+            "sufficient": 256,
+            "top_one_required": 256
+          },
+          "multiuse/action": {
+            "count": 512,
+            "full_required": 512,
+            "sufficient": 512,
+            "top_one_required": 512
+          }
+        }
+      },
+      "heldout": {
+        "loss": 1.3933252096176147,
+        "by_family": {
+          "multiuse/permission": {
+            "count": 64,
+            "full_required": 60,
+            "sufficient": 60,
+            "top_one_required": 41
+          },
+          "multiuse/restoration": {
+            "count": 64,
+            "full_required": 62,
+            "sufficient": 62,
+            "top_one_required": 51
+          },
+          "multiuse/identifier": {
+            "count": 64,
+            "full_required": 58,
+            "sufficient": 58,
+            "top_one_required": 38
+          },
+          "multiuse/action": {
+            "count": 128,
+            "full_required": 48,
+            "sufficient": 56,
+            "top_one_required": 98
+          }
+        }
+      }
+    }
+  }
+}
