@@ -265,3 +265,16 @@ corrected BF16 feature-score approximation to match the writer's key normalizati
 and FP32 search. Native comparison matches all 320 top-two rankings with maximum
 cosine error 2.39e-7 on shared serialized projected vectors. Corrected fitting uses
 new run identities; historical stored outcomes remain unchanged.
+
+Corrected fitting preserves the known-corpus stored result: 102/128 free actions
+for global training versus 58/128 within-world, with all 128 raw payload/provenance
+records and 640 oracle/no-memory scoring rows unchanged. Targeted source changes
+retain both correct answers for 74/128 permission pairs and 47/64 restoration
+pairs. This is an implementation diagnostic on existing questions.
+
+A [width diagnostic](../experiments/binding-routing-width-20260919/README.md)
+raises the address dimension from 64 to 128 or 256 with matched Muon updates and
+query batches. Training pair retrieval improves, while held-out full pairs fall
+from 87/128 to 80/128 and 79/128. The unchanged-width endpoint reproduces model,
+optimizer and sampler state exactly. The production address width remains 64;
+the wider feature experiment does not establish a useful model improvement.
