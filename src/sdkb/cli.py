@@ -73,6 +73,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--compact", action="store_true")
     p.add_argument("--drop-supports", action="store_true")
     p.add_argument("--boolean-counterfactuals", action="store_true")
+    p.add_argument("--binding-counterfactuals", action="store_true")
     p.add_argument("--persistent-compact", action="store_true")
     p = sub.add_parser("evaluate-depths", help="One frozen writer/bank, several native recurrent depths")
     p.add_argument("--run", required=True)
@@ -170,7 +171,8 @@ def main(argv: list[str] | None = None) -> None:
         from .evaluation import evaluate_transfer_run
         full = evaluate_transfer_run(args.run, args.episodes, compact=args.compact,
                                      drop_supports=args.drop_supports, boolean_counterfactuals=args.boolean_counterfactuals,
-                                     persistent_compact=args.persistent_compact)
+                                     persistent_compact=args.persistent_compact,
+                                     binding_counterfactuals=args.binding_counterfactuals)
         result = {key: value for key, value in full.items() if key != "rows"}
     elif args.command == "evaluate-depths":
         from .depth_eval import evaluate_depths

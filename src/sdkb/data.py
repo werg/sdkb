@@ -205,6 +205,46 @@ def make_multiuse_world(seed: int, *, split: str = "multiuse", bindings: int = 3
     return episodes
 
 
+def counterfactual_multiuse(episode: Episode, which: str) -> Episode:
+    """Flip a rule type across a generated world, keeping shared source IDs consistent.
+
+    Every future query sees the same alternate world. Flipping only its queried
+    entity would assign conflicting payloads to shared IDs in a global bank.
+    """
+    import re
+    if not episode.task_family.startswith('multiuse/') or which not in {'restoration', 'permission'}:
+        raise ValueError('Generated multiuse episode and restoration/permission intervention required')
+    sources = []
+    for source in episode.supports:
+        text = source.text
+        if source.kind == which:
+            if which == 'restoration':
+                text, count = re.subn(r'\b(required|forbidden)\.$',
+                    lambda m: ('forbidden' if m[1] == 'required' else 'required') + '.', text)
+            else:
+                text, count = re.subn(r'(?<=capability=)[01](?=;)', lambda m: str(1 - int(m[0])), text)
+            if count != 1:
+                raise ValueError('Malformed generated binding rule')
+        sources.append(replace(source, text=text))
+    restore = not episode.restore if which == 'restoration' else episode.restore
+    allowed = 1 - episode.allowed_capability if which == 'permission' else episode.allowed_capability
+    family = episode.task_family.split('/')[1]
+    groups = episode.sufficient_groups
+    if family == 'action':
+        answer = 'STOP' if episode.capability != allowed else ('RESTORE_RETRY' if restore else 'RETRY')
+        groups = ((episode.required_ids[1],),) if episode.capability != allowed else (episode.required_ids,)
+    elif family == 'restoration':
+        answer = 'required' if restore else 'forbidden'
+    elif family == 'permission':
+        answer = str(allowed)
+    elif family == 'identifier':
+        answer = episode.answer
+    else:
+        raise ValueError('Unknown binding task family')
+    return replace(episode, supports=tuple(sources), answer=answer, restore=restore,
+                   allowed_capability=allowed, sufficient_groups=groups)
+
+
 def make_boolean_world(seed: int, *, split: str = "boolean", operations: tuple[str, ...] = ("xor",)) -> list[Episode]:
     """Balanced independent bit facts for a small end-to-end composition diagnostic."""
     if not operations or any(op not in {'xor', 'and', 'or', 'a', 'b'} for op in operations):

@@ -11,7 +11,7 @@ from safetensors.torch import load_model
 
 from .agent import SDKBAgent
 from .checkpoints import resolve_checkpoint
-from .data import Episode, load_episodes, counterfactual_boolean
+from .data import Episode, load_episodes, counterfactual_boolean, counterfactual_multiuse
 from .metrics import summarize_rows, paired_world_bootstrap
 from .routing import complete_support_recall
 from .sessions import read_session
@@ -135,7 +135,10 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
 
 def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
                           compact: bool = False, drop_supports: bool = False,
-                          boolean_counterfactuals: bool = False, persistent_compact: bool = False) -> dict:
+                          boolean_counterfactuals: bool = False, persistent_compact: bool = False,
+                          binding_counterfactuals: bool = False) -> dict:
+    if boolean_counterfactuals and binding_counterfactuals:
+        raise ValueError('Choose one counterfactual family per evaluation')
     run = Path(run)
     config = config_from_run(run)
     reset_resource_peaks()
@@ -159,11 +162,13 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
                                         capture_plans=original_plans)
     if code_manifest is not None:
         result["persistent_codes"] = code_manifest
-    if boolean_counterfactuals:
+    if boolean_counterfactuals or binding_counterfactuals:
         from .metrics import counterfactual_metrics
         original_answers = {e.episode_id: e.answer for e in episodes}
-        for bit in ("a", "b"):
-            variants = [counterfactual_boolean(e, bit) for e in episodes]
+        names = ('a', 'b') if boolean_counterfactuals else ('restoration', 'permission')
+        transform = counterfactual_boolean if boolean_counterfactuals else counterfactual_multiuse
+        for bit in names:
+            variants = [transform(e, bit) for e in episodes]
             build_shared_bank(agent, store, variants, namespace=f"flip-{bit}")
             variant_results = stored_transfer_evaluation(agent, DiskStore(store.path), variants,
                                                          namespace=f"flip-{bit}",
@@ -173,9 +178,15 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
                     row["condition"] = f"cf_{bit}"
                     row["counterfactual_should_change"] = row["answer"] != original_answers[row["episode"]]
                     result["rows"].append(row)
-        result["counterfactuals"] = counterfactual_metrics(result["rows"], names=("cf_a", "cf_b"))
-        result["xor_counterfactuals"] = counterfactual_metrics(
-            [r for r in result["rows"] if r["task_family"] == "boolean/xor"], names=("cf_a", "cf_b"))
+        conditions = tuple('cf_' + name for name in names)
+        result["counterfactuals"] = counterfactual_metrics(result["rows"], names=conditions)
+        if boolean_counterfactuals:
+            result["xor_counterfactuals"] = counterfactual_metrics(
+                [r for r in result["rows"] if r["task_family"] == "boolean/xor"], names=conditions)
+        else:
+            result['counterfactuals_by_family'] = {
+                family: counterfactual_metrics([r for r in result['rows'] if r['task_family'] == family], names=conditions)
+                for family in sorted({e.task_family for e in episodes})}
         result["counterfactual_write_note"] = "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads."
     result['write_phase'] = writes
     result['store'] = store.sizes()

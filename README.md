@@ -77,6 +77,7 @@ To download, pin and inspect data without loading the training model:
 | `openhands.yaml` | Successful Nebius SWE-rebench/OpenHands coding traces. |
 | `cross_experience.yaml` | Different prior SWE-smith instances in the same repository; repository-held-out validation. |
 | `looped_causal.yaml` | **Real LFM student** text-to-latent training on controlled rules, then fresh-world counterfactual and binding evaluation. |
+| `looped_binding.yaml` | Selected-pair permission, restoration, action and identifier curriculum with rule counterfactuals; oracle routing. |
 | `looped_smoke.yaml` | Real model and starter sources, two updates per stage, native recurrence preflight. |
 | `tiny_looped_smoke.yaml` | Tiny CPU recurrent curriculum and fresh causal worlds, no downloads. |
 

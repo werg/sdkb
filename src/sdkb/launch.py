@@ -28,11 +28,13 @@ def atomic_json(path, value):
 def load_recipe(path):
     recipe = yaml.safe_load(Path(path).read_text())
     allowed = {'base_config', 'protocol', 'seed', 'validation_fraction', 'sources',
-               'preparation', 'stages', 'evaluation', 'causal_train_worlds'}
+               'preparation', 'stages', 'evaluation', 'causal_train_worlds', 'bindings'}
     if not isinstance(recipe, dict) or set(recipe) - allowed:
         raise ValueError('Unknown recipe fields')
-    if recipe.get('protocol') not in {'prefix', 'cross_experience', 'causal'}:
+    if recipe.get('protocol') not in {'prefix', 'cross_experience', 'causal', 'binding'}:
         raise ValueError('Invalid protocol')
+    if not isinstance(recipe.get('bindings', 2), int) or recipe.get('bindings', 2) < 1:
+        raise ValueError('Positive integer bindings required')
     names = []
     if not recipe.get('stages'):
         raise ValueError('At least one stage required')
@@ -105,7 +107,7 @@ def prepare_launch(recipe_path, output, *, resume=False):
     base.train.seed = recipe.get('seed', 17)
     data = output / 'data'
     dataset_lock = output / 'datasets-lock.json'
-    if recipe['protocol'] != 'causal':
+    if recipe['protocol'] not in {'causal', 'binding'}:
         if dataset_lock.exists():
             locked_sources = json.loads(dataset_lock.read_text())
         else:
@@ -114,14 +116,17 @@ def prepare_launch(recipe_path, output, *, resume=False):
     if not (data / 'manifest.json').exists():
         with tempfile.TemporaryDirectory(prefix='.data-', dir=output) as temp:
             pending = Path(temp) / 'data'
-            if recipe['protocol'] == 'causal':
+            if recipe['protocol'] in {'causal', 'binding'}:
                 pending.mkdir()
                 worlds = recipe.get('causal_train_worlds', 128)
                 for split, count in [('train', worlds), ('validation', max(1, recipe.get('evaluation', {}).get('causal_worlds', 32)))]:
-                    examples = [e for i in range(count) for e in make_boolean_world(
-                        i, split=f'causal-{split}-{base.train.seed}', operations=('a', 'b', 'xor'))]
+                    namespace = f"{recipe['protocol']}-{split}-{base.train.seed}"
+                    examples = [e for i in range(count) for e in (
+                        make_boolean_world(i, split=namespace, operations=('a', 'b', 'xor'))
+                        if recipe['protocol'] == 'causal' else
+                        make_multiuse_world(i, split=namespace, bindings=recipe.get('bindings', 2)))]
                     save_episodes(pending / f'{split}.jsonl', examples)
-                atomic_json(pending / 'manifest.json', {'protocol': 'causal', 'worlds': worlds})
+                atomic_json(pending / 'manifest.json', {'protocol': recipe['protocol'], 'worlds': worlds})
             else:
                 budgets = recipe.get('preparation', {}) | {k: getattr(base.train, k) for k in
                     ('max_source_tokens', 'max_prompt_tokens', 'max_target_tokens')}
@@ -243,8 +248,11 @@ def _launch(recipe_path, output, *, resume, prepare_only, stop):
             if stopping():
                 return dict(status='checkpointed', boundary='before_binding_evaluation')
             path = output / 'fresh-multiuse.jsonl'
-            save_episodes(path, [e for i in range(count) for e in make_multiuse_world(i, split=split, bindings=2)])
-            result = evaluate_transfer_run(last['run'], path, persistent_compact=compact_evaluation)
+            binding_protocol = manifest['recipe']['protocol'] == 'binding'
+            save_episodes(path, [e for i in range(count) for e in make_multiuse_world(
+                i, split=split, bindings=manifest['recipe'].get('bindings', 2))])
+            result = evaluate_transfer_run(last['run'], path, persistent_compact=compact_evaluation,
+                                           drop_supports=binding_protocol, binding_counterfactuals=binding_protocol)
             atomic_json(output / 'multiuse-evaluation.json', {k: v for k, v in result.items() if k != 'rows'})
     return dict(status='complete', output=str(output), stages=[s['name'] for s in manifest['stages']],
                 scientific_claim='Inspect stored-memory and counterfactual effects; execution alone is not evidence of transfer.')

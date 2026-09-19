@@ -31,10 +31,11 @@ def wait_for_completion(run):
 
 def compare(run: Path, episodes: Path | None = None):
     run = run.resolve()
-    episodes = (episodes or run / 'fresh-causal.jsonl').resolve()
     manifest = json.loads((run / 'launch.json').read_text())
-    if manifest['recipe']['protocol'] != 'causal':
-        raise ValueError('This comparison requires a causal curriculum')
+    protocol = manifest['recipe']['protocol']
+    if protocol not in {'causal', 'binding'}:
+        raise ValueError('This comparison requires a causal or binding curriculum')
+    episodes = (episodes or run / ('fresh-causal.jsonl' if protocol == 'causal' else 'fresh-multiuse.jsonl')).resolve()
     episode_hash = file_sha256(episodes)
     output = run / 'stage-transfer-comparison'
     with run_lock(run), stop_on_signal() as stop:
@@ -61,7 +62,8 @@ def compare(run: Path, episodes: Path | None = None):
             else:
                 print(f'Evaluating {name}', flush=True)
                 report = evaluate_transfer_run(stage['run'], episodes,
-                                               drop_supports=True, boolean_counterfactuals=True)
+                    drop_supports=True, boolean_counterfactuals=protocol == 'causal',
+                    binding_counterfactuals=protocol == 'binding')
                 record = {'identity': identity,
                           'report': {k: v for k, v in report.items() if k != 'rows'}}
                 atomic_json(path, record)

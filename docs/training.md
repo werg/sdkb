@@ -119,6 +119,28 @@ or stops a recipe silently. The goal is to obtain interpretable measurements.
 
 ## Real-trajectory evaluation
 
+### Controlled procedural curriculum
+
+`recipes/looped_binding.yaml` uses `protocol: binding` to train on permission,
+restoration, action and exact-identifier queries from generated multi-entity
+worlds. The four stages and stored-only evaluation are the same as the Boolean
+curriculum. `bindings` sets entities per world; `causal_train_worlds` retains its
+existing name and controls the generated training world count. Train, validation
+and post-freeze worlds have separate namespaces.
+
+Oracle routing supplies the query's relevant source pair. This isolates action
+interpretation and latent transfer; it does not establish learned entity selection
+or correct binding among all competing records. Text controls receive exactly
+the same selected sources. Both rule records are supplied for action queries,
+including STOP branches, so selection cardinality cannot reveal the action.
+
+`sdkb evaluate-transfer --binding-counterfactuals` flips permission or restoration
+rules consistently throughout each world. IDs, queries, timestamps and read plans
+remain fixed. Scores distinguish answer-changing branches from branches that
+should remain unchanged and report each task family separately. Fresh variant
+banks are written offline by the frozen writer, then consumed through stored reads.
+`scripts/evaluate_causal_stages.py` supports both causal and binding curricula.
+
 Payload interventions replay the original selected IDs and scores at every read
 boundary, including native recurrent reads. They measure the value channel without
 changing later routing decisions. Learned-routing counterfactual evaluation uses
