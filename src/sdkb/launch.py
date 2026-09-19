@@ -67,7 +67,9 @@ def prepare_launch(recipe_path, output, *, resume=False):
     # Defaults preserving old behavior must not invalidate an existing 0.4 recipe.
     defaults = TrainConfig()
     for name in ('archive_dir', 'archive_keep_checkpoints', 'min_free_disk_bytes',
-                 'wandb_mode', 'wandb_project', 'wandb_entity', 'wandb_group', 'evidence_scope'):
+                 'wandb_mode', 'wandb_project', 'wandb_entity', 'wandb_group', 'evidence_scope',
+                 'optimizer', 'weight_decay', 'adam_betas', 'adam_eps', 'muon_momentum', 'muon_ns_steps',
+                 'cuda_memory_fraction', 'min_system_available_bytes', 'stall_timeout_seconds'):
         if identity_config['train'][name] == getattr(defaults, name):
             identity_config['train'].pop(name)
     identity = digest({'recipe': recipe, 'base_config': identity_config})

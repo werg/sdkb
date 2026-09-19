@@ -62,7 +62,7 @@ train:
   routing_warmup: 100
   threads: 8
   max_target_tokens: 512
-  checkpoint_every: 50
+  checkpoint_every: 1000
   oracle_anchor_weight: 0.0
   oracle_anchor_loops: 1
   evidence_scope: available

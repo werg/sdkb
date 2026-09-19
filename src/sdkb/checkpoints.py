@@ -76,16 +76,19 @@ def resolve_checkpoint(run: str | Path, *, verify: bool = False) -> Path:
 
 
 def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
-                    cache, fingerprint: str, *, keep: int = 2, archiver=None) -> Path:
+                    cache, fingerprint: str, *, keep: int = 2, archiver=None,
+                    accumulation: dict | None = None) -> Path:
     if step < 0 or keep < 1:
         raise ValueError("Invalid checkpoint step/retention")
     from .archiving import ensure_free
     weights_bytes = sum(p.numel() * p.element_size() for p in agent.parameters())
     optimizer_bytes = 2 * sum(p.numel() * p.element_size() for p in agent.parameters() if p.requires_grad)
-    ensure_free(run, weights_bytes + optimizer_bytes + cache.sizes()['physical_sqlite_bytes'] + 1024 ** 2,
-                agent.config.train.min_free_disk_bytes)
     root = run / "checkpoints"
     root.mkdir(exist_ok=True)
+    gradient_bytes = sum(p.grad.numel() * p.grad.element_size() for p in agent.parameters()
+                         if p.grad is not None) if accumulation else 0
+    ensure_free(root, weights_bytes + optimizer_bytes + gradient_bytes +
+                cache.sizes()['physical_sqlite_bytes'] + 1024 ** 2, agent.config.train.min_free_disk_bytes)
     token = uuid.uuid4().hex[:12]
     pending = root / (".pending-" + token)
     pending.mkdir()
@@ -93,9 +96,15 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
     try:
         save_model(agent, str(pending / "model.safetensors"))
         state = {"optimizer": optimizer.state_dict(), "step": step,
+                 "optimizer_type": agent.config.train.optimizer,
+                 "optimizer_parameter_names": getattr(optimizer, '_sdkb_parameter_names', None),
                  "python_rng": rng.getstate(), "global_python_rng": random.getstate(),
                  "torch_rng": torch.get_rng_state(),
                  "cuda_rng": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []}
+        if accumulation:
+            state['accumulation'] = accumulation
+            state['gradients'] = {n: p.grad.detach().cpu() for n, p in agent.named_parameters()
+                                  if p.grad is not None}
         torch.save(state, pending / "training_state.pt")
         # backup() sees a consistent SQLite snapshot, including committed WAL data.
         with cache.connect() as source, sqlite3.connect(pending / "training_cache.sqlite") as dest:
@@ -139,7 +148,7 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
 
 
 def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
-                       fingerprint: str) -> int:
+                       fingerprint: str, *, progress: dict | None = None) -> int:
     path = resolve_checkpoint(run, verify=True)
     if path != run:
         manifest = json.loads((path / "manifest.json").read_text())
@@ -149,7 +158,22 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
             raise ValueError("Base model revision changed; use the pinned original revision")
     load_model(agent, str(path / "model.safetensors"), device=agent.config.train.device)
     state = torch.load(path / "training_state.pt", map_location="cpu", weights_only=True)
+    if state.get('optimizer_type', 'adamw') != agent.config.train.optimizer:
+        raise ValueError('Optimizer changed; use an explicit warm-start with a new run identity')
+    if (state.get('optimizer_parameter_names') is not None and
+            state['optimizer_parameter_names'] != getattr(optimizer, '_sdkb_parameter_names', None)):
+        raise ValueError('Optimizer parameter names/order changed; refusing mismatched momentum')
     optimizer.load_state_dict(state["optimizer"])
+    if state.get('accumulation'):
+        if progress is None:
+            raise ValueError('Checkpoint has an incomplete optimizer update; restore its accumulation state')
+        progress.update(state['accumulation'])
+        parameters = dict(agent.named_parameters())
+        for name, gradient in state['gradients'].items():
+            if name not in parameters or not parameters[name].requires_grad:
+                raise ValueError(f'Accumulated gradient has no trainable parameter: {name}')
+            parameter = parameters[name]
+            parameter.grad = gradient.to(device=parameter.device, dtype=parameter.dtype)
     rng.setstate(state["python_rng"])
     random.setstate(state.get("global_python_rng", state["python_rng"]))
     torch.set_rng_state(state["torch_rng"])

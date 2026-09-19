@@ -1,0 +1,12 @@
+{
+  "source": "/runs/binding-pilot-20260919/latent_warmup",
+  "optimizer": "muon",
+  "device": "cuda",
+  "precision": "bf16",
+  "completed_steps": 2,
+  "interrupted_microbatches": 1,
+  "exact_model_and_optimizer_rng_state": true,
+  "full_checkpoint": "/archive/validation/muon-emergency-resume-20260919/full/checkpoints/step-000000002-ef1e275dead5",
+  "resumed_checkpoint": "/archive/validation/muon-emergency-resume-20260919/stopped/checkpoints/step-000000002-01b1acf8f31b",
+  "note": "No optimizer update is taken from partial accumulation. Not a capability experiment."
+}

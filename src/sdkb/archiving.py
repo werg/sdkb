@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import threading
+import time
 import uuid
 
 from .checkpoints import _atomic_text, _fsync_dir, resolve_checkpoint
@@ -110,6 +111,7 @@ class CheckpointArchiver:
         self.pending = self.active = None
         self.closing = False
         self.error = None
+        self.last_completed = None
         self.thread = threading.Thread(target=self._work, name='sdkb-archive', daemon=True)
         self.thread.start()
 
@@ -118,7 +120,15 @@ class CheckpointArchiver:
             if self.error:
                 raise RuntimeError('Checkpoint archive failed; local checkpoint remains available') from self.error
             self.pending = Path(checkpoint)
+            self._status()
             self.condition.notify()
+
+    def _status(self):
+        from .operations import atomic_json
+        atomic_json(self.destination / 'archive-status.json', dict(
+            updated_at=time.time(), active=str(self.active) if self.active else None,
+            pending=str(self.pending) if self.pending else None,
+            last_completed=self.last_completed, error=str(self.error) if self.error else None))
 
     def protected_names(self):
         with self.condition:
@@ -127,6 +137,10 @@ class CheckpointArchiver:
     def _work(self):
         try:
             self._copy_loop()
+        except Exception as exc:
+            # Includes failures writing status metadata, not only payload copies.
+            with self.condition:
+                self.error = exc
         finally:
             self.ownership.__exit__(None, None, None)
 
@@ -137,14 +151,18 @@ class CheckpointArchiver:
                 if self.pending is None:
                     return
                 self.active, self.pending = self.pending, None
+                self._status()
             try:
                 archive_checkpoint(self.active, self.destination, keep=self.keep, reserve_bytes=self.reserve_bytes)
             except Exception as exc:
                 with self.condition:
                     self.error = exc
+                    self._status()
                 return
             with self.condition:
+                self.last_completed = self.active.name
                 self.active = None
+                self._status()
 
     def close(self, *, wait=False):
         with self.condition:
@@ -166,3 +184,83 @@ def restore_archive(archive_run, output):
     restored = archive_checkpoint(checkpoint, output, reserve_bytes=0)
     return {'checkpoint': str(restored), 'output': str(output),
             'note': 'Resume requires the original prepared dataset specified by the checkpoint config.'}
+
+
+def relocate_checkpoints(run, destination, *, archive_hint=None):
+    """Move a stopped stage's checkpoint storage, retaining its public run paths.
+
+    Destination is an existing, dedicated directory on the intended filesystem.
+    All retained sets are verified before replacing the local directory with a
+    symlink. An optional verified archive supplies same-filesystem hardlinks;
+    deleting an archive name cannot delete the retained link. No shared cleanup.
+    """
+    from .checkpoints import _digest
+    from .operations import run_lock
+    run, destination = Path(run), Path(destination).absolute()
+    with run_lock(run, clear_stop=False):
+        source = run / 'checkpoints'
+        if not destination.is_dir():
+            raise FileNotFoundError('Destination must exist on the mounted disk')
+        if source.is_symlink():
+            if source.resolve() != destination.resolve():
+                raise ValueError('Checkpoints already relocated to another destination')
+            resolve_checkpoint(run, verify=True)
+            return dict(destination=str(destination), local_bytes_removed=0)
+        if destination.resolve().is_relative_to(source.resolve()):
+            raise ValueError('Destination must be outside local checkpoint storage')
+        ensure_free(destination)
+        resolve_checkpoint(run, verify=True)
+        checkpoints = sorted(source.iterdir())
+        if any(not p.is_dir() or not p.name.startswith('step-') for p in checkpoints):
+            raise ValueError('Inspect pending/unknown checkpoint entries before relocating')
+        local_bytes = 0
+        for checkpoint in checkpoints:
+            manifest = json.loads((checkpoint / 'manifest.json').read_text())
+            files = manifest['sha256']
+            if any(Path(n).name != n for n in files):
+                raise ValueError('Invalid checkpoint filenames')
+            target = destination / checkpoint.name
+            hint = Path(archive_hint) / checkpoint.name if archive_hint else None
+            if not target.exists():
+                pending = destination / ('.pending-' + uuid.uuid4().hex)
+                pending.mkdir()
+                try:
+                    for name, expected in files.items():
+                        if hint is not None and (hint / name).is_file():
+                            if _digest(hint / name) != expected:
+                                raise ValueError(f'Archive checksum mismatch: {hint / name}')
+                            try:
+                                os.link(hint / name, pending / name)
+                            except OSError:
+                                copy_file(hint / name, pending / name, expected)
+                        else:
+                            copy_file(checkpoint / name, pending / name, expected)
+                    copy_file(checkpoint / 'manifest.json', pending / 'manifest.json')
+                    _fsync_dir(pending)
+                    os.replace(pending, target)
+                    _fsync_dir(destination)
+                except BaseException:
+                    shutil.rmtree(pending, ignore_errors=True)
+                    raise
+            else:
+                if (target / 'manifest.json').read_bytes() != (checkpoint / 'manifest.json').read_bytes():
+                    raise ValueError('Destination checkpoint manifest mismatch')
+                for name, expected in files.items():
+                    if _digest(target / name) != expected:
+                        raise ValueError(f'Destination checksum mismatch: {name}')
+            local_bytes += sum(p.stat().st_size for p in checkpoint.iterdir() if p.is_file())
+        # Create the symlink first: unsupported platforms fail without moving data.
+        token = uuid.uuid4().hex
+        link, backup = run / ('.checkpoint-link-' + token), run / ('.relocated-' + token)
+        link.symlink_to(destination, target_is_directory=True)
+        os.replace(source, backup)
+        try:
+            os.replace(link, source)
+            _fsync_dir(run)
+        except BaseException:
+            os.replace(backup, source)
+            link.unlink(missing_ok=True)
+            raise
+        shutil.rmtree(backup)
+        _fsync_dir(run)
+        return dict(destination=str(destination), local_bytes_removed=local_bytes)

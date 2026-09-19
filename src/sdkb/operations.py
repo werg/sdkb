@@ -74,11 +74,50 @@ def stop_requested(run):
     return (control_dir(run) / 'STOP').exists()
 
 
+CHECKPOINT_POLICY_FIELDS = {'checkpoint_every', 'keep_checkpoints', 'archive_keep_checkpoints',
+                            'archive_dir', 'min_free_disk_bytes'}
+
+
+def configure_checkpoints(run, **settings):
+    """Explicit operational overrides; immutable scientific launch inputs stay intact."""
+    settings = {k: v for k, v in settings.items() if v is not ...}
+    if not settings or set(settings) - CHECKPOINT_POLICY_FIELDS:
+        raise ValueError('Supply supported checkpoint policy settings')
+    for name, value in settings.items():
+        if name != 'archive_dir' and (not isinstance(value, int) or isinstance(value, bool)
+                                     or value < (0 if name == 'min_free_disk_bytes' else 1)):
+            raise ValueError(f'Invalid checkpoint policy: {name}')
+    if settings.get('archive_dir') is not None and not Path(settings['archive_dir']).is_dir():
+        raise FileNotFoundError('Archive directory must exist on the mounted disk')
+    run = Path(run)
+    if not run.is_dir():
+        raise FileNotFoundError(run)
+    with run_lock(run, clear_stop=False):
+        path = run / 'checkpoint-policy.json'
+        old = json.loads(path.read_text()) if path.exists() else {}
+        atomic_json(path, old | settings)
+    return {'policy': str(path), 'settings': old | settings}
+
+
+def apply_checkpoint_policy(config, run, launch=None):
+    for root in (launch, run):
+        if root is None:
+            continue
+        path = Path(root) / 'checkpoint-policy.json'
+        if path.exists():
+            settings = json.loads(path.read_text())
+            if set(settings) - CHECKPOINT_POLICY_FIELDS:
+                raise ValueError('Unsupported checkpoint policy setting')
+            for name, value in settings.items():
+                setattr(config.train, name, value)
+    config.validate()
+
+
 def request_stop(run):
     path = control_dir(run) / 'STOP'
     atomic_json(path, {'requested_at': time.time()})
     return {'status': 'stop_requested', 'output': str(Path(run).resolve()),
-            'behavior': 'Finish the current optimizer step and checkpoint; evaluations stop at the next stage boundary.'}
+            'behavior': 'Finish the current microbatch/replay and save gradients plus full resume state; evaluations stop at the next stage boundary.'}
 
 
 def run_status(run):
@@ -104,7 +143,30 @@ def run_status(run):
         if time.time() - state.get('started_at', 0) > 60:
             state['status'] = 'interrupted'
     return state | {'running': running, 'stop_requested': stop_requested(run),
-                    'log': str(directory / 'console.log')}
+                    'log': str(directory / 'console.log'), 'checkpoints': checkpoint_status(run)}
+
+
+def checkpoint_status(run):
+    import shutil
+    root = Path(run)
+    stages = [root] if (root / 'CURRENT').exists() else sorted(p.parent for p in root.glob('*/CURRENT'))
+    result = []
+    from .checkpoints import resolve_checkpoint
+    for stage in stages:
+        checkpoint = resolve_checkpoint(stage)
+        manifest = json.loads((checkpoint / 'manifest.json').read_text())
+        config = json.loads((checkpoint / 'config.json').read_text())
+        report = dict(stage=str(stage), step=manifest['step'], checkpoint=str(checkpoint.resolve()),
+                      externalized=(stage / 'checkpoints').is_symlink(),
+                      filesystem_free_bytes=shutil.disk_usage(checkpoint).free,
+                      checkpoint_every=config['train']['checkpoint_every'])
+        identity = checkpoint / 'run-identity.json'
+        archive = config['train'].get('archive_dir')
+        if archive and identity.exists():
+            status = Path(archive) / json.loads(identity.read_text())['id'] / 'archive-status.json'
+            report['archive'] = json.loads(status.read_text()) if status.exists() else {'status': 'unreported'}
+        result.append(report)
+    return result
 
 
 def start_run(recipe, run, *, resume=False):

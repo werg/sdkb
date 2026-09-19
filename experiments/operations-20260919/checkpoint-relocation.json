@@ -1,0 +1,127 @@
+[
+  {
+    "run": "/runs/binding-all-context-20260919/latent_warmup",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-all-context-20260919/latent_warmup",
+    "local_bytes_removed": 2427919700
+  },
+  {
+    "run": "/runs/binding-all-context-20260919/recurrence_bridge",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-all-context-20260919/recurrence_bridge",
+    "local_bytes_removed": 2068396522
+  },
+  {
+    "run": "/runs/binding-all-context-20260919/recurrent_joint",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-all-context-20260919/recurrent_joint",
+    "local_bytes_removed": 3535663622
+  },
+  {
+    "run": "/runs/binding-all-context-20260919/text_bootstrap",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-all-context-20260919/text_bootstrap",
+    "local_bytes_removed": 5710116456
+  },
+  {
+    "run": "/runs/binding-context-script-check/latent_warmup",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-context-script-check/latent_warmup",
+    "local_bytes_removed": 1411289
+  },
+  {
+    "run": "/runs/binding-context-script-check/recurrence_bridge",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-context-script-check/recurrence_bridge",
+    "local_bytes_removed": 1233963
+  },
+  {
+    "run": "/runs/binding-context-script-check/recurrent_joint",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-context-script-check/recurrent_joint",
+    "local_bytes_removed": 1600965
+  },
+  {
+    "run": "/runs/binding-context-script-check/text_bootstrap",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-context-script-check/text_bootstrap",
+    "local_bytes_removed": 2186138
+  },
+  {
+    "run": "/runs/binding-pilot-20260919/latent_warmup",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-pilot-20260919/latent_warmup",
+    "local_bytes_removed": 2427919606
+  },
+  {
+    "run": "/runs/binding-pilot-20260919/recurrence_bridge",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-pilot-20260919/recurrence_bridge",
+    "local_bytes_removed": 2068396428
+  },
+  {
+    "run": "/runs/binding-pilot-20260919/recurrent_joint",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-pilot-20260919/recurrent_joint",
+    "local_bytes_removed": 3535663656
+  },
+  {
+    "run": "/runs/binding-pilot-20260919/text_bootstrap",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-pilot-20260919/text_bootstrap",
+    "local_bytes_removed": 5710116362
+  },
+  {
+    "run": "/runs/causal-comparison-script-check/latent_warmup",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-comparison-script-check/latent_warmup",
+    "local_bytes_removed": 1411293
+  },
+  {
+    "run": "/runs/causal-comparison-script-check/recurrence_bridge",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-comparison-script-check/recurrence_bridge",
+    "local_bytes_removed": 1233967
+  },
+  {
+    "run": "/runs/causal-comparison-script-check/recurrent_joint",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-comparison-script-check/recurrent_joint",
+    "local_bytes_removed": 1600969
+  },
+  {
+    "run": "/runs/causal-comparison-script-check/text_bootstrap",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-comparison-script-check/text_bootstrap",
+    "local_bytes_removed": 2186142
+  },
+  {
+    "run": "/runs/causal-pilot-20260919/latent_warmup",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-pilot-20260919/latent_warmup",
+    "local_bytes_removed": 2427919808
+  },
+  {
+    "run": "/runs/causal-pilot-20260919/recurrence_bridge",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-pilot-20260919/recurrence_bridge",
+    "local_bytes_removed": 2068396502
+  },
+  {
+    "run": "/runs/causal-pilot-20260919/recurrent_joint",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-pilot-20260919/recurrent_joint",
+    "local_bytes_removed": 3535663602
+  },
+  {
+    "run": "/runs/causal-pilot-20260919/text_bootstrap",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-pilot-20260919/text_bootstrap",
+    "local_bytes_removed": 5710116500
+  },
+  {
+    "run": "/runs/causal-throughput-20260919/latent_warmup",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-throughput-20260919/latent_warmup",
+    "local_bytes_removed": 2231360756
+  },
+  {
+    "run": "/runs/causal-throughput-20260919/recurrence_bridge",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-throughput-20260919/recurrence_bridge",
+    "local_bytes_removed": 2051599076
+  },
+  {
+    "run": "/runs/causal-throughput-20260919/recurrent_joint",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-throughput-20260919/recurrent_joint",
+    "local_bytes_removed": 2785232847
+  },
+  {
+    "run": "/runs/causal-throughput-20260919/text_bootstrap",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/causal-throughput-20260919/text_bootstrap",
+    "local_bytes_removed": 3872459332
+  },
+  {
+    "run": "/runs/binding-gradient-diagnostic",
+    "destination": "/mnt/external/sdkb-archive/retained-checkpoints/binding-gradient-diagnostic",
+    "local_bytes_removed": 1767831860
+  }
+]

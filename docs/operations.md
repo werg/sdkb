@@ -24,9 +24,13 @@ sdkb runs stop --output /fast/sdkb-runs/causal
 sdkb runs start --recipe recipes/looped_causal.yaml --output /fast/sdkb-runs/causal --resume
 ```
 
-Status gives a persistent console-log path. A stop request is a control file,
-not a signal sent to a potentially recycled PID. Training finishes the current
-optimizer step and commits model, optimizer, RNG and cache together. Preparation,
+Status gives a persistent console-log path, resolved checkpoint locations and free space.
+Optional archives expose active/pending copies, last completion and errors in
+`archive-status.json`. A stop request is a control file,
+not a signal sent to a potentially recycled PID. Training finishes the current microbatch and its complete producer replay, then
+commits model, optimizer, RNG and cache together. If accumulation is incomplete,
+the checkpoint also includes accumulated gradients, microbatch position, sampled
+depth and running loss totals; resume finishes that same optimizer update. Preparation,
 preflight and evaluation stop at the next stage boundary; they are not interrupted
 mid-write. SIGINT/SIGTERM also request a graceful stop. A hard kill resumes the
 last committed checkpoint. Detached runs do not automatically restart failures.
@@ -43,8 +47,8 @@ lifetime; do not detach a child inside an ephemeral `docker run --rm` container.
 On Spark:
 
 ```bash
-export SDKB_RUNS_DIR="$HOME/sdkb-runs"             # fast local storage
-export SDKB_ARCHIVE_DIR=/mnt/external/sdkb-archive # existing project directory
+export SDKB_RUNS_DIR=/mnt/external/sdkb-runs       # existing mounted external storage
+export SDKB_ARCHIVE_DIR=/mnt/external/sdkb-archive # optional separate archive directory
 export SDKB_CONTAINER=sdkb-causal
 ./scripts/spark.sh build
 ./scripts/spark.sh start --recipe recipes/looped_causal.yaml --output /runs/causal
@@ -59,18 +63,46 @@ with `--resume`. Logs can be detached without stopping training. Docker stop all
 600 seconds by default (`SDKB_STOP_TIMEOUT` overrides this); an expired grace
 period becomes a hard kill. Existing unrelated GPU services are never stopped.
 
-## Fast checkpoints and external archives
+## Checkpoint frequency and storage placement
 
-Choose the active filesystem with `--output`. Keep active optimizer checkpoints,
-the training cache and frequently accessed data on fast storage. An external HDD
-is appropriate for archive copies; its latency should not block every optimizer
-checkpoint. This distinction also applies to other machines and network storage.
+Choose checkpoint placement explicitly with `--output`. On this machine retained
+checkpoints belong on the external disk. New runs can live entirely there, with
+`archive_dir: null` to avoid a redundant second copy. Existing stopped runs can
+move their checkpoint directories without changing dataset or result paths:
+
+```bash
+mkdir -p /mnt/external/sdkb-checkpoints/my-stage
+sdkb relocate-checkpoints --run /fast/run/my-stage \
+  --destination /mnt/external/sdkb-checkpoints/my-stage
+sdkb runs configure --output /fast/run --checkpoint-every 1000 --no-archive
+```
+
+Relocation verifies every retained checkpoint, publishes the external directory,
+replaces the old checkpoint directory with a link, then removes redundant local
+files. A corrupt destination or a running stage fails closed. Optional
+`--archive-hint PATH/TO/checkpoints` reuses verified existing archive files with
+hardlinks when possible. Source/destination paths must be visible in the same
+location inside and outside containers; the Spark wrapper exposes the archive at
+both `/archive` and its host path. Run parents must also be stopped during a
+manual stage relocation. New direct-external runs do not need symlinks.
+
+Periodic saves default to **1,000 optimizer updates**, plus initial, final and
+emergency saves. `runs configure` changes only checkpoint operations and records
+`checkpoint-policy.json`; it does not rewrite immutable scientific inputs. Short
+200–400-update stages therefore normally write initial/final checkpoints only.
+Stop and final checkpoints remain mandatory regardless of periodic cadence.
+
+A fast local staging directory and asynchronous archive remain optional when
+external-write latency is unacceptable. They require deliberate retirement of
+completed runs: keeping two local checkpoints **per stage forever** is not a
+space-management policy. The external-first setup avoids that accumulation.
 
 Copy a base config/recipe for the intended run and set these fields under `train`:
 
 ```yaml
 archive_dir: /archive             # Docker mount; use the actual path outside Docker
-keep_checkpoints: 2               # recent local complete sets
+checkpoint_every: 1000           # emergency and final saves are independent
+keep_checkpoints: 2               # recent complete sets on the output filesystem
 archive_keep_checkpoints: 3       # recent archived sets per unique run identity
 min_free_disk_bytes: 10737418240  # optional 10 GiB reserve; default is 1 GiB
 ```
@@ -106,8 +138,7 @@ sdkb storage --path /mnt/external/sdkb-archive
 sdkb archive --run /fast/sdkb-runs/causal/recurrent_joint --destination /archive/manual-stage
 # Restore into a NEW directory, then resume using its committed config:
 sdkb restore --archive /archive/RUN_UUID --output /fast/recovered-stage
-sdkb train --config /fast/recovered-stage/checkpoints/STEP_DIRECTORY/config.json \
-  --output /fast/recovered-stage --resume
+sdkb train --output /fast/recovered-stage --resume
 ```
 
 Archives hold checkpoint sets, including the stale training cache and run identity.
@@ -156,3 +187,42 @@ identity during resume. SDKB adopts bounded flushing, verified atomic publicatio
 independent retention, durable identities and graceful stopping. It keeps the
 implementation independent of bgkit's model code, Hydra configuration, absolute
 mount paths and Spark-only optimizations.
+
+## Optimizers and exact resume
+
+`train.optimizer: muon` uses native `torch.optim.Muon` on eligible 2D matrix
+transforms, with AdamW on embedding/output tables, learned slots, vectors,
+non-matrix tensors and LoRA factors. It requires a runtime with native Muon;
+older Torch runtimes fail clearly without installing a replacement. The saved
+configuration controls momentum, Newton–Schulz steps, weight decay, Adam betas
+and epsilon. Muon uses `adjust_lr_fn: match_rms_adamw`; learning rates still need
+experimental validation and are not assumed equivalent to AdamW.
+
+Every trainable parameter must have exactly one optimizer owner. Checkpoints save
+both optimizers, actual per-group learning rates and settings, momentum/moments,
+parameter names/order and all accumulation state. `optimizer.json` reports the
+settings actually loaded after resume. Changed training hyperparameters are
+rejected on exact resume; an optimizer switch is an explicit warm-start into a
+new run. `sdkb train --output RUN --resume` loads the saved config automatically.
+There is no LR scheduler or early-stopping controller in SDKB yet; no scheduler
+state is implied. W&B identity and random episode-sampling position also survive.
+
+## Runtime rails and profiling
+
+Optional `cuda_memory_fraction` limits this process's CUDA allocator;
+`min_system_available_bytes` checks host `MemAvailable` before allocation and
+between updates, requesting a checkpointed stop under pressure. Neither adds host
+RAM and CUDA totals together. Unsupported host memory reporting is recorded as
+unknown. These controls are portable opt-ins rather than Spark assumptions.
+
+`stall_timeout_seconds` dumps all-thread stacks during stalled compute. It is
+disarmed for checkpoint writes and never hard-kills a process with unsaved work.
+A hung native kernel must return before cooperative checkpointing is possible;
+SIGKILL or power loss can only recover the last committed state.
+
+Benchmark representative shapes before changing activation checkpointing or
+batch size. GPU memory headroom alone is not throughput evidence. Keep cold-disk,
+warm-cache, exact-scan and ANN claims separate. Model-specific bgkit DeltaNet
+kernels do not apply to this LFM2 convolution/attention backbone.
+
+The detailed adoption inventory is in [the bgkit audit](bgkit-audit.md).

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import nullcontext, ExitStack
+from copy import deepcopy
 from dataclasses import asdict, replace
 from pathlib import Path
 import json
@@ -116,6 +117,9 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
 
 
 def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, lifecycle):
+    from .operations import apply_checkpoint_policy, CHECKPOINT_POLICY_FIELDS
+    config = deepcopy(config)
+    apply_checkpoint_policy(config, output, stop_output)
     config.validate()
     if resume and init_from is not None:
         raise ValueError("Choose resume or warm-start, not both")
@@ -140,8 +144,10 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         old_config = asdict(config_from_run(output))
         current = asdict(config)
         old_config['train']['steps'] = current['train']['steps']
+        for name in CHECKPOINT_POLICY_FIELDS:
+            old_config['train'][name] = current['train'][name]
         if old_config != current:
-            raise ValueError('Resume config differs beyond total step count')
+            raise ValueError('Resume training hyperparameters differ; only steps/checkpoint policy may change')
     from .archiving import ensure_free
     from .operations import stop_requested
     from .tracking import Tracking, run_identity
@@ -153,11 +159,14 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         if identity_file.exists():
             (output / 'run-identity.json').write_bytes(identity_file.read_bytes())
     tracker = lifecycle.enter_context(Tracking(config, output))
+    resource_stop = None
     def want_stop():
-        return stop['signal'] is not None or stop_requested(output) or (stop_output is not None and stop_requested(stop_output))
+        return resource_stop is not None or stop['signal'] is not None or stop_requested(output) or (stop_output is not None and stop_requested(stop_output))
     torch.set_num_threads(config.train.threads)
     random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
+    from .runtime import configure_memory, compute_watchdog, available_host_memory
+    runtime_limits = configure_memory(config.train)
     reset_resource_peaks()
     rng = random.Random(config.train.seed)
     agent = SDKBAgent(config).to(config.train.device)
@@ -201,17 +210,13 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             parameter.requires_grad_(name.startswith("compactor."))
         agent.eval()
         agent.compactor.train()
-    base_ids = {id(p) for p in agent.backbone.base.parameters()}
-    groups = [
-        {"params": [p for p in agent.parameters() if p.requires_grad and id(p) in base_ids],
-         "lr": config.train.backbone_learning_rate},
-        {"params": [p for p in agent.parameters() if p.requires_grad and id(p) not in base_ids],
-         "lr": config.train.learning_rate},
-    ]
-    optimizer = torch.optim.AdamW(groups)
+    from .optimizers import make_optimizer, optimizer_report
+    optimizer = make_optimizer(agent)
     start = 0
+    progress = {}
     (output / "config.json").write_text(json.dumps(asdict(config), indent=2) + "\n")
     manifest = environment_report() | {"resolved_model_revision": agent.resolved_revision,
+        'runtime_limits': runtime_limits,
         "total_parameters": sum(p.numel() for p in agent.parameters()),
         "trainable_parameters": sum(p.numel() for p in agent.parameters() if p.requires_grad),
         "notice": "Prototype measurements; not evidence of capacity substitution."}
@@ -219,7 +224,16 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         manifest["recurrence"] = agent.backbone.manifest()
         manifest["recurrence"]["training_depths"] = config.train.loop_counts or [config.model.loops]
         manifest["recurrence"]["writer_loops"] = config.model.writer_loops
-    (output / "environment.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    attempts = output / 'attempts'
+    attempts.mkdir(exist_ok=True)
+    previous_environment = output / 'environment.json'
+    if previous_environment.exists():
+        previous = previous_environment.read_bytes()
+        (attempts / ('previous-' + hashlib.sha256(previous).hexdigest()[:16] + '.json')).write_bytes(previous)
+    manifest['resume'] = resume
+    manifest['attempt'] = tracker.attempt
+    (attempts / (tracker.attempt + '.json')).write_text(json.dumps(manifest, indent=2) + '\n')
+    previous_environment.write_text(json.dumps(manifest, indent=2) + "\n")
     fingerprint = (episodes.sha256 if isinstance(episodes, EpisodeIndex) else
                    hashlib.sha256(json.dumps([asdict(e) for e in episodes], sort_keys=True).encode()).hexdigest())
     data_manifest = output / "data_manifest.json"
@@ -228,9 +242,13 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     data_manifest.write_text(json.dumps({"sha256": fingerprint, "episodes": len(episodes)}, indent=2) + "\n")
     save_episodes(output / "train.jsonl", episodes)
     if resume:
-        start = restore_checkpoint(agent, optimizer, output, rng, fingerprint)
+        start = restore_checkpoint(agent, optimizer, output, rng, fingerprint, progress=progress)
         if config.train.steps < start:
             raise ValueError("Requested total steps precede the saved checkpoint")
+    resolved_optimizer = dict(kind=config.train.optimizer, groups=optimizer_report(optimizer),
+                              resumed=resume, completed_steps=start)
+    (output / 'optimizer.json').write_text(json.dumps(resolved_optimizer, indent=2) + '\n')
+    print(json.dumps({'optimizer': resolved_optimizer}), flush=True)
     cache = DiskStore(output / "training_cache.sqlite")
     archiver = None
     if config.train.archive_dir:
@@ -253,70 +271,100 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     start_time = time.perf_counter()
     with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
         for step in range(start, config.train.steps):
+            if config.train.min_system_available_bytes:
+                available = available_host_memory()
+                if available is not None and available < config.train.min_system_available_bytes:
+                    resource_stop = {'reason': 'host_memory_reserve', 'available_bytes': available}
             if want_stop():
+                save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
+                                keep=config.train.keep_checkpoints, archiver=archiver,
+                                accumulation=progress or None)
                 break
             # One depth per optimizer update, not per microbatch or replay callback.
             # This RNG is part of the atomic checkpoint. Producer depth stays fixed.
-            agent.backbone.loops = (rng.choice(config.train.loop_counts) if config.train.loop_counts
-                                    else config.model.loops)
-            optimizer.zero_grad(set_to_none=True)
-            totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
-                      "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
-            anchor_total = 0.0
-            for _ in range(config.train.gradient_accumulation):
-                episode = rng.choice(episodes)
-                tape = ReplayTape(verify_outputs=config.train.verify_replay)
-                visible = evidence_ids(episode, config.train.evidence_scope)
-                read_indices = [i for i, source in enumerate(episode.supports) if source.record_id in visible]
-                with autocast_context(config):
-                    records = []
-                    if config.train.arm in {"memory", "direct_latent"}:
-                        for source in episode.supports:
-                            ids = agent.text_ids(source.text, source=True)
-                            # Repeated source IDs use genuinely stored old payloads; first encounter populates the cache.
-                            if config.train.live_fraction < 1:
-                                try:
-                                    cached = read_cached(cache, agent, source, "train", generation)
-                                except KeyError:
-                                    with torch.no_grad():
-                                        cached = stored_channel(agent, agent.produce(ids))
-                                    persist_outputs(cache, agent, source, cached, "train", generation)
-                            if rng.random() < config.train.live_fraction:
-                                def producer(ids=ids):
-                                    return stored_channel(agent, agent.produce(ids))
-                                value = tape.capture(agent, producer) if config.train.replay else producer()
-                            else:
-                                value = tuple(x.detach() for x in cached)
-                            records.append(value)
-                    support_text = "\n".join(s.text for s in episode.supports if s.record_id in visible)
-                    prompt = agent.prompt_ids(episode.query, support_text if config.train.arm == "oracle_text" else "")
-                    compact = (config.train.arm == "memory" and config.memory.compaction != "none"
-                               and step >= config.memory.compaction_warmup
-                               and rng.random() < config.memory.compaction_probability)
-                    result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
-                                   step=step, compact=compact)
-                    loss = result.loss
-                    if config.train.oracle_anchor_weight and config.train.arm == "memory":
-                        oracle_prompt = agent.prompt_ids(episode.query, support_text)
-                        anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None,
-                                                       loops=config.train.oracle_anchor_loops)
-                        loss = loss + config.train.oracle_anchor_weight * anchor
-                        anchor_total += float(anchor.detach()) / config.train.gradient_accumulation
-                    loss = loss / config.train.gradient_accumulation
-                if not torch.isfinite(loss):
-                    raise FloatingPointError(f"Nonfinite loss at step {step}")
-                if loss.requires_grad:
-                    loss.backward()
-                # Full source gradient accumulation happens BEFORE any optimizer update.
-                if config.train.replay:
-                    tape.backward()
-                for name in totals:
-                    value = getattr(result, name)
-                    totals[name] += (float(value.detach()) if isinstance(value, torch.Tensor) else
-                                     float(value or 0)) / config.train.gradient_accumulation
-            grad_norm = torch.nn.utils.clip_grad_norm_(agent.parameters(), config.train.clip_grad_norm,
-                                                       error_if_nonfinite=True)
-            optimizer.step()
+            with ExitStack() as compute:
+                compute.enter_context(compute_watchdog(config.train.stall_timeout_seconds))
+                if progress:
+                    agent.backbone.loops = progress['loops']
+                    totals, anchor_total = progress['totals'], progress['anchor_total']
+                    micro_start = progress['microbatches']
+                    if not 0 < micro_start < config.train.gradient_accumulation:
+                        raise ValueError('Invalid saved accumulation position')
+                    progress = {}
+                else:
+                    agent.backbone.loops = (rng.choice(config.train.loop_counts) if config.train.loop_counts
+                                            else config.model.loops)
+                    optimizer.zero_grad(set_to_none=True)
+                    totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
+                              "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
+                    anchor_total, micro_start = 0.0, 0
+                for micro in range(micro_start, config.train.gradient_accumulation):
+                    episode = rng.choice(episodes)
+                    tape = ReplayTape(verify_outputs=config.train.verify_replay)
+                    visible = evidence_ids(episode, config.train.evidence_scope)
+                    read_indices = [i for i, source in enumerate(episode.supports) if source.record_id in visible]
+                    with autocast_context(config):
+                        records = []
+                        if config.train.arm in {"memory", "direct_latent"}:
+                            for source in episode.supports:
+                                ids = agent.text_ids(source.text, source=True)
+                                # Repeated source IDs use genuinely stored old payloads; first encounter populates the cache.
+                                if config.train.live_fraction < 1:
+                                    try:
+                                        cached = read_cached(cache, agent, source, "train", generation)
+                                    except KeyError:
+                                        with torch.no_grad():
+                                            cached = stored_channel(agent, agent.produce(ids))
+                                        persist_outputs(cache, agent, source, cached, "train", generation)
+                                if rng.random() < config.train.live_fraction:
+                                    def producer(ids=ids):
+                                        return stored_channel(agent, agent.produce(ids))
+                                    value = tape.capture(agent, producer) if config.train.replay else producer()
+                                else:
+                                    value = tuple(x.detach() for x in cached)
+                                records.append(value)
+                        support_text = "\n".join(s.text for s in episode.supports if s.record_id in visible)
+                        prompt = agent.prompt_ids(episode.query, support_text if config.train.arm == "oracle_text" else "")
+                        compact = (config.train.arm == "memory" and config.memory.compaction != "none"
+                                   and step >= config.memory.compaction_warmup
+                                   and rng.random() < config.memory.compaction_probability)
+                        result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
+                                       step=step, compact=compact)
+                        loss = result.loss
+                        if config.train.oracle_anchor_weight and config.train.arm == "memory":
+                            oracle_prompt = agent.prompt_ids(episode.query, support_text)
+                            anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None,
+                                                           loops=config.train.oracle_anchor_loops)
+                            loss = loss + config.train.oracle_anchor_weight * anchor
+                            anchor_total += float(anchor.detach()) / config.train.gradient_accumulation
+                        loss = loss / config.train.gradient_accumulation
+                    if not torch.isfinite(loss):
+                        raise FloatingPointError(f"Nonfinite loss at step {step}")
+                    if loss.requires_grad:
+                        loss.backward()
+                    # Full source gradient accumulation happens BEFORE any optimizer update.
+                    if config.train.replay:
+                        tape.backward()
+                    for name in totals:
+                        value = getattr(result, name)
+                        totals[name] += (float(value.detach()) if isinstance(value, torch.Tensor) else
+                                         float(value or 0)) / config.train.gradient_accumulation
+                    if want_stop() and micro + 1 < config.train.gradient_accumulation:
+                        # Replay has finished for this microbatch. Preserve its complete
+                        # cotangents, RNG, sampled depth and cache instead of discarding
+                        # partial work or stepping an under-accumulated optimizer.
+                        progress = dict(microbatches=micro + 1, loops=agent.backbone.loops,
+                                        totals=totals, anchor_total=anchor_total)
+                        compute.close()
+                        save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
+                                        keep=config.train.keep_checkpoints, archiver=archiver,
+                                        accumulation=progress)
+                        break
+                if progress:
+                    break
+                grad_norm = torch.nn.utils.clip_grad_norm_(agent.parameters(), config.train.clip_grad_norm,
+                                                           error_if_nonfinite=True)
+                optimizer.step()
             row = {"step": step + 1, **totals, "oracle_anchor_nll": anchor_total,
                    "optimization_loss": totals["loss"] + config.train.oracle_anchor_weight * anchor_total,
                    "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
@@ -339,6 +387,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     if archiver is not None:
         archiver.close(wait=not want_stop())
     summary = {"steps": completed, "requested_steps": config.train.steps, 'stop_requested': bool(want_stop()),
+               'saved_microbatches': progress.get('microbatches', 0), 'resource_stop': resource_stop,
                "stopped_early": completed < config.train.steps, "last": history[-1] if history else None,
                "environment": manifest, "resources": resource_report(), "store": cache.sizes()}
     (output / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n")

@@ -64,6 +64,12 @@ class TrainConfig:
     steps: int = 200
     learning_rate: float = 0.0001
     backbone_learning_rate: float = 0.00001
+    optimizer: str = 'adamw'  # historical default; new Muon recipes opt in explicitly
+    weight_decay: float = .01
+    adam_betas: list[float] = field(default_factory=lambda: [.9, .999])
+    adam_eps: float = 1e-8
+    muon_momentum: float = .95
+    muon_ns_steps: int = 5
     gradient_accumulation: int = 4
     clip_grad_norm: float = 1.0
     precision: str = "bf16"
@@ -82,8 +88,11 @@ class TrainConfig:
     routing_weight: float = 0.1
     routing_warmup: int = 100
     threads: int = 4
+    cuda_memory_fraction: float | None = None
+    min_system_available_bytes: int = 0
+    stall_timeout_seconds: float = 0
     optimization_scope: str = "all"  # compactor freezes writer, reader and controller
-    checkpoint_every: int = 50
+    checkpoint_every: int = 1000
     keep_checkpoints: int = 2
     max_target_tokens: int = 512
     loop_counts: list[int] = field(default_factory=list)  # sampled once per optimizer step
@@ -110,6 +119,15 @@ class Config:
 
     def validate(self) -> None:
         m, r, t = self.model, self.memory, self.train
+        if (t.cuda_memory_fraction is not None and not 0 < t.cuda_memory_fraction <= 1
+                or t.min_system_available_bytes < 0 or t.stall_timeout_seconds < 0):
+            raise ValueError('Invalid runtime resource limits')
+        if t.optimizer not in {'adamw', 'muon'}:
+            raise ValueError('Optimizer must be adamw or muon')
+        if (t.weight_decay < 0 or t.adam_eps <= 0 or len(t.adam_betas) != 2
+                or any(not 0 <= b < 1 for b in t.adam_betas)
+                or not 0 <= t.muon_momentum < 1 or t.muon_ns_steps < 1):
+            raise ValueError('Invalid optimizer hyperparameters')
         if m.backend not in {"tiny", "hf"} or m.loops < 1:
             raise ValueError("Invalid backbone configuration")
         if m.recurrence_mode not in {"full_stack", "middle_block"}:

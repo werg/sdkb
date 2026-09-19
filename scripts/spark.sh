@@ -35,6 +35,10 @@ case "$command" in
     if [[ -n "${SDKB_ARCHIVE_DIR:-}" ]]; then
       [[ -d "$SDKB_ARCHIVE_DIR" ]] || { echo 'Archive directory must exist on the mounted disk.' >&2; exit 1; }
       flags+=(--mount "type=bind,src=$SDKB_ARCHIVE_DIR,dst=/archive")
+      # Relocated checkpoint links use a host-absolute path. Expose that same
+      # path so existing run directories remain readable inside/outside Docker.
+      archive_absolute="$(cd "$SDKB_ARCHIVE_DIR" && pwd -P)"
+      [[ "$archive_absolute" == /archive ]] || flags+=(--mount "type=bind,src=$archive_absolute,dst=$archive_absolute")
     fi
     [[ -z "${HF_TOKEN:-}" ]] || flags+=(--env HF_TOKEN)
     [[ -z "${WANDB_API_KEY:-}" ]] || flags+=(--env WANDB_API_KEY)

@@ -14,10 +14,17 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--version", action="version", version=f"SDKB {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser('runs', help='Start, inspect or cooperatively stop a local detached curriculum')
-    p.add_argument('action', choices=['start', 'status', 'stop'])
+    p.add_argument('action', choices=['start', 'status', 'stop', 'configure'])
     p.add_argument('--output', required=True)
     p.add_argument('--recipe')
     p.add_argument('--resume', action='store_true')
+    p.add_argument('--checkpoint-every', type=int)
+    p.add_argument('--keep-checkpoints', type=int)
+    p.add_argument('--no-archive', action='store_true')
+    p = sub.add_parser('relocate-checkpoints', help='Verify and move stopped-stage checkpoints to external storage')
+    p.add_argument('--run', required=True)
+    p.add_argument('--destination', required=True)
+    p.add_argument('--archive-hint')
     p = sub.add_parser('archive', help='Copy a verified checkpoint to an existing archive directory')
     p.add_argument('--run', required=True)
     p.add_argument('--destination', required=True)
@@ -44,7 +51,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--config", required=True)
     p.add_argument("--output")
     p = sub.add_parser("train", help="Train support/query episodes")
-    p.add_argument("--config", required=True)
+    p.add_argument("--config", help='Defaults to the committed checkpoint config with --resume')
     p.add_argument("--output", required=True)
     p.add_argument("--steps", type=int)
     p.add_argument("--resume", action="store_true")
@@ -104,15 +111,23 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     result = None
     if args.command == 'runs':
-        from .operations import start_run, run_status, request_stop
+        from .operations import start_run, run_status, request_stop, configure_checkpoints
         if args.action == 'start':
             if not args.recipe:
                 parser.error('runs start requires --recipe')
             result = start_run(args.recipe, args.output, resume=args.resume)
         elif args.action == 'stop':
             result = request_stop(args.output)
+        elif args.action == 'configure':
+            result = configure_checkpoints(args.output,
+                checkpoint_every=args.checkpoint_every if args.checkpoint_every is not None else ...,
+                keep_checkpoints=args.keep_checkpoints if args.keep_checkpoints is not None else ...,
+                archive_dir=None if args.no_archive else ...)
         else:
             result = run_status(args.output)
+    elif args.command == 'relocate-checkpoints':
+        from .archiving import relocate_checkpoints
+        result = relocate_checkpoints(args.run, args.destination, archive_hint=args.archive_hint)
     elif args.command == 'archive':
         from .archiving import archive_checkpoint
         from .checkpoints import resolve_checkpoint
@@ -154,8 +169,10 @@ def main(argv: list[str] | None = None) -> None:
         from .probes import model_probe
         result = model_probe(load_config(args.config))
     elif args.command == "train":
-        from .training import train
-        config = load_config(args.config)
+        from .training import train, config_from_run
+        if not args.config and not args.resume:
+            parser.error('Fresh training requires --config')
+        config = load_config(args.config) if args.config else config_from_run(Path(args.output))
         if args.steps is not None:
             config.train.steps = args.steps
         result = train(config, args.output, resume=args.resume, stop_after=args.stop_after, init_from=args.init_from)

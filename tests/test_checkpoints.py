@@ -118,3 +118,46 @@ def test_compactor_only_does_not_move_raw_system(tmp_path, tiny_config):
         torch.testing.assert_close(after[name], tensor, rtol=0, atol=0)
     initial = load_file(str(sorted((run / 'checkpoints').glob('step-000000000-*'))[0] / 'model.safetensors'))
     assert any(not torch.equal(initial[k], after[k]) for k in after if k.startswith('compactor.'))
+
+
+def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monkeypatch):
+    from sdkb.operations import request_stop
+    from sdkb.replay import ReplayTape
+    config = copy.deepcopy(tiny_config)
+    config.train.steps = 3
+    config.train.gradient_accumulation = 3
+    config.train.checkpoint_every = 1000
+    config.train.live_fraction = .5
+    config.memory.noise_std = .03
+    full, interrupted = tmp_path / 'full', tmp_path / 'interrupted'
+    train(config, full)
+    original = ReplayTape.backward
+    calls = 0
+    def stop_after_microbatch(self, *args, **kwargs):
+        nonlocal calls
+        result = original(self, *args, **kwargs)
+        calls += 1
+        if calls == 4:
+            request_stop(interrupted)
+        return result
+    monkeypatch.setattr(ReplayTape, 'backward', stop_after_microbatch)
+    partial = train(config, interrupted)
+    assert partial['steps'] == 1
+    saved = torch.load(resolve_checkpoint(interrupted) / 'training_state.pt', weights_only=True)
+    assert saved['accumulation']['microbatches'] == 1
+    assert saved['gradients']
+    assert saved['optimizer']['param_groups'][0]['lr'] == config.train.backbone_learning_rate
+    monkeypatch.setattr(ReplayTape, 'backward', original)
+    train(config, interrupted, resume=True)
+    a = load_file(str(resolve_checkpoint(full) / 'model.safetensors'))
+    b = load_file(str(resolve_checkpoint(interrupted) / 'model.safetensors'))
+    for name in a:
+        torch.testing.assert_close(a[name], b[name], rtol=0, atol=0)
+    a_state = torch.load(resolve_checkpoint(full) / 'training_state.pt', weights_only=True)
+    b_state = torch.load(resolve_checkpoint(interrupted) / 'training_state.pt', weights_only=True)
+    assert a_state['optimizer']['param_groups'] == b_state['optimizer']['param_groups']
+    for index, state in a_state['optimizer']['state'].items():
+        for name, value in state.items():
+            torch.testing.assert_close(value, b_state['optimizer']['state'][index][name], rtol=0, atol=0)
+    assert a_state['python_rng'] == b_state['python_rng']
+    torch.testing.assert_close(a_state['torch_rng'], b_state['torch_rng'], rtol=0, atol=0)
