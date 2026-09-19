@@ -30,3 +30,15 @@ Features and small model/optimizer/sampling states remain external. Cooperative
 stop and signals save at a complete update; scientific identity and named ownership
 must match on resume. W&B logs offline with stable per-arm identity and explicit
 feature-probe configuration. No backbone copies or periodic checkpoints are written.
+
+## Completed result
+
+Both arms completed from `4b8dfed`. STOP ends action reads too early: 23/128 held-out
+action queries return nothing, 37 return one record, and only 68 return two. Full
+required-pair recall drops to 43/128 versus 69/128 in the matched fixed-budget
+continuation. Single-fact exact-set recall is 28/64 permission, 39/64 restoration
+and 24/64 identifier. The failure is also visible in training, where 1,023/4,096
+action reads return fewer than two records. These 200-update results do not justify
+adding this STOP policy to production inference. The two objective losses include
+different events and are not directly comparable. Scalar/config telemetry was
+recorded offline in W&B; full states remain external.
