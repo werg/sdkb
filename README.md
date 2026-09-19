@@ -88,9 +88,9 @@ input/config changes are rejected on resume. Run only one launcher per output di
 To download, pin and inspect data without loading the training model:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/prepared --prepare-only
+./scripts/start_spark.sh --recipe recipes/looped_starter_muon.yaml --output /runs/prepared --prepare-only
 # Inspect data/manifest.json and launch.json; then continue:
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/prepared --resume
+./scripts/start_spark.sh --recipe recipes/looped_starter_muon.yaml --output /runs/prepared --resume
 ```
 
 ## Training recipes

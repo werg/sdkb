@@ -35,7 +35,7 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser('storage', help='Inspect filesystem capacity and run artifact sizes')
     p.add_argument('--path', required=True)
     p = sub.add_parser("launch", help="Prepare pinned data and execute a staged training curriculum")
-    p.add_argument("--recipe", default="recipes/looped_starter.yaml")
+    p.add_argument("--recipe", default="recipes/looped_starter_muon.yaml")
     p.add_argument("--output", required=True)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--prepare-only", action="store_true")
