@@ -2,7 +2,8 @@
 
 Status: both native-GPU MLP curricula have completed training from the pinned
 pretrained model. Both post-freeze evaluations are complete; common-world stage
-comparisons and the additional attention training/control are in progress.
+comparisons are complete. Attention training and its launcher evaluation are also
+complete; the paired reader confirmation is in progress.
 Their frozen training source checkout is `837f592`; they do not inherit AdamW optimizer
 state or claim that the interrupted AdamW curricula completed.
 
@@ -145,7 +146,7 @@ scoring and exact reproduction. It remains a synthetic output check, not execute
 agent behavior. `short-adaptation-generation.json` retains matching-subset choice
 scores, script/input hashes and output summaries; raw predictions stay external.
 
-## Attention reader control (running)
+## Attention reader control (trained; paired confirmation running)
 
 `recipes/looped_binding_muon_attention.yaml` changes only the selected-support
 recipe's reader from pooled MLP to the existing fixed-slot attention comparator.
@@ -226,3 +227,19 @@ action composition. Identifier choice has no reliable selected-support advantage
 `common-evidence-policy-comparison.json` retains all paired statistics, source-report
 hashes and the common episode checksum. Evidence access differs deliberately;
 these are trained-system comparisons, not an inference-only retrieval ablation.
+
+### Completed attention launcher evaluation
+
+On its own 32 fresh worlds, attention achieves 100% choice accuracy on actions,
+permission and restoration. For actions, both answers are correct on every
+permission flip (128/128) and every answer-changing restoration flip (64/64).
+Restoration changes cause **zero** spurious action changes on 64 unchanged branches.
+No-memory and zero-payload action scores are 40.6% and 35.2%. Removing permission
+reduces action accuracy to 43.8%; removing restoration reduces it to 75.0%.
+
+This is positive evidence of narrow stored-memory action composition, subject to
+confirmation on the same worlds as MLP. Identifier choice remains weak at 28.1%
+(zeroed 32.8%, no-memory 35.9%). `attention-final.json` records the complete
+aggregate results and source/checkpoint/input identities. Candidate-free generation
+is running separately; the choice result does not establish executable agent skill,
+multi-entity retrieval or capacity substitution.

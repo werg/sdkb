@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **236 tests**, with four existing dependency/runtime
+The latest full suite passed **240 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -71,7 +71,10 @@ of permission, restoration, exact identifiers and their combination:
 - Common-world MLP stage comparisons are complete. Selected-support text controls
   solve every family; all-context text controls score only 50% on actions despite
   perfect direct facts. Final latent action accuracy is 54.7% versus 49.2%, with
-  a paired interval including zero. The matched attention control remains in progress.
+  a paired interval including zero. The attention launcher reaches 100% action and rule-fact choice accuracy, with
+  every action counterfactual pair correct and no spurious action changes on
+  unchanged restoration branches. Common-world reader confirmation and
+  candidate-free generation are in progress; identifier choice remains weak.
 
 The all-context model's lower NLL versus no memory did not translate into a benefit
 over zeroed payloads. Tests, falling losses, linear probes and successful execution
