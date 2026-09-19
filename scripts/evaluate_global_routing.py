@@ -43,7 +43,9 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
                                           independent_routing_query=True)
         count = attach_read_count_policy(agent, checkpoint, count_policy)
         agent.requires_grad_(False)
-        reference_path = bank_path.parent / 'results.json'
+        reference_path = bank_path.parent / 'bank-manifest.json'
+        if not reference_path.exists():
+            reference_path = bank_path.parent / 'results.json'
         reference = json.loads(reference_path.read_text())
         identity = {'source_manifest_sha256': file_sha256(checkpoint / 'manifest.json'),
                     'episodes_sha256': file_sha256(episodes_file), 'bank_sha256': file_sha256(bank_path),
