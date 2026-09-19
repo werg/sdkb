@@ -28,9 +28,15 @@ def model_probe(config) -> dict:
         modified = agent.backbone.hidden(changed, mask, loops=2)
         causal_error = float((twice[:, :cut] - modified[:, :cut]).abs().max())
     tolerance = .03 if config.train.precision == 'bf16' else 1e-4
-    if max(error_one, error_two, causal_error) > tolerance:
+    native = config.model.recurrence_mode == 'middle_block'
+    identity_error = max(error_one, causal_error) if native else max(error_one, error_two, causal_error)
+    if not all(torch.isfinite(x).all() for x in (base, once, twice, modified)):
+        raise AssertionError('Nonfinite recurrent preflight states')
+    if identity_error > tolerance:
         raise AssertionError(f'Backbone identity/causality failed: {error_one}, {error_two}, {causal_error}')
     agent.train()
+    if native and config.memory.read_timing == 'loop_boundary':
+        agent.backbone.loops = max(2, config.memory.read_steps + 1, config.model.loops)
     with autocast_context(config):
         records = [agent.produce(agent.text_ids(text, source=True)) for text in
                    ['Prior experience: restore state before retry.', 'Prior experience: retry is permitted.']]
@@ -38,8 +44,16 @@ def model_probe(config) -> dict:
                        records, [0, 1], arm='memory')
     result.loss.backward()
     gradients = {}
-    for name, parameter in [('write_slots', agent.write_slots), ('value_head', agent.value_head[-1].weight),
-                            ('reader_output', (agent.reader.local[0] if hasattr(agent.reader, 'local') else agent.reader).output[-1].weight), ('memory_gate', agent.memory_gate)]:
+    gradient_parameters = [('write_slots', agent.write_slots), ('value_head', agent.value_head[-1].weight),
+                            ('reader_output', (agent.reader.local[0] if hasattr(agent.reader, 'local') else agent.reader).output[-1].weight), ('memory_gate', agent.memory_gate)]
+    if native and config.memory.read_timing == 'loop_boundary':
+        gradient_parameters = gradient_parameters[:-1] + [
+            ('bridge_reentry', agent.backbone.bridge.reentry.weight),
+            ('bridge_input_gate', agent.backbone.bridge.input_logit),
+            ('bridge_update_gate', agent.backbone.bridge.update_logit),
+            ('bridge_memory_projection', agent.backbone.bridge.memory_projection.weight),
+            ('bridge_memory_gate', agent.backbone.bridge.memory_logit)]
+    for name, parameter in gradient_parameters:
         if parameter.grad is None or not torch.isfinite(parameter.grad).all():
             raise AssertionError(f'Missing/nonfinite soft-memory gradient: {name}')
         gradients[name] = float(parameter.grad.norm())
@@ -48,7 +62,11 @@ def model_probe(config) -> dict:
     return {'environment': environment_report(), 'backend': config.model.backend, 'model_id': config.model.model_id,
             'resolved_revision': agent.resolved_revision, 'width': agent.width,
             'parameters': sum(p.numel() for p in agent.parameters()),
-            'one_loop_identity_max_error': error_one, 'zero_gate_two_loop_max_error': error_two,
+            'one_loop_identity_max_error': error_one,
+            'two_loop_delta_max': error_two,
+            'two_loop_identity_required': not native,
+            'zero_gate_two_loop_max_error': None if native else error_two,
+            'recurrence': agent.backbone.manifest() if native else {'mode': 'full_stack'},
             'causal_prefix_max_error': causal_error, 'nll': float(result.nll.detach()),
             'gradient_norms': gradients, 'resources': resource_report(),
             'notice': 'Numerical preflight only; no capability training or cache-performance claim.'}

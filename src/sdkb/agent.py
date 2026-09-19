@@ -9,6 +9,7 @@ from torch.nn import functional as F
 from .backbones import ByteTokenizer, HFBackbone, RecurrentBackbone, TinyBackbone
 from .compaction import SyntheticCompactor, contribution_loss, storage_noise, compact_view
 from .config import Config
+from .recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite
 from .readers import MultiSpaceReader, SetReader
 from .routing import cosine_scores, group_plan_loss
 
@@ -24,6 +25,7 @@ class ForwardResult:
     compact_nll: Tensor | None = None
     behavior_kl: Tensor | None = None
     read_count: int = 1
+    parent_kl: Tensor | None = None
 
 
 class SDKBAgent(nn.Module):
@@ -41,7 +43,20 @@ class SDKBAgent(nn.Module):
                               gradient_checkpointing=m.gradient_checkpointing)
             self.tokenizer = base.tokenizer
             self.resolved_revision = base.resolved_revision
-        self.backbone = RecurrentBackbone(base, m.loops)
+        self.backbone = (MiddleBlockBackbone(base, m.loops, start=m.recurrent_start,
+                             end=m.recurrent_end, input_mix=m.recurrent_input_mix,
+                             update_mix=m.recurrent_update_mix)
+                         if m.recurrence_mode == "middle_block" else RecurrentBackbone(base, m.loops))
+        if m.recurrence_mode == "middle_block":
+            self.loop_workspace = nn.Parameter(torch.randn(r.read_slots, base.width) * 0.02)
+            self.loop_query_norm = nn.RMSNorm(base.width, eps=1e-5)
+        if m.backbone_train_scope == "recurrent_core":
+            for parameter in base.parameters():
+                parameter.requires_grad_(False)
+            layers = base.layers if m.backend == "tiny" else base.lm.base_model.layers
+            for layer in layers[m.recurrent_start:m.recurrent_end]:
+                for parameter in layer.parameters():
+                    parameter.requires_grad_(True)
         self.width = base.width
         if m.freeze_backbone:
             for p in self.backbone.base.parameters():
@@ -96,7 +111,8 @@ class SDKBAgent(nn.Module):
         """
         tokens = self.backbone.embed(source_ids)
         embeddings = torch.cat((tokens, self.write_slots[None].expand(tokens.shape[0], -1, -1)), 1)
-        hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long))
+        hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long),
+                                      loops=self.config.model.writer_loops)
         tail = hidden[:, -(self.config.memory.write_slots + 1):]
         key = F.normalize(self.key_head(tail[:, 0]), dim=-1)
         canonical = self.value_head(tail[:, 1:]).flatten(1)
@@ -154,34 +170,144 @@ class SDKBAgent(nn.Module):
         auxiliary = contribution_loss(self.reader, values[0], weights[0], view.values, view.weights, query)
         return raw, compact, auxiliary
 
-    def shared_compute_tokens(self, prompt: Tensor) -> Tensor:
+    def shared_compute_tokens(self, prompt: Tensor) -> Tensor | LoopMemory:
         """Same query/reader/soft-slot path, no external information or payload reads."""
+        if self.config.memory.read_timing == "loop_boundary":
+            last = None
+            def provider(completed, query):
+                nonlocal last
+                if completed <= self.config.memory.read_steps:
+                    payloads = [query.new_zeros(n, d) for n, d in
+                                zip(self.config.memory.neighbors, self.config.memory.payload_dims, strict=True)]
+                    last, _ = self.read_tokens(payloads, query)
+                return last
+            return self.plan_loop_memory(prompt, provider)
         query = self.query(prompt)
         # Several records prevent a null-read shortcut while carrying no source data.
         payloads = [query.new_zeros(max(1, n), d) for n, d in
                     zip(self.config.memory.neighbors, self.config.memory.payload_dims, strict=True)]
         return self.read_tokens(payloads, query)[0]
 
-    def _context(self, prompt: Tensor, memory: Tensor | None) -> Tensor:
+    def _context(self, prompt: Tensor, memory: Tensor | LoopMemory | None) -> Tensor:
         context = self.backbone.embed(prompt)
+        if isinstance(memory, LoopMemory):
+            if memory.prefix_length != prompt.shape[1] or memory.slots != self.config.memory.read_slots:
+                raise ValueError("Captured loop-memory layout does not match the consumer prefix")
+            return torch.cat((context, self.loop_workspace[None].expand(prompt.shape[0], -1, -1)), 1)
         if memory is not None and memory.shape[1] > 0:
             scale = context.detach().float().square().mean().sqrt().clamp_min(1e-3)
             tokens = self.memory_norm(memory) * scale.to(memory.dtype) * self.memory_gate.sigmoid()
             context = torch.cat((context, tokens.to(context.dtype)), 1)
         return context
 
-    def conditioned_logits(self, prompt: Tensor, target: Tensor, memory: Tensor | None) -> Tensor:
+    def conditioned_logits(self, prompt: Tensor, target: Tensor, memory: Tensor | LoopMemory | None,
+                           *, loops: int | None = None) -> Tensor:
+        if (isinstance(memory, Tensor) and self.config.memory.read_timing == "loop_boundary"):
+            # Explicit fixed-result comparison; normal training/read_session uses
+            # state-conditioned LoopMemory rather than this convenience path.
+            count = self.backbone.loops if loops is None else loops
+            memory = LoopMemory(prompt.shape[1], self.config.memory.read_slots, count,
+                                tuple(memory for _ in range(count - 1)))
         context = self._context(prompt, memory)
         embeddings = torch.cat((context, self.backbone.embed(target[:, :-1])), 1)
-        hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long))
+        kwargs = dict(loops=loops)
+        if isinstance(memory, LoopMemory):
+            if loops is not None and loops != memory.loops:
+                raise ValueError("Changing depth requires regenerating the prefix-only read plan")
+            kwargs = dict(loops=memory.loops, boundary=memory.callback)
+        hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long), **kwargs)
         return self.backbone.logits(hidden[:, context.shape[1] - 1:]).float()
 
-    def conditioned_nll(self, prompt: Tensor, target: Tensor, memory: Tensor | None,
-                        *, reduction: str = "mean") -> Tensor:
+    def conditioned_nll(self, prompt: Tensor, target: Tensor, memory: Tensor | LoopMemory | None,
+                        *, reduction: str = "mean", loops: int | None = None) -> Tensor:
         if reduction not in {"mean", "sum", "none"}:
             raise ValueError("Invalid NLL reduction")
-        logits = self.conditioned_logits(prompt, target, memory)
+        logits = self.conditioned_logits(prompt, target, memory, loops=loops)
         return F.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1), reduction=reduction)
+
+    def loop_query(self, state: Tensor, prefix_length: int) -> Tensor:
+        # The last reserved slot is strictly before every teacher-forced target.
+        index = prefix_length + self.config.memory.read_slots - 1
+        return F.normalize(self.query_head(self.loop_query_norm(state[:, index])), dim=-1)
+
+    def plan_loop_memory(self, prompt: Tensor, provider) -> LoopMemory:
+        """Run ONLY the available prefix, collecting state-conditioned read results.
+
+        provider(completed_core_passes, query_key) may read stored payloads but must
+        never access a target. Captured results can be replayed for different answer
+        candidates, preserving a common read plan without calling the writer.
+        """
+        if not isinstance(self.backbone, MiddleBlockBackbone):
+            raise ValueError("A middle-block backbone is required")
+        count, length = self.backbone.loops, prompt.shape[1]
+        blank = LoopMemory(length, self.config.memory.read_slots, count, (None,) * (count - 1))
+        context, events = self._context(prompt, blank), []
+        def boundary(completed, state, _anchor):
+            tokens = provider(completed, self.loop_query(state, length))
+            events.append(tokens)
+            return None if tokens is None else LoopWrite(length, tokens)
+        if count > 1:
+            self.backbone.hidden(context, torch.ones(context.shape[:2], dtype=torch.long, device=self.device),
+                                 boundary=boundary, plan_only=True)
+        return LoopMemory(length, blank.slots, count, tuple(events))
+
+    def forward_loop_memory(self, prompt: Tensor, target: Tensor,
+                            records: list[tuple[Tensor, ...]], required: list[int], *,
+                            step: int = 0, ablate_values: bool = False,
+                            shared_compute: bool = False) -> ForwardResult:
+        """Single integrated consumer graph: compute -> retrieve -> inject -> compute.
+
+        Only prefix states determine queries, even though causal teacher-forced
+        continuation positions execute in parallel. Inference captures the same
+        read events with a prefix-only execution and replays them while scoring.
+        """
+        r, t = self.config.memory, self.config.train
+        count, length = self.backbone.loops, prompt.shape[1]
+        if count < 2:
+            raise ValueError("In-loop memory training needs at least two core passes")
+        selected = [[] for _ in r.payload_dims]
+        routing, memory, read_count = self.memory_gate * 0, None, 0
+        auxiliary = self.memory_gate * 0
+        oracle = t.retrieval == "oracle" or (self.training and step < t.routing_warmup)
+        blank = LoopMemory(length, r.read_slots, count, (None,) * (count - 1))
+        context = self._context(prompt, blank)
+        embeddings = torch.cat((context, self.backbone.embed(target[:, :-1])), 1)
+        def boundary(completed, state, _anchor):
+            nonlocal memory, routing, read_count, auxiliary
+            if completed <= r.read_steps:
+                query = self.loop_query(state, length)
+                payloads, progressed = [], False
+                for space, dim in enumerate(r.payload_dims):
+                    if shared_compute:
+                        payloads.append(query.new_zeros(r.neighbors[space], dim))
+                        progressed = True
+                        continue
+                    candidates = [i for i in range(len(records)) if i not in selected[space]]
+                    if candidates:
+                        keys = torch.cat([records[i][2 * space] for i in candidates], 0)
+                        scores = cosine_scores(self.query_maps[space](query), keys)[0]
+                        remaining = [candidates.index(i) for i in required if i in candidates]
+                        if t.retrieval == "learned" and remaining:
+                            routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)
+                        k = r.neighbors[space] if r.read_steps == 1 else r.read_top_k
+                        chosen = (remaining if r.read_steps == 1 else remaining[:k]) if oracle else scores.argsort(descending=True, stable=True)[:k].tolist()
+                        selected[space].extend(candidates[i] for i in chosen)
+                        progressed = progressed or bool(chosen)
+                    values = [records[i][2 * space + 1] for i in selected[space]]
+                    payloads.append(torch.cat(values, 0) if values else query.new_empty(0, dim))
+                if progressed:
+                    memory, local_auxiliary = self.read_tokens(payloads, query, ablate_values=ablate_values)
+                    auxiliary = auxiliary + local_auxiliary
+                    read_count += 1
+            return None if memory is None else LoopWrite(length, memory)
+        hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long),
+                                      boundary=boundary)
+        logits = self.backbone.logits(hidden[:, context.shape[1] - 1:]).float()
+        nll = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1))
+        routing = routing / max(1, read_count)
+        auxiliary = auxiliary / max(1, read_count)
+        return ForwardResult(nll + t.routing_weight * routing + r.merge_loss_weight * auxiliary,
+                             nll, routing, auxiliary, selected, raw_nll=nll, read_count=read_count)
 
     def target_ids(self, answer: str) -> Tensor:
         ids = self.tokenizer.encode(answer, add_special_tokens=False)
@@ -198,8 +324,24 @@ class SDKBAgent(nn.Module):
         arm = arm or t.arm
         zero = self.memory_gate * 0
         if arm in {"no_memory", "oracle_text"}:
+            if self.training and t.parent_kl_weight:
+                logits = self.conditioned_logits(prompt, target, None)
+                nll = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1))
+                # Exactly the frozen text parent: R=1 bypasses all bridge parameters.
+                # No second resident model and no gradient through the teacher path.
+                with torch.no_grad():
+                    teacher = self.conditioned_logits(prompt, target, None, loops=1)
+                kl = F.kl_div(logits.log_softmax(-1), teacher.softmax(-1),
+                              reduction="none").sum(-1).mean()
+                return ForwardResult(nll + t.parent_kl_weight * kl, nll, zero, zero, [],
+                                     read_count=0, parent_kl=kl)
             nll = self.conditioned_nll(prompt, target, None)
-            return ForwardResult(nll, nll, zero, zero, [])
+            return ForwardResult(nll, nll, zero, zero, [], read_count=0)
+        if r.read_timing == "loop_boundary":
+            if compact:
+                raise ValueError("Compaction is a separate prefix-reader comparison for now")
+            return self.forward_loop_memory(prompt, target, records, required, step=step,
+                                            ablate_values=ablate_values, shared_compute=arm == "shared_compute")
         if arm == "shared_compute":
             nll = self.conditioned_nll(prompt, target, self.shared_compute_tokens(prompt))
             return ForwardResult(nll, nll, zero, zero, [], raw_nll=nll)
@@ -292,14 +434,27 @@ class SDKBAgent(nn.Module):
             raise ValueError("max_new_tokens must be positive")
         memory = None
         if payloads is not None and any(p.shape[0] for p in payloads):
-            q = self.query(prompt)
-            memory, _ = self.read_tokens(payloads, q)
+            if self.config.memory.read_timing == "loop_boundary":
+                # Fixed candidate set, but interpreted at actual recurrent states.
+                last = None
+                def provider(completed, query):
+                    nonlocal last
+                    if completed <= self.config.memory.read_steps:
+                        last, _ = self.read_tokens(payloads, query)
+                    return last
+                memory = self.plan_loop_memory(prompt, provider)
+            else:
+                q = self.query(prompt)
+                memory, _ = self.read_tokens(payloads, q)
         return self.generate_from_memory(prompt, memory, max_new_tokens)
 
     @torch.no_grad()
-    def generate_from_memory(self, prompt: Tensor, memory: Tensor | None, max_new_tokens: int = 24) -> str:
+    def generate_from_memory(self, prompt: Tensor, memory: Tensor | LoopMemory | None, max_new_tokens: int = 24) -> str:
         if max_new_tokens < 1:
             raise ValueError("max_new_tokens must be positive")
+        if isinstance(memory, Tensor) and self.config.memory.read_timing == "loop_boundary":
+            memory = LoopMemory(prompt.shape[1], self.config.memory.read_slots, self.backbone.loops,
+                                tuple(memory for _ in range(self.backbone.loops - 1)))
         context = self._context(prompt, memory)
         generated: list[int] = []
         for _ in range(max_new_tokens):
@@ -307,7 +462,9 @@ class SDKBAgent(nn.Module):
             if generated:
                 ids = torch.tensor([generated], device=self.device)
                 embeddings = torch.cat((context, self.backbone.embed(ids)), 1)
-            hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long))
+            kwargs = (dict(loops=memory.loops, boundary=memory.callback)
+                      if isinstance(memory, LoopMemory) else {})
+            hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long), **kwargs)
             next_id = int(self.backbone.logits(hidden[:, -1]).argmax(-1).item())
             if next_id == self.tokenizer.eos_token_id:
                 break

@@ -6,11 +6,12 @@ import torch
 from torch import Tensor
 
 from .store import DiskStore, ReadPlan, Selection
+from .recurrence import LoopMemory
 
 
 @dataclass
 class ReadSession:
-    memory: Tensor | None
+    memory: Tensor | LoopMemory | None
     plans: list[list[ReadPlan]]
     selected_ids: list[list[str]]
     query_keys: list[Tensor]
@@ -33,6 +34,12 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
     if agent.training:
         raise ValueError("Stored sessions require eval mode")
     r = agent.config.memory
+    if r.read_timing == "loop_boundary":
+        if compact or cluster_bank is not None or r.stream_reads:
+            raise ValueError("In-loop sessions currently read raw materialized payloads")
+        return loop_read_session(agent, store, prompt, namespace=namespace, generation=generation,
+                                 query_time=query_time, domain=domain, oracle_ids=oracle_ids,
+                                 ablate_values=ablate_values, exclude_ids=exclude_ids)
     if cluster_bank is not None and (r.stream_reads or len(r.payload_dims) != 1 or compact):
         raise ValueError("Persistent codes require the single-space materialized reader, without re-compaction")
     if r.stream_reads and compact:
@@ -89,3 +96,49 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
         else:
             memory, _ = agent.read_tokens(payloads, q, compact=compact, ablate_values=ablate_values)
     return ReadSession(memory, plans, selected, keys[:len(plans)], accounting)
+
+
+@torch.no_grad()
+def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
+                      generation: str, query_time: int, domain: str,
+                      oracle_ids: tuple[str, ...] | None, ablate_values: bool,
+                      exclude_ids: frozenset[str]) -> ReadSession:
+    """Prefix-only read-plan construction at actual recurrent core boundaries."""
+    if agent.training:
+        raise ValueError("Stored sessions require eval mode")
+    r = agent.config.memory
+    selected = [[] for _ in r.payload_dims]
+    plans, keys, memory = [], [], None
+    if agent.backbone.loops == 1:
+        return ReadSession(None, [], selected, [])
+    def provider(completed, query):
+        nonlocal memory
+        if completed > r.read_steps:
+            return memory
+        step_plans, payloads, progressed = [], [], False
+        for space, dim in enumerate(r.payload_dims):
+            if oracle_ids is None:
+                plan = store.search(agent.query_maps[space](query)[0], namespace=namespace,
+                                    space=f"s{space}", generation=generation, domain=domain,
+                                    query_time=query_time,
+                                    top_k=r.neighbors[space] if r.read_steps == 1 else r.read_top_k,
+                                    exclude_ids=exclude_ids | frozenset(selected[space]))
+            else:
+                available = [rid for rid in oracle_ids if rid not in selected[space] and rid not in exclude_ids]
+                limit = len(available) if r.read_steps == 1 else r.read_top_k
+                plan = ReadPlan(namespace, f"s{space}", generation, domain, query_time,
+                                tuple(Selection(rid, 0.) for rid in available[:limit]))
+            progressed = progressed or bool(plan.selections)
+            selected[space].extend(s.record_id for s in plan.selections)
+            step_plans.append(plan)
+            cumulative = ReadPlan(namespace, f"s{space}", generation, domain, query_time,
+                                  tuple(Selection(rid, 0.) for rid in selected[space]))
+            values = store.fetch(cumulative)
+            payloads.append(torch.stack(values).float().to(agent.device) if values else query.new_empty(0, dim))
+        if progressed:
+            plans.append(step_plans)
+            keys.append(query.detach().cpu())
+            memory, _ = agent.read_tokens(payloads, query, ablate_values=ablate_values)
+        return memory
+    schedule = agent.plan_loop_memory(prompt, provider)
+    return ReadSession(schedule, plans, selected, keys)

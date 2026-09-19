@@ -1,8 +1,9 @@
-"""Cache-free causal backbone adapters and optional tied full-stack recurrence.
+"""Cache-free causal backbone adapters for SDKB recurrence.
 
-LFM2 is a hybrid, not a standard attention-only decoder. We reuse its public
-inputs_embeds path and reset all conv/KV state on every pass. This is an explicit
-experimental conversion, not a claim that the pretrained checkpoint was looped.
+Native conversion exposes prelude, shared middle layers, and coda without changing
+the parent's normalization, mask, or positional behavior. The earlier full-stack
+adapter remains a comparison. No path shares KV/convolution caches across loops.
+This is an experimental conversion, not a claim that LFM was pretrained as looped.
 """
 from __future__ import annotations
 
@@ -50,22 +51,39 @@ class TinyBackbone(nn.Module):
     def embed(self, ids: Tensor) -> Tensor:
         return self.embedding(ids)
 
-    def core(self, embeddings: Tensor, mask: Tensor) -> Tensor:
+    @property
+    def layer_count(self) -> int:
+        return len(self.layers)
+
+    @property
+    def layer_types(self) -> list[str]:
+        return ["full_attention"] * self.layer_count
+
+    def prepare_layers(self, embeddings: Tensor, mask: Tensor):
         if embeddings.shape[1] > self.max_length:
             raise ValueError("Tiny backbone context limit exceeded")
-        from torch.utils.checkpoint import checkpoint
         positions = torch.arange(embeddings.shape[1], device=embeddings.device)
         x = embeddings + self.position(positions)[None]
         causal = torch.ones(x.shape[1], x.shape[1], device=x.device, dtype=torch.bool).triu(1)
-        for layer in self.layers:
-            if self.gradient_checkpointing and self.training:
-                # Bind layer now; do not capture the final loop variable in a closure.
-                def run(hidden, module=layer):
-                    return module(hidden, src_mask=causal, src_key_padding_mask=~mask.bool())
-                x = checkpoint(run, x, use_reentrant=False)
-            else:
-                x = layer(x, src_mask=causal, src_key_padding_mask=~mask.bool())
-        return self.norm(x)
+        return x, (causal, mask)
+
+    def run_layers(self, hidden: Tensor, context, start: int, end: int) -> Tensor:
+        from torch.utils.checkpoint import checkpoint
+        causal, mask = context
+        for index in range(start, end):
+            layer = self.layers[index]
+            def run(value, module=layer):
+                return module(value, src_mask=causal, src_key_padding_mask=~mask.bool())
+            hidden = (checkpoint(run, hidden, use_reentrant=False)
+                      if self.gradient_checkpointing and self.training else run(hidden))
+        return hidden
+
+    def finish_layers(self, hidden: Tensor) -> Tensor:
+        return self.norm(hidden)
+
+    def core(self, embeddings: Tensor, mask: Tensor) -> Tensor:
+        hidden, context = self.prepare_layers(embeddings, mask)
+        return self.finish_layers(self.run_layers(hidden, context, 0, self.layer_count))
 
     def logits(self, hidden: Tensor) -> Tensor:
         return F.linear(hidden, self.embedding.weight)
@@ -102,6 +120,49 @@ class HFBackbone(nn.Module):
             raise ValueError("Configured context limit exceeded")
         return self.lm.base_model(inputs_embeds=embeddings, attention_mask=mask,
                                   use_cache=False, return_dict=True).last_hidden_state
+
+    @property
+    def layer_count(self) -> int:
+        return len(self.lm.base_model.layers)
+
+    @property
+    def layer_types(self) -> list[str]:
+        return list(getattr(self.lm.config, "layer_types", ["full_attention"] * self.layer_count))
+
+    def prepare_layers(self, embeddings: Tensor, mask: Tensor):
+        """Native Transformers 5.17 mask/RoPE construction, never a cache mutation.
+
+        Verified against the upstream LFM2 model definition. Unsupported API changes
+        should fail the one-pass preflight, not silently use a generic attention mask.
+        """
+        if embeddings.shape[1] > self.max_length:
+            raise ValueError("Configured context limit exceeded")
+        from transformers.masking_utils import create_causal_mask, create_recurrent_attention_mask
+        model = self.lm.base_model
+        positions = torch.arange(embeddings.shape[1], device=embeddings.device)[None]
+        kwargs = dict(config=self.lm.config, inputs_embeds=embeddings,
+                      attention_mask=mask, past_key_values=None, position_ids=positions)
+        masks = {"full_attention": create_causal_mask(**kwargs)}
+        if self.lm.config.model_type == "lfm2":
+            masks["conv"] = create_recurrent_attention_mask(**kwargs)
+        rotary = model.rotary_emb(embeddings, position_ids=positions)
+        return embeddings, (masks, positions, rotary)
+
+    def run_layers(self, hidden: Tensor, context, start: int, end: int) -> Tensor:
+        masks, positions, rotary = context
+        for index in range(start, end):
+            # Native GradientCheckpointingLayer.__call__ remains responsible for
+            # layer recomputation. No callback/retrieval lives inside its closure.
+            hidden = self.lm.base_model.layers[index](
+                hidden, attention_mask=masks[self.layer_types[index]],
+                position_embeddings=rotary, position_ids=positions, past_key_values=None)
+            if not isinstance(hidden, Tensor):
+                raise TypeError("Unexpected decoder API; run the pinned-version model preflight")
+        return hidden
+
+    def finish_layers(self, hidden: Tensor) -> Tensor:
+        model = self.lm.base_model
+        return (model.embedding_norm if self.lm.config.model_type == "lfm2" else model.norm)(hidden)
 
     def logits(self, hidden: Tensor) -> Tensor:
         return self.lm.get_output_embeddings()(hidden)

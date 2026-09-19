@@ -1,0 +1,190 @@
+{
+  "recurrence_bridge": [
+    {
+      "step": 1,
+      "loss": 5.268852233886719,
+      "nll": 5.268852233886719,
+      "routing_loss": 0.0,
+      "compaction_loss": 0.0,
+      "raw_nll": 0.0,
+      "compact_nll": 0.0,
+      "behavior_kl": 0.0,
+      "read_count": 0.0,
+      "parent_kl": 5.00120222568512e-07,
+      "oracle_anchor_nll": 0.0,
+      "optimization_loss": 5.268852233886719,
+      "grad_norm": 0.0030115453992038965,
+      "loops": 2,
+      "elapsed_seconds": 0.012270629999989069,
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          1
+        ],
+        "core": [
+          1,
+          3
+        ],
+        "coda": [
+          3,
+          4
+        ],
+        "loops": 2,
+        "layer_visits": 6,
+        "layer_types": [
+          "full_attention",
+          "full_attention",
+          "full_attention",
+          "full_attention"
+        ],
+        "new_bridge_parameters": 3171,
+        "input_mix": 0.10009200125932693,
+        "update_mix": 0.10009200125932693,
+        "memory_mix": 0.10000000149011612,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary"
+      }
+    }
+  ],
+  "latent_warmup": [
+    {
+      "step": 1,
+      "loss": 5.27188777923584,
+      "nll": 5.27188777923584,
+      "routing_loss": 0.0,
+      "compaction_loss": 0.0,
+      "raw_nll": 5.27188777923584,
+      "compact_nll": 0.0,
+      "behavior_kl": 0.0,
+      "read_count": 1.0,
+      "parent_kl": 0.0,
+      "oracle_anchor_nll": 0.0,
+      "optimization_loss": 5.27188777923584,
+      "grad_norm": 0.3058403432369232,
+      "loops": 2,
+      "elapsed_seconds": 0.03384393999999702,
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          1
+        ],
+        "core": [
+          1,
+          3
+        ],
+        "coda": [
+          3,
+          4
+        ],
+        "loops": 2,
+        "layer_visits": 6,
+        "layer_types": [
+          "full_attention",
+          "full_attention",
+          "full_attention",
+          "full_attention"
+        ],
+        "new_bridge_parameters": 3171,
+        "input_mix": 0.10018408298492432,
+        "update_mix": 0.10018408298492432,
+        "memory_mix": 0.09991201758384705,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary"
+      }
+    }
+  ],
+  "recurrent_joint": [
+    {
+      "step": 1,
+      "loss": 5.426516532897949,
+      "nll": 5.426516532897949,
+      "routing_loss": 0.0,
+      "compaction_loss": 0.0,
+      "raw_nll": 5.426516532897949,
+      "compact_nll": 0.0,
+      "behavior_kl": 0.0,
+      "read_count": 1.0,
+      "parent_kl": 0.0,
+      "oracle_anchor_nll": 5.411314964294434,
+      "optimization_loss": 5.967648029327393,
+      "grad_norm": 0.7620062828063965,
+      "loops": 3,
+      "elapsed_seconds": 0.04146547300001657,
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          1
+        ],
+        "core": [
+          1,
+          3
+        ],
+        "coda": [
+          3,
+          4
+        ],
+        "loops": 3,
+        "layer_visits": 8,
+        "layer_types": [
+          "full_attention",
+          "full_attention",
+          "full_attention",
+          "full_attention"
+        ],
+        "new_bridge_parameters": 3171,
+        "input_mix": 0.10027623921632767,
+        "update_mix": 0.10027623921632767,
+        "memory_mix": 0.1000039204955101,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary"
+      }
+    }
+  ],
+  "text_bootstrap": [
+    {
+      "step": 1,
+      "loss": 5.446506500244141,
+      "nll": 5.446506500244141,
+      "routing_loss": 0.0,
+      "compaction_loss": 0.0,
+      "raw_nll": 0.0,
+      "compact_nll": 0.0,
+      "behavior_kl": 0.0,
+      "read_count": 0.0,
+      "parent_kl": 0.0,
+      "oracle_anchor_nll": 0.0,
+      "optimization_loss": 5.446506500244141,
+      "grad_norm": 4.928332328796387,
+      "loops": 1,
+      "elapsed_seconds": 0.016750494000007166,
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          1
+        ],
+        "core": [
+          1,
+          3
+        ],
+        "coda": [
+          3,
+          4
+        ],
+        "loops": 1,
+        "layer_visits": 4,
+        "layer_types": [
+          "full_attention",
+          "full_attention",
+          "full_attention",
+          "full_attention"
+        ],
+        "new_bridge_parameters": 3171,
+        "input_mix": 0.10000000149011612,
+        "update_mix": 0.10000000149011612,
+        "memory_mix": 0.10000000149011612,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary"
+      }
+    }
+  ]
+}

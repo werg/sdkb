@@ -1,5 +1,11 @@
 # SDKB on NVIDIA DGX Spark
 
+
+> **v0.4 update:** the recommended entry points are `recipes/looped_smoke.yaml`,
+> `recipes/looped_starter.yaml` and `recipes/looped_causal.yaml`. They add native
+> middle-block recurrence and in-loop reads. See [recurrent conversion](recurrence.md)
+> for the four-stage protocol. The one-pass recipes below remain control experiments.
+
 ## Chosen runtime
 
 Run natively on Spark's ARM64 host with its supported NVIDIA driver, Docker and NVIDIA

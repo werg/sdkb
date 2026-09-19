@@ -1,0 +1,10 @@
+.............s.......................................................... [ 42%]
+.........................................s....s......................... [ 85%]
+........................                                                 [100%]
+=============================== warnings summary ===============================
+tests/test_recurrence.py::test_bfloat16_recurrent_preflight
+  /opt/pyvenv/lib/python3.13/site-packages/torch/nn/functional.py:2954: UserWarning: Mismatch dtype between input and weight: input dtype = c10::BFloat16, weight dtype = float, Cannot dispatch to fused implementation. (Triggered internally at /pytorch/aten/src/ATen/native/layer_norm.cpp:344.)
+    return torch.rms_norm(input, normalized_shape, weight, eps)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+165 passed, 3 skipped, 1 warning in 13.16s

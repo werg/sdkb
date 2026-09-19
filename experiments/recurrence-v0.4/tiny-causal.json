@@ -1,0 +1,185 @@
+{
+  "schema_version": 2,
+  "protocol": "write-once, serialize/reload, global stored-only bank",
+  "choice_scoring": "sum of target token NLL including EOS",
+  "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+  "summary": {
+    "all": {
+      "n": 3,
+      "choice_accuracy": 0.0,
+      "mean_target_nll": 5.38545576731364,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 3,
+      "choice_accuracy": 0.0,
+      "mean_target_nll": 5.386834939320882,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 3,
+      "choice_accuracy": 0.0,
+      "mean_target_nll": 5.385508060455322,
+      "complete_support_recall": 1.0
+    },
+    "drop_0": {
+      "n": 3,
+      "choice_accuracy": 0.0,
+      "mean_target_nll": 5.385584195454915,
+      "complete_support_recall": 0.0
+    },
+    "drop_1": {
+      "n": 1,
+      "choice_accuracy": 0.0,
+      "mean_target_nll": 5.387736797332764,
+      "complete_support_recall": 0.0
+    }
+  },
+  "by_family": {
+    "boolean/a": {
+      "all": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.383569717407227,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.387518882751465,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.38361930847168,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.383725643157959,
+        "complete_support_recall": 0.0
+      }
+    },
+    "boolean/b": {
+      "all": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.385074615478516,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.3876752853393555,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.385124683380127,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.385291576385498,
+        "complete_support_recall": 0.0
+      }
+    },
+    "boolean/xor": {
+      "all": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.387722969055176,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.385310649871826,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.38778018951416,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.387735366821289,
+        "complete_support_recall": 0.0
+      },
+      "drop_1": {
+        "n": 1,
+        "choice_accuracy": 0.0,
+        "mean_target_nll": 5.387736797332764,
+        "complete_support_recall": 0.0
+      }
+    }
+  },
+  "paired_memory_benefit": {
+    "n_worlds": 1,
+    "n_queries": 3,
+    "mean_gain": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 335925248,
+    "system_mem_available_bytes": 4948504576
+  },
+  "counterfactuals": {
+    "cf_a": {
+      "change_pairs": 2,
+      "both_correct_on_change": 0.0,
+      "appropriate_prediction_change": 0.0,
+      "unchanged_pairs": 1,
+      "false_change_rate": 0.0
+    },
+    "cf_b": {
+      "change_pairs": 2,
+      "both_correct_on_change": 0.0,
+      "appropriate_prediction_change": 0.0,
+      "unchanged_pairs": 1,
+      "false_change_rate": 0.0
+    }
+  },
+  "xor_counterfactuals": {
+    "cf_a": {
+      "change_pairs": 1,
+      "both_correct_on_change": 0.0,
+      "appropriate_prediction_change": 0.0,
+      "unchanged_pairs": 0,
+      "false_change_rate": null
+    },
+    "cf_b": {
+      "change_pairs": 1,
+      "both_correct_on_change": 0.0,
+      "appropriate_prediction_change": 0.0,
+      "unchanged_pairs": 0,
+      "false_change_rate": null
+    }
+  },
+  "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+  "write_phase": {
+    "unique_sources": 2,
+    "writer_calls": 2,
+    "queries": 3,
+    "worlds": 1
+  },
+  "store": {
+    "records": 6,
+    "serialized_payload_bytes": 720,
+    "key_bytes": 288,
+    "physical_sqlite_bytes": 32768,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "/mnt/data/sdkb-loop-validation/stages/recurrent_joint/transfer-v2-1789803717298386713"
+}

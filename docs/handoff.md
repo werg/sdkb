@@ -1,20 +1,20 @@
-# SDKB 0.3 handoff and publication
+# SDKB 0.4 handoff and publication
 
-The rewritten repository is delivered as `sdkb-v0.3.bundle` with complete Git history,
+The rewritten repository is delivered as `sdkb-v0.4.bundle` with complete Git history,
 plus source ZIP/tarball and a patch from the previous version.
 
 The existing `werg/sdkb` GitHub repository was readable and empty when checked.
-An actual contents write was rejected with **HTTP 403: Resource not accessible by
-integration**. Consequently the handoff does **not** claim a remote commit or push.
+The v0.3 publication attempt was rejected with **HTTP 403: Resource not accessible
+by integration**; this release did not gain publication access. Consequently the handoff does **not** claim a remote commit or push.
 The connection must permit repository contents writes, or use authenticated local Git.
 
 Start from the supplied bundle on the Spark:
 
 ```bash
-git clone sdkb-v0.3.bundle sdkb
+git clone sdkb-v0.4.bundle sdkb
 cd sdkb
-./scripts/start_spark.sh --recipe recipes/spark_smoke.yaml --output runs/spark-smoke
-./scripts/start_spark.sh --recipe recipes/starter.yaml --output runs/starter
+./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output runs/spark-smoke
+./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output runs/looped-starter
 ```
 
 A bundle clone has a local-file `origin`. To publish to the currently empty repository

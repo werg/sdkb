@@ -14,7 +14,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--version", action="version", version=f"SDKB {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("launch", help="Prepare pinned data and execute a staged training curriculum")
-    p.add_argument("--recipe", default="recipes/starter.yaml")
+    p.add_argument("--recipe", default="recipes/looped_starter.yaml")
     p.add_argument("--output", required=True)
     p.add_argument("--resume", action="store_true")
     p.add_argument("--prepare-only", action="store_true")
@@ -26,7 +26,7 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--generate-tokens", type=int, default=0)
     p = sub.add_parser("doctor", help="Inspect runtime and test BF16 CUDA when available")
     p.add_argument("--require-spark", action="store_true")
-    p = sub.add_parser("model-probe", help="Execute backbone causality, zero-gate recurrence and memory gradients")
+    p = sub.add_parser("model-probe", help="Execute one-pass identity, recurrent causality and memory gradients")
     p.add_argument("--config", required=True)
     p.add_argument("--output")
     p = sub.add_parser("train", help="Train support/query episodes")
@@ -60,6 +60,13 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--drop-supports", action="store_true")
     p.add_argument("--boolean-counterfactuals", action="store_true")
     p.add_argument("--persistent-compact", action="store_true")
+    p = sub.add_parser("evaluate-depths", help="One frozen writer/bank, several native recurrent depths")
+    p.add_argument("--run", required=True)
+    p.add_argument("--episodes", required=True)
+    p.add_argument("--output", required=True)
+    p.add_argument("--depths", nargs="+", type=int, default=[1, 2, 3, 4])
+    p.add_argument("--protocol", choices=["transfer", "teacher"], default="transfer")
+    p.add_argument("--max-episodes", type=int, default=32)
     p = sub.add_parser("make-data", help="Create causally separated synthetic episodes")
     p.add_argument("--output", required=True)
     p.add_argument("--count", type=int, default=128)
@@ -117,6 +124,10 @@ def main(argv: list[str] | None = None) -> None:
                                      drop_supports=args.drop_supports, boolean_counterfactuals=args.boolean_counterfactuals,
                                      persistent_compact=args.persistent_compact)
         result = {key: value for key, value in full.items() if key != "rows"}
+    elif args.command == "evaluate-depths":
+        from .depth_eval import evaluate_depths
+        result = evaluate_depths(args.run, args.episodes, args.output, depths=tuple(args.depths),
+                                 protocol=args.protocol, max_episodes=args.max_episodes)
     elif args.command == "make-boolean":
         from .data import make_boolean_world, save_episodes
         path = Path(args.output)

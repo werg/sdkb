@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sdkb"
-version = "0.3.0"
+version = "0.4.0"
 description = "Spatially Superposed Differentiable Knowledge Base"
 requires-python = ">=3.11"
 dependencies = ["torch>=2.6", "numpy>=1.26", "safetensors>=0.5", "PyYAML>=6"]

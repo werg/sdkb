@@ -37,7 +37,8 @@ def load_recipe(path):
     if not recipe.get('stages'):
         raise ValueError('At least one stage required')
     for stage in recipe['stages']:
-        if set(stage) - {'name', 'arm', 'steps', 'freeze_backbone', 'init_from', 'oracle_anchor_weight', 'compaction'}:
+        if set(stage) - {'name', 'arm', 'steps', 'freeze_backbone', 'init_from', 'oracle_anchor_weight', 'compaction',
+                         'loops', 'loop_counts', 'backbone_train_scope', 'oracle_anchor_loops', 'parent_kl_weight'}:
             raise ValueError('Unknown stage fields')
         if not stage['name'].replace('_', '').isalnum() or stage['name'] in names:
             raise ValueError('Stage names must be unique safe identifiers')
@@ -135,7 +136,12 @@ def prepare_launch(recipe_path, output, *, resume=False):
         config.train.episodes_file = str(data / 'train.jsonl')
         config.train.arm, config.train.steps = stage['arm'], stage['steps']
         config.model.freeze_backbone = stage.get('freeze_backbone', False)
+        config.model.loops = stage.get('loops', base.model.loops)
+        config.model.backbone_train_scope = stage.get('backbone_train_scope', base.model.backbone_train_scope)
+        config.train.loop_counts = stage.get('loop_counts', [])
+        config.train.oracle_anchor_loops = stage.get('oracle_anchor_loops', base.train.oracle_anchor_loops)
         config.train.oracle_anchor_weight = stage.get('oracle_anchor_weight', 0.)
+        config.train.parent_kl_weight = stage.get('parent_kl_weight', 0.)
         if stage.get('compaction'):
             config.memory.compaction = 'synthetic'
             config.memory.compaction_probability, config.memory.compaction_warmup = 1., 0

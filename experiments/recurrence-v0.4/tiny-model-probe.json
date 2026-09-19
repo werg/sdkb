@@ -1,0 +1,66 @@
+{
+  "environment": {
+    "python": "3.13.5",
+    "machine": "x86_64",
+    "torch": "2.10.0+cpu",
+    "cuda_runtime": null,
+    "cuda_available": false,
+    "git_commit": "f18c17db478356c7335f60196de8c103891c8290",
+    "git_dirty": true,
+    "transformers": null
+  },
+  "backend": "tiny",
+  "model_id": "LiquidAI/LFM2.5-230M",
+  "resolved_revision": "local-tiny",
+  "width": 32,
+  "parameters": 136302,
+  "one_loop_identity_max_error": 0.0,
+  "two_loop_delta_max": 0.03469860553741455,
+  "two_loop_identity_required": false,
+  "zero_gate_two_loop_max_error": null,
+  "recurrence": {
+    "mode": "middle_block",
+    "prelude": [
+      0,
+      1
+    ],
+    "core": [
+      1,
+      3
+    ],
+    "coda": [
+      3,
+      4
+    ],
+    "loops": 2,
+    "layer_visits": 6,
+    "layer_types": [
+      "full_attention",
+      "full_attention",
+      "full_attention",
+      "full_attention"
+    ],
+    "new_bridge_parameters": 3171,
+    "input_mix": 0.10000000149011612,
+    "update_mix": 0.10000000149011612,
+    "memory_mix": 0.10000000149011612,
+    "cache": "disabled; no KV or convolution state crosses a depth boundary"
+  },
+  "causal_prefix_max_error": 0.0,
+  "nll": 5.478037357330322,
+  "gradient_norms": {
+    "write_slots": 6.745960035914322e-06,
+    "value_head": 1.3187687727622688e-05,
+    "reader_output": 0.00022712736972607672,
+    "bridge_reentry": 0.0023619576822966337,
+    "bridge_input_gate": 7.345980702666566e-05,
+    "bridge_update_gate": 6.367076275637373e-05,
+    "bridge_memory_projection": 0.00012405462621245533,
+    "bridge_memory_gate": 1.5246638213284314e-05
+  },
+  "resources": {
+    "process_peak_rss_bytes": 306589696,
+    "system_mem_available_bytes": 4972597248
+  },
+  "notice": "Numerical preflight only; no capability training or cache-performance claim."
+}

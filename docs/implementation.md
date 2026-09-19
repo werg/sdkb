@@ -1,5 +1,11 @@
 # Implementation specification — 0.3
 
+
+> **v0.4 update:** the recommended entry points are `recipes/looped_smoke.yaml`,
+> `recipes/looped_starter.yaml` and `recipes/looped_causal.yaml`. They add native
+> middle-block recurrence and in-loop reads. See [recurrent conversion](recurrence.md)
+> for the four-stage protocol. The one-pass recipes below remain control experiments.
+
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
 Operational details are in [development-v0.2.md](development-v0.2.md).

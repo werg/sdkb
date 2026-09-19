@@ -40,3 +40,14 @@ Read the dataset/training guides before changing causal boundaries. Keep source 
 target identities/versioned payloads intact; source commands are inert data. Preserve
 NVIDIA torch/CUDA and run the model preflight for actual-HF changes. Core tests must
 work without downloads. Distinguish teacher NLL, controlled transfer and agent success.
+
+
+## SDKB 0.4 recurrence development
+
+Read `docs/recurrence.md` before changing recurrent depth, native layer splitting,
+or in-loop read timing. The one-pass baseline must preserve the parent on identical
+inputs. Keep the writer's configured depth independent of consumer depth. Do not
+share native attention or convolution caches across loops, move target information
+into a prefix query, or execute retrieval callbacks during checkpoint recomputation.
+Changing depth must not create decoder parameter copies. Run the actual-model
+preflight on Spark; tiny-model tests do not validate a Hugging Face model API.

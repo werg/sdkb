@@ -1,0 +1,11 @@
+{
+  "status": "complete",
+  "output": "/mnt/data/sdkb-loop-validation/stages",
+  "stages": [
+    "text_bootstrap",
+    "recurrence_bridge",
+    "latent_warmup",
+    "recurrent_joint"
+  ],
+  "scientific_claim": "Inspect stored-memory and counterfactual effects; execution alone is not evidence of transfer."
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-image="${SDKB_IMAGE:-sdkb-spark:0.3}"
+image="${SDKB_IMAGE:-sdkb-spark:0.4}"
 cache="${SDKB_CACHE_DIR:-$HOME/.cache/sdkb}"
 command="${1:-shell}"
 shift || true

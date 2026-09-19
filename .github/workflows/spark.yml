@@ -13,3 +13,4 @@ jobs:
       - run: ./scripts/spark.sh build
       - run: ./scripts/spark.sh run sdkb doctor --require-spark
       - run: ./scripts/spark.sh run python -m pytest -q
+      - run: ./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output runs/manual-looped-${{ github.run_id }}

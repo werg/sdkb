@@ -1,5 +1,11 @@
 # Spatially Superposed Differentiable Knowledge Base (SDKB)
 
+
+> **Implementation update, 19 September 2026:** the decoder now has a native
+> prelude/shared-core/coda conversion with in-loop reads and a conversion curriculum.
+> [Recurrent conversion specification](recurrence.md) gives the executable v0.4
+> design, rather than treating the looped backbone as a deferred prerequisite.
+
 ## Read-time superposition, selective replay, and learned cluster compaction
 
 **Research architecture and experimental specification — 19 September 2026**  

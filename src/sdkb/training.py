@@ -122,15 +122,31 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
             raise ValueError("Warm-start changes the stored interface or reader architecture")
         if old.model.backend != config.model.backend or old.model.model_id != config.model.model_id:
             raise ValueError("Warm-start changes the student backbone")
+        old_mode = old.model.recurrence_mode
+        converting = old_mode != config.model.recurrence_mode
+        if converting and not (config.train.allow_recurrence_conversion and old_mode == "full_stack"
+                               and config.model.recurrence_mode == "middle_block"):
+            raise ValueError("Changing recurrence requires explicit full-stack-to-middle conversion")
+        if not converting and old_mode == "middle_block" and (
+                old.model.recurrent_start, old.model.recurrent_end) != (
+                config.model.recurrent_start, config.model.recurrent_end):
+            raise ValueError("Warm-start changes the recurrent layer partition")
         manifest_path = source_checkpoint / "manifest.json"
         if manifest_path.exists() and json.loads(manifest_path.read_text())["resolved_model_revision"] != agent.resolved_revision:
             raise ValueError("Warm-start base revision differs")
         missing, unexpected = load_model(agent, str(source_checkpoint / "model.safetensors"),
                                         strict=False, device=config.train.device)
-        if any(not name.startswith("compactor.") for name in set(missing) | set(unexpected)):
+        allowed_missing = ("compactor.",)
+        allowed_unexpected = ("compactor.",)
+        if converting:
+            allowed_missing += ("backbone.bridge.", "loop_workspace", "loop_query_norm.")
+            allowed_unexpected += ("backbone.loop_gate", "backbone.feedback_norm.")
+        if (any(not name.startswith(allowed_missing) for name in missing)
+                or any(not name.startswith(allowed_unexpected) for name in unexpected)):
             raise ValueError(f"Incompatible warm-start state: missing={missing}, unexpected={unexpected}")
         provenance = {"checkpoint": str(source_checkpoint), "optimizer_reset": True,
-                      "missing_initialized": sorted(missing), "unused": sorted(unexpected)}
+                      "missing_initialized": sorted(missing), "unused": sorted(unexpected),
+                      "recurrence_conversion": converting}
         (output / "initialization.json").write_text(json.dumps(provenance, indent=2) + "\n")
     if config.train.optimization_scope == "compactor":
         for name, parameter in agent.named_parameters():
@@ -157,6 +173,10 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
         "total_parameters": sum(p.numel() for p in agent.parameters()),
         "trainable_parameters": sum(p.numel() for p in agent.parameters() if p.requires_grad),
         "notice": "Prototype measurements; not evidence of capacity substitution."}
+    if hasattr(agent.backbone, "manifest"):
+        manifest["recurrence"] = agent.backbone.manifest()
+        manifest["recurrence"]["training_depths"] = config.train.loop_counts or [config.model.loops]
+        manifest["recurrence"]["writer_loops"] = config.model.writer_loops
     (output / "environment.json").write_text(json.dumps(manifest, indent=2) + "\n")
     from .episode_index import EpisodeIndex
     episodes = (EpisodeIndex(config.train.episodes_file) if config.train.episodes_file else
@@ -183,9 +203,13 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
     start_time = time.perf_counter()
     with stop_on_signal() as stop, (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
         for step in range(start, config.train.steps):
+            # One depth per optimizer update, not per microbatch or replay callback.
+            # This RNG is part of the atomic checkpoint. Producer depth stays fixed.
+            agent.backbone.loops = (rng.choice(config.train.loop_counts) if config.train.loop_counts
+                                    else config.model.loops)
             optimizer.zero_grad(set_to_none=True)
             totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
-                      "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0}
+                      "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
             anchor_total = 0.0
             for _ in range(config.train.gradient_accumulation):
                 episode = rng.choice(episodes)
@@ -220,7 +244,8 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
                     loss = result.loss
                     if config.train.oracle_anchor_weight and config.train.arm == "memory":
                         oracle_prompt = agent.prompt_ids(episode.query, support_text)
-                        anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None)
+                        anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None,
+                                                       loops=config.train.oracle_anchor_loops)
                         loss = loss + config.train.oracle_anchor_weight * anchor
                         anchor_total += float(anchor.detach()) / config.train.gradient_accumulation
                     loss = loss / config.train.gradient_accumulation
@@ -240,8 +265,10 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
             optimizer.step()
             row = {"step": step + 1, **totals, "oracle_anchor_nll": anchor_total,
                    "optimization_loss": totals["loss"] + config.train.oracle_anchor_weight * anchor_total,
-                   "grad_norm": float(grad_norm),
+                   "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
                    "elapsed_seconds": time.perf_counter() - start_time}
+            if hasattr(agent.backbone, "manifest"):
+                row["recurrence"] = agent.backbone.manifest()
             log.write(json.dumps(row) + "\n")
             log.flush()
             history.append(row)
@@ -382,6 +409,8 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
     """
     run = Path(run)
     config = config_from_run(run)
+    if config.memory.read_timing == "loop_boundary":
+        raise ValueError("Use evaluate-transfer, evaluate-teachers or evaluate-depths for native in-loop reads")
     episodes = load_episodes(path)
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device)

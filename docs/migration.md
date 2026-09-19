@@ -18,3 +18,13 @@ Git history likewise keeps its original names. Current validation is versioned s
 The Git bundle contains the complete history. Source archives contain no external
 teacher datasets, downloaded weights, runtime banks or credentials. Current GitHub
 publication status is in [handoff.md](handoff.md), not inferred from a local commit.
+
+## v0.4 recurrent conversion
+
+Use `recurrence_mode: middle_block` with an explicit core partition and
+`writer_loops: 1`. Warm-starting a v0.3 full-stack checkpoint requires
+`train.allow_recurrence_conversion: true`, a fresh optimizer/cache/output, and
+otherwise compatible stored interfaces. It initializes only the new bridge and
+workspace while preserving parent weights. Existing middle partitions cannot be
+changed silently. The main staged recipes can instead start directly from the
+pretrained checkpoint. See [recurrence.md](recurrence.md).
