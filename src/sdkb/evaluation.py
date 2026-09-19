@@ -91,10 +91,13 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                                namespace: str = 'global', generation: str = 'frozen-v1',
                                compact: bool = False, drop_supports: bool = False, cluster_bank=None,
                                fixed_plans_by_episode=None, capture_plans=None,
-                               full_evidence_only: bool = False, progress=None) -> dict:
+                               full_evidence_only: bool = False, progress=None,
+                               use_codes_for_all_conditions: bool = False) -> dict:
     """Never calls the writer. Retrieval competes across worlds in a shared bank."""
     if agent.training:
         raise ValueError('Evaluation requires frozen weights')
+    if use_codes_for_all_conditions and cluster_bank is None:
+        raise ValueError('A stored cluster bank is required for code conditions')
     rows = []
     with autocast_context(agent.config):
         for index, episode in enumerate(episodes, 1):
@@ -106,7 +109,7 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                 conditions.extend(('none', 'zero_values'))
                 if compact:
                     conditions.append('compact')
-                if cluster_bank is not None:
+                if cluster_bank is not None and not use_codes_for_all_conditions:
                     conditions.append('persistent')
                 if drop_supports:
                     conditions.extend(f'drop_{i}' for i in range(len(episode.required_ids)))
@@ -125,7 +128,7 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                                            oracle_ids=selected if agent.config.train.retrieval == 'oracle' else None,
                                            exclude_ids=excluded, ablate_values=condition == 'zero_values',
                                            compact=condition == 'compact',
-                                           cluster_bank=cluster_bank if condition == 'persistent' else None,
+                                           cluster_bank=cluster_bank if condition == 'persistent' or use_codes_for_all_conditions else None,
                                            fixed_plans=original_plans if condition in {'all', 'zero_values', 'compact', 'persistent'} else None)
                     memory, selected_spaces, plans = session.memory, session.selected_ids, session.plans
                     if condition == 'all':
@@ -222,13 +225,13 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
 
 @torch.no_grad()
 def build_persistent_codes(agent, store: DiskStore, episodes: list[Episode], *,
-                           namespace='global', generation='frozen-v1'):
+                           namespace='global', generation='frozen-v1', view_name='frozen-codes-v1'):
     from .cluster_store import ClusterBank, state_fingerprint
     from .store import ReadPlan, Selection
     if agent.config.train.arm != 'memory' or len(agent.config.memory.payload_dims) != 1:
         raise ValueError('Persistent prototype requires the single-space memory arm')
     reader_hash = state_fingerprint(agent.reader)
-    bank = ClusterBank(store, view='frozen-codes-v1', reader_hash=reader_hash)
+    bank = ClusterBank(store, view=view_name, reader_hash=reader_hash)
     seen, covered, skipped = set(), set(), 0
     with autocast_context(agent.config):
         for episode in episodes:
@@ -250,7 +253,15 @@ def build_persistent_codes(agent, store: DiskStore, episodes: list[Episode], *,
             if view.output_records >= view.input_records:
                 skipped += 1
                 continue
-            bank.put(plan, view.values[0].to(getattr(torch, agent.config.memory.storage_dtype)), view.weights[0])
+            values = view.values[0].to(getattr(torch, agent.config.memory.storage_dtype))
+            existing = bank.fetch(plan)
+            if existing.used_clusters:
+                if existing.raw_fallback_ids:
+                    raise ValueError('Existing compact view has a different cluster partition')
+                torch.testing.assert_close(existing.values[0], values.cpu(), rtol=0, atol=0)
+                torch.testing.assert_close(existing.weights[0], view.weights[0].float().cpu(), rtol=0, atol=0)
+            else:
+                bank.put(plan, values, view.weights[0])
             covered.update(ids)
     return bank, bank.sizes() | {'skipped_overlapping_or_unprofitable_groups': skipped,
                                  'reader_hash': reader_hash,

@@ -62,3 +62,48 @@ def test_endpoint_counterfactual_changes_only_endpoint_information():
                 assert old.text.split('Its endpoint')[0] == new.text.split('Its endpoint')[0]
                 assert old.text != new.text
             assert shared_sources.setdefault(new.record_id, new) == new
+
+
+@pytest.mark.parametrize('method', ['mean', 'trained'])
+def test_oracle_runner_reads_native_compact_codes_and_raw_subsets(tmp_path, tiny_config, method, monkeypatch):
+    path = tmp_path/'episodes.jsonl'
+    save_episodes(path, make_multiuse_world(9, bindings=1))
+    c = tiny_config
+    c.model.tiny_layers = 4
+    c.model.recurrence_mode = 'middle_block'
+    c.model.recurrent_start, c.model.recurrent_end = 1, 3
+    c.model.loops, c.model.writer_loops = 3, 1
+    c.memory.read_timing, c.memory.read_steps = 'loop_boundary', 1
+    c.memory.compaction, c.memory.compact_records = 'synthetic', 1
+    c.memory.compaction_warmup, c.memory.compaction_probability = 0, 1.
+    c.train.steps, c.train.episodes_file, c.train.evidence_scope = 1, str(path), 'required'
+    source, output = tmp_path/'source', tmp_path/'evaluation'
+    train(c, source)
+    run(source, path, output, compact_method=method)
+    report = json.loads((output/'results.json').read_text())
+    assert report['inputs']['compact_method'] == method
+    assert all(size['codes'] == 1 for size in report['code_storage'].values())
+    actions = [r for r in report['scores']['rows'] if r['task_family'] == 'multiuse/action']
+    for row in actions:
+        accounting = row['payload_accounting']
+        if row['condition'] in {'all', 'cf_permission', 'cf_restoration', 'cf_identifier'}:
+            assert any(a['clusters'] for a in accounting)
+            assert not any(a['raw_fallback_ids'] for a in accounting)
+        elif row['condition'].startswith('drop_'):
+            assert any(a['raw_fallback_ids'] for a in accounting)
+            assert not any(a['clusters'] for a in accounting)
+    for row in report['generation_rows']:
+        if row['task_family'] == 'multiuse/action' and row['condition'] == 'all':
+            assert any(a['clusters'] for a in row['payload_accounting'])
+    bank_hash = file_sha256(output/'bank.sqlite')
+    (output/'results.json').unlink()
+    from sdkb.agent import SDKBAgent
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Restart re-encoded a source')
+    monkeypatch.setattr(SDKBAgent, 'produce', forbidden)
+    run(source, path, output, compact_method=method)
+    resumed = json.loads((output/'results.json').read_text())
+    assert resumed['generation_rows'] == report['generation_rows']
+    assert file_sha256(output/'bank.sqlite') == bank_hash
+    with pytest.raises(ValueError, match='identity changed'):
+        run(source, path, output, compact_method='raw')

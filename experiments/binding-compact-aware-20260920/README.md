@@ -27,3 +27,15 @@ full resume state, 10 GiB free-disk reserve, host memory rails and offline W&B.
 No new teacher calls or model downloads. This is one-seed MLP learning evidence;
 the attention implementation has the same intervention and execution tests, but
 this comparison does not yet provide a matched attention learning result.
+
+The frozen evaluator supports explicit `--compact-method raw|mean|trained`. A code
+arm uses its bank for scoring, free generation, value ablation and counterfactuals;
+removing a source exercises raw fallback. Separate named code views keep per-variant
+accounting unambiguous. A restart verifies existing code tensors against offline
+reconstruction and reuses the raw bank without writer calls; no reconstruction
+runs during inference. Regression tests exercise this and reject changed evaluation
+identity. Full suite after this extension: 363 passed; Ruff clean.
+
+`run_confirmation.py` waits for both committed 400-update endpoints and released
+training locks, then runs two evaluator processes at a time. It checks frozen
+config/corpus identities and treats incomplete or stopped training as a failure.

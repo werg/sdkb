@@ -15,8 +15,10 @@ CPU reference evidence remains in `validation-v0.2.md`.
 2. **Global address generalization.** Corrected training gets 102/128 free actions
    at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
    training fit but reduce held-out pair retrieval. No robust large-bank claim.
-3. **MLP conditional compaction.** Preserve numerator/mass and source-change
-   behavior before claiming useful persistent compression. Raw subset fallbacks
+3. **MLP conditional compaction.** Native single-read interleaved training now
+   passes replay, causal, stored-code and emergency-resume checks. A matched
+   raw/temporary-code learning comparison is running; preserve numerator/mass
+   and source-change behavior before claiming useful persistent compression. Raw subset fallbacks
    remain necessary and count toward the disk budget.
 4. **Real task success and capacity substitution.** Synthetic composition and
    teacher NLL do not establish these. Compare information-matched systems with
@@ -68,7 +70,7 @@ runtime work is tracked in `bgkit-audit.md`; it is part of the running experimen
 
 - [x] Mean-plus-mass and amortized synthetic-record compactor.
 - [x] Conditional numerator/mass targets plus free-rollout loss for both readers.
-- [x] Temporary compact task steps and raw-task interleaving.
+- [x] Temporary compact task steps and raw-task interleaving, including native single-read recurrent training.
 - [x] Merge-consistency, alternate-partition, overlap and noise APIs/tests.
 - [x] Integrate regrouping/overlap schedules and paired raw/compact task-loss options; comparative ablations remain open.
 - [x] Preserve a partial Boolean XOR result under compactor-only training and stored full-cluster codes.
