@@ -34,13 +34,18 @@ def progress(event, **fields):
 
 
 @torch.no_grad()
-def evaluate(run, episodes_file, output):
+def evaluate(run, episodes_file, output, *, learned_world=False, read_budget=2):
     config = config_from_run(run)
     if config.train.arm not in {'memory', 'oracle_text', 'direct_latent'}:
         raise ValueError('Use a text or latent checkpoint')
     if config.memory.read_steps != 1:
         raise ValueError('This world-context diagnostic requires one complete read')
+    if learned_world:
+        if config.train.arm != 'memory' or len(config.memory.payload_dims) != 1 or read_budget < 1:
+            raise ValueError('Learned world routing requires a memory arm, one space and positive read budget')
+        config.memory.neighbors = [read_budget]
     episodes = load_episodes(episodes_file)
+    universe = frozenset(s.record_id for e in episodes for s in e.supports)
     variants = {kind: [counterfactual_multiuse(e, kind) for e in episodes]
                 for kind in ('restoration', 'permission')}
     progress('evaluation_checkpoint_verify', run=str(run))
@@ -85,9 +90,12 @@ def evaluate(run, episodes_file, output):
                         fixed = ([[replace(p, namespace=namespace) for p in step] for step in plans[e.episode_id]]
                                  if condition == 'zero_values' or kind != 'all' else None)
                         session = read_session(agent, store, prompt, namespace=namespace, generation='frozen-v1',
-                            query_time=e.query_time, oracle_ids=selected,
+                            query_time=e.query_time,
+                            oracle_ids=None if learned_world and condition != 'selected_pair' else selected,
+                            exclude_ids=universe - set(selected) if learned_world else frozenset(),
                             ablate_values=condition == 'zero_values', fixed_plans=fixed)
                         memory = session.memory
+                        selected = tuple(dict.fromkeys(rid for ids in session.selected_ids for rid in ids))
                         if condition == 'all':
                             plans[e.episode_id] = session.plans
                     groups = e.sufficient_groups or (e.required_ids,)
@@ -116,6 +124,15 @@ def evaluate(run, episodes_file, output):
         notice='All-world versus selected-pair reads differ in information/compute budget. '
                'World membership is supplied; routing across worlds is not tested. '
                'Zero-payload interventions apply only to latent arms; text stays unchanged.')
+    if learned_world:
+        result['protocol'] = 'World-scoped exact learned ranking of stored keys; frozen stored-only reads.'
+        result['routing'] = {'read_budget': read_budget, 'candidate_scope': 'supplied world membership',
+                             'search': 'exact scan, not ANN',
+                             'interventions': 'Zero values and counterfactuals preserve original read plans; '
+                                              'support removal excludes the record before reranking.'}
+        result['notice'] = ('Selected-pair is an oracle control. Learned ranking receives all eligible world '
+                            'records, never required-support IDs. World membership is supplied; '
+                            'this is not cross-world retrieval or learned authorization.')
     atomic_json(output / 'results.json', result)
     atomic_json(output / 'summary.json', {k: v for k, v in result.items() if k != 'rows'})
     progress('evaluation_committed', output=str(output), scored_rows=len(rows))
@@ -127,5 +144,8 @@ if __name__ == '__main__':
     parser.add_argument('--run', type=Path, required=True)
     parser.add_argument('--episodes', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--learned-world', action='store_true', help='Rank eligible world records by stored keys')
+    parser.add_argument('--read-budget', type=int, default=2, help='Record budget for --learned-world')
     args = parser.parse_args()
-    print(json.dumps({'summary': str(evaluate(args.run, args.episodes, args.output))}, indent=2))
+    print(json.dumps({'summary': str(evaluate(args.run, args.episodes, args.output,
+                     learned_world=args.learned_world, read_budget=args.read_budget))}, indent=2))

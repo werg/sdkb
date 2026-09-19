@@ -91,3 +91,46 @@ def test_full_evidence_fast_path_matches_reference_rows(tmp_path, tiny_config):
     reference = stored_transfer_evaluation(agent, store, episodes)
     fast = stored_transfer_evaluation(agent, store, episodes, full_evidence_only=True)
     assert fast['rows'] == [r for r in reference['rows'] if r['condition'] == 'all']
+
+
+def test_world_learned_routing_respects_eligibility_and_fixed_intervention_plans(
+        tmp_path, tiny_config, monkeypatch):
+    from sdkb.data import save_episodes
+    from sdkb.store import DiskStore
+    from sdkb.training import train
+    tiny_config.train.steps = 1
+    tiny_config.train.max_prompt_tokens = 1500
+    run = tmp_path / 'model'
+    train(tiny_config, run)
+    episodes = make_multiuse_world(2, bindings=2) + make_multiuse_world(3, bindings=2)
+    path = tmp_path / 'episodes.jsonl'
+    save_episodes(path, episodes)
+    by_id = {e.episode_id: e for e in episodes}
+    script = Path(__file__).parents[1] / 'scripts/evaluate_binding_context.py'
+    spec = importlib.util.spec_from_file_location('world_routing', script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    calls, search = [], DiskStore.search
+
+    def observe(self, query, **kwargs):
+        calls.append(kwargs)
+        return search(self, query, **kwargs)
+
+    monkeypatch.setattr(DiskStore, 'search', observe)
+    output = tmp_path / 'evaluation'
+    module.evaluate(run, path, output, learned_world=True, read_budget=2)
+    result = json.loads((output / 'results.json').read_text())
+    rows = {(r['episode'], r['condition']): r for r in result['rows']}
+    assert calls and all(c['top_k'] == 2 and len(c['exclude_ids']) >= 4 for c in calls)
+    for (episode_id, condition), row in rows.items():
+        episode = by_id[episode_id]
+        selected = set(row['selected_ids'])
+        assert selected <= {s.record_id for s in episode.supports}
+        if condition == 'all':
+            assert len(selected) == 2
+        elif condition == 'selected_pair':
+            assert selected == set(episode.required_ids)
+        elif condition == 'zero_values' or condition.startswith('cf_'):
+            assert row['selected_ids'] == rows[(episode_id, 'all')]['selected_ids']
+        elif condition.startswith('drop_'):
+            assert episode.required_ids[int(condition[5:])] not in selected

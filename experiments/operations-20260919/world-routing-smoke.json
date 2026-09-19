@@ -1,0 +1,21 @@
+{
+  "protocol": "World-scoped exact learned ranking of stored keys; frozen stored-only reads.",
+  "routing": {
+    "read_budget": 2,
+    "candidate_scope": "supplied world membership",
+    "search": "exact scan, not ANN",
+    "interventions": "Zero values and counterfactuals preserve original read plans; support removal excludes the record before reranking."
+  },
+  "checkpoint_manifest_sha256": "43d9e91808e8aa8570e1121a326fd252dc1998d6e100ccbe79928085d5c85d4f",
+  "episodes_sha256": "08752028a3458c2a2051befc913440dece752218017e6d002db025ab17316a22",
+  "raw_results_sha256": "c587e309b0c8857637f6e5fec24ef35706a148bb6a88764498ef45b6615185ab",
+  "validated_rows": 148,
+  "checks": [
+    "world eligibility",
+    "two selected records",
+    "oracle control supports",
+    "fixed zero/counterfactual plans",
+    "removed support excluded"
+  ],
+  "notice": "Two-world mechanics smoke, not evidence of learned retrieval capability."
+}

@@ -101,3 +101,22 @@ continuation with/without distractors did not improve binding: all-world action
 accuracy was 62.5% versus 63.3% for its source and 59.4% for extra selected-support
 training, with no jointly correct opposed-rule entity pairs after either continuation. No paid teacher
 collection, license change or public-visibility change has been initiated.
+
+
+### Longer Muon MLP continuation
+
+The fixed 1,600-update continuations now both pass selected-support action
+composition: 128/128 actions, all changed action counterfactual pairs correct,
+and no false changes on unchanged actions. Candidate-free action generation is
+32/32 in both arms; identifier generation remains 0/16. Recurrent-core adaptation
+alone suffices at this larger budget. This revises the architectural interpretation
+of the earlier short-budget failure; it does not establish distractor binding.
+See [the continuation record](../experiments/binding-continuation-20260919/README.md).
+
+`evaluate_binding_context.py --learned-world --read-budget 2` also supports
+world-scoped exact learned ranking of stored keys. Supplied world membership
+sets eligibility; required supports are used only by the named oracle control
+and support-removal intervention. Zero values and counterfactuals retain the
+original read plans. CPU regression and a native BF16 148-row mechanics smoke
+verify selection eligibility and intervention plans. This is not ANN or global
+retrieval, and the smoke is not retrieval capability evidence.

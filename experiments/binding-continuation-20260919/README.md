@@ -1,4 +1,4 @@
-# MLP adaptation-scope continuation (running)
+# MLP adaptation-scope continuation (complete)
 
 The completed selected-support Muon curriculum interprets source text correctly
 and retrieves single rule facts, but fails conditional action composition through
@@ -60,9 +60,29 @@ The full-backbone preflight used `2112c9f`; model, training and optimizer module
 are unchanged across these commits. The generation diagnostic on the earlier
 checkout finished before that checkout was advanced for training.
 
-The recurrent-core control completed 1,600 updates and the full-backbone arm has
-started. Actual trainable counts are 93,866,055 and 254,331,335. Both arms' first
+Both the recurrent-core control and full-backbone arm completed 1,600 updates. Actual trainable counts are 93,866,055 and 254,331,335. Both arms' first
 update has identical loss (0.09923347085197065) and sampled depth (2); gradient
 norms differ because trainable scope differs. `initialization-check.json` records
 the source paths, native optimizer groups and first-update memory counters.
-Final capability results remain pending; the larger arm is not compute-matched.
+The larger arm is not compute-matched; final capability results follow below.
+
+
+## Fixed-endpoint confirmation
+
+Both arms completed all 1,600 additional updates. On 32 new shared worlds,
+action accuracy rose from 46.875% at the source endpoint to 100% in both
+arms: +53.125 percentage points, world-bootstrap 95% interval [45.3125, 60.15625].
+Both scored 128/128 permission-change action pairs and 64/64 restoration-change
+action pairs jointly correct, with 0/64 false changes on unchanged actions.
+Candidate-free generation on the first eight worlds scored 32/32 actions and
+32/32 direct facts in both arms; opaque identifiers remained 0/16.
+
+The recurrent-core extra-training control therefore suffices for this narrow
+selected-support composition task. The results do not establish a need for full
+backbone adaptation, nor an architectural inability of the pooled MLP. The earlier
+matched-budget attention advantage remains a learning-budget result. These are
+one-seed synthetic diagnostics with oracle supports, not agent success, entity
+binding with distractors, or parameter substitution. See `confirmation-summaries.json`
+for checkpoint, episode and raw-result hashes and generation controls, and
+`paired-results.json` for strict world-paired comparisons. Training used frozen
+source `0d6c0a4`; evaluation used `b82d7a0`.
