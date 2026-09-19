@@ -92,6 +92,14 @@ emergency saves. `runs configure` changes only checkpoint operations and records
 200–400-update stages therefore normally write initial/final checkpoints only.
 Stop and final checkpoints remain mandatory regardless of periodic cadence.
 
+Console logs mark `checkpoint_start` and `checkpoint_committed`, with elapsed
+seconds and serialized bytes. These separate storage waits from compute stalls.
+Direct external saves can take minutes under disk contention, including graceful
+stop saves. The asynchronous archive mode below provides a faster local save path
+when explicitly configured; direct external output does not silently stage an
+emergency copy on NVMe. Wait for the commit event or process exit before removing
+the disk or container.
+
 A fast local staging directory and asynchronous archive remain optional when
 external-write latency is unacceptable. They require deliberate retirement of
 completed runs: keeping two local checkpoints **per stage forever** is not a

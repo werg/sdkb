@@ -17,6 +17,7 @@ import shutil
 import signal
 import sqlite3
 import threading
+import time
 import uuid
 
 import torch
@@ -52,6 +53,14 @@ def _atomic_text(path: Path, text: str) -> None:
     _fsync(tmp)
     os.replace(tmp, path)
     _fsync_dir(path.parent)
+
+
+def _checkpoint_event(event):
+    # A disconnected console must not prevent an emergency recovery save.
+    try:
+        print(json.dumps(event), flush=True)
+    except OSError:
+        pass
 
 
 def resolve_checkpoint(run: str | Path, *, verify: bool = False) -> Path:
@@ -97,6 +106,9 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
     pending = root / (".pending-" + token)
     pending.mkdir()
     final = root / f"step-{step:09d}-{token}"
+    started = time.perf_counter()
+    _checkpoint_event({'event': 'checkpoint_start', 'step': step, 'path': str(final),
+                       'accumulated_microbatches': (accumulation or {}).get('microbatches', 0)})
     try:
         save_model(agent, str(pending / "model.safetensors"))
         state = {"optimizer": optimizer.state_dict(), "step": step,
@@ -128,6 +140,9 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
         os.replace(pending, final)
         _fsync_dir(root)
         _atomic_text(run / "CURRENT", final.name + "\n")
+        _checkpoint_event({'event': 'checkpoint_committed', 'step': step, 'path': str(final),
+                           'elapsed_seconds': time.perf_counter() - started,
+                           'bytes': sum(p.stat().st_size for p in final.iterdir() if p.is_file())})
     except BaseException:
         shutil.rmtree(pending, ignore_errors=True)
         raise
