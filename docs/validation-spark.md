@@ -78,6 +78,9 @@ of permission, restoration, exact identifiers and their combination:
   The common-world reader confirmation also gives attention 100% action accuracy
   versus MLP 53.1% (paired gain 46.9 points, world-bootstrap interval 40.6–53.9).
   Both text controls solve every task; identifier choice remains weak.
+- Exposing both entities to the frozen attention reader reduces action accuracy
+  from 100% to 68.8%, with degraded counterfactual consistency. This remains above
+  zero/no-memory controls, but robust entity binding is not established.
 
 The all-context model's lower NLL versus no memory did not translate into a benefit
 over zeroed payloads. Tests, falling losses, linear probes and successful execution
@@ -93,5 +96,6 @@ frontier showing substitution for resident model parameters.
 
 These are research outcomes to establish, not implemented-module checkboxes. The
 current work is a paired MLP continuation (extra training versus broader backbone
-adaptation) and a frozen attention check with all entity records visible. No paid teacher
+adaptation) following the confirmed attention result and its measured failure under entity
+distractors. No paid teacher
 collection, license change or public-visibility change has been initiated.

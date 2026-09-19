@@ -271,6 +271,28 @@ source access/interface budgets but different reader parameters and compute.
 `reader-confirmation-stages.json` records all four systems and checkpoint/episode
 identities. `reader-confirmation-paired.json` retains raw-report checksums and
 paired intervals. Literal identifiers remain unresolved. The ongoing MLP
-continuation separates extra training from broader backbone adaptation; a separate
-frozen attention test exposes all entity records to check its dependence on oracle
-selection. Neither follow-up has a result yet.
+continuation separates extra training from broader backbone adaptation; the completed
+frozen attention test below checks its dependence on oracle selection. The MLP
+continuation is still running.
+
+## Attention with competing entity records
+
+A frozen inference check on the attention launcher's same 32 worlds exposes all
+four records (two entities) instead of the oracle-selected supports. No retraining
+occurs. A separate offline bank is built before reads, then the writer is disabled.
+The selected-pair control exactly reproduces the earlier choice scores.
+
+Action accuracy falls from 100% to 68.8% with all world records, versus 40.6%
+without memory and 35.2% with zeroed payloads. The paired drop relative to selected
+supports is 31.3 points (world-bootstrap 95% interval: 21.1–39.8 points). Both-correct
+action counterfactual pairs fall to 56/128 for permission and 31/64 for restoration;
+restoration causes 7/64 spurious changes on unchanged branches. Permission and
+restoration fact accuracy fall to 75.0% and 79.7%. Identifiers remain uninformative
+(31.3%, also 31.3% with zeros).
+
+The trained reader uses some useful memory under distractors, but robust entity
+binding is not established. World membership is still supplied; this does not test
+learned retrieval across worlds. Selected-pair and all-record reads differ in source
+information and compute budget. `attention-all-world-context.json` preserves
+checkpoint/data/result hashes, paired intervals and controls. No automatic text
+fallback or source re-encoding is introduced into inference.

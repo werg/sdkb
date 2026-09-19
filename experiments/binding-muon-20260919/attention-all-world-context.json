@@ -1,0 +1,467 @@
+{
+  "protocol": "World-scoped evidence, competing entities, frozen stored-only read.",
+  "checkpoint": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/checkpoints/step-000000400-421032105456",
+  "checkpoint_manifest_sha256": "f90b27924a9f0815f38ac525737041850c260a159e6f3241447676ba13181e81",
+  "episodes_sha256": "65e9cc505c05f5663a83465950cda46f8afcf172194a8d76c1d65f70c7ece54d",
+  "writes": {
+    "all": {
+      "unique_sources": 128,
+      "writer_calls": 128,
+      "queries": 320,
+      "worlds": 32
+    },
+    "restoration": {
+      "unique_sources": 128,
+      "writer_calls": 128,
+      "queries": 320,
+      "worlds": 32
+    },
+    "permission": {
+      "unique_sources": 128,
+      "writer_calls": 128,
+      "queries": 320,
+      "worlds": 32
+    }
+  },
+  "summary": {
+    "all": {
+      "n": 320,
+      "choice_accuracy": 0.646875,
+      "mean_target_nll": 1.570431729107528,
+      "complete_support_recall": 1.0
+    },
+    "selected_pair": {
+      "n": 320,
+      "choice_accuracy": 0.85625,
+      "mean_target_nll": 0.564912749107043,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 320,
+      "choice_accuracy": 0.41875,
+      "mean_target_nll": 2.5209829055990296,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 320,
+      "choice_accuracy": 0.41875,
+      "mean_target_nll": 2.2222644835833174,
+      "complete_support_recall": 1.0
+    },
+    "drop_0": {
+      "n": 320,
+      "choice_accuracy": 0.521875,
+      "mean_target_nll": 2.2832018186257668,
+      "complete_support_recall": 0.2
+    },
+    "drop_1": {
+      "n": 128,
+      "choice_accuracy": 0.4765625,
+      "mean_target_nll": 1.4405233249234917,
+      "complete_support_recall": 0.0
+    },
+    "cf_restoration": {
+      "n": 320,
+      "choice_accuracy": 0.64375,
+      "mean_target_nll": 1.5614922674560072,
+      "complete_support_recall": 1.0
+    },
+    "cf_permission": {
+      "n": 320,
+      "choice_accuracy": 0.6375,
+      "mean_target_nll": 1.549519869645812,
+      "complete_support_recall": 1.0
+    }
+  },
+  "by_family": {
+    "multiuse/action": {
+      "all": {
+        "n": 128,
+        "choice_accuracy": 0.6875,
+        "mean_target_nll": 0.892564047380853,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 128,
+        "choice_accuracy": 1.0,
+        "mean_target_nll": 0.005147949548792158,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 128,
+        "choice_accuracy": 0.40625,
+        "mean_target_nll": 1.215537411195778,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 128,
+        "choice_accuracy": 0.3515625,
+        "mean_target_nll": 1.3879082023693823,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 128,
+        "choice_accuracy": 0.6171875,
+        "mean_target_nll": 1.2019271999768215,
+        "complete_support_recall": 0.5
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.4765625,
+        "mean_target_nll": 1.4405233249234917,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 128,
+        "choice_accuracy": 0.6796875,
+        "mean_target_nll": 0.9025773508407859,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 128,
+        "choice_accuracy": 0.6796875,
+        "mean_target_nll": 0.8732010327933919,
+        "complete_support_recall": 1.0
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.3125,
+        "mean_target_nll": 2.812389246350716,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 64,
+        "choice_accuracy": 0.28125,
+        "mean_target_nll": 2.814260182163072,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.359375,
+        "mean_target_nll": 4.0897485031021965,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.3125,
+        "mean_target_nll": 2.816538875573684,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 64,
+        "choice_accuracy": 0.328125,
+        "mean_target_nll": 2.8125736382627298,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 64,
+        "choice_accuracy": 0.3125,
+        "mean_target_nll": 2.817176658098423,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 64,
+        "choice_accuracy": 0.28125,
+        "mean_target_nll": 2.8149782883624237,
+        "complete_support_recall": 1.0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.75,
+        "mean_target_nll": 2.1375053240898625,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 64,
+        "choice_accuracy": 1.0,
+        "mean_target_nll": 8.027995370696317e-07,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.4375,
+        "mean_target_nll": 5.667968939058438,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.5625,
+        "mean_target_nll": 3.716798123902551,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 4.4670307169802435,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 64,
+        "choice_accuracy": 0.75,
+        "mean_target_nll": 2.0774521861401074,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 64,
+        "choice_accuracy": 0.75,
+        "mean_target_nll": 2.2314605801314165,
+        "complete_support_recall": 1.0
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.796875,
+        "mean_target_nll": 1.1171359803353553,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 64,
+        "choice_accuracy": 1.0,
+        "mean_target_nll": 6.861475021935348e-06,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.484375,
+        "mean_target_nll": 0.4161222634429578,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.515625,
+        "mean_target_nll": 1.8021690137015867,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 64,
+        "choice_accuracy": 0.546875,
+        "mean_target_nll": 1.7325503379322171,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 64,
+        "choice_accuracy": 0.796875,
+        "mean_target_nll": 1.107677791359933,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 64,
+        "choice_accuracy": 0.796875,
+        "mean_target_nll": 0.9547584141484364,
+        "complete_support_recall": 1.0
+      }
+    }
+  },
+  "counterfactuals_by_family": {
+    "multiuse/action": {
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.484375,
+        "appropriate_prediction_change": 0.484375,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.109375
+      },
+      "cf_permission": {
+        "change_pairs": 128,
+        "both_correct_on_change": 0.4375,
+        "appropriate_prediction_change": 0.5,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    },
+    "multiuse/identifier": {
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.015625
+      },
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.09375
+      }
+    },
+    "multiuse/permission": {
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.21875
+      },
+      "cf_permission": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.5,
+        "appropriate_prediction_change": 0.5,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    },
+    "multiuse/restoration": {
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.59375,
+        "appropriate_prediction_change": 0.59375,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      }
+    }
+  },
+  "paired_gains": {
+    "multiuse/action": {
+      "selected_pair": {
+        "n_worlds": 32,
+        "n_queries": 128,
+        "mean_gain": -0.3125,
+        "ci95": [
+          -0.3984375,
+          -0.2109375
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 128,
+        "mean_gain": 0.3359375,
+        "ci95": [
+          0.2109375,
+          0.4765625
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 128,
+        "mean_gain": 0.28125,
+        "ci95": [
+          0.1484375,
+          0.4296875
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "multiuse/identifier": {
+      "selected_pair": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.03125,
+        "ci95": [
+          0.0,
+          0.078125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": -0.046875,
+        "ci95": [
+          -0.1875,
+          0.078125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "multiuse/permission": {
+      "selected_pair": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": -0.25,
+        "ci95": [
+          -0.328125,
+          -0.15625
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.1875,
+        "ci95": [
+          0.0625,
+          0.34375
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.3125,
+        "ci95": [
+          0.1875,
+          0.46875
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "multiuse/restoration": {
+      "selected_pair": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": -0.203125,
+        "ci95": [
+          -0.296875,
+          -0.125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.28125,
+        "ci95": [
+          0.15625,
+          0.4375
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.3125,
+        "ci95": [
+          0.171875,
+          0.453125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    }
+  },
+  "read_evaluation_seconds": 185.95753328999854,
+  "resources": {
+    "process_peak_rss_bytes": 3354607616,
+    "rss_scope": "process lifetime; not phase-isolated",
+    "cuda_peak_allocated_bytes": 2047746048,
+    "cuda_peak_reserved_bytes": 2082471936,
+    "system_mem_available_bytes": 73327779840
+  },
+  "notice": "All-world versus selected-pair reads differ in information/compute budget. World membership is supplied; routing across worlds is not tested. Zero-payload interventions apply only to latent arms; text stays unchanged.",
+  "source_commit": "b82d7a0",
+  "raw_results_sha256": "36acf9dc4f443fdd7e32716583075c20a790757d7957537b26c94cc296eee6ca"
+}
