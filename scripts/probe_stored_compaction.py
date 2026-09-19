@@ -170,8 +170,8 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=N
             directory.mkdir(exist_ok=True)
             save_episodes(directory / 'episodes.jsonl', group)
             stores[split] = DiskStore(directory / 'bank.sqlite')
-            if not (directory / 'features.json').exists():
-                build_shared_bank(agent, stores[split], group)
+            build_shared_bank(agent, stores[split], group,
+                              writer_identity=identity['checkpoint_manifest_sha256'])
             data[split] = {k: v.float().to(agent.device) for k, v in
                            features(agent, group, stores[split], directory).items()}
         def forbidden(*_args, **_kwargs):

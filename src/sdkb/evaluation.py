@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from dataclasses import replace
+from dataclasses import asdict, replace
 import json
+import hashlib
 import time
 
 import torch
@@ -45,7 +46,7 @@ def score_answers(agent, prompt, memory, answer: str, choices: tuple[str, ...]) 
 
 @torch.no_grad()
 def build_shared_bank(agent, store: DiskStore, episodes: list[Episode], *, namespace: str = 'global',
-                      generation: str = 'frozen-v1') -> dict:
+                      generation: str = 'frozen-v1', writer_identity: str | None = None) -> dict:
     """Canonical source IDs are written exactly once across all future queries."""
     if agent.training:
         raise ValueError('Writer must be frozen in eval mode')
@@ -61,8 +62,24 @@ def build_shared_bank(agent, store: DiskStore, episodes: list[Episode], *, names
                 for source in unique.values():
                     result = stored_channel(agent, agent.produce(agent.text_ids(source.text, source=True)))
                     yield from output_records(agent, source, result, namespace, generation)
-        store.put_many(records())
-        writes = len(unique)
+        if writer_identity is None:
+            store.put_many(records())
+            created = True
+        else:
+            from .offline_bank import canonical_json, ensure_offline_records
+            if not writer_identity:
+                raise ValueError('Verified writer identity cannot be empty')
+            identity = {'version': 1, 'writer': writer_identity,
+                        'sources_sha256': hashlib.sha256(canonical_json(
+                            [asdict(unique[rid]) for rid in sorted(unique)]).encode()).hexdigest(),
+                        'model': asdict(agent.config.model), 'memory': asdict(agent.config.memory),
+                        'max_source_tokens': agent.config.train.max_source_tokens,
+                        'compute_precision': agent.config.train.precision}
+            created = ensure_offline_records(store, records, identity=identity,
+                namespace=namespace, generation=generation,
+                spaces=tuple(f's{i}' for i in range(len(agent.config.memory.payload_dims))),
+                expected_count=len(unique) * len(agent.config.memory.payload_dims))
+        writes = len(unique) if created else 0
     else:
         writes = 0
     return {'unique_sources': len(unique), 'writer_calls': writes, 'queries': len(episodes),

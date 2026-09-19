@@ -66,3 +66,13 @@ After the projection-only run finished, its byte-identical initial weights were
 also deduplicated (another 0.95 GiB). Total verified redundant weight removal is
 now about 16.1 GiB. This is additional to the earlier roughly 48 GiB removed from
 the internal run tree by verified relocation.
+
+The same recovery discipline now covers the standalone frozen-compactor probes:
+raw bank creation and its source/writer/config identity plus raw-record digest
+commit in one SQLite transaction. A restart verifies bytes and reuses the bank
+without writer calls, even if feature extraction had not finished. Existing banks
+without this manifest require an explicit offline rebuild at a new path; they are
+not silently adopted. Historical frozen experiment checkouts retain their original
+code. Compact-code markers, lineage and code/member tables also publish in one
+transaction, so interruption cannot leave a marker blocking a retry. Probe metrics
+are reconciled to the saved optimizer step before a new resume attempt appends rows.

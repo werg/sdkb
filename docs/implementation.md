@@ -242,3 +242,15 @@ policy or an added standard-training objective. Fixed plans and oracle controls
 retain their declared selections. Default models have no count parameters.
 Integrated/full-graph, replay and stored-session paths share the count decision;
 the classifier itself is trained separately on frozen features and remains frozen.
+
+### Resumable offline bank publication
+
+`build_shared_bank(..., writer_identity=...)` accepts a caller-verified frozen
+checkpoint identity and atomically commits raw records with a manifest of sources,
+model/interface settings, precision and stored bytes. Repeated calls validate and
+reuse those bytes without encoding sources. Derived code views do not change the
+raw-bank digest. Unmanifested existing banks fail closed and need an explicit new
+output path for offline rebuilding. This optional path is used by the standalone
+compactor probe and confirmation builders; ordinary immutable inserts retain their
+previous behavior. Compact-code markers, lineage and membership publish in one
+writer transaction, including the disjointness and live-child checks.

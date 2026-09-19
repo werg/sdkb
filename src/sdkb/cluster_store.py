@@ -70,17 +70,18 @@ class ClusterBank:
             raise ValueError('Code width differs from child payload interface')
         blob = save({'values': values.detach().cpu().contiguous(), 'weights': weights.detach().float().cpu().contiguous()})
         parent = 'cluster_' + hashlib.sha256((self.view + repr(sorted(children))).encode() + blob).hexdigest()[:24]
+        marker = StoredRecord(parent, records[0].key, torch.zeros(1), plan.namespace,
+                              '__compact__/' + plan.space, self.view, plan.domain,
+                              max(r.created_at for r in records), 'full-cluster')
+        # Disjointness, live-child revalidation, lineage and code publication share
+        # one writer transaction. A failed publication leaves no inert marker.
         with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             for child in children:
                 if db.execute('SELECT 1 FROM cluster_members WHERE namespace=? AND space=? AND generation=? AND view=? AND child_id=?',
                               (plan.namespace, plan.space, plan.generation, self.view, child)).fetchone():
                     raise ValueError('Clusters must be disjoint within a persistent view; use a new view')
-        marker = StoredRecord(parent, records[0].key, torch.zeros(1), plan.namespace,
-                              '__compact__/' + plan.space, self.view, plan.domain,
-                              max(r.created_at for r in records), 'full-cluster')
-        # A failure before the code-table commit may leave an inert marker, never a routable code.
-        self.store.put(marker, children=children)
-        with self.store.connect() as db:
+            self.store._put(db, marker, children)
             db.execute('INSERT INTO cluster_codes VALUES (?,?,?,?,?,?,?,?,?)',
                        (plan.namespace, parent, self.view, self.reader_hash, plan.space,
                         plan.generation, plan.domain, json.dumps(children), blob))

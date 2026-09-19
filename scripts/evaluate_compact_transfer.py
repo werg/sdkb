@@ -76,7 +76,8 @@ def run(source, fit, output, *, reuse_decoder=False, worlds=32, episodes_file=No
             stores[kind] = DiskStore(path)
             if kind != 'all' or rebuild:
                 save_episodes(output / f'{kind}.jsonl', group)
-                build_shared_bank(agent, stores[kind], group)
+                build_shared_bank(agent, stores[kind], group,
+                                  writer_identity=inputs['source_manifest_sha256'])
             banks[kind] = {}
             for method in ('mean', *compactors):
                 banks[kind][method] = (ClusterBank(stores[kind], view=method, reader_hash=reader_hash)

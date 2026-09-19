@@ -134,3 +134,23 @@ def test_stored_codes_need_neither_writer_nor_compactor_at_read(tmp_path, tiny_c
         store.delete('global', episodes[2].required_ids[0])
         with pytest.raises(KeyError):
             read_session(agent, store, agent.prompt_ids('query'), **arguments)
+
+
+def test_failed_code_publication_leaves_no_marker_or_lineage(tmp_path):
+    import sqlite3
+    store, _, plan, _ = setup_bank(tmp_path)
+    bank = ClusterBank(store, view='interrupted', reader_hash='reader1')
+    with store.connect() as db:
+        records = db.execute('SELECT * FROM records').fetchall()
+        lineage = db.execute('SELECT * FROM lineage').fetchall()
+        db.execute("""CREATE TRIGGER fail_members BEFORE INSERT ON cluster_members
+                    WHEN NEW.view='interrupted' BEGIN SELECT RAISE(ABORT,'interrupted'); END""")
+    with pytest.raises(sqlite3.IntegrityError, match='interrupted'):
+        bank.put(plan, torch.ones(1, 8), torch.tensor([2.]))
+    with store.connect() as db:
+        assert db.execute('SELECT * FROM records').fetchall() == records
+        assert db.execute('SELECT * FROM lineage').fetchall() == lineage
+        assert not db.execute("SELECT * FROM cluster_codes WHERE view='interrupted'").fetchall()
+        db.execute('DROP TRIGGER fail_members')
+    parent = bank.put(plan, torch.ones(1, 8), torch.tensor([2.]))
+    assert bank.fetch(plan).used_clusters == [parent]
