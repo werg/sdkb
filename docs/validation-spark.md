@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **244 tests**, with four existing dependency/runtime
+The latest full suite passed **246 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -128,3 +128,9 @@ opposed-rule worlds (17 permission, 19 restoration), with no jointly correct fac
 pairs. The selected-support composition success therefore does not resolve binding.
 A fixed-budget, matched routing-supervision study is now running from `304fb17`;
 its results remain pending. Checkpoints and banks remain on the external disk.
+
+
+Candidate-free generation now also supports explicit world-scoped learned ranking.
+A native BF16 two-world smoke generates 60 rows from an existing bank with the
+writer disabled; all selected-ID lists match the corresponding choice and control
+rows. CPU regressions cover both existing oracle behavior and learned ranking.

@@ -21,13 +21,17 @@ from sdkb.trajectories import file_sha256
 
 
 @torch.no_grad()
-def evaluate(run, bank, episodes_path, worlds, max_new_tokens):
+def evaluate(run, bank, episodes_path, worlds, max_new_tokens, *, learned_world=False, read_budget=2):
     if worlds < 1 or max_new_tokens < 1:
         raise ValueError('World and generation budgets must be positive')
     checkpoint = resolve_checkpoint(run, verify=True)
     config = config_from_run(run)
-    if config.train.arm != 'memory' or config.train.retrieval != 'oracle':
+    if config.train.arm != 'memory' or (not learned_world and config.train.retrieval != 'oracle'):
         raise ValueError('This diagnostic requires the controlled oracle-memory arm')
+    if learned_world:
+        if len(config.memory.payload_dims) != 1 or config.memory.read_steps != 1 or read_budget < 1:
+            raise ValueError('Learned world generation requires one space, one read and positive budget')
+        config.memory.neighbors = [read_budget]
     if not bank.is_file():
         raise FileNotFoundError('Supply an existing frozen bank')
     torch.set_num_threads(config.train.threads)
@@ -40,6 +44,7 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens):
     agent.produce = forbidden_writer
     store = DiskStore(bank)
     episodes = load_episodes(episodes_path)
+    universe = frozenset(s.record_id for e in episodes for s in e.supports)
     selected_worlds = list(dict.fromkeys(e.environment for e in episodes))[:worlds]
     rows = []
     with autocast_context(config):
@@ -50,18 +55,21 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens):
             plans = None
             for condition in ('all', 'zero_values', 'none'):
                 memory = None
+                selected_ids = []
                 if condition != 'none':
                     session = read_session(agent, store, prompt, namespace='global', generation='frozen-v1',
                                            query_time=episode.query_time,
-                                           oracle_ids=tuple(evidence_ids(episode, config.train.evidence_scope)),
+                                           oracle_ids=None if learned_world else tuple(evidence_ids(episode, config.train.evidence_scope)),
+                                           exclude_ids=universe - {s.record_id for s in episode.supports} if learned_world else frozenset(),
                                            ablate_values=condition == 'zero_values', fixed_plans=plans)
                     memory = session.memory
+                    selected_ids = list(dict.fromkeys(rid for ids in session.selected_ids for rid in ids))
                     if condition == 'all':
                         plans = session.plans
                 prediction = agent.generate_from_memory(prompt, memory, max_new_tokens=max_new_tokens)
                 rows.append(dict(episode=episode.episode_id, environment=episode.environment,
                                  task_family=episode.task_family, condition=condition,
-                                 answer=episode.answer, prediction=prediction,
+                                 answer=episode.answer, prediction=prediction, selected_ids=selected_ids,
                                  exact_match=prediction == episode.answer))
     groups = defaultdict(list)
     for row in rows:
@@ -71,6 +79,9 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens):
         'protocol': 'Greedy stored-only generation; no candidate answers supplied; writer disabled.',
         'notice': 'First requested validation worlds, chosen by file order. Exact strings after '
                   'decoder whitespace stripping; no agent execution or capacity-substitution claim.',
+        'routing': ({'mode': 'world-scoped exact learned ranking', 'read_budget': read_budget,
+                     'eligibility': 'supplied world membership; not global retrieval or authorization'}
+                    if learned_world else {'mode': 'oracle', 'evidence_scope': config.train.evidence_scope}),
         'max_new_tokens': max_new_tokens,
         'worlds': len(selected_worlds),
         'inputs': {'checkpoint': str(checkpoint),
@@ -92,10 +103,13 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--worlds', type=int, default=8)
     parser.add_argument('--max-new-tokens', type=int, default=24)
+    parser.add_argument('--learned-world', action='store_true')
+    parser.add_argument('--read-budget', type=int, default=2)
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(args.output)
-    result = evaluate(args.run, args.bank, args.episodes, args.worlds, args.max_new_tokens)
+    result = evaluate(args.run, args.bank, args.episodes, args.worlds, args.max_new_tokens,
+                      learned_world=args.learned_world, read_budget=args.read_budget)
     with args.output.open('x') as handle:
         handle.write(json.dumps(result, indent=2) + '\n')
     print(json.dumps({k: v for k, v in result.items() if k != 'rows'}, indent=2))

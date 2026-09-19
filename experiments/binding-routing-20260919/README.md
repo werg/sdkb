@@ -44,3 +44,10 @@ process IDs; `inputs.json` records immutable configurations and source/data hash
 All 244 core tests and Ruff passed before launch. The source's all-world diagnosis
 subsequently confirmed identical fact answers for both entities in every opposed-rule
 world, making learned selection a distinct, unresolved mechanism to test.
+
+
+After choice evaluation commits, `generate.py --study EXTERNAL_STUDY_ROOT` validates
+its checkpoint/episode identities and runs candidate-free generation from the same
+banks: first eight worlds, 24 greedy tokens, learned top-two selection, zero-payload
+and no-memory controls. This follow-up adds no training or checkpoint selection.
+Generation code is frozen separately from the running training/evaluation checkout.

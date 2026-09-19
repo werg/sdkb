@@ -1,0 +1,79 @@
+{
+  "protocol": "Greedy stored-only generation; no candidate answers supplied; writer disabled.",
+  "notice": "First requested validation worlds, chosen by file order. Exact strings after decoder whitespace stripping; no agent execution or capacity-substitution claim.",
+  "routing": {
+    "mode": "world-scoped exact learned ranking",
+    "read_budget": 2,
+    "eligibility": "supplied world membership; not global retrieval or authorization"
+  },
+  "max_new_tokens": 24,
+  "worlds": 2,
+  "inputs": {
+    "checkpoint": "/archive/runs/binding-attention-context-20260919/all_world/checkpoints/step-000000800-f16ee9589e07",
+    "checkpoint_manifest_sha256": "43d9e91808e8aa8570e1121a326fd252dc1998d6e100ccbe79928085d5c85d4f",
+    "bank": "/archive/runs/binding-attention-context-20260919/learned-routing-check/bank.sqlite",
+    "bank_sha256": "26cf4b26e80bfc9e4250bd71536cc41fccf319c0157985f0818515807917e27f",
+    "episodes": "/archive/runs/binding-muon-attention-20260919/progress-check-episodes.jsonl",
+    "episodes_sha256": "08752028a3458c2a2051befc913440dece752218017e6d002db025ab17316a22"
+  },
+  "by_family": {
+    "multiuse/action": {
+      "all": {
+        "n": 8,
+        "exact_match": 0.625
+      },
+      "zero_values": {
+        "n": 8,
+        "exact_match": 0.625
+      },
+      "none": {
+        "n": 8,
+        "exact_match": 0.625
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 4,
+        "exact_match": 0.0
+      },
+      "zero_values": {
+        "n": 4,
+        "exact_match": 0.0
+      },
+      "none": {
+        "n": 4,
+        "exact_match": 0.0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 4,
+        "exact_match": 0.75
+      },
+      "zero_values": {
+        "n": 4,
+        "exact_match": 0.25
+      },
+      "none": {
+        "n": 4,
+        "exact_match": 0.25
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 4,
+        "exact_match": 0.25
+      },
+      "zero_values": {
+        "n": 4,
+        "exact_match": 0.5
+      },
+      "none": {
+        "n": 4,
+        "exact_match": 0.5
+      }
+    }
+  },
+  "raw_results_sha256": "ad053f99cf964744c133b649529fdd9b3926233cb87c61033a72aba425d08a65",
+  "validation": "All 60 generated rows reuse the same selected IDs as corresponding choice/control rows. Mechanics smoke, not retrieval capability evidence."
+}
