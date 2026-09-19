@@ -19,3 +19,14 @@ regressions cover full-graph/replay, target exclusion, stored-session parity,
 exact Muon resume and frozen payload/reader behavior. The adapter loader checks
 source checkpoint identity and parameter ownership. Generation checks the bank's
 adapter identity so a different routing model cannot silently reuse its keys.
+
+## Single-fact read-budget diagnostic
+
+Prepared before seeing the full-state stored results: compare fixed read budgets
+one and two on the permission/restoration subset of these same 32 worlds, using
+the full-state adapter and its existing bank. Generate without candidates with
+real, zero and no payloads. The routing objective rewards a correct top-one item
+for these single-required-record questions, while fixed top-two execution can
+also return a conflicting entity's fact. This diagnostic tests whether that extra
+record interferes. It does not implement or claim an adaptive read-count policy,
+and it excludes two-record action questions explicitly.
