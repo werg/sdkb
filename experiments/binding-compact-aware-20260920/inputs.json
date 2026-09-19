@@ -8,11 +8,11 @@
   "seed": 103,
   "arms": {
     "raw-control": {
-      "config_sha256": "b6651eb4cb0aa801e73eb8d6e2160915cbd60f5ce14c7a88ce28b9d0caf568bd",
+      "config_sha256": "b9232dcba86883e360999240b382343b9907673d2cbb5d757f3cb2596bfe51d2",
       "compaction_probability": 0.0
     },
     "temporary": {
-      "config_sha256": "8e66a804ca36dc5d0ed9e3d4600d9930cd2c5d26d3fff8559b58946f9909bae8",
+      "config_sha256": "a50feb7d8fb3035fc0c8b75322d27b86f6ffb7452d9a341a53cc7350d18159e7",
       "compaction_probability": 0.5
     }
   }

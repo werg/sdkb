@@ -99,6 +99,5 @@ train:
   wandb_entity: null
   wandb_group: binding-compact-aware-20260920
   wandb_mode: offline
-  wandb_name: raw-control
   wandb_project: sdkb
   weight_decay: 0.01
