@@ -1,0 +1,7 @@
+{
+  "source_commit": "44927b8",
+  "host_training_pid": 1247855,
+  "worktree": ".sdkb/count-stored",
+  "output": "/archive/probes/count-stored-20260919",
+  "checkpoint_storage": "external; no backbone copies"
+}

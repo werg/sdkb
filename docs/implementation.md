@@ -149,6 +149,13 @@ The inference API never calls the writer or compactor. Retaining fallback record
 means this prototype does not establish net disk savings. Learned arbitrary-subset
 or persistent overlapping-field decoding is not implemented.
 
+Stored single-space codes also work at native recurrent read boundaries. Each
+boundary fetches the complete cumulative selection, including code multiplicity,
+before updating shared reader state; a partial cluster still uses raw fallback.
+Per-boundary accounting records codes, fallback IDs and payload bytes. Runtime
+re-compaction and streaming in-loop reads remain unsupported; offline compactor
+fitting and code creation are separate operations from recurrent training.
+
 ## Persistence and concurrency
 
 SQLite records are immutable within namespace/ID/space/generation. A read plan

@@ -59,24 +59,75 @@ def test_state_fingerprint_detects_reader_change():
     assert first != state_fingerprint(reader)
 
 
-def test_stored_codes_need_neither_writer_nor_compactor_at_read(tmp_path, tiny_config, monkeypatch):
+@pytest.mark.parametrize('timing', ['prefix', 'loop_boundary'])
+def test_stored_codes_need_neither_writer_nor_compactor_at_read(tmp_path, tiny_config, monkeypatch, timing):
     from sdkb.agent import SDKBAgent
     from sdkb.data import make_boolean_world
     from sdkb.evaluation import build_shared_bank, build_persistent_codes, stored_transfer_evaluation
     tiny_config.memory.compaction = 'synthetic'
     tiny_config.memory.compact_records = 1
+    if timing == 'loop_boundary':
+        tiny_config.model.tiny_layers = 4
+        tiny_config.model.recurrence_mode = 'middle_block'
+        tiny_config.model.recurrent_start, tiny_config.model.recurrent_end = 1, 3
+        tiny_config.model.loops, tiny_config.model.writer_loops = 3, 1
+        tiny_config.memory.read_timing = timing
+        tiny_config.memory.read_steps, tiny_config.memory.read_top_k = 2, 1
+        tiny_config.memory.compaction = 'none'
+    tiny_config.validate()
     agent = SDKBAgent(tiny_config).eval()
     episodes = make_boolean_world(0, operations=('a','b','xor'))
     store = DiskStore(tmp_path / 'bank.sqlite')
     build_shared_bank(agent, store, episodes)
-    codes, manifest = build_persistent_codes(agent, store, episodes)
+    if timing == 'prefix':
+        codes, manifest = build_persistent_codes(agent, store, episodes)
+    else:
+        # Offline compaction is separate from the recurrent training config.
+        from sdkb.compaction import SyntheticCompactor
+        compactor = SyntheticCompactor(24, 24, 1).eval()
+        codes = ClusterBank(store, view='offline', reader_hash=state_fingerprint(agent.reader))
+        plan = ReadPlan('global', 's0', 'frozen-v1', 'research', episodes[2].query_time,
+                        tuple(Selection(rid, 0.) for rid in episodes[2].required_ids))
+        raw = torch.stack(store.fetch(plan)).float()[None]
+        with torch.no_grad():
+            values, weights = compactor(raw, raw.new_ones(raw.shape[:2]))
+        codes.put(plan, values[0].bfloat16(), weights[0])
+        manifest = codes.sizes()
     assert manifest['codes'] == 1
     def forbidden(*_args, **_kwargs):
         raise AssertionError('Inference regenerated stored representations')
     monkeypatch.setattr(agent, 'produce', forbidden)
-    monkeypatch.setattr(agent.compactor, 'forward', forbidden)
+    monkeypatch.setattr(agent.compactor if timing == 'prefix' else compactor, 'forward', forbidden)
     result = stored_transfer_evaluation(agent, DiskStore(store.path), episodes, cluster_bank=codes)
     persistent = [r for r in result['rows'] if r['condition'] == 'persistent']
     assert len(persistent) == 3
     assert persistent[0]['payload_accounting'][0]['raw_fallback_ids']
-    assert persistent[2]['payload_accounting'][0]['clusters']
+    assert persistent[2]['payload_accounting'][-1]['clusters']
+    if timing == 'loop_boundary':
+        # The first boundary has a partial cluster and must read the raw child.
+        # Only the complete cumulative selection at the second can use its code.
+        assert persistent[2]['payload_accounting'][0]['raw_fallback_ids']
+        assert not persistent[2]['payload_accounting'][0]['clusters']
+        assert not persistent[2]['payload_accounting'][1]['raw_fallback_ids']
+        from sdkb.sessions import read_session
+        captured = []
+        handle = agent.reader.register_forward_pre_hook(
+            lambda _module, args: captured.append((args[0].clone(), args[2].clone())))
+        arguments = dict(namespace='global', generation='frozen-v1',
+                         query_time=episodes[2].query_time, oracle_ids=episodes[2].required_ids,
+                         cluster_bank=codes)
+        try:
+            session = read_session(agent, store, agent.prompt_ids(episodes[2].query),
+                                   ablate_values=True, **arguments)
+        finally:
+            handle.remove()
+        assert len(captured) == len(session.plans) == 2
+        assert all(torch.count_nonzero(values) == 0 for values, _ in captured)
+        assert [weights.sum().item() for _, weights in captured] == [1., 2.]
+        assert [values.shape[1] for values, _ in captured] == [1, 1]
+        # Stored-code use does not relax visibility or derivative invalidation.
+        with pytest.raises(KeyError, match='unauthorized'):
+            read_session(agent, store, agent.prompt_ids('query'), domain='denied', **arguments)
+        store.delete('global', episodes[2].required_ids[0])
+        with pytest.raises(KeyError):
+            read_session(agent, store, agent.prompt_ids('query'), **arguments)
