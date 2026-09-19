@@ -1,0 +1,13 @@
+{
+  "source_commit": "2c05b939e93e80a8766b24fa48be86fa7f4efeb5",
+  "frozen_worktree": ".sdkb/routing-breadth",
+  "output": "/archive/probes/routing-breadth-20260919",
+  "host_pid": 1205355,
+  "train_worlds": [
+    128,
+    1024
+  ],
+  "steps": 800,
+  "sampled_queries_per_update": 1280,
+  "status": "running"
+}
