@@ -51,3 +51,11 @@ its checkpoint/episode identities and runs candidate-free generation from the sa
 banks: first eight worlds, 24 greedy tokens, learned top-two selection, zero-payload
 and no-memory controls. This follow-up adds no training or checkpoint selection.
 Generation code is frozen separately from the running training/evaluation checkout.
+
+
+The control completed all 800 updates and its final checkpoint committed directly
+externally in 24.2 seconds (1.393 GB); its only checkpoint sets are initial and final.
+The supervised arm then started. `initialization-check.json` verifies both initial
+weight-file hashes equal the shared source. Their first task NLL and raw routing
+loss are identical (0.00328392605 and 1.13250297308); the weighted objectives and
+gradients differ as intended. Final routing capability results remain pending.
