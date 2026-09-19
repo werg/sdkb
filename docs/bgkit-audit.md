@@ -76,3 +76,15 @@ not silently adopted. Historical frozen experiment checkouts retain their origin
 code. Compact-code markers, lineage and code/member tables also publish in one
 transaction, so interruption cannot leave a marker blocking a retry. Probe metrics
 are reconciled to the saved optimizer step before a new resume attempt appends rows.
+
+Older routing-feature, STOP and count probes now use the shared small-probe
+checkpoint contract: named optimizer groups, full optimizer hyperparameters,
+Python/Torch/CUDA and sampler RNG, fsynced atomic publication with free-space
+reserve, and JSONL reconciliation to the committed optimizer step. They write
+initial/final/emergency state only, keep separate W&B attempts and group metadata,
+and arm the stall watchdog only for compute. This closes gaps in their earlier
+standalone save functions; historical checkouts still implement their original
+formats. Current-source resume rejects the old format rather than guessing at
+missing state. Use the original checkout to resume an old run, or an explicit
+warm-start fork for a changed protocol. Main-trainer microbatch/replay recovery
+remains a stronger, separate contract; these small probes stop between updates.

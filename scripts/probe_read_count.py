@@ -5,6 +5,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 import signal
+import random
 
 from safetensors.torch import load_file
 import torch
@@ -14,8 +15,9 @@ from torch.nn import functional as F
 from probe_routing_stop import StopProbe
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.operations import atomic_json, control_dir, run_lock, stop_requested
-from sdkb.optimizers import MuonAdamW
-from sdkb.runtime import configure_memory, available_host_memory, memory_metrics
+from sdkb.optimizers import MuonAdamW, optimizer_report
+from sdkb.probe_state import restore_probe_state, save_probe_state, parameter_names
+from sdkb.runtime import configure_memory, available_host_memory, memory_metrics, compute_watchdog
 from sdkb.tracking import Tracking
 from sdkb.training import config_from_run, autocast_context
 from sdkb.trajectories import file_sha256
@@ -26,6 +28,7 @@ def run(source, features_root, output, steps=200, representation='address_query'
     with run_lock(output, clear_stop=False):
         checkpoint = resolve_checkpoint(source, verify=True)
         config = copy.deepcopy(config_from_run(checkpoint))
+        config.train.optimizer = 'muon'
         config.model.freeze_backbone = True
         config.memory.independent_routing_query = True
         config.train.seed, config.train.steps = 53, steps
@@ -44,6 +47,7 @@ def run(source, features_root, output, steps=200, representation='address_query'
             raise ValueError('Frozen address source differs')
         configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
+        random.seed(53)
         torch.manual_seed(53)
         router = StopProbe(state['model'], False).to(config.train.device).eval().requires_grad_(False)
         identity = {'source_endpoint_sha256': file_sha256(endpoint), 'source_identity': inputs,
@@ -79,20 +83,15 @@ def run(source, features_root, output, steps=200, representation='address_query'
         optimizer = MuonAdamW([{'params': [head.weight], 'lr': .01}],
                              [{'params': [head.bias], 'lr': .01}], config.train)
         generator = torch.Generator().manual_seed(53)
-        start, path = 0, output / 'resume.pt'
-        if path.exists():
-            saved = torch.load(path, weights_only=True, map_location=config.train.device)
-            if saved['identity'] != identity:
-                raise ValueError('Read-count resume identity differs')
-            head.load_state_dict(saved['head'])
-            optimizer.load_state_dict(saved['optimizer'])
-            generator.set_state(saved['sampling_rng'].cpu())
-            start = saved['step']
+        path = output / 'resume.pt'
+        start = restore_probe_state(path, head, optimizer, generator, identity, model_key='head')
         def save(step):
-            temporary = path.with_suffix('.tmp')
-            torch.save({'identity': identity, 'head': head.state_dict(), 'step': step,
-                        'optimizer': optimizer.state_dict(), 'sampling_rng': generator.get_state()}, temporary)
-            temporary.replace(path)
+            save_probe_state(path, head, optimizer, generator, identity, step,
+                             reserve_bytes=config.train.min_free_disk_bytes, model_key='head')
+        if not path.exists():
+            save(0)
+        atomic_json(output / 'optimizer.json', {'kind': 'muon_adamw', 'groups': optimizer_report(optimizer),
+                    'parameter_names': parameter_names(head, optimizer)})
         with Tracking(config, output) as tracking:
             if tracking.run is not None:
                 tracking.run.config.update({'read_count_probe': identity, 'frozen_address_model': True})
@@ -102,14 +101,17 @@ def run(source, features_root, output, steps=200, representation='address_query'
                     save(step)
                     raise RuntimeError('Read-count probe stopped with complete optimizer/sampling state')
                 indices = torch.randint(len(labels['train']), (1280,), generator=generator).to(config.train.device)
-                optimizer.zero_grad(set_to_none=True)
-                with autocast_context(config):
-                    loss = F.cross_entropy(head(values['train'][indices]).float(), labels['train'][indices])
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(head.parameters(), 1., error_if_nonfinite=True)
-                optimizer.step()
+                with compute_watchdog(config.train.stall_timeout_seconds):
+                    optimizer.zero_grad(set_to_none=True)
+                    with autocast_context(config):
+                        loss = F.cross_entropy(head(values['train'][indices]).float(), labels['train'][indices])
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(head.parameters(), 1., error_if_nonfinite=True)
+                    optimizer.step()
                 if (step + 1) % 20 == 0:
-                    row = {'step': step + 1, 'loss': loss.item(), **memory_metrics(config.train.device)}
+                    row = {'step': step + 1, 'loss': loss.item(), 'resume_attempt': tracking.attempt, **memory_metrics(config.train.device)}
+                    with (output / 'metrics.jsonl').open('a') as handle:
+                        handle.write(json.dumps(row) + '\n')
                     tracking.log(row)
                     print(json.dumps(row), flush=True)
             save(steps)

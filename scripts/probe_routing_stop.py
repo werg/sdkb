@@ -5,6 +5,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 import signal
+import random
 from types import SimpleNamespace
 
 from safetensors.torch import load_file
@@ -16,9 +17,10 @@ from probe_routing_features import AddressProbe, pair_loss
 from sdkb.data import load_episodes
 from sdkb.operations import atomic_json, control_dir, run_lock, stop_requested
 from sdkb.optimizers import MuonAdamW, optimizer_report
-from sdkb.runtime import available_host_memory, configure_memory, memory_metrics
+from sdkb.runtime import compute_watchdog, available_host_memory, configure_memory, memory_metrics
 from sdkb.tracking import Tracking
 from sdkb.training import autocast_context, config_from_run
+from sdkb.probe_state import restore_probe_state, save_probe_state
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.trajectories import file_sha256
 
@@ -103,6 +105,7 @@ def run(source, features_root, output, steps):
     with run_lock(output, clear_stop=False):
         checkpoint = resolve_checkpoint(source, verify=True)
         config = copy.deepcopy(config_from_run(checkpoint))
+        config.train.optimizer = 'muon'
         inputs = json.loads((features_root / 'inputs.json').read_text())
         path = features_root / 'full_state_query-resume.pt'
         initial = torch.load(path, weights_only=True, map_location='cpu')
@@ -125,6 +128,7 @@ def run(source, features_root, output, steps):
         config.memory.independent_routing_query = True
         configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
+        random.seed(47)
         torch.manual_seed(47)
         identity = {'source_endpoint_sha256': file_sha256(path), 'source_identity': inputs,
                     'steps': steps, 'batch_size': 1280, 'seed': 47, 'optimizer_reset': True,
@@ -166,21 +170,12 @@ def run(source, features_root, output, steps):
                 [{'params': other, 'lr': config.train.learning_rate}] if other else [], config.train)
             generator = torch.Generator().manual_seed(47)
             state_path = root / 'resume.pt'
-            start = 0
-            if state_path.exists():
-                saved = torch.load(state_path, weights_only=True, map_location=config.train.device)
-                if saved['identity'] != identity or saved['arm'] != name or saved['parameter_names'] != list(named):
-                    raise ValueError('Probe resume identity/ownership changed')
-                model.load_state_dict(saved['model'])
-                optimizer.load_state_dict(saved['optimizer'])
-                generator.set_state(saved['sampling_rng'].cpu())
-                start = saved['step']
+            start = restore_probe_state(state_path, model, optimizer, generator, identity, extra={'arm': name})
             def save(step):
-                temporary = state_path.with_suffix('.tmp')
-                torch.save({'identity': identity, 'arm': name, 'step': step, 'model': model.state_dict(),
-                            'optimizer': optimizer.state_dict(), 'sampling_rng': generator.get_state(),
-                            'parameter_names': list(named)}, temporary)
-                temporary.replace(state_path)
+                save_probe_state(state_path, model, optimizer, generator, identity, step,
+                                 reserve_bytes=config.train.min_free_disk_bytes, extra={'arm': name})
+            if not state_path.exists():
+                save(0)
             with Tracking(config, root) as tracking:
                 if tracking.run is not None:
                     tracking.run.config.update({'feature_probe': identity, 'arm': name, 'learned_stop': enabled})
@@ -193,16 +188,19 @@ def run(source, features_root, output, steps):
                         raise RuntimeError('Feature continuation stopped with full optimizer/sampling state')
                     indices = torch.randint(len(episodes['train']), (1280,), generator=generator).to(config.train.device)
                     batch = {k: v[indices] for k, v in features['train'].items()}
-                    optimizer.zero_grad(set_to_none=True)
-                    with autocast_context(config):
-                        scores, stop = model(batch)
-                        loss = (pair_loss(scores, batch['required'], batch['lengths']) if stop is None else
-                                stop_pair_loss(scores, stop, batch['required'], batch['lengths']))
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), config.train.clip_grad_norm, error_if_nonfinite=True)
-                    optimizer.step()
+                    with compute_watchdog(config.train.stall_timeout_seconds):
+                        optimizer.zero_grad(set_to_none=True)
+                        with autocast_context(config):
+                            scores, stop = model(batch)
+                            loss = (pair_loss(scores, batch['required'], batch['lengths']) if stop is None else
+                                    stop_pair_loss(scores, stop, batch['required'], batch['lengths']))
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), config.train.clip_grad_norm, error_if_nonfinite=True)
+                        optimizer.step()
                     if (step + 1) % 20 == 0:
-                        row = {'step': step + 1, 'loss': loss.item(), 'arm': name, **memory_metrics(config.train.device)}
+                        row = {'step': step + 1, 'loss': loss.item(), 'arm': name, 'resume_attempt': tracking.attempt, **memory_metrics(config.train.device)}
+                        with (root / 'metrics.jsonl').open('a') as handle:
+                            handle.write(json.dumps(row) + '\n')
                         tracking.log(row)
                         print(json.dumps(row), flush=True)
                 save(steps)

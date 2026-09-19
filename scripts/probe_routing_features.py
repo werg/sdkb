@@ -3,6 +3,7 @@ import argparse
 import copy
 import json
 import signal
+import random
 from pathlib import Path
 
 from safetensors.torch import load_file, load_model, save_file
@@ -14,7 +15,10 @@ from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes, make_multiuse_world, save_episodes
 from sdkb.operations import atomic_json, run_lock, stop_requested
-from sdkb.runtime import available_host_memory, configure_memory, memory_metrics
+from sdkb.runtime import available_host_memory, configure_memory, memory_metrics, compute_watchdog
+from sdkb.probe_state import restore_probe_state, save_probe_state, parameter_names
+from sdkb.optimizers import optimizer_report
+from sdkb.tracking import Tracking
 from sdkb.training import autocast_context, config_from_run
 from sdkb.trajectories import file_sha256
 
@@ -132,8 +136,12 @@ def run(checkpoint, root, steps, train_worlds=0, batch_size=0):
     with run_lock(root, clear_stop=False):
         checkpoint = resolve_checkpoint(checkpoint, verify=True)
         config = config_from_run(checkpoint)
+        config.train.optimizer = 'muon'
+        config.train.seed, config.train.steps = 43, steps
+        config.train.wandb_group = 'routing-feature-probe'
         configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
+        random.seed(43)
         torch.manual_seed(43)
         agent = SDKBAgent(config).to(config.train.device).eval()
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
@@ -202,40 +210,45 @@ def run(checkpoint, root, steps, train_worlds=0, batch_size=0):
                 momentum=config.train.muon_momentum, ns_steps=config.train.muon_ns_steps,
                 weight_decay=config.train.weight_decay, adjust_lr_fn='match_rms_adamw')
             state_path = root / f'{name}-resume.pt'
-            start = 0
-            if state_path.exists():
-                state = torch.load(state_path, weights_only=True, map_location=config.train.device)
-                if state['identity'] != identity:
-                    raise ValueError('Resume identity changed')
-                model.load_state_dict(state['model'])
-                optimizer.load_state_dict(state['optimizer'])
-                start = state['step']
-                generator.set_state(state['sampling_rng'].cpu())
+            telemetry = root / name
+            telemetry.mkdir(exist_ok=True)
+            start = restore_probe_state(state_path, model, optimizer, generator, identity, metrics_root=telemetry)
             def save(step):
-                temporary = state_path.with_suffix('.tmp')
-                torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(),
-                            'step': step, 'identity': identity, 'sampling_rng': generator.get_state()}, temporary)
-                temporary.replace(state_path)
+                save_probe_state(state_path, model, optimizer, generator, identity, step,
+                                 reserve_bytes=config.train.min_free_disk_bytes)
+            if not state_path.exists():
+                save(0)
+            atomic_json(telemetry / 'optimizer.json', {'kind': 'native_muon', 'groups': optimizer_report(optimizer),
+                        'parameter_names': parameter_names(model, optimizer)})
             initial = score(model, train_features, train[:count], config) if start == 0 else None
-            for step in range(start, steps):
-                available = available_host_memory()
-                if stop_requested(root) or (available is not None and available < config.train.min_system_available_bytes):
-                    save(step)
-                    raise RuntimeError('Probe stopped; address optimizer state saved')
-                optimizer.zero_grad(set_to_none=True)
-                if batch_size:
-                    indices = torch.randint(count, (batch_size,), generator=generator, device='cpu').to(config.train.device)
-                    batch = {k: v[indices] for k, v in train_features.items()}
-                else:
-                    batch = train_features
-                with autocast_context(config):
-                    loss = pair_loss(model(batch), batch['required'], batch['lengths'])
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), config.train.clip_grad_norm)
-                optimizer.step()
-                if (step + 1) % 100 == 0:
-                    print(json.dumps({'arm': name, 'step': step + 1, 'loss': loss.item(), **memory_metrics(config.train.device)}), flush=True)
-            save(steps)
+            with Tracking(config, telemetry) as tracking:
+                if tracking.run is not None:
+                    tracking.run.config.update({'feature_probe': identity, 'arm': name, 'frozen_backbone': True})
+                for step in range(start, steps):
+                    available = available_host_memory()
+                    if stop_requested(root) or (available is not None and available < config.train.min_system_available_bytes):
+                        save(step)
+                        raise RuntimeError('Probe stopped; address optimizer state saved')
+                    if batch_size:
+                        indices = torch.randint(count, (batch_size,), generator=generator, device='cpu').to(config.train.device)
+                        batch = {k: v[indices] for k, v in train_features.items()}
+                    else:
+                        batch = train_features
+                    with compute_watchdog(config.train.stall_timeout_seconds):
+                        optimizer.zero_grad(set_to_none=True)
+                        with autocast_context(config):
+                            loss = pair_loss(model(batch), batch['required'], batch['lengths'])
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), config.train.clip_grad_norm, error_if_nonfinite=True)
+                        optimizer.step()
+                    if (step + 1) % 100 == 0:
+                        row = {'arm': name, 'step': step + 1, 'loss': loss.item(), 'resume_attempt': tracking.attempt,
+                               **memory_metrics(config.train.device)}
+                        with (telemetry / 'metrics.jsonl').open('a') as handle:
+                            handle.write(json.dumps(row) + '\n')
+                        tracking.log(row)
+                        print(json.dumps(row), flush=True)
+                save(steps)
             report['arms'][name] = {'parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
                 'initial_train': initial, 'training_queries': count,
                 'train': score(model, train_features, train[:count], config),
