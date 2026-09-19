@@ -86,3 +86,17 @@ binding with distractors, or parameter substitution. See `confirmation-summaries
 for checkpoint, episode and raw-result hashes and generation controls, and
 `paired-results.json` for strict world-paired comparisons. Training used frozen
 source `0d6c0a4`; evaluation used `b82d7a0`.
+
+
+## Competing-entity follow-up
+
+Frozen source `27dfbac` evaluated both final checkpoints on the same 32 confirmation
+worlds with every entity's records available. Both action scores fell to 61.71875%
+from the reproduced 100% oracle-support scores. Core-only permission accuracy was
+64.0625%, full-backbone permission 45.3125%; both restoration scores were 70.3125%.
+For both models, every opposed-permission world (17/17) and every opposed-restoration
+world (19/19) produced the same fact answer for both entities, with zero jointly
+correct pairs. More training and wider adaptation solved selected-support composition
+but did not establish entity discrimination. These worlds were reused to diagnose
+fixed checkpoints, not to choose a training endpoint. See `context-summaries.json`,
+`context-entity-stratification.json`, and `context-scope-comparison.json`.

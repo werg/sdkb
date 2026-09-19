@@ -1,0 +1,13 @@
+{
+  "pid": 27781,
+  "source_commit": "304fb17",
+  "study": "/archive/runs/binding-muon-routing-20260919",
+  "console": "/archive/runs/.sdkb-control/1a048cde46adb6a06ace31ce/console.log",
+  "training_order": [
+    "no_routing_loss",
+    "group_routing"
+  ],
+  "status": "launched",
+  "comparison_pid": 27920,
+  "comparison_console": "/archive/runs/binding-muon-routing-20260919/comparison-console.log"
+}

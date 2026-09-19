@@ -1,4 +1,4 @@
-# MLP world-scoped learned selection (protocol prepared)
+# MLP world-scoped learned selection (running)
 
 The longer selected-support MLP now composes both rule facts correctly. Test whether
 verified group supervision can teach its existing key/query path to select records
@@ -35,3 +35,12 @@ cannot establish agent success, arbitrary entity binding or parameter substituti
 Preparation does not launch training. The full-graph/replay test covers the new
 combination of in-loop learned top-two selection, competing records, serialized
 BF16 payloads, live key/query gradients, and checkpointing on/off.
+
+
+Launched sequentially from frozen source `304fb17`, control first. The queued
+comparison uses that same frozen source and waits for both arms to finish before
+creating its new evaluation worlds. `launch.json` records the external console and
+process IDs; `inputs.json` records immutable configurations and source/data hashes.
+All 244 core tests and Ruff passed before launch. The source's all-world diagnosis
+subsequently confirmed identical fact answers for both entities in every opposed-rule
+world, making learned selection a distinct, unresolved mechanism to test.

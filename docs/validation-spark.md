@@ -120,3 +120,11 @@ and support-removal intervention. Zero values and counterfactuals retain the
 original read plans. CPU regression and a native BF16 148-row mechanics smoke
 verify selection eligibility and intervention plans. This is not ANN or global
 retrieval, and the smoke is not retrieval capability evidence.
+
+
+Both longer MLP endpoints were subsequently tested with competing entities. Both
+fell to 61.7% action accuracy and gave identical answers to both entities in all
+opposed-rule worlds (17 permission, 19 restoration), with no jointly correct fact
+pairs. The selected-support composition success therefore does not resolve binding.
+A fixed-budget, matched routing-supervision study is now running from `304fb17`;
+its results remain pending. Checkpoints and banks remain on the external disk.
