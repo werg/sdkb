@@ -1,0 +1,15 @@
+{
+  "identical_records": 128,
+  "columns": [
+    "namespace",
+    "record_id",
+    "space",
+    "generation",
+    "domain",
+    "created_at",
+    "payload",
+    "source_id",
+    "deleted"
+  ],
+  "keys_intentionally_differ": true
+}

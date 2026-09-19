@@ -25,3 +25,17 @@ Initial/final/emergency small-state checkpoints remain external. Named ownership
 full optimizer/config/RNG/sampler recovery, atomic fsync, disk/memory reserves,
 compute-only watchdog, W&B attempts and checkpoint-aligned JSONL apply. No periodic
 full-model checkpoints or backbone copies are created.
+
+## Completed feature comparison
+
+Both arms completed 800 updates from `e6c13b9`. Initial development scores agree
+exactly. Under full-bank competition, complete heldout action-pair recall is
+45/128 after global-negative training versus 4/128 after within-world training
+(initial 1/128). Paired gain is 32.03 points, world-bootstrap interval
+[21.88, 42.19]. Under supplied world scope the two endpoints score 79/128 and
+82/128 respectively; that difference is inconclusive. Global training-bank action
+pairs reach 973/4096, so the hard objective is not solved even on training worlds.
+
+The paired control attributes this feature improvement to candidate scope rather
+than only additional updates. It does not establish useful stored inference.
+Both endpoints are frozen for the separate fresh-world stored confirmation.

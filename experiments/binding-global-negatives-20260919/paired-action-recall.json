@@ -1,0 +1,26 @@
+{
+  "direction": "global-negative minus world-negative continuation",
+  "metric": "full required-pair recall",
+  "scopes": {
+    "world": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": -0.0234375,
+      "ci95": [
+        -0.1328125,
+        0.0859375
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    },
+    "global": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": 0.3203125,
+      "ci95": [
+        0.21875,
+        0.421875
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    }
+  }
+}

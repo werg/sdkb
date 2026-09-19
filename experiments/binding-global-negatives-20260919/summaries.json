@@ -1,0 +1,384 @@
+{
+  "world": {
+    "initial-heldout": {
+      "report_sha256": "db3dba53eda6c948fc090df9e5ae713e934a600b91bf7951e0955f149dbca47b",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.8319299101829529,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 66,
+              "top_one_required": 99,
+              "only_target_world": 128
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 43,
+              "only_target_world": 64
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 63,
+              "top_one_required": 47,
+              "only_target_world": 64
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 58,
+              "only_target_world": 64
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 5.196956920623779,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 1,
+              "top_one_required": 17,
+              "only_target_world": 1
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 10,
+              "top_one_required": 6,
+              "only_target_world": 0
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 11,
+              "top_one_required": 8,
+              "only_target_world": 1
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 25,
+              "top_one_required": 14,
+              "only_target_world": 0
+            }
+          }
+        }
+      }
+    },
+    "train": {
+      "report_sha256": "6d1f5496ca6edd5fb1a7c5ed3bfee7acd2872e04254ec7646dfafa6ca4910c15",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.18586169378831982,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 3966,
+              "top_one_required": 4072,
+              "only_target_world": 4096
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 2048,
+              "top_one_required": 2023,
+              "only_target_world": 2048
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 2048,
+              "top_one_required": 2015,
+              "only_target_world": 2048
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 2048,
+              "top_one_required": 2023,
+              "only_target_world": 2048
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 8.816127502918244,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 3,
+              "top_one_required": 86,
+              "only_target_world": 3
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 50,
+              "top_one_required": 23,
+              "only_target_world": 0
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 41,
+              "top_one_required": 21,
+              "only_target_world": 0
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 129,
+              "top_one_required": 75,
+              "only_target_world": 0
+            }
+          }
+        }
+      }
+    },
+    "heldout": {
+      "report_sha256": "a89c4eaae12c65038c7175ab65d8744ff0c3e5fc765188319efc9916d9086c05",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.5893023610115051,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 82,
+              "top_one_required": 112,
+              "only_target_world": 128
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 50,
+              "only_target_world": 64
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 51,
+              "only_target_world": 64
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 60,
+              "only_target_world": 64
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 4.78555269241333,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 4,
+              "top_one_required": 34,
+              "only_target_world": 9
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 8,
+              "top_one_required": 6,
+              "only_target_world": 1
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 17,
+              "top_one_required": 10,
+              "only_target_world": 1
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 33,
+              "top_one_required": 24,
+              "only_target_world": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "global": {
+    "initial-heldout": {
+      "report_sha256": "db3dba53eda6c948fc090df9e5ae713e934a600b91bf7951e0955f149dbca47b",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.8319299101829529,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 66,
+              "top_one_required": 99,
+              "only_target_world": 128
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 43,
+              "only_target_world": 64
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 63,
+              "top_one_required": 47,
+              "only_target_world": 64
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 58,
+              "only_target_world": 64
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 5.196956920623779,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 1,
+              "top_one_required": 17,
+              "only_target_world": 1
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 10,
+              "top_one_required": 6,
+              "only_target_world": 0
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 11,
+              "top_one_required": 8,
+              "only_target_world": 1
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 25,
+              "top_one_required": 14,
+              "only_target_world": 0
+            }
+          }
+        }
+      }
+    },
+    "train": {
+      "report_sha256": "19879aa274c8e3f46a042c463bf76656bb7c91c24218f84956ab8e21586be2a8",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.5636700771749019,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 3092,
+              "top_one_required": 3973,
+              "only_target_world": 4096
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 1985,
+              "top_one_required": 1743,
+              "only_target_world": 2048
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 1973,
+              "top_one_required": 1664,
+              "only_target_world": 2048
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 2045,
+              "top_one_required": 1957,
+              "only_target_world": 2048
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 5.211365699768066,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 973,
+              "top_one_required": 3118,
+              "only_target_world": 1245
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 1016,
+              "top_one_required": 760,
+              "only_target_world": 90
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 1029,
+              "top_one_required": 766,
+              "only_target_world": 122
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 1732,
+              "top_one_required": 1505,
+              "only_target_world": 198
+            }
+          }
+        }
+      }
+    },
+    "heldout": {
+      "report_sha256": "f37a8cf47493e3ded49220afaaf96e6a554d18aa035bf03c3b0b85503b0ff5da",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.7939326643943787,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 79,
+              "top_one_required": 122,
+              "only_target_world": 128
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 57,
+              "top_one_required": 43,
+              "only_target_world": 64
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 55,
+              "top_one_required": 38,
+              "only_target_world": 64
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 61,
+              "only_target_world": 64
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 2.2530131340026855,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 45,
+              "top_one_required": 110,
+              "only_target_world": 68
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 40,
+              "top_one_required": 32,
+              "only_target_world": 21
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 40,
+              "top_one_required": 29,
+              "only_target_world": 25
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 62,
+              "top_one_required": 57,
+              "only_target_world": 24
+            }
+          }
+        }
+      }
+    }
+  }
+}
