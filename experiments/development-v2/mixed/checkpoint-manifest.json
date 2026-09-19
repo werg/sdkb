@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "step": 1000,
+  "dataset_sha256": "b823c2aa194746bf09284a7430f8133d201210372ee70985615ffe9228be4c67",
+  "resolved_model_revision": "local-tiny",
+  "sha256": {
+    "training_cache.sqlite": "4bd1b0372892c275cb65e5ed35ff95dc28bc3d3600ca7d9c4f1dc18c34370b0f",
+    "config.json": "9ffe52bd026f2002da0a5f90ab99f703eeb7b6cfa0094b80f5c349f48085629e",
+    "model.safetensors": "a705979ad6c211aa6bb626831ffa4a91f3fb849fa669a8149826bbc4a0ac6b6b",
+    "training_state.pt": "636aa21b67d95c4047e23ef66320387c27507292601c4255ce2e8d9d6c94a3cd"
+  }
+}

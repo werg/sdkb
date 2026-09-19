@@ -1,5 +1,8 @@
 # Experiment protocol
 
+See [v0.2 validation](validation-v0.2.md) for the executed CPU study and
+[development guide](development-v0.2.md) for runner commands.
+
 ## 1. Establish the information path before retrieval engineering
 
 Run the one-space, one-loop student with oracle support selection. Compare no
@@ -20,13 +23,16 @@ Every evaluation freezes weights, constructs truly new support worlds, serialize
 the payload format/precision, reopens the bank and evaluates stored-only. A unit
 test that passes through serialization is necessary but does not establish transfer.
 Inspect whether predictions change appropriately under counterfactual replacements.
-The included 30-step tiny run does **not** show this yet.
+The original 30-step run did not show this. The v0.2 warm-started toy study shows
+partial joint-use improvement, but counterfactual consistency remains insufficient
+for a robust-composition claim.
 
-Built-in action scoring selects the lowest mean token NLL among three action
-strings; it is not open-ended generation correctness. `--generate` additionally
-reports exact-match greedy generation for memory/no-memory arms. Mean-NLL scoring
-has tokenization/length effects; use one-token label controls or calibrated scoring
-for rigorous comparisons. All conditions report their raw values.
+Built-in choice scoring now uses total sequence NLL including EOS. Mean-token
+NLL and mean-score predictions remain separately reported. This is not open-ended
+generation correctness; `--generate` in the original action evaluator supplies an
+additional greedy exact-match diagnostic. Unequal choice lengths/tokenizations can
+still favor some answers; equal-length Boolean labels isolate that issue in the
+CPU study. Do not compare v0.1 mean-scored action accuracy directly to v0.2 scores.
 
 ## 2. Separate write, storage and read bottlenecks
 
@@ -44,8 +50,9 @@ observations out of its support. Split repositories/task families and remove
 near-duplicates. Teacher API execution and output-license management are outside
 the current runner.
 
-For general held-out JSONL use `elm evaluate-episodes`, which reports target answer
-NLL, missing-support and value-ablation controls. Tool execution, code tests and
+For new held-out JSONL use `elm evaluate-transfer`, which writes each source once
+in a shared bank and reports choice or target NLL, missing-support/value ablations,
+and world-clustered paired metrics. The legacy `evaluate-episodes` remains available. Tool execution, code tests and
 reward models must be added as real verifiers rather than renamed likelihoods.
 
 ## 3. Learned access
@@ -54,15 +61,16 @@ The learned configuration retrieves two records from ten, after oracle warmup.
 The scorer receives gradients from known sufficient groups even when each member
 is individually unhelpful. The current reference enumerates group orderings up to
 size four; it is not an arbitrary group-discovery algorithm. Candidate exploration,
-conditional marginal utility and adaptive multi-read query updates remain useful
-follow-on experiments.
+conditional marginal utility and learned invocation remain follow-on experiments.
+Scheduled state-dependent multi-read queries and remaining-group supervision are
+implemented; do not call a fixed schedule an adaptive stopping policy.
 
 Track complete-support recall, accepting any actually sufficient group, plus
-end-task success. The built-in benchmark names one sufficient pair; on stopped
-branches that pair can be conservative. Do not treat perfect oracle recall as a
-learned-router result. Current learned training is candidate-local; evaluation
-searches the bank for that task namespace. Global cross-task distractor stress
-requires a different bank-building protocol.
+end-task success. The retry benchmark recognizes branch-specific sufficient groups; its oracle read
+plan still supplies both rules so target-dependent cardinality cannot leak the answer. Do not treat perfect oracle recall as a
+learned-router result. Current learned training is candidate-local; `evaluate-transfer` searches one
+heterogeneous global namespace, exposing distractors outside the training episode.
+Oracle recall is not evidence that this harder retrieval problem is solved.
 
 ## 4. Compaction and compactability
 

@@ -1,0 +1,6 @@
+{
+  "tensors_checked": 71,
+  "noncompactor_max_abs_difference": 0.0,
+  "compactor_tensors_added": 10,
+  "notice": "Only compactor parameters were trained in the compaction phase."
+}

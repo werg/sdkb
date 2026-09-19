@@ -1,0 +1,185 @@
+{
+  "schema_version": 2,
+  "protocol": "write-once, serialize/reload, global stored-only bank",
+  "choice_scoring": "sum of target token NLL including EOS",
+  "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+  "summary": {
+    "all": {
+      "n": 768,
+      "choice_accuracy": 0.7669270833333334,
+      "mean_target_nll": 0.2543639593362362,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 768,
+      "choice_accuracy": 0.5104166666666666,
+      "mean_target_nll": 0.48379657554323785,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 768,
+      "choice_accuracy": 0.4986979166666667,
+      "mean_target_nll": 0.5142974209108312,
+      "complete_support_recall": 1.0
+    },
+    "drop_0": {
+      "n": 768,
+      "choice_accuracy": 0.5091145833333334,
+      "mean_target_nll": 0.5515021806944181,
+      "complete_support_recall": 0.0
+    },
+    "drop_1": {
+      "n": 256,
+      "choice_accuracy": 0.50390625,
+      "mean_target_nll": 0.5581100587296532,
+      "complete_support_recall": 0.0
+    }
+  },
+  "by_family": {
+    "boolean/a": {
+      "all": {
+        "n": 256,
+        "choice_accuracy": 0.81640625,
+        "mean_target_nll": 0.2143951385987748,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 256,
+        "choice_accuracy": 0.5078125,
+        "mean_target_nll": 0.5478878111607628,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 256,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.5498280816245824,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 256,
+        "choice_accuracy": 0.5078125,
+        "mean_target_nll": 0.5478878111607628,
+        "complete_support_recall": 0.0
+      }
+    },
+    "boolean/b": {
+      "all": {
+        "n": 256,
+        "choice_accuracy": 0.82421875,
+        "mean_target_nll": 0.2091466466881684,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 256,
+        "choice_accuracy": 0.5234375,
+        "mean_target_nll": 0.5352391150227049,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 256,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.5709227461920818,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 256,
+        "choice_accuracy": 0.5234375,
+        "mean_target_nll": 0.5352391150227049,
+        "complete_support_recall": 0.0
+      }
+    },
+    "boolean/xor": {
+      "all": {
+        "n": 256,
+        "choice_accuracy": 0.66015625,
+        "mean_target_nll": 0.3395500927217654,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 256,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.3682628004462458,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 256,
+        "choice_accuracy": 0.49609375,
+        "mean_target_nll": 0.42214143491582945,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 256,
+        "choice_accuracy": 0.49609375,
+        "mean_target_nll": 0.5713796158997866,
+        "complete_support_recall": 0.0
+      },
+      "drop_1": {
+        "n": 256,
+        "choice_accuracy": 0.50390625,
+        "mean_target_nll": 0.5581100587296532,
+        "complete_support_recall": 0.0
+      }
+    }
+  },
+  "paired_memory_benefit": {
+    "n_worlds": 256,
+    "n_queries": 768,
+    "mean_gain": 0.2565104166666667,
+    "ci95": [
+      0.22916666666666666,
+      0.28515625
+    ],
+    "warning": "Few independent worlds produce unreliable uncertainty estimates."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 275607552,
+    "system_mem_available_bytes": 5022474240
+  },
+  "counterfactuals": {
+    "cf_a": {
+      "change_pairs": 512,
+      "both_correct_on_change": 0.474609375,
+      "appropriate_prediction_change": 0.474609375,
+      "unchanged_pairs": 256,
+      "false_change_rate": 0.0
+    },
+    "cf_b": {
+      "change_pairs": 512,
+      "both_correct_on_change": 0.470703125,
+      "appropriate_prediction_change": 0.470703125,
+      "unchanged_pairs": 256,
+      "false_change_rate": 0.0
+    }
+  },
+  "xor_counterfactuals": {
+    "cf_a": {
+      "change_pairs": 256,
+      "both_correct_on_change": 0.32421875,
+      "appropriate_prediction_change": 0.32421875,
+      "unchanged_pairs": 0,
+      "false_change_rate": null
+    },
+    "cf_b": {
+      "change_pairs": 256,
+      "both_correct_on_change": 0.31640625,
+      "appropriate_prediction_change": 0.31640625,
+      "unchanged_pairs": 0,
+      "false_change_rate": null
+    }
+  },
+  "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+  "write_phase": {
+    "unique_sources": 512,
+    "writer_calls": 512,
+    "queries": 768,
+    "worlds": 256
+  },
+  "store": {
+    "records": 1536,
+    "serialized_payload_bytes": 307200,
+    "key_bytes": 73728,
+    "physical_sqlite_bytes": 716800,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "runs/boolean-warm/transfer-v2-1789779313820254901"
+}

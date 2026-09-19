@@ -5,10 +5,16 @@ set composition, selective producer replay, and conditional cluster compaction.
 The initial pretrained student is **LiquidAI/LFM2.5-230M**. Development targets a
 single **NVIDIA DGX Spark**, with an offline CPU backend for correctness tests.
 
-**Status: executable research reference, not a validated capability or serving result.**
-The CPU paths have been exercised. The real LFM checkpoint, native ARM64 container,
-and Spark CUDA execution still require the supplied hardware smoke test. See
-[validation results](docs/validation.md) and the [implementation boundary](docs/implementation.md).
+**Status: v0.2 research implementation with a partial CPU latent-transfer result.**
+The tiny byte-model diagnostic reaches 66.0% held-out XOR accuracy versus 50.0%
+without memory; either missing support returns it to chance. Counterfactual flips
+remain inconsistent, so this is not robust composition. A separately trained
+compactor preserves that score using one stored synthetic record instead of two.
+No LFM/Spark capability or deployment-resource result has been established.
+
+See [v0.2 validation and raw evidence](docs/validation-v0.2.md),
+[development guide](docs/development-v0.2.md), and the
+[implementation boundary](docs/implementation.md).
 
 ## Architecture and project map
 
@@ -38,20 +44,36 @@ inference: stored values only; no trajectory re-encoding on the read path
 | Attention comparison | Fixed-slot cross-attention with the same residual updater and additive numerator/mass compaction targets |
 | Multiscale reader | Different payload widths and neighbor counts; one common recurrent residual state |
 | Selective replay | RNG/autocast replay, accumulated leaf cotangents, shared-parameter gradients, cached/live mixtures; full-graph parity tests |
-| Reader memory | Chunked aggregation and non-reentrant checkpointing; no trajectory read-count truncation mechanism |
-| Compaction | Mean-plus-mass; amortized synthetic records; conditional contribution and rollout loss; temporary compressed training reads |
-| Compactability utilities | Local merge loss, alternative partitions, overlapping field responsibilities, storage-aligned noise; tested as modules |
-| Retrieval | Exact streaming CPU cosine reference; complete-plan routing supervision; complete-support metric |
+| Reader memory | Chunk-checkpointed training; single-space stored-only streaming with bounded device payload staging |
+| Compaction | Paired raw/compact losses, conditional contribution/KL targets, compactor-only warm starts; persistent full-cluster codes with raw partial fallback |
+| Compactability | Integrated local/random/overlap grouping, mass conservation, merge regularization, storage noise, and synthetic-record replacement |
+| Retrieval | Global-bank exact CPU search, complete-group supervision, scheduled state-conditioned follow-up reads with exclusion |
 | Storage | Versioned immutable records, authorization/time filtering, safetensors payloads, deletion lineage; asynchronous CPU retrieval utility |
 | Recurrence | Optional tied **full-stack refinement** through public model APIs; one loop preserves the original path |
-| Experiments | Synthetic counterfactual support/query tasks, general JSONL supervised tasks, stored-only evaluation, CPU I/O and compaction probes |
-| Development | Configurations, container/devcontainer, CLI, checkpoint/resume, test workflows and issue templates |
+| Experiments | Write-once/many-use and Boolean counterfactual datasets; full-sequence scoring, world-level paired intervals, seven-arm runner, stored-only persistent evaluation |
+| Development | Atomic checkpoint sets including stale cache/RNG, compatible warm starts, hardware preflight, Spark configs/container, CI and replay tests |
 
 Not yet implemented: disk ANN, trajectory-wide adaptive read scheduling, early-layer
 asynchronous query overlap, a hybrid-state loop cache, production serving,
-persistent selection-conditioned compact fields, nested producer dependency replay,
+arbitrary-subset compact codes, nested producer dependency replay,
 teacher rollout collection, task verifiers, or a measured capacity-substitution frontier.
 The asynchronous retrieval utility is **not** an implemented asynchronous LLM scheduler.
+
+## Reproduce the new CPU diagnostic
+
+```bash
+# Tests need no model download.
+python -m pytest -q
+# Four worlds and one optimizer step per stage: execution only.
+python scripts/reproduce_boolean.py --output runs/study-smoke --smoke
+# Full study, including failed cold starts, text bootstrap, and compaction.
+python scripts/reproduce_boolean.py --output runs/study
+```
+
+The study keeps all weights frozen during stored evaluation, writes each source
+once, and tests new worlds. The reported run uses one training seed and oracle
+retrieval. It is not a measurement on the 230M student. Original values are retained
+for partial-cluster fallback: fewer active read bytes is not net disk compression.
 
 ## Quick start: offline CPU reference
 
@@ -95,10 +117,11 @@ Container Toolkit are operational:
 ./scripts/spark.sh run bash scripts/smoke_lfm.sh \
   runs/lfm-pinned.yaml runs/lfm-smoke
 
-# First longer oracle-transfer experiment.
-./scripts/spark.sh run elm train \
-  --config runs/lfm-pinned.yaml --output runs/lfm-oracle --steps 200
-./scripts/spark.sh run elm evaluate --run runs/lfm-oracle --count 32
+# Prepare common-data controls; preparation launches no training.
+./scripts/spark.sh run python scripts/prepare_matrix.py \
+  --config runs/lfm-pinned.yaml --output runs/lfm-matrix \
+  --steps 200 --worlds 64 --eval-worlds 32 --bindings 2 --seeds 17
+./scripts/spark.sh run bash runs/lfm-matrix/run_all.sh
 ```
 
 The base image defaults to `nvcr.io/nvidia/pytorch:26.08-py3`; override it with
@@ -143,6 +166,12 @@ using defaults. `model.revision: main` is a bootstrap default; pin it before run
 | `lfm25_230m_direct_latent_spark.yaml` | Deliver individual canonical latent records without pooling |
 | `lfm25_230m_attention_spark.yaml` | Attention reader comparison |
 | `lfm25_230m_compaction_spark.yaml` | Temporary full-neighborhood compaction; no persistent index rewrite |
+| `lfm25_230m_paired_compaction_spark.yaml` | Paired raw/compact task loss and local grouping |
+| `lfm25_230m_overlap_spark.yaml` | Mass-conserving overlapping-field compaction training |
+| `lfm25_230m_multiread_spark.yaml` | Two causally state-conditioned scheduled reads |
+| `lfm25_230m_streaming_spark.yaml` | Bounded-payload stored inference; synchronous repeated disk passes |
+| `lfm25_230m_oracle_text_spark.yaml` | Information-availability control |
+| `lfm25_230m_shared_compute_spark.yaml` | Source-independent query/reader/soft-position control |
 | `lfm25_230m_learned_spark.yaml` | Two-of-ten retrieval, known-group supervision, oracle warmup |
 | `lfm25_230m_multiscale_spark.yaml` | Optional four-space branch; not required for the first experiment |
 | `lfm25_230m_loop2_spark.yaml` | Gated shared-stack recurrence |

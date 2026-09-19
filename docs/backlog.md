@@ -1,7 +1,7 @@
 # Development and research backlog
 
 Checkboxes mean implemented tasks, not validated scientific hypotheses. The
-reference tests and CPU runs are recorded in `validation.md`.
+reference tests and CPU runs are recorded in `validation-v0.2.md`.
 
 ## A. Numerical reference and runnable development
 
@@ -15,15 +15,16 @@ reference tests and CPU runs are recorded in `validation.md`.
 - [x] General support/query JSONL input and stored-only likelihood evaluation.
 - [x] CPU CLI, environment doctor, native Spark Docker/devcontainer configuration.
 - [ ] Run the provided image and real LFM checkpoint on DGX Spark.
-- [ ] Add periodic checkpoints, coordinated multi-file recovery and an interrupted-run test.
+- [x] Add periodic checkpoints, coordinated multi-file/cache recovery and an interrupted-run test.
 
 ## B. Oracle transfer and composition — first scientific milestone
 
 - [x] Counterfactual retry/restoration generator and intervention evaluation.
 - [x] Main/wide-payload/direct-latent/attention configuration controls.
-- [ ] Establish useful causal memory dependence on frozen-weight held-out worlds.
-- [ ] Add multiple uses of one write, more variable bindings and held-out task families.
-- [ ] Add a raw-state/shared-compute control to isolate extra decoder positions.
+- [x] Establish a partial tiny-model stored-memory/joint-use signal with interventions.
+- [ ] Establish reliable counterfactual composition on the actual pretrained student.
+- [x] Add multiple uses of one write, variable bindings and separate held-out worlds (new real task families remain open).
+- [x] Add a source-independent shared-compute control to isolate extra decoder positions.
 - [ ] Train and compare LFM and SmolLM oracle-text ability before attributing reader failures.
 - [ ] Import licensed teacher coding trajectories and execute real task verifiers.
 
@@ -31,11 +32,13 @@ reference tests and CPU runs are recorded in `validation.md`.
 
 - [x] Complete-plan sufficient-group objective and candidate-local top-k training.
 - [x] Streaming exact CPU search, captured immutable read plans and async CPU utility.
-- [ ] Global heterogeneous bank evaluation, negatives outside each episode namespace.
-- [ ] Conditional marginal-utility sampling, plan exploration and next-query state updates.
+- [x] Global heterogeneous bank evaluation, negatives outside each episode namespace.
+- [x] Scheduled next-query state updates, remaining-group supervision and replay parity.
+- [ ] Conditional marginal-utility sampling, plan exploration and learned invocation/stopping.
 - [ ] Generation refresh, key-drift audit and sampled regeneration of never-retrieved entries.
 - [ ] Disk ANN adapter and key/payload layout benchmarks under controlled cache budgets.
-- [ ] Sparse nested producer dependency replay and bounded resident staging, without read truncation.
+- [x] Bounded device payload staging for single-space stored inference.
+- [ ] Sparse nested producer dependency replay and out-of-core consumer training without read truncation.
 
 ## D. Conditional compaction — independent branch from a useful reader
 
@@ -43,10 +46,11 @@ reference tests and CPU runs are recorded in `validation.md`.
 - [x] Conditional numerator/mass targets plus free-rollout loss for both readers.
 - [x] Temporary compact task steps and raw-task interleaving.
 - [x] Merge-consistency, alternate-partition, overlap and noise APIs/tests.
-- [ ] Integrate regrouping/overlap schedules and paired raw/compact task-loss ablations.
-- [ ] Preserve useful task behavior on held-out related clusters; characterize independent facts.
-- [ ] Persistent synthetic records with key-to-cluster indirection and explicit membership semantics.
-- [ ] Selection-conditioned child responses; retain full-code rejection until they are implemented.
+- [x] Integrate regrouping/overlap schedules and paired raw/compact task-loss options; comparative ablations remain open.
+- [x] Preserve a partial Boolean XOR result under compactor-only training and stored full-cluster codes.
+- [ ] Preserve strong behavior on harder related clusters, independent facts and exceptions.
+- [x] Persistent full-cluster records with key indirection and explicit raw subset fallback.
+- [ ] Selection-conditioned child responses; retain exact raw fallback until they are implemented.
 - [ ] Adaptive code sizes, exception records and measured net storage/compute savings.
 
 ## E. Recurrence and deployment

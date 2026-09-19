@@ -1,0 +1,116 @@
+{
+  "schema_version": 2,
+  "protocol": "write-once, serialize/reload, global stored-only bank",
+  "choice_scoring": "sum of target token NLL including EOS",
+  "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+  "summary": {
+    "all": {
+      "n": 192,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 0.3513069149727623,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 192,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 0.3917171796783805,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 192,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 0.35130687213192385,
+      "complete_support_recall": 1.0
+    }
+  },
+  "by_family": {
+    "boolean/a": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.35129219898954034,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.419948760420084,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.35129218036308885,
+        "complete_support_recall": 1.0
+      }
+    },
+    "boolean/b": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.35129339434206486,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.403883412014693,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.351293318439275,
+        "complete_support_recall": 1.0
+      }
+    },
+    "boolean/xor": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.3513351515866816,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.35131936660036445,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.35133511759340763,
+        "complete_support_recall": 1.0
+      }
+    }
+  },
+  "paired_memory_benefit": {
+    "n_worlds": 64,
+    "n_queries": 192,
+    "mean_gain": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "warning": "Few independent worlds produce unreliable uncertainty estimates."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 271585280,
+    "system_mem_available_bytes": 5031841792
+  },
+  "write_phase": {
+    "unique_sources": 128,
+    "writer_calls": 128,
+    "queries": 192,
+    "worlds": 64
+  },
+  "store": {
+    "records": 128,
+    "serialized_payload_bytes": 25600,
+    "key_bytes": 6144,
+    "physical_sqlite_bytes": 94208,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "runs/boolean-mixed/transfer-v2-1789779020840819620"
+}

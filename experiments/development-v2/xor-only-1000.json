@@ -1,0 +1,76 @@
+{
+  "schema_version": 2,
+  "protocol": "write-once, serialize/reload, global stored-only bank",
+  "choice_scoring": "sum of target token NLL including EOS",
+  "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+  "summary": {
+    "all": {
+      "n": 64,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 0.3513892670162022,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 64,
+      "choice_accuracy": 0.5625,
+      "mean_target_nll": 0.4406454241834581,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 64,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 0.3513892530463636,
+      "complete_support_recall": 1.0
+    }
+  },
+  "by_family": {
+    "boolean/xor": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.3513892670162022,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.5625,
+        "mean_target_nll": 0.4406454241834581,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.3513892530463636,
+        "complete_support_recall": 1.0
+      }
+    }
+  },
+  "paired_memory_benefit": {
+    "n_worlds": 64,
+    "n_queries": 64,
+    "mean_gain": -0.0625,
+    "ci95": [
+      -0.21875,
+      0.09375
+    ],
+    "warning": "Few independent worlds produce unreliable uncertainty estimates."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 271036416,
+    "system_mem_available_bytes": 5037322240
+  },
+  "write_phase": {
+    "unique_sources": 128,
+    "writer_calls": 128,
+    "queries": 64,
+    "worlds": 64
+  },
+  "store": {
+    "records": 128,
+    "serialized_payload_bytes": 25600,
+    "key_bytes": 6144,
+    "physical_sqlite_bytes": 94208,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "runs/boolean-raw/transfer-v2-1789778969709099528"
+}

@@ -1,0 +1,210 @@
+{
+  "base_config": "configs/tiny_cpu.yaml",
+  "model_revision": "main",
+  "runs": [
+    {
+      "arm": "oracle_text",
+      "seed": 17,
+      "config": "runs/matrix-smoke/oracle_text-seed17.yaml",
+      "run": "runs/matrix-smoke/oracle_text-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.452655521739613,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.5014655789462,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.452655521739613,
+          "complete_support_recall": 1.0
+        }
+      },
+      "queries": 5
+    },
+    {
+      "arm": "no_memory",
+      "seed": 17,
+      "config": "runs/matrix-smoke/no_memory-seed17.yaml",
+      "run": "runs/matrix-smoke/no_memory-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.47833918426976,
+          "complete_support_recall": 0.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.47833918426976,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.47833918426976,
+          "complete_support_recall": 0.0
+        }
+      },
+      "queries": 5
+    },
+    {
+      "arm": "shared_compute",
+      "seed": 17,
+      "config": "runs/matrix-smoke/shared_compute-seed17.yaml",
+      "run": "runs/matrix-smoke/shared_compute-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.478893578269265,
+          "complete_support_recall": 0.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.478893578269265,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.478893578269265,
+          "complete_support_recall": 0.0
+        }
+      },
+      "queries": 5
+    },
+    {
+      "arm": "memory",
+      "seed": 17,
+      "config": "runs/matrix-smoke/memory-seed17.yaml",
+      "run": "runs/matrix-smoke/memory-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.486079951199618,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.513630389589252,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.48619941480232,
+          "complete_support_recall": 1.0
+        }
+      },
+      "queries": 5
+    },
+    {
+      "arm": "attention",
+      "seed": 17,
+      "config": "runs/matrix-smoke/attention-seed17.yaml",
+      "run": "runs/matrix-smoke/attention-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.488591428814512,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.516081957961574,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.488843204613888,
+          "complete_support_recall": 1.0
+        }
+      },
+      "queries": 5
+    },
+    {
+      "arm": "one_round",
+      "seed": 17,
+      "config": "runs/matrix-smoke/one_round-seed17.yaml",
+      "run": "runs/matrix-smoke/one_round-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.481187560341575,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.510235719969779,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.481178380214806,
+          "complete_support_recall": 1.0
+        }
+      },
+      "queries": 5
+    },
+    {
+      "arm": "two_reads",
+      "seed": 17,
+      "config": "runs/matrix-smoke/two_reads-seed17.yaml",
+      "run": "runs/matrix-smoke/two_reads-seed17",
+      "test": "runs/matrix-smoke/test-17.jsonl",
+      "completed_steps": 2,
+      "evaluation_summary": {
+        "all": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.4878124005866775,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.513894774119059,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 5,
+          "choice_accuracy": 0.2,
+          "mean_target_nll": 5.487943940596147,
+          "complete_support_recall": 1.0
+        }
+      },
+      "queries": 5
+    }
+  ],
+  "notice": "Oracle evidence and common data; configurations are not claimed perfectly compute matched."
+}

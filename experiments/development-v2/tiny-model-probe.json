@@ -1,0 +1,32 @@
+{
+  "environment": {
+    "python": "3.13.5",
+    "machine": "x86_64",
+    "torch": "2.10.0+cpu",
+    "cuda_runtime": null,
+    "cuda_available": false,
+    "git_commit": "d9284ae208b90e43b823bdaeb26302a437a943a3",
+    "git_dirty": true,
+    "transformers": null
+  },
+  "backend": "tiny",
+  "model_id": "LiquidAI/LFM2.5-230M",
+  "resolved_revision": "local-tiny",
+  "width": 32,
+  "parameters": 101228,
+  "one_loop_identity_max_error": 0.0,
+  "zero_gate_two_loop_max_error": 0.0,
+  "causal_prefix_max_error": 0.0,
+  "nll": 5.547139644622803,
+  "gradient_norms": {
+    "write_slots": 0.0011378913186490536,
+    "value_head": 0.0007430995465256274,
+    "reader_output": 0.01707994006574154,
+    "memory_gate": 0.0005460034590214491
+  },
+  "resources": {
+    "process_peak_rss_bytes": 304132096,
+    "system_mem_available_bytes": 4899237888
+  },
+  "notice": "Numerical preflight only; no capability training or cache-performance claim."
+}

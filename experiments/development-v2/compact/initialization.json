@@ -1,0 +1,17 @@
+{
+  "checkpoint": "runs/boolean-warm/checkpoints/step-000001500-dd36a61d2783",
+  "optimizer_reset": true,
+  "missing_initialized": [
+    "compactor.codes.0.bias",
+    "compactor.codes.0.weight",
+    "compactor.codes.2.bias",
+    "compactor.codes.2.weight",
+    "compactor.encode.0.bias",
+    "compactor.encode.0.weight",
+    "compactor.encode.2.bias",
+    "compactor.encode.2.weight",
+    "compactor.multiplicity.bias",
+    "compactor.multiplicity.weight"
+  ],
+  "unused": []
+}

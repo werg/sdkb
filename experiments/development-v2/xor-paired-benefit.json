@@ -1,0 +1,10 @@
+{
+  "n_worlds": 256,
+  "n_queries": 256,
+  "mean_gain": 0.16015625,
+  "ci95": [
+    0.11328125,
+    0.20703125
+  ],
+  "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+}

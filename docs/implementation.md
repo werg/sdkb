@@ -1,7 +1,8 @@
-# Implementation specification — 0.1
+# Implementation specification — 0.2
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
+Operational details are in [development-v0.2.md](development-v0.2.md).
 
 ## Shared writer, query and decoder
 
@@ -12,7 +13,7 @@ key; the remaining states produce a fixed sequence of canonical value vectors.
 Per-space address maps and codecs produce stored keys and payloads.
 
 The writer receives only the source. The query head receives only the current
-query prompt. Required-record annotations, target answers and opaque IDs are not
+query prompt and, on follow-up reads, the preceding memory state. Required-record annotations, target answers and opaque IDs are not
 neural input features. Keys are used for retrieval and routing loss, not silently
 concatenated into the reader payload. Future tool observations are not available.
 Source and prompt limits fail explicitly instead of silently truncating rules.
@@ -23,11 +24,11 @@ context state, then each next token from preceding context. Only answer position
 contribute to the supervised loss. Greedy reference decoding recomputes prefixes;
 it is not an optimized serving engine.
 
-The current end-to-end runner has one externally scheduled read per task. This is
-a scope boundary, **not a memory-driven read cap in the replay algorithm**. The
-reader can process variable neighborhoods, and ReplayTape can service multiple
-producer captures and repeated consumer uses. Follow-up queries and asynchronous
-model scheduling remain explicit backlog items.
+The runner supports scheduled causal multi-read tasks. Each follow-up query uses
+the previous soft working state; newly retrieved records are added to cumulative
+evidence and recomposed into fixed slots. Complete-group supervision updates the
+remaining-support target. The schedule is not an adaptive invocation policy or a
+replay memory cap. Early asynchronous model scheduling remains unimplemented.
 
 ## Reader equations
 
@@ -55,8 +56,9 @@ rounding can vary with chunk shape and is not claimed bit-identical.
 
 Chunk checkpointing does not build an all-pairs neighborhood attention matrix. It
 still retains the small statistic graph per chunk/round and the selected payload
-inputs; it is not a constant-memory out-of-core GPU streamer. A production payload
-streamer can reuse the additive boundary later. All chunks complete a round before
+inputs; it is not a constant-memory training streamer. A separate single-space stored-only
+inference streamer stages one payload chunk at a time and rereads the captured
+plan each round. It does not overlap transfers with kernels or measure disk latency. All chunks complete a round before
 the shared residual advances. Processing each chunk through all rounds independently
 would be a different computation.
 
@@ -118,24 +120,25 @@ objective, marginalized over valid orderings for small groups. This directly
 rewards group starters even when isolated utility is zero. Single-utility ranking
 is a separate utility that skips flat targets. Top-k itself is still discrete.
 
-Temporary compaction replaces an entire selected neighborhood with its weighted
-mean or a few amortized synthetic records. The synthetic writer preserves total
-multiplicity and is shared across clusters. Contribution loss matches each round's
-numerator/mass at raw-reader states and also a free compact rollout. Normal task
-steps remain interleaved with compact task steps; a given compact step does not
-also compute a second raw task loss. The stronger paired objective in the plan is
-a follow-on ablation. The raw contribution teacher is detached.
+Temporary compaction supports whole/random/local/overlap groups. The synthetic
+writer preserves total multiplicity and is shared across clusters. Contribution
+loss matches each round's numerator/mass at raw-reader states and also a free
+compact rollout. The paired objective computes raw and compact task losses on the
+same noisy values, optionally adding detached-teacher KL; the original interleaved
+objective remains available. Compactor-only optimization freezes all other state.
 
-`local_merge_loss`, random grouping, overlap responsibilities and storage-noise
-functions are implemented/tested APIs. Persistent overlapping field storage and
-an integrated regrouping-training schedule are **not** claimed. Responsibilities
-split both contributions and mass; retrieving only some shares requires a separately
-specified routing plan. Noise does not make independent facts compressible by itself.
+Local merge regularization and regrouping are integrated. Overlap splits both
+contributions and mass with responsibilities summing to one per record. All shares
+participate in the training read; independently retrieving only some shares would
+require different semantics. Noise is not assumed to make independent facts
+compressible by itself.
 
-`FullClusterCode` rejects partial selections and cross-domain reads. Persistent
-arbitrary-subset decoding is not approximated by a full-cluster code. SQLite
-lineage permits invalidation of compact derivatives but does not automatically run
-a compactor or replace record indices. These are distinct pieces of infrastructure.
+`ClusterBank` persists full-cluster codes and connects them to original keys.
+Full selections use the stored code; partial selections fetch raw values. Reader
+fingerprints and domain/time checks are enforced; deletions invalidate derivatives.
+The inference API never calls the writer or compactor. Retaining fallback records
+means this prototype does not establish net disk savings. Learned arbitrary-subset
+or persistent overlapping-field decoding is not implemented.
 
 ## Persistence and concurrency
 
@@ -158,9 +161,11 @@ This narrow API is intentionally separate from claims about overlap performance.
 A run records config, dependency/model revision, dataset content hash, metrics,
 resource counters, a safetensors checkpoint and local optimizer state. Resume only
 allows changing total step count; changing episode content is rejected before
-reusing stale cache data. Checkpoints are atomically replaced at the file level,
-not a fault-tolerant multi-file transaction. The prototype saves at run completion;
-periodic checkpoints and interruption recovery remain development tasks.
+reusing stale cache data. Periodic immutable checkpoint sets include model, optimizer, RNG, config, and the
+stale training-cache snapshot. An atomic CURRENT pointer commits the set. Resume
+verifies hashes, restores that snapshot, and truncates later log fragments. The
+full-copy SQLite snapshot remains a small-scale reference, not an incremental
+distributed checkpoint system.
 
 A mutable `model.revision: main` is logged as the actual resolved commit but should
 be pinned before training. Different runs can otherwise fetch different initial

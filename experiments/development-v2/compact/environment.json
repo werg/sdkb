@@ -1,0 +1,13 @@
+{
+  "python": "3.13.5",
+  "machine": "x86_64",
+  "torch": "2.10.0+cpu",
+  "cuda_runtime": null,
+  "cuda_available": false,
+  "git_commit": "d9284ae208b90e43b823bdaeb26302a437a943a3",
+  "transformers": null,
+  "resolved_model_revision": "local-tiny",
+  "total_parameters": 204430,
+  "trainable_parameters": 11058,
+  "notice": "Prototype measurements; not evidence of capacity substitution."
+}

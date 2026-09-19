@@ -1,21 +1,31 @@
 # Repository handoff
 
-The bootstrap environment authenticated a read-capable GitHub connector as `werg`.
-The exposed actions did not include creation, file writes or pushing commits. No
-GitHub CLI or shell credentials were available, and the execution environment
-could not connect to Git/Hugging Face from its shell. The project was therefore
-implemented, tested and committed **locally**. No remote repo was created or pushed.
+The v0.2 work is committed locally and supplied as a self-contained Git bundle,
+source ZIP/tarball, and a patch from the v0.1 handoff. The connected GitHub tools
+now include writes to existing repositories, but not repository creation. A fresh
+lookup of `werg/external-latent-memory` returned 404 (absent or inaccessible). No
+remote was created or pushed. No authenticated shell GitHub CLI was available.
 
-Two equivalent handoff formats are supplied:
+The bundle `external-latent-memory-v0.2.bundle` preserves all commits and `main`.
+Source archives exclude Git metadata, model checkpoints, caches and dependencies.
 
-* `external-latent-memory.bundle` preserves commits and the `main` branch.
-* `external-latent-memory.tar.gz` is a source-only `git archive`, excluding Git
-  metadata, model checkpoints, training caches and dependencies.
+To update an unchanged v0.1 checkout without replacing local work:
+
+```bash
+git fetch /path/to/external-latent-memory-v0.2.bundle main
+git merge --ff-only FETCH_HEAD
+# Only after verifying your origin is the intended GitHub repository:
+git remote -v
+git push origin main
+```
+
+A divergent checkout intentionally fails the fast-forward merge rather than
+silently overwriting work. The provided patch is an alternative for review.
 
 To preserve the committed history:
 
 ```bash
-git clone external-latent-memory.bundle external-latent-memory
+git clone external-latent-memory-v0.2.bundle external-latent-memory
 cd external-latent-memory
 # Cloning a bundle creates an origin pointing at the local bundle. Remove only
 # that local origin before asking the helper to create the actual GitHub remote.
@@ -37,7 +47,7 @@ For source-only initialization instead:
 ```bash
 mkdir external-latent-memory
 cd external-latent-memory
-tar -xzf ../external-latent-memory.tar.gz
+tar -xzf ../external-latent-memory-v0.2.tar.gz
 git init -b main
 git add .
 git commit -m 'Initialize external latent memory research project'
@@ -46,4 +56,4 @@ git commit -m 'Initialize external latent memory research project'
 
 Git author identity must already be configured for the latter option. The supplied
 bundle avoids reconstructing the initial commits. Neither archive includes weights
-or experiment databases. Recorded diagnostic JSON remains in `experiments/bootstrap`.
+or experiment databases. Recorded diagnostics are in `experiments/bootstrap` and `experiments/development-v2`.

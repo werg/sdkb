@@ -1,3 +1,6 @@
+> Historical v0.1 bootstrap report. For the current implementation and executed
+> learning/compaction study, see [validation-v0.2.md](validation-v0.2.md).
+
 # Bootstrap validation
 
 This file records executable checks from the bootstrap environment. Numerical results

@@ -1,0 +1,10 @@
+{
+  "input_files": {
+    "boolean-train.jsonl": "055f6d6cf54a7ff0ab1e4bfbe5bde0c369369fa2d5d4a9c84cd88785f13cebea",
+    "boolean-mixed-train.jsonl": "abdd182d6112892bf07863c8975ae505026f6904c3659defe7252d2a55048959",
+    "boolean-test.jsonl": "573a80f9cedaf66d4b84b6ba124d01857e130b537f7d93efd5ff75480a9b8313",
+    "boolean-mixed-test.jsonl": "00fa9adb32839826100f3d011c661127a2fd3714daf6e4ed61a965ef5c4a9e8e",
+    "boolean-confirm.jsonl": "5c746648e501e788d5a6ed2fe4a6e4a662514bc11daa057e02a743fe0df3a894"
+  },
+  "note": "Experiments ran during development of the final source tree. Environment commits refer to the inherited base, not an already committed v0.2; the supplied evidence/source snapshot records the implemented paths. One training seed, oracle retrieval, tiny CPU byte model only."
+}

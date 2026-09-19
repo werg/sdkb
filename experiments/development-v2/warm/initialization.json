@@ -1,0 +1,6 @@
+{
+  "checkpoint": "runs/boolean-oracle-text/checkpoints/step-000001000-f6b75ba3a500",
+  "optimizer_reset": true,
+  "missing_initialized": [],
+  "unused": []
+}
