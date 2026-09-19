@@ -1,0 +1,96 @@
+{
+  "protocol": "Greedy stored-only generation; no candidate answers supplied; writer disabled.",
+  "notice": "First requested validation worlds, chosen by file order. Exact strings after decoder whitespace stripping; no agent execution or capacity-substitution claim.",
+  "max_new_tokens": 24,
+  "worlds": 8,
+  "inputs": {
+    "checkpoint": "/archive/profiles/binding-muon-checkpoint-off-20260919/training/checkpoints/step-000000100-4c442aaeb1fc",
+    "checkpoint_manifest_sha256": "4d0dcc379e8d8336c1329503d7e09afcf34f7f044ea8be36dfb6618d0dd7167f",
+    "bank": "/archive/diagnostics/binding-short-muon-20260919/muon_100/transfer-v2-1789821036554321302/bank.sqlite",
+    "bank_sha256": "32262cf67fa144d4fabb09ebb2d11c1e4c4676724ac3a2cb8d956b3aed7ffdc5",
+    "episodes": "/runs/binding-pilot-20260919/data/validation.jsonl",
+    "episodes_sha256": "f0d912abad3532b84349c6ba94c062196fd49e30355441210959c1e9caac3b38"
+  },
+  "by_family": {
+    "multiuse/action": {
+      "all": {
+        "n": 32,
+        "exact_match": 0.59375
+      },
+      "zero_values": {
+        "n": 32,
+        "exact_match": 0.5
+      },
+      "none": {
+        "n": 32,
+        "exact_match": 0.3125
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 16,
+        "exact_match": 0.0
+      },
+      "zero_values": {
+        "n": 16,
+        "exact_match": 0.0
+      },
+      "none": {
+        "n": 16,
+        "exact_match": 0.0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 16,
+        "exact_match": 1.0
+      },
+      "zero_values": {
+        "n": 16,
+        "exact_match": 0.6875
+      },
+      "none": {
+        "n": 16,
+        "exact_match": 0.0
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 16,
+        "exact_match": 1.0
+      },
+      "zero_values": {
+        "n": 16,
+        "exact_match": 0.375
+      },
+      "none": {
+        "n": 16,
+        "exact_match": 0.375
+      }
+    }
+  },
+  "matched_choice_accuracy": {
+    "multiuse/action": {
+      "all": 0.59375,
+      "zero_values": 0.5,
+      "none": 0.3125
+    },
+    "multiuse/identifier": {
+      "all": 0.5625,
+      "zero_values": 0.5625,
+      "none": 0.375
+    },
+    "multiuse/permission": {
+      "all": 1.0,
+      "zero_values": 0.5625,
+      "none": 0.375
+    },
+    "multiuse/restoration": {
+      "all": 1.0,
+      "zero_values": 0.375,
+      "none": 0.375
+    }
+  },
+  "script_sha256": "35b8117a1e0671b91ab6577e60c4dec07de95a8d78945b977e3340ac10ac2aa1",
+  "library_source_commit": "f737e7a"
+}

@@ -57,6 +57,19 @@ Aggregate summaries and world-paired diagnostic intervals are the
 external. These validation results motivate a reader control; they are not a final
 held-out confirmation and do not justify selecting a winning training seed.
 
+### Unconstrained generation check
+
+`scripts/evaluate_stored_generation.py` consumed the adapted model's existing
+serialized bank with its writer disabled, using the first eight validation worlds
+in file order (80 questions). No candidate list was supplied to the decoder.
+With a 24-token greedy budget, exact output was 19/32 for action, 16/16 for each
+rule fact, and **0/16 for exact identifiers**. Zeroed memory gave 16/32 action,
+11/16 permission and 6/16 restoration. This small diagnostic confirms that rule
+facts can be emitted freely; it also exposes the gap between identifier choice
+scoring and exact reproduction. It remains a synthetic output check, not executed
+agent behavior. `short-adaptation-generation.json` retains matching-subset choice
+scores, script/input hashes and output summaries; raw predictions stay external.
+
 ## Attention reader control (running)
 
 `recipes/looped_binding_muon_attention.yaml` changes only the selected-support
