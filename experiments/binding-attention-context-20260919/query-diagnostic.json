@@ -1,0 +1,112 @@
+{
+  "inputs": {
+    "checkpoint": "/archive/runs/binding-attention-context-20260919/all_world/checkpoints/step-000000800-f16ee9589e07",
+    "checkpoint_manifest_sha256": "43d9e91808e8aa8570e1121a326fd252dc1998d6e100ccbe79928085d5c85d4f",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "bank_sha256": "5a50e271eaa26054a25e2d979b851b99a470f8cb128c4c45f59d6c49869bc898"
+  },
+  "by_family": {
+    "multiuse/permission": {
+      "opposed_rule": {
+        "worlds": 19,
+        "query": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.024690136313438416,
+          "relative_l2_median": 0.04602782428264618,
+          "relative_l2_max": 0.07729928195476532,
+          "max_abs_difference": 0.027113176882267
+        },
+        "payload": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 1.669700264930725,
+          "relative_l2_median": 1.696959376335144,
+          "relative_l2_max": 1.7268447875976562,
+          "max_abs_difference": 5.03125
+        },
+        "read": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.018687475472688675,
+          "relative_l2_median": 0.03731353580951691,
+          "relative_l2_max": 0.06813463568687439,
+          "max_abs_difference": 0.17578125
+        }
+      },
+      "same_rule": {
+        "worlds": 13,
+        "query": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.028612567111849785,
+          "relative_l2_median": 0.04978633671998978,
+          "relative_l2_max": 0.07755950093269348,
+          "max_abs_difference": 0.028124501928687096
+        },
+        "payload": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.07692000269889832,
+          "relative_l2_median": 0.09852909296751022,
+          "relative_l2_max": 0.1690598428249359,
+          "max_abs_difference": 0.51953125
+        },
+        "read": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.012503840029239655,
+          "relative_l2_median": 0.024627024307847023,
+          "relative_l2_max": 0.03632352501153946,
+          "max_abs_difference": 0.08984375
+        }
+      }
+    },
+    "multiuse/restoration": {
+      "opposed_rule": {
+        "worlds": 15,
+        "query": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.02847740612924099,
+          "relative_l2_median": 0.056075192987918854,
+          "relative_l2_max": 0.09933123737573624,
+          "max_abs_difference": 0.03022857755422592
+        },
+        "payload": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 1.64899742603302,
+          "relative_l2_median": 1.6559501886367798,
+          "relative_l2_max": 1.670736312866211,
+          "max_abs_difference": 4.25
+        },
+        "read": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.029205715283751488,
+          "relative_l2_median": 0.0534646175801754,
+          "relative_l2_max": 0.10603310912847519,
+          "max_abs_difference": 0.28515625
+        }
+      },
+      "same_rule": {
+        "worlds": 17,
+        "query": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.03433465212583542,
+          "relative_l2_median": 0.060610026121139526,
+          "relative_l2_max": 0.08979581296443939,
+          "max_abs_difference": 0.02875586226582527
+        },
+        "payload": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.03643979877233505,
+          "relative_l2_median": 0.06513679027557373,
+          "relative_l2_max": 0.11270959675312042,
+          "max_abs_difference": 0.32177734375
+        },
+        "read": {
+          "exact_collision_pairs": 0,
+          "relative_l2_min": 0.014662833884358406,
+          "relative_l2_median": 0.034650348126888275,
+          "relative_l2_max": 0.06466327607631683,
+          "max_abs_difference": 0.140625
+        }
+      }
+    }
+  },
+  "notice": "Stored-only geometric diagnostic, not a probe or proof that information is absent. Small differences can still carry information; capability requires behavioral tests.",
+  "validation": "All compared queries use the identical ordered world candidate set; writer disabled during diagnosis."
+}

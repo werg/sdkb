@@ -76,4 +76,22 @@ retain controls, shared episode/raw-report hashes and paired intervals. This is
 one training seed; intervals resample worlds and are not multiplicity-corrected.
 The result motivates inspecting entity information in queries and stored payloads
 before another training intervention, rather than assuming that more updates alone
-will fix binding. No such diagnostic is asserted as completed here.
+will fix binding. The diagnostic below is now complete.
+
+## Stored query/payload diagnostic
+
+`scripts/inspect_entity_queries.py` verifies the evaluation bank's checkpoint and
+episode provenance, disables the writer, and compares paired fact queries using
+the identical ordered candidate set. In the all-world-trained endpoint there are
+**no exact query, payload or returned-token collisions** among the two entities.
+Median relative query differences on opposed-rule pairs are 4.6% (permission) and
+5.6% (restoration); returned-token differences are 3.7% and 5.3%. Thus the system
+is not literally reading identical inputs after the entity changes.
+
+Payload differences are much larger for opposed rules than agreeing rules:
+median relative differences are 1.70 versus 0.10 for permission and 1.66 versus
+0.065 for restoration. These geometric observations do not prove which identity
+information is recoverable, nor establish a trained matching algorithm. The
+behavioral entity-pair failure remains the relevant capability finding.
+`query-diagnostic.json` records the aggregates and input hashes; no source
+trajectories are re-encoded during this diagnostic.
