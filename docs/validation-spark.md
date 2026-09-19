@@ -64,9 +64,12 @@ of permission, restoration, exact identifiers and their combination:
 - A separate 100-update Muon warm-start diagnostic recovered both direct rule
   facts, including their counterfactuals, but action composition remained weak.
   Candidate-free generation reproduced zero of sixteen exact identifiers.
-- The selected-support final evaluation and matched attention control are still
-  being completed. Common-world comparisons are queued separately from each
-  launcher's independently generated tests.
+- The completed selected-support MLP recalled both rule facts perfectly, but action
+  accuracy was 55.5%. Restoration changes spuriously changed actions in 63/64
+  branches that should remain fixed; permission flips had only 7/128 both-correct
+  pairs. The 69.4% overall score does not establish conditional composition.
+- Common-world stage comparisons and the matched attention control are in progress,
+  separately from each launcher's independently generated tests.
 
 The all-context model's lower NLL versus no memory did not translate into a benefit
 over zeroed payloads. Tests, falling losses, linear probes and successful execution

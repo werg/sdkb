@@ -29,7 +29,9 @@
           "model_sha256": "6b8b46e05d201dab982d418eab9a57fcea432ca46888ac278a7f9796c2f2727d",
           "training_state_sha256": "e2ce766c18cb3c082e9198b592d37a298e445f62f3b010141b04da58854e6836"
         }
-      }
+      },
+      "migration_completed": true,
+      "checkpoint_identities_unchanged": true
     },
     "all": {
       "checkpoints": {
@@ -57,7 +59,9 @@
           "model_sha256": "428dd6edb833ed8986f447b3118a16529753479c6e4a315bdbfc777fb7e56689",
           "training_state_sha256": "9107c48518d12de62a5be59d6b39dff22dbf7007f4588a65d6fb75fa432cf441"
         }
-      }
+      },
+      "migration_completed": true,
+      "checkpoint_identities_unchanged": true
     }
   }
 }

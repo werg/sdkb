@@ -1,8 +1,8 @@
 # Matched Muon binding curricula
 
 Status: both native-GPU MLP curricula have completed training from the pinned
-pretrained model. The all-context post-freeze evaluation is complete; the selected
-evaluation and the additional attention training/control are still in progress.
+pretrained model. Both post-freeze evaluations are complete; common-world stage
+comparisons and the additional attention training/control are in progress.
 Their frozen training source checkout is `837f592`; they do not inherit AdamW optimizer
 state or claim that the interrupted AdamW curricula completed.
 
@@ -58,6 +58,26 @@ at an evaluation boundary and resumed from `a962739` for the remaining frozen
 evaluations. Every stage's checkpoint name, model hash and optimizer-state hash
 remained unchanged. This is an evaluation-only source transition, not retraining
 or an optimizer reset.
+
+## Completed selected-support result
+
+The selected-support MLP completed the same budget. On its own 32 fresh worlds
+(320 questions), choice accuracy was 69.4% with payloads, 38.1% with zeroed
+payloads and 48.8% without memory. Both direct rule facts scored 100%, including
+every answer-changing counterfactual pair. Identifier choice accuracy was 35.9%.
+
+Action accuracy was only 55.5%. Permission flips produced both correct actions in
+7/128 pairs. Restoration flips produced both correct actions in 48/64 changing
+pairs, but also changed predictions on 63/64 branches where the correct action
+should stay fixed. Removing permission barely affected action accuracy (53.1%).
+The model often follows restoration without respecting permission; successful
+fact recall has not become reliable conditional composition.
+
+`selected-final.json` preserves summaries and checkpoint/data identities. These
+are different worlds from the all-context launcher's evaluation, so their headline
+scores are not a paired comparison. Candidate-free generation has not been run on
+this final model. Both MLP evaluation migrations preserved every stage's checkpoint
+name and model/optimizer-state hashes (`evaluation-migration.json`).
 
 ## Short adaptation diagnostic (completed)
 
