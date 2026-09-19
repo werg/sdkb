@@ -14,12 +14,15 @@ map. These are separate oracle-conditioned histories, not a single chronological
 live namespace or a learned-global-routing benchmark. Each read sees only its own
 history's required sources; versions are never combined as extra evidence.
 
-The resulting 1,024 snapshots have 10,240 questions and 2,048 endpoint values,
+The resulting 1,024 snapshots have 10,240 questions and 2,048 endpoint-bearing sources,
 matching the completed 1,024-independent-world control's corpus size. Warm-start
 from the same original reader checkpoint, with the same seed 79, 1,600 Muon
 updates, four microbatches, learning rates, task proportions and loop schedule.
 Only the training corpus changes. This isolates conflicting query-only targets
-and repeated query identities, not an increase in update or endpoint-count budget.
+and repeated query identities at the same update and endpoint-source-count budget.
+The fixed generator produces 2,047 distinct strings because of one cross-query
+six-hex collision, versus 2,048 in the control; every individual query still has
+eight distinct targets. This small content difference is retained and disclosed.
 
 Compare the frozen source, completed independent-world control and new endpoint-view
 arm on a newly declared 32-world held-out split `endpoint-views-heldout-20260920`.
