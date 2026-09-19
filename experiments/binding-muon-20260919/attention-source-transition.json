@@ -1,0 +1,34 @@
+{
+  "before_source_commit": "f737e7a",
+  "after_source_commit": "a962739",
+  "boundary": "after completed latent warmup and its teacher evaluation, before recurrent_joint",
+  "checkpoints": {
+    "text_bootstrap": {
+      "checkpoint": "step-000000200-c3db1e987281",
+      "step": 200,
+      "model_sha256": "0099c6633b4ff9b1e3355b7730b9123bd5d873ae36e537818d805b66b653402e",
+      "training_state_sha256": "916a4e5ecb7478c86457d2639f78d98003aa05ed18186f1d146ddcb93ada1e15"
+    },
+    "recurrence_bridge": {
+      "checkpoint": "step-000000200-172c038b439b",
+      "step": 200,
+      "model_sha256": "cc49a30bd7a4657833117ee60adf3faaa703e89ace0b0434e6477abd9daedfe6",
+      "training_state_sha256": "c03f588708692e19690877fe1ea0aa16c83fa803812c56e8c5b20b1e17b82f72"
+    },
+    "latent_warmup": {
+      "checkpoint": "step-000000400-9d93734a4741",
+      "step": 400,
+      "model_sha256": "b298004956adde75659a8f4c6e25b84c798543c7f291856b950f3e4db12cc7cd",
+      "training_state_sha256": "a163a97960fe70ed641e10ab2eae0138a45c3c0a38a30d5f426d39d8b22c4fed"
+    }
+  },
+  "identical_code": {
+    "src/sdkb/agent.py": "f21b98caf55d717478d88d688d56945196c99a76f806d16a95637a43d9536dac",
+    "src/sdkb/backbones.py": "0e1a4bece4127655a4269c6bb37cad46e40e4dae8d60d9d3b59953353e37adb0",
+    "src/sdkb/recurrence.py": "a0175742aef43c8f5040e4d76ff3bae1a937476bbea2370ee3b7b67e772bb101",
+    "src/sdkb/replay.py": "2225abad4d9d9b5238824db8a59d97bc542bf7232d29b92a321a36f426e92a17",
+    "src/sdkb/readers.py": "b08661ddb06fdf3f7870ecabf2b8b04c7951afa07d02caf86b749ae39794e972",
+    "src/sdkb/optimizers.py": "beb7e6a57a1ac0579036f630bef646c66fbf8e9d20e8882116ccb918c0b4788b",
+    "src/sdkb/config.py": "beed862974f8e39f14d51f683d38140a8d8b0401673842be71f504deaf0f1728"
+  }
+}

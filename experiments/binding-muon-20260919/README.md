@@ -143,3 +143,12 @@ The frozen comparison drivers themselves are unchanged. New logs are
 `/archive/runs/muon-reader-confirmation-batched.log`. This operational change
 addresses per-record external-disk commits; it does not alter evidence, model
 weights, scoring, budgets or the predeclared comparison questions.
+
+The attention curriculum subsequently stopped gracefully after warmup and its
+teacher evaluation, before creating the joint-training directory. It continues
+from the same checkpoint into the prescribed joint stage on `a962739`. The model,
+reader, replay, recurrence, optimizer and configuration modules are byte-identical
+across the source transition; earlier checkpoint hashes are retained in
+`attention-source-transition.json`. The training loop and scientific settings are
+unchanged. This records an explicit stage-boundary storage/operations update,
+rather than changing a live checkout invisibly.
