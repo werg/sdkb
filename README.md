@@ -56,7 +56,8 @@ Resume the identical recipe/output:
 ```
 
 The job runs synchronously in the foreground. A graceful interruption checkpoints
-at an optimizer boundary. Completed stages and evaluations are not repeated. Prepared
+after a complete microbatch/replay, preserving partial gradient accumulation for
+exact resume. Completed stages and evaluations are not repeated. Prepared
 input/config changes are rejected on resume. Run only one launcher per output directory.
 
 To download, pin and inspect data without loading the training model:

@@ -85,8 +85,10 @@ runs/starter/
 Use one immutable recipe/output pair. A changed recipe, base configuration or prepared
 file hash requires a fresh output directory. `CURRENT` names a fully committed atomic
 checkpoint set. Never use partially written temporary files as a resumable state.
-A hard kill returns to the last committed checkpoint. A graceful stop requests an
-optimizer-boundary save. Runs with no committed checkpoint are not silently overwritten.
+A hard kill returns to the last committed checkpoint. A graceful stop saves after
+the current complete microbatch/replay, including any partial gradient accumulation;
+resume finishes that same optimizer update. Runs with no committed checkpoint are
+not silently overwritten.
 
 Completed stage/evaluation markers are independent. In particular, a failed binding
 evaluation after causal evaluation is retried without retraining or being skipped.
@@ -142,6 +144,12 @@ not claim learned routing. For generated binding worlds it exposes all entities
 in a world, while world membership is still supplied. The default `required`
 preserves existing recipes. Use `recipes/looped_binding_all.yaml` for the matched
 all-context curriculum. Producer replay and serialized value precision are unchanged.
+
+The current native-Muon variants are `recipes/looped_binding_muon_selected.yaml`
+and `recipes/looped_binding_muon_all.yaml`. They use Muon for eligible matrices
+and AdamW for embeddings, output heads and other excluded parameters. They start
+fresh optimizer state; an AdamW checkpoint cannot become a Muon exact resume.
+See [optimizer ownership and resume](operations.md#optimizers-and-exact-resume) for details.
 
 `sdkb evaluate-transfer --binding-counterfactuals` flips permission or restoration
 rules consistently throughout each world. IDs, queries, timestamps and read plans
