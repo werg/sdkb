@@ -100,3 +100,15 @@ correct pairs. More training and wider adaptation solved selected-support compos
 but did not establish entity discrimination. These worlds were reused to diagnose
 fixed checkpoints, not to choose a training endpoint. See `context-summaries.json`,
 `context-entity-stratification.json`, and `context-scope-comparison.json`.
+
+
+## Training-only identifier fit
+
+The frozen `0454c3a` diagnostic selects the first eight training worlds and their
+16 identifier questions. Core-only generation gets 7/16 exact with real payloads,
+7/16 with zero payloads, and 0/16 without memory. Full-backbone generation gets
+13/16, 12/16 and 0/16 respectively. The held-out comparison above remains 0/16
+for both arms. Thus better training fit largely survives removing stored content;
+it does not establish identifier retrieval or generalization. This is a small,
+explicitly training-only diagnostic, not another held-out capability result.
+See `training-identifier-fit.json` for identities, controls and prediction agreement.

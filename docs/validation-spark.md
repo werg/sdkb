@@ -134,3 +134,9 @@ Candidate-free generation now also supports explicit world-scoped learned rankin
 A native BF16 two-world smoke generates 60 rows from an existing bank with the
 writer disabled; all selected-ID lists match the corresponding choice and control
 rows. CPU regressions cover both existing oracle behavior and learned ranking.
+
+
+An explicitly training-only identifier diagnostic gets 7/16 exact for the longer
+core-only MLP and 13/16 for the full-backbone MLP, versus 7/16 and 12/16 with
+zero payloads. Held-out identifiers remain 0/16. Training fit largely surviving
+payload removal is not evidence of reading identifiers from storage.
