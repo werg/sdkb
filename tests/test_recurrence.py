@@ -499,3 +499,40 @@ def test_independent_learned_routing_matches_stored_sessions(tmp_path, loop_conf
     expected = [[e.supports[i].record_id for i in indices] for indices in integrated.selected]
     assert session.selected_ids == expected
     torch.testing.assert_close(integrated.nll, agent.conditioned_nll(prompt, target, session.memory), atol=1e-6, rtol=1e-6)
+
+
+@pytest.mark.parametrize('timing', ['prefix', 'loop_boundary'])
+def test_learned_read_count_matches_stored_and_full_replay(tmp_path, loop_config, timing):
+    loop_config.memory.read_timing = timing
+    loop_config.memory.read_steps = 1
+    loop_config.memory.independent_routing_query = True
+    loop_config.train.retrieval = 'learned'
+    loop_config.train.routing_warmup = 0
+    agent = SDKBAgent(loop_config).eval()
+    agent.read_count_head = torch.nn.Linear(loop_config.memory.key_dim, 2).eval().requires_grad_(False)
+    agent.read_count_choices = (1, 2)
+    with torch.no_grad():
+        agent.read_count_head.weight.zero_()
+        agent.read_count_head.bias.copy_(torch.tensor([2., 0.]))
+    other = copy.deepcopy(agent)
+    e = make_episode(6, distractors=2)
+    prompt, target = agent.prompt_ids(e.query), agent.target_ids(e.answer)
+    sources = [agent.text_ids(s.text, source=True) for s in e.supports]
+    reference = agent(prompt, target, [stored_channel(agent, agent.produce(s)) for s in sources], [0, 1])
+    assert len(reference.selected[0]) == 1
+    reference.loss.backward()
+    tape = ReplayTape(verify_outputs=True)
+    records = [tape.capture(other, lambda s=s: stored_channel(other, other.produce(s))) for s in sources]
+    replay = other(prompt, target, records, [0, 1])
+    replay.loss.backward()
+    tape.backward()
+    for (name, a), (_, b) in zip(agent.named_parameters(), other.named_parameters(), strict=True):
+        if a.grad is None:
+            assert b.grad is None
+        else:
+            torch.testing.assert_close(a.grad, b.grad, atol=2e-5, rtol=2e-4, msg=name)
+    store = DiskStore(tmp_path / 'count-bank.sqlite')
+    build_shared_bank(agent, store, [e])
+    session = read_session(agent, store, prompt, namespace='global', generation='frozen-v1', query_time=e.query_time)
+    assert session.selected_ids == [[e.supports[i].record_id for i in reference.selected[0]]]
+    torch.testing.assert_close(reference.nll, agent.conditioned_nll(prompt, target, session.memory), atol=1e-6, rtol=1e-6)

@@ -86,10 +86,25 @@ class SDKBAgent(nn.Module):
         self.memory_norm = nn.LayerNorm(self.width)
         self.memory_gate = nn.Parameter(torch.tensor(-1.0))
         self.routing_query_head = copy.deepcopy(self.query_head) if r.independent_routing_query else None
+        self.read_count_head = None  # Optional separately trained, frozen inference policy.
+        self.read_count_choices = ()
 
     @property
     def device(self) -> torch.device:
         return self.write_slots.device
+
+    def requested_records(self, query: Tensor, maximum: int) -> int:
+        """A frozen causal policy may request fewer records than the configured cap."""
+        if self.read_count_head is None:
+            return maximum
+        if len(self.config.memory.payload_dims) != 1 or self.config.memory.read_steps != 1:
+            raise ValueError('Read-count policy requires one space and one complete read')
+        if not self.read_count_choices:
+            raise ValueError('Read-count policy has no declared choices')
+        logits = self.read_count_head(F.normalize(query.float(), dim=-1))
+        if logits.numel() != len(self.read_count_choices):
+            raise ValueError('Read-count policy expects one query')
+        return min(maximum, self.read_count_choices[int(logits.argmax(-1).item())])
 
     def text_ids(self, text: str, *, source: bool = False) -> Tensor:
         limit = self.config.train.max_source_tokens if source else self.config.train.max_prompt_tokens
@@ -317,7 +332,7 @@ class SDKBAgent(nn.Module):
                         remaining = [candidates.index(i) for i in required if i in candidates]
                         if t.retrieval == "learned" and remaining:
                             routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)
-                        k = r.neighbors[space] if r.read_steps == 1 else r.read_top_k
+                        k = self.requested_records(query, r.neighbors[space] if r.read_steps == 1 else r.read_top_k)
                         chosen = (remaining if r.read_steps == 1 else remaining[:k]) if oracle else scores.argsort(descending=True, stable=True)[:k].tolist()
                         selected[space].extend(candidates[i] for i in chosen)
                         progressed = progressed or bool(chosen)
@@ -385,7 +400,7 @@ class SDKBAgent(nn.Module):
             if t.retrieval == "learned" and required and records:
                 routing = routing + group_plan_loss(scores, [tuple(required)]) / len(r.payload_dims)
             oracle = t.retrieval == "oracle" or (self.training and step < t.routing_warmup)
-            indices = required if oracle else torch.argsort(scores, descending=True, stable=True)[:r.neighbors[space]].tolist()
+            indices = required if oracle else torch.argsort(scores, descending=True, stable=True)[:self.requested_records(q, r.neighbors[space])].tolist()
             selected.append(list(indices))
             payloads.append(values[indices])
         present = any(p.shape[0] for p in payloads)
@@ -440,7 +455,7 @@ class SDKBAgent(nn.Module):
                     if self.training and t.retrieval == "learned" and remaining:
                         routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)
                     chosen = (remaining[:r.read_top_k] if oracle else
-                              scores.argsort(descending=True, stable=True)[:r.read_top_k].tolist())
+                              scores.argsort(descending=True, stable=True)[:self.requested_records(q, r.read_top_k)].tolist())
                     selected[space].extend(candidates[i] for i in chosen)
                     progressed = progressed or bool(chosen)
                 values = ([records[i][2 * space + 1] for i in selected[space]])

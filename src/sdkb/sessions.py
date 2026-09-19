@@ -63,7 +63,7 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
                 plan = store.search(agent.query_maps[space](routing_query)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
-                                    top_k=r.neighbors[space] if r.read_steps == 1 else r.read_top_k,
+                                    top_k=agent.requested_records(q, r.neighbors[space] if r.read_steps == 1 else r.read_top_k),
                                     exclude_ids=exclude_ids | frozenset(selected[space]))
             else:
                 available = [rid for rid in oracle_ids if rid not in selected[space] and rid not in exclude_ids]
@@ -130,7 +130,7 @@ def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str
                 plan = store.search(agent.query_maps[space](routing_query)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
-                                    top_k=r.neighbors[space] if r.read_steps == 1 else r.read_top_k,
+                                    top_k=agent.requested_records(query, r.neighbors[space] if r.read_steps == 1 else r.read_top_k),
                                     exclude_ids=exclude_ids | frozenset(selected[space]))
             else:
                 available = [rid for rid in oracle_ids if rid not in selected[space] and rid not in exclude_ids]

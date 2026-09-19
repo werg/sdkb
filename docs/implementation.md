@@ -225,3 +225,13 @@ ownership. Prefix, multiread and loop-boundary training and stored sessions use
 the separate routing key; target tokens remain excluded from both queries.
 Full-graph/replay, stored-plan parity, frozen payload/oracle outputs and exact
 Muon resume are covered by regressions.
+
+The diagnostic evaluators also accept a separately trained, frozen reader-query
+count classifier through `--read-count-policy`. It can request one or two records
+within the configured search cap, using only the current causal reader query.
+The policy is bound to its source checkpoint; keys and payloads are unchanged.
+It is a single-space, single-read inference adapter, not a general learned stopping
+policy or an added standard-training objective. Fixed plans and oracle controls
+retain their declared selections. Default models have no count parameters.
+Integrated/full-graph, replay and stored-session paths share the count decision;
+the classifier itself is trained separately on frozen features and remains frozen.

@@ -570,7 +570,7 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
                     if config.train.retrieval == "learned" and condition != "none":
                         plan = store.search(agent.query_maps[space](routing_query)[0], namespace=episode.episode_id,
                             space=f"s{space}", generation="frozen-v0", query_time=episode.query_time,
-                            top_k=config.memory.neighbors[space])
+                            top_k=agent.requested_records(q, config.memory.neighbors[space]))
                     else:
                         plan = ReadPlan(episode.episode_id, f"s{space}", "frozen-v0", "research",
                                         episode.query_time, tuple(Selection(i, 0.) for i in selected))

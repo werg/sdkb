@@ -12,7 +12,7 @@ import torch
 from safetensors.torch import load_model
 
 from sdkb.agent import SDKBAgent
-from sdkb.evaluation_adapter import load_frozen_agent
+from sdkb.evaluation_adapter import load_frozen_agent, attach_read_count_policy
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes, evidence_ids
 from sdkb.sessions import read_session
@@ -23,7 +23,7 @@ from sdkb.trajectories import file_sha256
 
 @torch.no_grad()
 def evaluate(run, bank, episodes_path, worlds, max_new_tokens, *, learned_world=False, read_budget=2,
-             routing_probe=None, independent_routing_query=False):
+             routing_probe=None, independent_routing_query=False, read_count_policy=None):
     if worlds < 1 or max_new_tokens < 1:
         raise ValueError('World and generation budgets must be positive')
     checkpoint = resolve_checkpoint(run, verify=True)
@@ -47,6 +47,8 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens, *, learned_world=
             raise ValueError('Supply a routing probe for the independent query override')
         agent = SDKBAgent(config).to(config.train.device).eval()
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
+    count_policy = (attach_read_count_policy(agent, checkpoint, read_count_policy)
+                    if read_count_policy is not None else None)
 
     bank_report_path = bank.parent / 'results.json'
     if adapter is not None or bank_report_path.exists():
@@ -99,6 +101,7 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens, *, learned_world=
                      'eligibility': 'supplied world membership; not global retrieval or authorization'}
                     if learned_world else {'mode': 'oracle', 'evidence_scope': config.train.evidence_scope}),
         'routing_probe': adapter,
+        'read_count_policy': count_policy,
         'max_new_tokens': max_new_tokens,
         'worlds': len(selected_worlds),
         'inputs': {'checkpoint': str(checkpoint),
@@ -121,6 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('--worlds', type=int, default=8)
     parser.add_argument('--max-new-tokens', type=int, default=24)
     parser.add_argument('--learned-world', action='store_true')
+    parser.add_argument('--read-count-policy', type=Path)
     parser.add_argument('--routing-probe', type=Path)
     parser.add_argument('--independent-routing-query', action='store_true')
     parser.add_argument('--read-budget', type=int, default=2)
@@ -129,7 +133,8 @@ if __name__ == '__main__':
         raise FileExistsError(args.output)
     result = evaluate(args.run, args.bank, args.episodes, args.worlds, args.max_new_tokens,
                       learned_world=args.learned_world, read_budget=args.read_budget,
-                     routing_probe=args.routing_probe, independent_routing_query=args.independent_routing_query)
+                     routing_probe=args.routing_probe, independent_routing_query=args.independent_routing_query,
+                     read_count_policy=args.read_count_policy)
     with args.output.open('x') as handle:
         handle.write(json.dumps(result, indent=2) + '\n')
     print(json.dumps({k: v for k, v in result.items() if k != 'rows'}, indent=2))

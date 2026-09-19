@@ -25,3 +25,11 @@ the frozen reader query or the full causal state, each normalized to unit length
 The first two representations need 130 parameters; full-state input needs 2,050.
 This representation comparison uses the development split; a fresh stored test
 is still required after choosing a policy. No address or backbone weights change.
+
+Both alternate representations completed from `cdd06fe`: 10,240/10,240 training
+and 320/320 development count predictions are correct. Choose the reader-query
+head for the next fresh stored confirmation because it matches the full-state
+head's observed count accuracy with 130 rather than 2,050 parameters. This choice
+is based on the development split, not an untouched final test. The earlier
+address-query classifier had 305/320 correct counts. All address weights remain
+identical to the broad full-state endpoint throughout this comparison.
