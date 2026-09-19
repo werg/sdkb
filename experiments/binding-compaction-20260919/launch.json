@@ -1,0 +1,12 @@
+{
+  "source_commit": "868a1b3",
+  "worktree": ".sdkb/posthoc-compaction",
+  "arms": [
+    "mlp",
+    "attention"
+  ],
+  "external_root": "/archive/probes/posthoc-compaction-20260919",
+  "base_parameters_frozen": true,
+  "optimizer_owns": "SyntheticCompactor only; exact names in resume.pt",
+  "note": "Inherited config retains source training fields; only explicit probe objective and compactor optimizer are executed."
+}
