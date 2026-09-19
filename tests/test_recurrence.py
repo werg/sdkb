@@ -255,8 +255,11 @@ def test_invalid_recurrent_config_fails(loop_config, change):
 
 
 @pytest.mark.integration
-def test_random_native_lfm_exact_split_and_causality():
+def test_random_native_lfm_exact_split_and_causality(monkeypatch):
     pytest.importorskip('transformers')
+    import inspect
+    from transformers.models.lfm2 import modeling_lfm2
+    monkeypatch.setattr(modeling_lfm2, 'causal_conv1d_fn', inspect.unwrap(modeling_lfm2.causal_conv1d_fn))
     from transformers import Lfm2Config, Lfm2ForCausalLM
     from sdkb.backbones import HFBackbone
     from torch import nn

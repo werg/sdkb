@@ -11,7 +11,7 @@ import time
 
 import yaml
 from .backbones import ByteTokenizer
-from .config import load_config
+from .config import load_config, TrainConfig
 from .data import make_boolean_world, make_multiuse_world, save_episodes
 from .episode_index import EpisodeIndex
 from .text import render_prompt
@@ -38,7 +38,7 @@ def load_recipe(path):
         raise ValueError('At least one stage required')
     for stage in recipe['stages']:
         if set(stage) - {'name', 'arm', 'steps', 'freeze_backbone', 'init_from', 'oracle_anchor_weight', 'compaction',
-                         'loops', 'loop_counts', 'backbone_train_scope', 'oracle_anchor_loops', 'parent_kl_weight'}:
+                         'loops', 'loop_counts', 'backbone_train_scope', 'oracle_anchor_loops', 'parent_kl_weight', 'compact_records'}:
             raise ValueError('Unknown stage fields')
         if not stage['name'].replace('_', '').isalnum() or stage['name'] in names:
             raise ValueError('Stage names must be unique safe identifiers')
@@ -61,7 +61,14 @@ def prepare_launch(recipe_path, output, *, resume=False):
     recipe = load_recipe(recipe_path)
     output = Path(output).resolve()
     base = load_config(recipe['base_config'])
-    identity = digest({'recipe': recipe, 'base_config': asdict(base)})
+    identity_config = asdict(base)
+    # New optional operations defaults must not invalidate an existing 0.4 recipe.
+    defaults = TrainConfig()
+    for name in ('archive_dir', 'archive_keep_checkpoints', 'min_free_disk_bytes',
+                 'wandb_mode', 'wandb_project', 'wandb_entity', 'wandb_group'):
+        if identity_config['train'][name] == getattr(defaults, name):
+            identity_config['train'].pop(name)
+    identity = digest({'recipe': recipe, 'base_config': identity_config})
     manifest_path = output / 'launch.json'
     if manifest_path.exists():
         if not resume:
@@ -144,9 +151,12 @@ def prepare_launch(recipe_path, output, *, resume=False):
         config.train.parent_kl_weight = stage.get('parent_kl_weight', 0.)
         if stage.get('compaction'):
             config.memory.compaction = 'synthetic'
+            config.memory.compact_records = stage.get('compact_records', config.memory.compact_records)
             config.memory.compaction_probability, config.memory.compaction_warmup = 1., 0
             config.train.optimization_scope = 'compactor'
         config.validate()
+        from .routing import validate_routing_dataset
+        validate_routing_dataset(config, EpisodeIndex(data / 'train.jsonl'))
         name = stage['name']
         path = output / f'{name}.yaml'
         path.write_text(yaml.safe_dump(asdict(config), sort_keys=False))
@@ -165,11 +175,23 @@ def prepare_launch(recipe_path, output, *, resume=False):
     return manifest
 
 
-def launch(recipe_path, output, *, resume=False, prepare_only=False):
+def launch(recipe_path, output, *, resume=False, prepare_only=False, preserve_stop=False):
+    from .operations import run_lock
+    from .checkpoints import stop_on_signal
+    with run_lock(output, clear_stop=not preserve_stop), stop_on_signal() as stop:
+        return _launch(recipe_path, output, resume=resume, prepare_only=prepare_only, stop=stop)
+
+
+def _launch(recipe_path, output, *, resume, prepare_only, stop):
+    from .operations import stop_requested
+    def stopping():
+        return stop['signal'] is not None or stop_requested(output)
     manifest = prepare_launch(recipe_path, output, resume=resume)
     output = Path(output).resolve()
     if prepare_only:
         return {'status': 'prepared', 'manifest': str(output / 'launch.json'), 'stages': manifest['stages']}
+    if stopping():
+        return {'status': 'checkpointed', 'output': str(output), 'boundary': 'prepared'}
     from .probes import model_probe
     from .training import train
     from .checkpoints import resolve_checkpoint
@@ -178,6 +200,8 @@ def launch(recipe_path, output, *, resume=False, prepare_only=False):
     if not probe.exists():
         atomic_json(probe, model_probe(load_config(manifest['stages'][0]['config'])))
     for stage in manifest['stages']:
+        if stopping():
+            return {'status': 'checkpointed', 'output': str(output), 'boundary': 'between_stages'}
         run = Path(stage['run'])
         config, completed = load_config(stage['config']), 0
         if (run / 'CURRENT').exists():
@@ -189,28 +213,38 @@ def launch(recipe_path, output, *, resume=False, prepare_only=False):
             if run.exists() and not (run / 'CURRENT').exists():
                 raise RuntimeError(f'Uncommitted training directory {run}; inspect before retrying')
             result = train(config, run, resume=(run / 'CURRENT').exists(),
-                           init_from=None if (run / 'CURRENT').exists() else stage['init_from'])
-            if result['stopped_early']:
+                           init_from=None if (run / 'CURRENT').exists() else stage['init_from'],
+                           stop_output=output)
+            if result['stopped_early'] or result.get('stop_requested'):
                 return dict(status='checkpointed', stage=stage['name'], steps=result['steps'])
+        if stopping():
+            return dict(status='checkpointed', stage=stage['name'])
         report = output / (stage['name'] + '-evaluation.json')
         if not report.exists():
             atomic_json(report, evaluate_teacher_run(run, output / 'data/validation.jsonl',
                         max_episodes=manifest['recipe'].get('evaluation', {}).get('max_episodes', 64)))
     last = manifest['stages'][-1]
+    last_config = load_config(last['config'])
+    compact_evaluation = (last_config.memory.compaction != 'none' and last_config.train.arm == 'memory')
     count = manifest['recipe'].get('evaluation', {}).get('causal_worlds', 32)
     split = 'post-freeze-' + manifest['input_identity'][:12]
     if count:
+        if stopping():
+            return dict(status='checkpointed', boundary='before_causal_evaluation')
         from .evaluation import evaluate_transfer_run
         if not (output / 'causal-evaluation.json').exists():
             path = output / 'fresh-causal.jsonl'
             save_episodes(path, [e for i in range(count) for e in make_boolean_world(i, split=split, operations=('a', 'b', 'xor'))])
-            result = evaluate_transfer_run(last['run'], path, boolean_counterfactuals=True, drop_supports=True)
+            result = evaluate_transfer_run(last['run'], path, boolean_counterfactuals=True, drop_supports=True,
+                                           persistent_compact=compact_evaluation)
             atomic_json(output / 'causal-evaluation.json', {k: v for k, v in result.items() if k != 'rows'})
         # Independent marker: a failed binding evaluation does not silently get skipped on resume.
         if not (output / 'multiuse-evaluation.json').exists():
+            if stopping():
+                return dict(status='checkpointed', boundary='before_binding_evaluation')
             path = output / 'fresh-multiuse.jsonl'
             save_episodes(path, [e for i in range(count) for e in make_multiuse_world(i, split=split, bindings=2)])
-            result = evaluate_transfer_run(last['run'], path)
+            result = evaluate_transfer_run(last['run'], path, persistent_compact=compact_evaluation)
             atomic_json(output / 'multiuse-evaluation.json', {k: v for k, v in result.items() if k != 'rows'})
     return dict(status='complete', output=str(output), stages=[s['name'] for s in manifest['stages']],
                 scientific_claim='Inspect stored-memory and counterfactual effects; execution alone is not evidence of transfer.')

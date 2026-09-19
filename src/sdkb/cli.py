@@ -13,6 +13,20 @@ def main(argv: list[str] | None = None) -> None:
     from . import __version__
     parser.add_argument("--version", action="version", version=f"SDKB {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser('runs', help='Start, inspect or cooperatively stop a local detached curriculum')
+    p.add_argument('action', choices=['start', 'status', 'stop'])
+    p.add_argument('--output', required=True)
+    p.add_argument('--recipe')
+    p.add_argument('--resume', action='store_true')
+    p = sub.add_parser('archive', help='Copy a verified checkpoint to an existing archive directory')
+    p.add_argument('--run', required=True)
+    p.add_argument('--destination', required=True)
+    p.add_argument('--keep', type=int, default=3)
+    p = sub.add_parser('restore', help='Restore a verified archive into a new run directory')
+    p.add_argument('--archive', required=True)
+    p.add_argument('--output', required=True)
+    p = sub.add_parser('storage', help='Inspect filesystem capacity and run artifact sizes')
+    p.add_argument('--path', required=True)
     p = sub.add_parser("launch", help="Prepare pinned data and execute a staged training curriculum")
     p.add_argument("--recipe", default="recipes/looped_starter.yaml")
     p.add_argument("--output", required=True)
@@ -88,7 +102,41 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--output")
     args = parser.parse_args(argv)
     result = None
-    if args.command == "launch":
+    if args.command == 'runs':
+        from .operations import start_run, run_status, request_stop
+        if args.action == 'start':
+            if not args.recipe:
+                parser.error('runs start requires --recipe')
+            result = start_run(args.recipe, args.output, resume=args.resume)
+        elif args.action == 'stop':
+            result = request_stop(args.output)
+        else:
+            result = run_status(args.output)
+    elif args.command == 'archive':
+        from .archiving import archive_checkpoint
+        from .checkpoints import resolve_checkpoint
+        from .operations import file_lock
+        if args.keep < 1:
+            parser.error('Positive archive retention required')
+        destination = Path(args.destination)
+        if not destination.is_dir():
+            raise FileNotFoundError('Archive destination must already exist on the intended disk')
+        from .operations import run_lock
+        with run_lock(args.run, clear_stop=False), file_lock(destination / '.archive.lock'):
+            result = {'checkpoint': str(archive_checkpoint(resolve_checkpoint(args.run, verify=True),
+                                        destination, keep=args.keep))}
+    elif args.command == 'restore':
+        from .archiving import restore_archive
+        result = restore_archive(args.archive, args.output)
+    elif args.command == 'storage':
+        import shutil
+        path = Path(args.path).resolve()
+        usage = shutil.disk_usage(path)
+        result = dict(path=str(path), filesystem_total_bytes=usage.total, filesystem_free_bytes=usage.free,
+                      artifact_bytes=sum(p.stat().st_size for p in path.rglob('*') if p.is_file() and not p.is_symlink()),
+                      pending_directories=[str(p) for p in path.rglob('.pending-*') if p.is_dir()],
+                      note='Inspection only; no shared caches, runs or archives are deleted.')
+    elif args.command == "launch":
         from .launch import launch
         result = launch(args.recipe, args.output, resume=args.resume, prepare_only=args.prepare_only)
     elif args.command == "datasets":

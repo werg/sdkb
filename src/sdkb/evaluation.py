@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
 import json
 import time
 
@@ -15,7 +16,7 @@ from .metrics import summarize_rows, paired_world_bootstrap
 from .routing import complete_support_recall
 from .sessions import read_session
 from .store import DiskStore
-from .training import autocast_context, persist_outputs, stored_channel, config_from_run, resource_report
+from .training import autocast_context, persist_outputs, stored_channel, config_from_run, resource_report, reset_resource_peaks
 
 
 @torch.no_grad()
@@ -69,13 +70,17 @@ def build_shared_bank(agent, store: DiskStore, episodes: list[Episode], *, names
 @torch.no_grad()
 def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode], *,
                                namespace: str = 'global', generation: str = 'frozen-v1',
-                               compact: bool = False, drop_supports: bool = False, cluster_bank=None) -> dict:
+                               compact: bool = False, drop_supports: bool = False, cluster_bank=None,
+                               fixed_plans_by_episode=None, capture_plans=None) -> dict:
     """Never calls the writer. Retrieval competes across worlds in a shared bank."""
     if agent.training:
         raise ValueError('Evaluation requires frozen weights')
     rows = []
     with autocast_context(agent.config):
         for episode in episodes:
+            original_plans = (None if fixed_plans_by_episode is None else
+                              [[replace(p, namespace=namespace) for p in step]
+                               for step in fixed_plans_by_episode[episode.episode_id]])
             conditions = ['all', 'none', 'zero_values']
             if compact:
                 conditions.append('compact')
@@ -98,8 +103,13 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                                            oracle_ids=selected if agent.config.train.retrieval == 'oracle' else None,
                                            exclude_ids=excluded, ablate_values=condition == 'zero_values',
                                            compact=condition == 'compact',
-                                           cluster_bank=cluster_bank if condition == 'persistent' else None)
+                                           cluster_bank=cluster_bank if condition == 'persistent' else None,
+                                           fixed_plans=original_plans if condition in {'all', 'zero_values', 'compact', 'persistent'} else None)
                     memory, selected_spaces, plans = session.memory, session.selected_ids, session.plans
+                    if condition == 'all':
+                        original_plans = plans
+                        if capture_plans is not None:
+                            capture_plans[episode.episode_id] = plans
                 elif arm == 'shared_compute':
                     memory = agent.shared_compute_tokens(prompt)
                 elif arm == 'oracle_text':
@@ -118,6 +128,7 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
     return {'schema_version': 2, 'protocol': 'write-once, serialize/reload, global stored-only bank',
             'choice_scoring': 'sum of target token NLL including EOS',
             'notice': 'Synthetic transfer diagnostics, not capacity-substitution evidence.',
+            'payload_intervention_routing': 'Captured original plans; payload changes never reroute later reads.',
             'rows': rows, 'summary': summarize_rows(rows), 'by_family': families,
             'paired_memory_benefit': paired_world_bootstrap(rows), 'resources': resource_report()}
 
@@ -127,6 +138,7 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
                           boolean_counterfactuals: bool = False, persistent_compact: bool = False) -> dict:
     run = Path(run)
     config = config_from_run(run)
+    reset_resource_peaks()
     if (compact or persistent_compact) and config.memory.compaction == 'none':
         raise ValueError('Run was not configured with a compactor')
     torch.set_num_threads(config.train.threads)
@@ -141,20 +153,21 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
     codes, code_manifest = None, None
     if persistent_compact:
         codes, code_manifest = build_persistent_codes(agent, store, episodes)
+    original_plans = {}
     result = stored_transfer_evaluation(agent, DiskStore(store.path), episodes,
-                                        compact=compact, drop_supports=drop_supports, cluster_bank=codes)
+                                        compact=compact, drop_supports=drop_supports, cluster_bank=codes,
+                                        capture_plans=original_plans)
     if code_manifest is not None:
         result["persistent_codes"] = code_manifest
     if boolean_counterfactuals:
         from .metrics import counterfactual_metrics
-        if config.train.retrieval != "oracle":
-            raise ValueError("Payload-causal boolean probe requires fixed oracle read plans")
         original_answers = {e.episode_id: e.answer for e in episodes}
         for bit in ("a", "b"):
             variants = [counterfactual_boolean(e, bit) for e in episodes]
             build_shared_bank(agent, store, variants, namespace=f"flip-{bit}")
             variant_results = stored_transfer_evaluation(agent, DiskStore(store.path), variants,
-                                                         namespace=f"flip-{bit}")
+                                                         namespace=f"flip-{bit}",
+                                                         fixed_plans_by_episode=original_plans if config.train.arm in {'memory', 'direct_latent'} else None)
             for row in variant_results["rows"]:
                 if row["condition"] == "all":
                     row["condition"] = f"cf_{bit}"
@@ -172,7 +185,8 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
 
 
 @torch.no_grad()
-def build_persistent_codes(agent, store: DiskStore, episodes: list[Episode]):
+def build_persistent_codes(agent, store: DiskStore, episodes: list[Episode], *,
+                           namespace='global', generation='frozen-v1'):
     from .cluster_store import ClusterBank, state_fingerprint
     from .store import ReadPlan, Selection
     if agent.config.train.arm != 'memory' or len(agent.config.memory.payload_dims) != 1:
@@ -186,12 +200,14 @@ def build_persistent_codes(agent, store: DiskStore, episodes: list[Episode]):
             if ids in seen:
                 continue
             seen.add(ids)
-            if len(ids) <= agent.config.memory.compact_records:
+            size = 1 if agent.config.memory.compaction == 'mean' else agent.config.memory.compact_records
+            if len(ids) <= size:
+                skipped += 1
                 continue
             if covered.intersection(ids):
                 skipped += 1
                 continue
-            plan = ReadPlan('global', 's0', 'frozen-v1', 'research', episode.query_time,
+            plan = ReadPlan(namespace, 's0', generation, 'research', episode.query_time,
                             tuple(Selection(rid, 0.) for rid in ids))
             raw = torch.stack(store.fetch(plan)).float().to(agent.device)[None]
             view = agent._compact_values(raw, raw.new_ones(raw.shape[:2]))

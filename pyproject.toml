@@ -12,6 +12,7 @@ dependencies = ["torch>=2.6", "numpy>=1.26", "safetensors>=0.5", "PyYAML>=6"]
 [project.optional-dependencies]
 hf = ["transformers==5.17.0"]
 data = ["datasets==5.0.1"]
+tracking = ["wandb>=0.19,<1"]
 dev = ["pytest>=8", "ruff>=0.11"]
 
 [project.scripts]

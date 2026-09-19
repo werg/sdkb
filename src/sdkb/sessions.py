@@ -23,7 +23,8 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
                  generation: str, query_time: int, domain: str = "research",
                  oracle_ids: tuple[str, ...] | None = None,
                  ablate_values: bool = False, compact: bool = False,
-                 exclude_ids: frozenset[str] = frozenset(), cluster_bank=None) -> ReadSession:
+                 exclude_ids: frozenset[str] = frozenset(), cluster_bank=None,
+                 fixed_plans: list[list[ReadPlan]] | None = None) -> ReadSession:
     """Gather a captured read plan at each safe boundary, then update working slots.
 
     Learned retrieval searches the whole selected namespace and excludes previous
@@ -34,12 +35,14 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
     if agent.training:
         raise ValueError("Stored sessions require eval mode")
     r = agent.config.memory
+    if fixed_plans is not None:
+        validate_fixed_plans(fixed_plans, r, namespace, generation, domain, query_time, exclude_ids)
     if r.read_timing == "loop_boundary":
         if compact or cluster_bank is not None or r.stream_reads:
             raise ValueError("In-loop sessions currently read raw materialized payloads")
         return loop_read_session(agent, store, prompt, namespace=namespace, generation=generation,
                                  query_time=query_time, domain=domain, oracle_ids=oracle_ids,
-                                 ablate_values=ablate_values, exclude_ids=exclude_ids)
+                                 ablate_values=ablate_values, exclude_ids=exclude_ids, fixed_plans=fixed_plans)
     if cluster_bank is not None and (r.stream_reads or len(r.payload_dims) != 1 or compact):
         raise ValueError("Persistent codes require the single-space materialized reader, without re-compaction")
     if r.stream_reads and compact:
@@ -47,12 +50,16 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
     selected = [[] for _ in r.payload_dims]
     memory, plans, keys, accounting = None, [], [], []
     for read in range(r.read_steps):
+        if fixed_plans is not None and read >= len(fixed_plans):
+            break
         q = agent.query(prompt, memory)
         keys.append(q.detach().cpu())
         step_plans, progressed = [], False
         payloads = []
         for space, dim in enumerate(r.payload_dims):
-            if oracle_ids is None:
+            if fixed_plans is not None:
+                plan = fixed_plans[read][space]
+            elif oracle_ids is None:
                 plan = store.search(agent.query_maps[space](q)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
@@ -102,7 +109,7 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
 def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
                       generation: str, query_time: int, domain: str,
                       oracle_ids: tuple[str, ...] | None, ablate_values: bool,
-                      exclude_ids: frozenset[str]) -> ReadSession:
+                      exclude_ids: frozenset[str], fixed_plans=None) -> ReadSession:
     """Prefix-only read-plan construction at actual recurrent core boundaries."""
     if agent.training:
         raise ValueError("Stored sessions require eval mode")
@@ -113,11 +120,13 @@ def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str
         return ReadSession(None, [], selected, [])
     def provider(completed, query):
         nonlocal memory
-        if completed > r.read_steps:
+        if completed > r.read_steps or (fixed_plans is not None and completed > len(fixed_plans)):
             return memory
         step_plans, payloads, progressed = [], [], False
         for space, dim in enumerate(r.payload_dims):
-            if oracle_ids is None:
+            if fixed_plans is not None:
+                plan = fixed_plans[completed - 1][space]
+            elif oracle_ids is None:
                 plan = store.search(agent.query_maps[space](query)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
@@ -142,3 +151,21 @@ def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str
         return memory
     schedule = agent.plan_loop_memory(prompt, provider)
     return ReadSession(schedule, plans, selected, keys)
+
+
+def validate_fixed_plans(plans, memory_config, namespace, generation, domain, query_time, excluded):
+    """Captured selections never grant visibility or permit changing read boundaries."""
+    if len(plans) > memory_config.read_steps:
+        raise ValueError('Captured plan exceeds configured read boundaries')
+    seen = [set() for _ in memory_config.payload_dims]
+    for step in plans:
+        if len(step) != len(seen):
+            raise ValueError('Captured plan has incompatible space boundaries')
+        for space, plan in enumerate(step):
+            if (plan.namespace, plan.space, plan.generation, plan.domain, plan.query_time) != (
+                    namespace, f's{space}', generation, domain, query_time):
+                raise ValueError('Captured plan crosses a namespace/version/time/authorization boundary')
+            ids = [s.record_id for s in plan.selections]
+            if len(ids) != len(set(ids)) or seen[space].intersection(ids) or set(ids).intersection(excluded):
+                raise ValueError('Captured plan duplicates or includes excluded evidence')
+            seen[space].update(ids)

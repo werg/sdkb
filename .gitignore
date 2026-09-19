@@ -22,4 +22,6 @@ checkpoints/
 *.bundle
 # Local launch cache and credentials.
 .sdkb/
+.sdkb-control/
+wandb/
 *.token

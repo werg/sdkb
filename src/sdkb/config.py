@@ -92,6 +92,13 @@ class TrainConfig:
     parent_kl_weight: float = 0.0  # fixed one-pass parent, only while native base is frozen
     oracle_anchor_weight: float = 0.0
     episodes_file: str | None = None  # optional general support/query JSONL
+    archive_dir: str | None = None  # existing external storage root; never auto-mount
+    archive_keep_checkpoints: int = 3
+    min_free_disk_bytes: int = 1024 ** 3
+    wandb_mode: str = 'disabled'  # opt-in: offline or online
+    wandb_project: str = 'sdkb'
+    wandb_entity: str | None = None
+    wandb_group: str | None = None
 
 
 @dataclass
@@ -186,6 +193,10 @@ class Config:
             raise ValueError("Specify writer_loops independently of sampled consumer depth")
         if t.distractors < 0 or min(t.learning_rate, t.backbone_learning_rate) <= 0:
             raise ValueError("Invalid distractor count or learning rate")
+        if t.archive_keep_checkpoints < 1 or t.min_free_disk_bytes < 0:
+            raise ValueError('Invalid archive retention/free disk reserve')
+        if t.wandb_mode not in {'disabled', 'offline', 'online'}:
+            raise ValueError('wandb_mode must be disabled, offline or online')
 
 
 def load_config(path: str | Path) -> Config:

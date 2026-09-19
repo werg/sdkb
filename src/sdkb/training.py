@@ -1,14 +1,13 @@
 """Executable support/query training and stored-only evaluation reference."""
 from __future__ import annotations
 
-from contextlib import nullcontext
-from dataclasses import asdict
+from contextlib import nullcontext, ExitStack
+from dataclasses import asdict, replace
 from pathlib import Path
 import json
 import hashlib
 import platform
 import random
-import resource
 import subprocess
 import time
 
@@ -58,7 +57,13 @@ def environment_report() -> dict:
 
 def resource_report() -> dict:
     # ru_maxrss is KiB on Linux (the supported Spark platform).
-    report = {"process_peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024}
+    try:
+        import resource
+        scale = 1 if platform.system() == 'Darwin' else 1024
+        report = {"process_peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * scale}
+    except ImportError:
+        report = {"process_peak_rss_bytes": None}
+    report['rss_scope'] = 'process lifetime; not phase-isolated'
     if torch.cuda.is_available():
         report.update(cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(),
                       cuda_peak_reserved_bytes=torch.cuda.max_memory_reserved())
@@ -66,6 +71,13 @@ def resource_report() -> dict:
         info = dict(line.split(":", 1) for line in Path("/proc/meminfo").read_text().splitlines())
         report["system_mem_available_bytes"] = int(info["MemAvailable"].split()[0]) * 1024
     return report
+
+
+def reset_resource_peaks():
+    """Phase-local CUDA peaks; host ru_maxrss cannot be reset portably."""
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
 
 
 def stored_channel(agent: SDKBAgent, outputs: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
@@ -95,12 +107,29 @@ def read_cached(store: DiskStore, agent: SDKBAgent, source: Source,
 
 
 def train(config: Config, output: str | Path, *, resume: bool = False,
-          stop_after: int | None = None, init_from: str | Path | None = None) -> dict:
+          stop_after: int | None = None, init_from: str | Path | None = None,
+          stop_output: str | Path | None = None) -> dict:
+    from .operations import run_lock
+    with run_lock(output), stop_on_signal() as stop, ExitStack() as lifecycle:
+        return _train(config, output, resume=resume, stop_after=stop_after, init_from=init_from,
+                      stop_output=stop_output, stop=stop, lifecycle=lifecycle)
+
+
+def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, lifecycle):
     config.validate()
     if resume and init_from is not None:
         raise ValueError("Choose resume or warm-start, not both")
     if stop_after is not None and stop_after < 1:
         raise ValueError("stop_after must be positive")
+    from .episode_index import EpisodeIndex
+    from .routing import validate_routing_dataset
+    episodes = (EpisodeIndex(config.train.episodes_file) if config.train.episodes_file else
+                [make_episode(i, split=f"train-{config.train.seed}", distractors=config.train.distractors)
+                 for i in range(config.train.train_worlds)])
+    validate_routing_dataset(config, episodes)
+    if config.train.optimization_scope == 'compactor' and config.train.retrieval == 'oracle' and not any(
+            len(e.required_ids) > config.memory.compact_records for e in episodes):
+        raise ValueError('Compactor-only training cannot reduce any selected group; lower compact_records')
     output = Path(output)
     if config.train.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA requested but unavailable. Use configs/tiny_cpu.yaml for offline tests.")
@@ -108,9 +137,28 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
         output.mkdir(parents=True, exist_ok=False)
     else:
         resolve_checkpoint(output)
+        old_config = asdict(config_from_run(output))
+        current = asdict(config)
+        old_config['train']['steps'] = current['train']['steps']
+        if old_config != current:
+            raise ValueError('Resume config differs beyond total step count')
+    from .archiving import ensure_free
+    from .operations import stop_requested
+    from .tracking import Tracking, run_identity
+    ensure_free(output, reserve_bytes=config.train.min_free_disk_bytes)
+    if config.train.archive_dir and not Path(config.train.archive_dir).is_dir():
+        raise FileNotFoundError('Archive root must be an existing directory/mounted external disk')
+    if resume and not (output / 'run-identity.json').exists():
+        identity_file = resolve_checkpoint(output, verify=True) / 'run-identity.json'
+        if identity_file.exists():
+            (output / 'run-identity.json').write_bytes(identity_file.read_bytes())
+    tracker = lifecycle.enter_context(Tracking(config, output))
+    def want_stop():
+        return stop['signal'] is not None or stop_requested(output) or (stop_output is not None and stop_requested(stop_output))
     torch.set_num_threads(config.train.threads)
     random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
+    reset_resource_peaks()
     rng = random.Random(config.train.seed)
     agent = SDKBAgent(config).to(config.train.device)
     agent.train()
@@ -162,12 +210,6 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
     ]
     optimizer = torch.optim.AdamW(groups)
     start = 0
-    if resume:
-        old_config = asdict(config_from_run(output))
-        current = asdict(config)
-        old_config["train"]["steps"] = current["train"]["steps"]
-        if old_config != current:
-            raise ValueError("Resume config differs beyond total step count")
     (output / "config.json").write_text(json.dumps(asdict(config), indent=2) + "\n")
     manifest = environment_report() | {"resolved_model_revision": agent.resolved_revision,
         "total_parameters": sum(p.numel() for p in agent.parameters()),
@@ -178,10 +220,6 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
         manifest["recurrence"]["training_depths"] = config.train.loop_counts or [config.model.loops]
         manifest["recurrence"]["writer_loops"] = config.model.writer_loops
     (output / "environment.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    from .episode_index import EpisodeIndex
-    episodes = (EpisodeIndex(config.train.episodes_file) if config.train.episodes_file else
-                [make_episode(i, split=f"train-{config.train.seed}", distractors=config.train.distractors)
-                 for i in range(config.train.train_worlds)])
     fingerprint = (episodes.sha256 if isinstance(episodes, EpisodeIndex) else
                    hashlib.sha256(json.dumps([asdict(e) for e in episodes], sort_keys=True).encode()).hexdigest())
     data_manifest = output / "data_manifest.json"
@@ -194,15 +232,29 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
         if config.train.steps < start:
             raise ValueError("Requested total steps precede the saved checkpoint")
     cache = DiskStore(output / "training_cache.sqlite")
+    archiver = None
+    if config.train.archive_dir:
+        from .archiving import CheckpointArchiver
+        archive_run = Path(config.train.archive_dir) / run_identity(output)
+        archive_run.mkdir(exist_ok=True)
+        from .operations import atomic_json
+        archiver = CheckpointArchiver(archive_run, keep=config.train.archive_keep_checkpoints,
+                                     reserve_bytes=config.train.min_free_disk_bytes)
+        lifecycle.callback(archiver.close)
+        atomic_json(archive_run / 'run.json', {'id': run_identity(output), 'source_run': str(output.resolve())})
+        if resume:
+            archiver.submit(resolve_checkpoint(output, verify=True))
     if not resume:
         save_checkpoint(agent, optimizer, output, 0, rng, cache, fingerprint,
-                        keep=config.train.keep_checkpoints)
+                        keep=config.train.keep_checkpoints, archiver=archiver)
     completed = start
     generation = "mixed-training-v0"  # intentional stale/live training distribution, never evaluation
     history = []
     start_time = time.perf_counter()
-    with stop_on_signal() as stop, (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
+    with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
         for step in range(start, config.train.steps):
+            if want_stop():
+                break
             # One depth per optimizer update, not per microbatch or replay callback.
             # This RNG is part of the atomic checkpoint. Producer depth stays fixed.
             agent.backbone.loops = (rng.choice(config.train.loop_counts) if config.train.loop_counts
@@ -221,12 +273,13 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
                         for source in episode.supports:
                             ids = agent.text_ids(source.text, source=True)
                             # Repeated source IDs use genuinely stored old payloads; first encounter populates the cache.
-                            try:
-                                cached = read_cached(cache, agent, source, "train", generation)
-                            except KeyError:
-                                with torch.no_grad():
-                                    cached = stored_channel(agent, agent.produce(ids))
-                                persist_outputs(cache, agent, source, cached, "train", generation)
+                            if config.train.live_fraction < 1:
+                                try:
+                                    cached = read_cached(cache, agent, source, "train", generation)
+                                except KeyError:
+                                    with torch.no_grad():
+                                        cached = stored_channel(agent, agent.produce(ids))
+                                    persist_outputs(cache, agent, source, cached, "train", generation)
                             if rng.random() < config.train.live_fraction:
                                 def producer(ids=ids):
                                     return stored_channel(agent, agent.produce(ids))
@@ -271,17 +324,20 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
                 row["recurrence"] = agent.backbone.manifest()
             log.write(json.dumps(row) + "\n")
             log.flush()
+            tracker.log(row)
             history.append(row)
             if (step + 1) % config.train.log_every == 0 or step == start:
                 print(json.dumps(row), flush=True)
             completed = step + 1
-            stopping = stop["signal"] is not None or (stop_after is not None and completed - start >= stop_after)
+            stopping = want_stop() or (stop_after is not None and completed - start >= stop_after)
             if completed % config.train.checkpoint_every == 0 or stopping or completed == config.train.steps:
                 save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
-                                keep=config.train.keep_checkpoints)
+                                keep=config.train.keep_checkpoints, archiver=archiver)
             if stopping:
                 break
-    summary = {"steps": completed, "requested_steps": config.train.steps,
+    if archiver is not None:
+        archiver.close(wait=not want_stop())
+    summary = {"steps": completed, "requested_steps": config.train.steps, 'stop_requested': bool(want_stop()),
                "stopped_early": completed < config.train.steps, "last": history[-1] if history else None,
                "environment": manifest, "resources": resource_report(), "store": cache.sizes()}
     (output / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
@@ -326,6 +382,7 @@ def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode
     if generate and (agent.config.memory.read_steps > 1 or agent.config.train.arm not in {"memory", "no_memory"}):
         raise ValueError("Use likelihood evaluation for multi-read/control arms")
     for episode in episodes:
+        original_plans = None
         for condition in conditions:
             cf = condition.startswith("cf_")
             variant = counterfactual(episode, "restoration" if condition == "cf_restoration" else "permission") if cf else episode
@@ -350,8 +407,12 @@ def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode
                     session = read_session(agent, store, prompt, namespace=namespace, generation=generation,
                                            query_time=episode.query_time,
                                            oracle_ids=None if learned else tuple(selected_ids),
-                                           ablate_values=condition == "zero_values")
+                                           ablate_values=condition == "zero_values",
+                                           fixed_plans=[[replace(p, namespace=namespace) for p in step] for step in original_plans]
+                                               if condition == 'zero_values' or cf else None)
                     memory, selected_spaces = session.memory, session.selected_ids
+                    if condition == 'all':
+                        original_plans = session.plans
                     read_count = len(session.plans)
                 elif arm == "shared_compute":
                     memory = agent.shared_compute_tokens(prompt)

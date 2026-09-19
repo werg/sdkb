@@ -119,3 +119,32 @@ def test_causal_curriculum_actual_cpu_path(tmp_path, tiny_config):
     recipe.write_text(yaml.safe_dump(r))
     assert launch(recipe, tmp_path / 'run')['status'] == 'complete'
     assert (tmp_path / 'run/multiuse-evaluation.json').exists()
+
+
+def test_learned_causal_launcher_completes(tmp_path, tiny_config):
+    tiny_config.train.retrieval = 'learned'
+    recipe = make_recipe(tmp_path, tiny_config)
+    r = yaml.safe_load(recipe.read_text())
+    r.update(protocol='causal', sources=[], causal_train_worlds=4)
+    r['stages'] = [dict(name='memory', arm='memory', steps=1)]
+    r['evaluation'] = dict(max_episodes=1, causal_worlds=1)
+    recipe.write_text(yaml.safe_dump(r))
+    assert launch(recipe, tmp_path / 'run')['status'] == 'complete'
+    assert (tmp_path / 'run/causal-evaluation.json').exists()
+
+
+def test_launcher_reports_actual_persistent_compaction(tmp_path, tiny_config):
+    recipe = make_recipe(tmp_path, tiny_config)
+    r = yaml.safe_load(recipe.read_text())
+    r.update(protocol='causal', sources=[], causal_train_worlds=4)
+    r['stages'] = [dict(name='memory', arm='memory', steps=1),
+                   dict(name='compact', arm='memory', steps=1, init_from='memory',
+                        compaction=True, compact_records=1)]
+    r['evaluation'] = dict(max_episodes=12, causal_worlds=1)
+    recipe.write_text(yaml.safe_dump(r))
+    out = tmp_path / 'run'
+    assert launch(recipe, out)['status'] == 'complete'
+    teacher = json.loads((out / 'compact-evaluation.json').read_text())
+    causal = json.loads((out / 'causal-evaluation.json').read_text())
+    assert teacher['persistent_codes']['codes'] > 0 and 'compact' in teacher['summary']
+    assert causal['persistent_codes']['codes'] > 0 and 'persistent' in causal['summary']

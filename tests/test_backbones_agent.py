@@ -120,8 +120,12 @@ def test_causal_source_cutoff():
 
 
 @pytest.mark.integration
-def test_random_lfm_public_embedding_path():
+def test_random_lfm_public_embedding_path(monkeypatch):
     pytest.importorskip("transformers")
+    # This is a CPU structural test even when the host has CUDA-only extensions.
+    import inspect
+    from transformers.models.lfm2 import modeling_lfm2
+    monkeypatch.setattr(modeling_lfm2, 'causal_conv1d_fn', inspect.unwrap(modeling_lfm2.causal_conv1d_fn))
     from transformers import Lfm2Config, Lfm2ForCausalLM
     config = Lfm2Config(vocab_size=259, hidden_size=32, intermediate_size=64,
         num_hidden_layers=2, num_attention_heads=4, num_key_value_heads=2,

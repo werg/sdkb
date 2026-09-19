@@ -29,6 +29,8 @@ def _fsync(path: Path) -> None:
 
 
 def _fsync_dir(path: Path) -> None:
+    if os.name == 'nt':
+        return  # Windows does not expose POSIX directory fsync.
     fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
     try:
         os.fsync(fd)
@@ -74,9 +76,14 @@ def resolve_checkpoint(run: str | Path, *, verify: bool = False) -> Path:
 
 
 def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
-                    cache, fingerprint: str, *, keep: int = 2) -> Path:
+                    cache, fingerprint: str, *, keep: int = 2, archiver=None) -> Path:
     if step < 0 or keep < 1:
         raise ValueError("Invalid checkpoint step/retention")
+    from .archiving import ensure_free
+    weights_bytes = sum(p.numel() * p.element_size() for p in agent.parameters())
+    optimizer_bytes = 2 * sum(p.numel() * p.element_size() for p in agent.parameters() if p.requires_grad)
+    ensure_free(run, weights_bytes + optimizer_bytes + cache.sizes()['physical_sqlite_bytes'] + 1024 ** 2,
+                agent.config.train.min_free_disk_bytes)
     root = run / "checkpoints"
     root.mkdir(exist_ok=True)
     token = uuid.uuid4().hex[:12]
@@ -94,6 +101,8 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
         with cache.connect() as source, sqlite3.connect(pending / "training_cache.sqlite") as dest:
             source.backup(dest)
         (pending / "config.json").write_text(json.dumps(asdict(agent.config), indent=2) + "\n")
+        if (run / 'run-identity.json').exists():
+            shutil.copyfile(run / 'run-identity.json', pending / 'run-identity.json')
         files = [p for p in pending.iterdir() if p.is_file()]
         for path in files:
             _fsync(path)
@@ -111,6 +120,8 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
         raise
     # Convenient legacy filenames; readers in this version always resolve CURRENT.
     for name in ("model.safetensors", "training_state.pt"):
+        if os.name == 'nt':
+            continue  # CURRENT is authoritative; Windows symlinks may require privilege.
         alias = run / (name + ".link-tmp")
         alias.unlink(missing_ok=True)
         alias.symlink_to(Path("checkpoints") / final.name / name)
@@ -118,8 +129,11 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
     committed = sorted((p for p in root.glob("step-*") if p.is_dir()),
                        key=lambda p: (json.loads((p / "manifest.json").read_text())["step"],
                                       p.stat().st_mtime_ns), reverse=True)
+    if archiver is not None:
+        archiver.submit(final)
+    protected = archiver.protected_names() if archiver is not None else set()
     for old in committed[keep:]:
-        if old != final:
+        if old != final and old.name not in protected:
             shutil.rmtree(old)
     return final
 

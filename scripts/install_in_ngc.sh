@@ -13,7 +13,7 @@ PY
 before="$(python -c 'import torch; print(torch.__version__, torch.version.cuda, torch.__file__)')"
 # Remove general vendor pins only inside this venv, keeping explicit GPU runtime pins.
 env -u PIP_CONSTRAINT -u PIP_BUILD_CONSTRAINT /opt/sdkb-venv/bin/python -m pip install \
-    -c /opt/sdkb-runtime-constraints.txt -e "$repo[hf,data,dev]"
+    -c /opt/sdkb-runtime-constraints.txt -e "$repo[hf,data,dev,tracking]"
 after="$(/opt/sdkb-venv/bin/python -c 'import torch; print(torch.__version__, torch.version.cuda, torch.__file__)')"
 [[ "$before" == "$after" ]] || { echo 'Vendor torch changed; refusing build.' >&2; exit 1; }
 /opt/sdkb-venv/bin/python - <<'PY'

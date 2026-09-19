@@ -53,3 +53,20 @@ def utility_ranking_loss(scores: Tensor, utilities: Tensor, tolerance: float = 1
 
 def complete_support_recall(selected: set[str], groups: list[set[str]]) -> float:
     return float(any(group <= selected for group in groups))
+
+
+def validate_routing_dataset(config, episodes) -> None:
+    """Do not turn supplied teacher context into fictitious sufficient-set labels."""
+    if config.train.retrieval != 'learned' or config.train.arm not in {'memory', 'direct_latent'}:
+        return
+    informative = 0
+    for episode in episodes:
+        if episode.support_annotation != 'verified':
+            raise ValueError('Learned group routing requires verified support labels; provided_context '
+                             'episodes support oracle training only. Collect utility/sufficiency labels first.')
+        if not 1 <= len(episode.required_ids) <= 4:
+            raise ValueError('Learned group routing requires 1..4 verified required records')
+        informative += len(episode.supports) > len(episode.required_ids)
+    if not informative:
+        raise ValueError('Learned routing has no competing candidates: every candidate is required. '
+                         'Provide causally eligible distractors or use oracle retrieval.')

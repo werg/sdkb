@@ -5,6 +5,7 @@ teacher or tool execution, and the reader never calls the source writer.
 """
 from __future__ import annotations
 from collections import defaultdict
+from dataclasses import replace
 from pathlib import Path
 import json
 import math
@@ -18,7 +19,7 @@ from .checkpoints import resolve_checkpoint
 from .episode_index import EpisodeIndex
 from .sessions import read_session
 from .store import DiskStore
-from .training import autocast_context, config_from_run, persist_outputs, stored_channel, resource_report
+from .training import autocast_context, config_from_run, persist_outputs, stored_channel, resource_report, reset_resource_peaks
 
 
 @torch.no_grad()
@@ -74,13 +75,15 @@ def paired_nll_benefit(rows, draws=500):
 
 
 @torch.no_grad()
-def stored_teacher_evaluation(agent, store, episodes, *, generate_tokens=0):
+def stored_teacher_evaluation(agent, store, episodes, *, generate_tokens=0, cluster_bank=None):
     if agent.training or not episodes:
         raise ValueError('Nonempty evaluation set and eval-mode agent required')
     rows = []
+    conditions = ('all', 'none', 'zero_values', 'wrong_values') + (('compact',) if cluster_bank else ())
     with autocast_context(agent.config):
         for e in episodes:
-            for condition in ('all', 'none', 'zero_values', 'wrong_values'):
+            original_plans = None
+            for condition in conditions:
                 arm = agent.config.train.arm
                 evidence = '\n'.join(s.text for s in e.supports if s.record_id in e.required_ids)
                 prompt = agent.prompt_ids(e.query, evidence if arm == 'oracle_text' and condition != 'none' else '')
@@ -90,8 +93,13 @@ def stored_teacher_evaluation(agent, store, episodes, *, generate_tokens=0):
                     session = read_session(agent, store, prompt, namespace=namespace, generation='teacher-eval-v1',
                                            query_time=e.query_time,
                                            oracle_ids=e.required_ids if agent.config.train.retrieval == 'oracle' else None,
-                                           ablate_values=condition == 'zero_values')
+                                           ablate_values=condition == 'zero_values',
+                                           cluster_bank=cluster_bank if condition == 'compact' else None,
+                                           fixed_plans=None if condition == 'all' else
+                                               [[replace(p, namespace=namespace) for p in step] for step in original_plans])
                     memory, selected = session.memory, session.selected_ids
+                    if condition == 'all':
+                        original_plans = session.plans
                 elif arm == 'shared_compute':
                     memory = agent.shared_compute_tokens(prompt)
                 target = agent.target_ids(e.answer)
@@ -99,18 +107,21 @@ def stored_teacher_evaluation(agent, store, episodes, *, generate_tokens=0):
                 r = dict(episode=e.episode_id, trajectory=e.environment, dataset=e.provenance.get('dataset'),
                          condition=condition, token_count=target.numel(), sequence_nll=nll, mean_nll=nll / target.numel(),
                          selected_ids=selected, support_annotation=e.support_annotation)
+                if condition == 'compact':
+                    r['payload_accounting'] = session.payload_accounting
                 if generate_tokens:
                     prediction = agent.generate_from_memory(prompt, memory, max_new_tokens=generate_tokens)
                     r.update(prediction=prediction, reference_exact_match=prediction.strip() == e.answer.strip())
                 rows.append(r)
     summary = {}
-    for c in ('all', 'none', 'zero_values', 'wrong_values'):
+    for c in conditions:
         subset = [r for r in rows if r['condition'] == c]
         nll = sum(r['sequence_nll'] for r in subset) / sum(r['token_count'] for r in subset)
         summary[c] = dict(episodes=len(subset), token_weighted_nll=nll,
                           perplexity=math.exp(nll) if nll < 50 else None,
                           macro_mean_nll=sum(r['mean_nll'] for r in subset) / len(subset))
     return dict(protocol='Write-once/serialize/reload, time-filtered per-trajectory stored-only reads.',
+                payload_intervention_routing='Captured original IDs and scores at every read; no intervention rerouting.',
                 summary=summary, paired_memory_nll_benefit=paired_nll_benefit(rows), rows=rows,
                 notice='Teacher likelihood is not task success. Payload interventions affect latent arms only; '
                        'supplied context is not annotated sufficient. No environment commands are executed.')
@@ -120,6 +131,7 @@ def evaluate_teacher_run(run, episodes_file, *, max_episodes=64, generate_tokens
     if max_episodes < 1 or generate_tokens < 0:
         raise ValueError('Invalid evaluation limits')
     config = config_from_run(Path(run))
+    reset_resource_peaks()
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device).eval()
     load_model(agent, str(resolve_checkpoint(run, verify=True) / 'model.safetensors'), device=config.train.device)
@@ -130,7 +142,22 @@ def evaluate_teacher_run(run, episodes_file, *, max_episodes=64, generate_tokens
     directory.mkdir(parents=True, exist_ok=False)
     store = DiskStore(directory / 'bank.sqlite')
     writes = build_teacher_bank(agent, store, episodes)
-    result = stored_teacher_evaluation(agent, DiskStore(store.path), episodes, generate_tokens=generate_tokens)
+    bank, code_manifest = None, None
+    if config.memory.compaction != 'none' and config.train.arm == 'memory':
+        from .evaluation import build_persistent_codes
+        grouped = defaultdict(list)
+        for e in episodes:
+            grouped[e.environment].append(e)
+        skipped = 0
+        for environment, group in grouped.items():
+            bank, manifest = build_persistent_codes(agent, store, group,
+                namespace='all/' + environment, generation='teacher-eval-v1')
+            skipped += manifest['skipped_overlapping_or_unprofitable_groups']
+        code_manifest = bank.sizes() | {'skipped_overlapping_or_unprofitable_groups': skipped}
+    result = stored_teacher_evaluation(agent, DiskStore(store.path), episodes,
+                                       generate_tokens=generate_tokens, cluster_bank=bank)
+    if code_manifest is not None:
+        result['persistent_codes'] = code_manifest
     result.update(write_phase=writes, resources=resource_report(), store=store.sizes())
     (directory / 'results.json').write_text(json.dumps(result, indent=2) + '\n')
     return {k: v for k, v in result.items() if k != 'rows'} | {'directory': str(directory)}
