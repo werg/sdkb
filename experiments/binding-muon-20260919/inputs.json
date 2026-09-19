@@ -1,0 +1,158 @@
+{
+  "selected": {
+    "input_identity": "2bfc34a2e533a823cc3cf2bf2bfd0b1607b2f47959168b8dcfc8e4eeedba7d24",
+    "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "prepared_checksums": {
+      "input-lock.json": "7a429f421a3d4a209f6517941aec80cc5125b582c4b93f02ba8f480008e21bde",
+      "model-lock.json": "d6a01502e2ec658a809debae02951f71f2be57680d0bc5dae7b884c67a8ab34d",
+      "data/train.jsonl": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "data/validation.jsonl": "f0d912abad3532b84349c6ba94c062196fd49e30355441210959c1e9caac3b38",
+      "data/manifest.json": "724e14b7a4bbb20c15dc0781c3abebbdd5eb8dc0de5d4267b533145f3a3b9d7c",
+      "text_bootstrap.yaml": "029bcedb372045c72252cfa1567af8cb76cc70859d65c7ded18d025e0f366788",
+      "recurrence_bridge.yaml": "97f78a2d5e6b04b52f045361661c12904bf8191e5c72fcf20ca2523ee57978ed",
+      "latent_warmup.yaml": "8b1ba30b9a5d56029921a2741fa4d89950144cb5fb9bc6d9a693445af0d85034",
+      "recurrent_joint.yaml": "a75148dcf10181010baa6feb00d808a6ee58cb73f8e328b814a73c733e06f5a3"
+    },
+    "recipe": {
+      "base_config": "configs/lfm25_230m_looped_binding_muon_selected_spark.yaml",
+      "protocol": "binding",
+      "seed": 23,
+      "validation_fraction": 0.1,
+      "sources": [],
+      "preparation": {
+        "max_supports": 4,
+        "max_targets_per_trajectory": 3,
+        "recent_messages": 1,
+        "recent_tokens": 512,
+        "task_tokens": 160
+      },
+      "stages": [
+        {
+          "name": "text_bootstrap",
+          "arm": "oracle_text",
+          "steps": 200,
+          "loops": 1,
+          "freeze_backbone": false
+        },
+        {
+          "name": "recurrence_bridge",
+          "arm": "oracle_text",
+          "steps": 200,
+          "loops": 2,
+          "freeze_backbone": true,
+          "init_from": "text_bootstrap",
+          "parent_kl_weight": 0.1
+        },
+        {
+          "name": "latent_warmup",
+          "arm": "memory",
+          "steps": 400,
+          "loops": 2,
+          "freeze_backbone": true,
+          "init_from": "recurrence_bridge"
+        },
+        {
+          "name": "recurrent_joint",
+          "arm": "memory",
+          "steps": 400,
+          "loops": 3,
+          "loop_counts": [
+            2,
+            3
+          ],
+          "freeze_backbone": false,
+          "backbone_train_scope": "recurrent_core",
+          "init_from": "latent_warmup",
+          "oracle_anchor_weight": 0.1,
+          "oracle_anchor_loops": 1
+        }
+      ],
+      "evaluation": {
+        "max_episodes": 64,
+        "causal_worlds": 32
+      },
+      "causal_train_worlds": 128,
+      "bindings": 2
+    },
+    "output": "/mnt/external/sdkb-archive/runs/binding-muon-selected-20260919"
+  },
+  "all": {
+    "input_identity": "86aa3fb5438089169878b183aa6f575a1ba7945673af388bf94ca664db54bdf6",
+    "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "prepared_checksums": {
+      "input-lock.json": "ca034e41ef11c902159d762b08117f482f81bda2c58352d0a90e8b916b7ac908",
+      "model-lock.json": "d6a01502e2ec658a809debae02951f71f2be57680d0bc5dae7b884c67a8ab34d",
+      "data/train.jsonl": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "data/validation.jsonl": "f0d912abad3532b84349c6ba94c062196fd49e30355441210959c1e9caac3b38",
+      "data/manifest.json": "724e14b7a4bbb20c15dc0781c3abebbdd5eb8dc0de5d4267b533145f3a3b9d7c",
+      "text_bootstrap.yaml": "fdcb5b654062db399d00761fae21ff2c486cf8e9cafea9c6c90e01b2c2da8298",
+      "recurrence_bridge.yaml": "039b38bbc90457301b7f7dae9130c0fc8d42af3cdfdab0421a8e1d6884d29b04",
+      "latent_warmup.yaml": "d82c5d4f84a8cfb4be08b0aaefee2fd66a09bf6a6fcbe7d8c72d7f697fa9bb33",
+      "recurrent_joint.yaml": "e451b413bed9fadcf9a2938df95ca0591755c0e34d51ca671b909755d839737a"
+    },
+    "recipe": {
+      "base_config": "configs/lfm25_230m_looped_binding_muon_all_spark.yaml",
+      "protocol": "binding",
+      "seed": 23,
+      "validation_fraction": 0.1,
+      "sources": [],
+      "preparation": {
+        "max_supports": 4,
+        "max_targets_per_trajectory": 3,
+        "recent_messages": 1,
+        "recent_tokens": 512,
+        "task_tokens": 160
+      },
+      "stages": [
+        {
+          "name": "text_bootstrap",
+          "arm": "oracle_text",
+          "steps": 200,
+          "loops": 1,
+          "freeze_backbone": false
+        },
+        {
+          "name": "recurrence_bridge",
+          "arm": "oracle_text",
+          "steps": 200,
+          "loops": 2,
+          "freeze_backbone": true,
+          "init_from": "text_bootstrap",
+          "parent_kl_weight": 0.1
+        },
+        {
+          "name": "latent_warmup",
+          "arm": "memory",
+          "steps": 400,
+          "loops": 2,
+          "freeze_backbone": true,
+          "init_from": "recurrence_bridge"
+        },
+        {
+          "name": "recurrent_joint",
+          "arm": "memory",
+          "steps": 400,
+          "loops": 3,
+          "loop_counts": [
+            2,
+            3
+          ],
+          "freeze_backbone": false,
+          "backbone_train_scope": "recurrent_core",
+          "init_from": "latent_warmup",
+          "oracle_anchor_weight": 0.1,
+          "oracle_anchor_loops": 1
+        }
+      ],
+      "evaluation": {
+        "max_episodes": 64,
+        "causal_worlds": 32
+      },
+      "causal_train_worlds": 128,
+      "bindings": 2
+    },
+    "output": "/mnt/external/sdkb-archive/runs/binding-muon-all-20260919"
+  },
+  "source_commit": "837f592c3c72eaa0d89ce64fabb4601b77036ef9",
+  "comparison_driver_sha256": "8c75a16bf9c416ec58ed6b8165c407590277d89444631592108380e8a7d55f47"
+}
