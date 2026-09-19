@@ -1,0 +1,157 @@
+{
+  "implementation_commit": "c550587",
+  "recipe": {
+    "base_config": ".sdkb/binding-all-context/base.yaml",
+    "protocol": "binding",
+    "seed": 23,
+    "validation_fraction": 0.1,
+    "sources": [],
+    "preparation": {
+      "max_supports": 4,
+      "max_targets_per_trajectory": 3,
+      "recent_messages": 1,
+      "recent_tokens": 512,
+      "task_tokens": 160
+    },
+    "stages": [
+      {
+        "name": "text_bootstrap",
+        "arm": "oracle_text",
+        "steps": 200,
+        "loops": 1,
+        "freeze_backbone": false
+      },
+      {
+        "name": "recurrence_bridge",
+        "arm": "oracle_text",
+        "steps": 200,
+        "loops": 2,
+        "freeze_backbone": true,
+        "init_from": "text_bootstrap",
+        "parent_kl_weight": 0.1
+      },
+      {
+        "name": "latent_warmup",
+        "arm": "memory",
+        "steps": 400,
+        "loops": 2,
+        "freeze_backbone": true,
+        "init_from": "recurrence_bridge"
+      },
+      {
+        "name": "recurrent_joint",
+        "arm": "memory",
+        "steps": 400,
+        "loops": 3,
+        "loop_counts": [
+          2,
+          3
+        ],
+        "freeze_backbone": false,
+        "backbone_train_scope": "recurrent_core",
+        "init_from": "latent_warmup",
+        "oracle_anchor_weight": 0.1,
+        "oracle_anchor_loops": 1
+      }
+    ],
+    "evaluation": {
+      "max_episodes": 64,
+      "causal_worlds": 32
+    },
+    "causal_train_worlds": 128,
+    "bindings": 2
+  },
+  "base_config": {
+    "model": {
+      "backend": "hf",
+      "model_id": "LiquidAI/LFM2.5-230M",
+      "revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "loops": 2,
+      "tiny_width": 64,
+      "tiny_layers": 2,
+      "tiny_heads": 4,
+      "gradient_checkpointing": true,
+      "freeze_backbone": false,
+      "recurrence_mode": "middle_block",
+      "recurrent_start": 4,
+      "recurrent_end": 10,
+      "recurrent_input_mix": 0.1,
+      "recurrent_update_mix": 0.1,
+      "writer_loops": 1,
+      "backbone_train_scope": "all"
+    },
+    "memory": {
+      "key_dim": 64,
+      "write_slots": 8,
+      "read_slots": 8,
+      "payload_dims": [
+        2048
+      ],
+      "neighbors": [
+        4
+      ],
+      "reader_width": 256,
+      "reader_rounds": 3,
+      "reader": "mlp",
+      "chunk_size": 4,
+      "checkpoint_chunks": true,
+      "storage_dtype": "bfloat16",
+      "compaction": "none",
+      "compact_records": 2,
+      "compaction_probability": 0.25,
+      "compaction_loss_weight": 0.1,
+      "compaction_warmup": 100,
+      "noise_std": 0.0,
+      "quantization_step": 0.0,
+      "read_timing": "loop_boundary",
+      "read_steps": 1
+    },
+    "train": {
+      "seed": 17,
+      "steps": 200,
+      "learning_rate": 0.0001,
+      "backbone_learning_rate": 5e-06,
+      "gradient_accumulation": 4,
+      "clip_grad_norm": 1.0,
+      "precision": "bf16",
+      "device": "cuda",
+      "replay": true,
+      "verify_replay": false,
+      "live_fraction": 1.0,
+      "train_worlds": 128,
+      "distractors": 2,
+      "eval_worlds": 16,
+      "log_every": 1,
+      "max_source_tokens": 512,
+      "max_prompt_tokens": 4096,
+      "arm": "memory",
+      "retrieval": "oracle",
+      "routing_weight": 0.1,
+      "routing_warmup": 100,
+      "threads": 8,
+      "max_target_tokens": 512,
+      "checkpoint_every": 50,
+      "oracle_anchor_weight": 0.0,
+      "oracle_anchor_loops": 1,
+      "archive_dir": "/archive",
+      "archive_keep_checkpoints": 2,
+      "keep_checkpoints": 2,
+      "min_free_disk_bytes": 10737418240,
+      "wandb_mode": "offline",
+      "wandb_group": "binding-all-context-20260919",
+      "evidence_scope": "available"
+    }
+  },
+  "input_identity": "fb8a9236c279d949137b09c30aec5965a56eb27855fc6a2bfbec4cefbab2f2e8",
+  "prepared_checksums": {
+    "input-lock.json": "4378d67ec144acf6d1bc10b59b2b2b8cf6e53ed6054dd90ba13f957545b7f11d",
+    "model-lock.json": "d6a01502e2ec658a809debae02951f71f2be57680d0bc5dae7b884c67a8ab34d",
+    "data/train.jsonl": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+    "data/validation.jsonl": "f0d912abad3532b84349c6ba94c062196fd49e30355441210959c1e9caac3b38",
+    "data/manifest.json": "724e14b7a4bbb20c15dc0781c3abebbdd5eb8dc0de5d4267b533145f3a3b9d7c",
+    "text_bootstrap.yaml": "f873e3274602dd14f6716c4acf1ac3504f3d59e04d0d630001955ef5f376e4e7",
+    "recurrence_bridge.yaml": "76857261d787d06ca634e220059e68c29842823f90bfd86e50bd25a95df79f6a",
+    "latent_warmup.yaml": "95eb099a31276f0f7465eca7bfb67df01bd83e2ec26f889cb42505715f397a3b",
+    "recurrent_joint.yaml": "21d9ef8f5bde6ed92d1d07e75cfcff861f02f6122c90bd9d7e995b002e811825"
+  }
+}

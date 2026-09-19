@@ -1,0 +1,35 @@
+{
+  "episodes_sha256": "f0d912abad3532b84349c6ba94c062196fd49e30355441210959c1e9caac3b38",
+  "evaluation": "/runs/binding-pilot-20260919/latent_warmup/transfer-v2-1789816589572824273",
+  "probes": {
+    "permission": {
+      "train_worlds": 16,
+      "test_worlds": 16,
+      "train_accuracy": 1.0,
+      "test_accuracy": 1.0,
+      "positive_heldout_pair_margin_fraction": 1.0,
+      "zero_heldout_pair_margin_fraction": 0.0,
+      "pairs": 64,
+      "payload_width": 2048,
+      "identical_serialized_pairs": 0,
+      "mean_relative_bit_flip_norm": 0.4267641305923462,
+      "regularization": 0.01,
+      "standardization": "Training worlds only; float64 dual ridge"
+    },
+    "restoration": {
+      "train_worlds": 16,
+      "test_worlds": 16,
+      "train_accuracy": 1.0,
+      "test_accuracy": 1.0,
+      "positive_heldout_pair_margin_fraction": 1.0,
+      "zero_heldout_pair_margin_fraction": 0.0,
+      "pairs": 64,
+      "payload_width": 2048,
+      "identical_serialized_pairs": 0,
+      "mean_relative_bit_flip_norm": 1.8179538249969482,
+      "regularization": 0.01,
+      "standardization": "Training worlds only; float64 dual ridge"
+    }
+  },
+  "notice": "A diagnostic trained readout, not deployed-model accuracy. Counterfactual context paired; held-out worlds; no inference-time re-encoding."
+}

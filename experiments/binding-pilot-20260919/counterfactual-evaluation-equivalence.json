@@ -1,0 +1,9 @@
+{
+  "actual_pretrained_gpu_rows_exactly_equal": true,
+  "queries": 5,
+  "reference_scored_rows": 15,
+  "optimized_scored_rows": 5,
+  "reference_seconds": 2.8865891809982713,
+  "optimized_seconds": 0.8782466459961142,
+  "notice": "Contended GPU timing; unused counterfactual ablations omitted, retained rows exactly equal."
+}

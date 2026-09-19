@@ -1,0 +1,63 @@
+{
+  "checkpoint": "/runs/binding-pilot-20260919/latent_warmup/checkpoints/step-000000400-77e2a94f8a44",
+  "evaluation": "/runs/binding-pilot-20260919/latent_warmup/transfer-v2-1789816589572824273",
+  "probes": {
+    "permission_query/permission_bit": {
+      "train_worlds": 16,
+      "test_worlds": 16,
+      "train_accuracy": 1.0,
+      "test_accuracy": 1.0,
+      "positive_heldout_pair_margin_fraction": 1.0,
+      "zero_heldout_pair_margin_fraction": 0.0,
+      "pairs": 64,
+      "payload_width": 8192,
+      "identical_serialized_pairs": 0,
+      "mean_relative_bit_flip_norm": 0.3773985505104065,
+      "regularization": 0.01,
+      "standardization": "Training worlds only; float64 dual ridge"
+    },
+    "restoration_query/restoration_bit": {
+      "train_worlds": 16,
+      "test_worlds": 16,
+      "train_accuracy": 1.0,
+      "test_accuracy": 1.0,
+      "positive_heldout_pair_margin_fraction": 1.0,
+      "zero_heldout_pair_margin_fraction": 0.0,
+      "pairs": 64,
+      "payload_width": 8192,
+      "identical_serialized_pairs": 0,
+      "mean_relative_bit_flip_norm": 1.8409695625305176,
+      "regularization": 0.01,
+      "standardization": "Training worlds only; float64 dual ridge"
+    },
+    "action_query/permission_bit": {
+      "train_worlds": 16,
+      "test_worlds": 16,
+      "train_accuracy": 1.0,
+      "test_accuracy": 1.0,
+      "positive_heldout_pair_margin_fraction": 1.0,
+      "zero_heldout_pair_margin_fraction": 0.0,
+      "pairs": 128,
+      "payload_width": 8192,
+      "identical_serialized_pairs": 0,
+      "mean_relative_bit_flip_norm": 0.04645375907421112,
+      "regularization": 0.01,
+      "standardization": "Training worlds only; float64 dual ridge"
+    },
+    "action_query/restoration_bit": {
+      "train_worlds": 16,
+      "test_worlds": 16,
+      "train_accuracy": 1.0,
+      "test_accuracy": 1.0,
+      "positive_heldout_pair_margin_fraction": 1.0,
+      "zero_heldout_pair_margin_fraction": 0.0,
+      "pairs": 128,
+      "payload_width": 8192,
+      "identical_serialized_pairs": 0,
+      "mean_relative_bit_flip_norm": 1.8300371170043945,
+      "regularization": 0.01,
+      "standardization": "Training worlds only; float64 dual ridge"
+    }
+  },
+  "notice": "Diagnostic readout of returned soft tokens, not deployed answer accuracy. No writer calls; fixed query/IDs/read plans; world-disjoint probe fit and evaluation."
+}
