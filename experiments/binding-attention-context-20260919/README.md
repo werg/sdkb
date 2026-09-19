@@ -33,3 +33,10 @@ Stop through `sdkb runs stop --output EXTERNAL_STUDY_ROOT`; resume explicitly wi
 `--resume`. Source/config/data hashes are checked, and an interrupted first arm
 prevents advancing to the second. Training and queued evaluation launched from frozen source `97a9ded` in
 `.sdkb/attention-context`. The selected-support control runs first.
+
+The completed source-model evaluation also shows identical fact predictions for
+both entities in every opposed-rule world (16 permission, 13 restoration). The
+follow-up analysis will report opposed-rule entity pairs separately, using
+`scripts/analyze_entity_binding.py`, rather than crediting agreement cases as
+binding. This is an additional diagnostic chosen before either continuation's
+final evaluation; the declared primary action endpoint is unchanged.

@@ -296,3 +296,12 @@ learned retrieval across worlds. Selected-pair and all-record reads differ in so
 information and compute budget. `attention-all-world-context.json` preserves
 checkpoint/data/result hashes, paired intervals and controls. No automatic text
 fallback or source re-encoding is introduced into inference.
+
+A post-hoc stratification further localizes this failure: facts are 100% correct
+when the two entities agree, but exactly 50% when they have opposed rules. The
+reader gives the same answer for both entities in all 16 opposed-permission worlds
+and all 13 opposed-restoration worlds; neither entity pair is jointly correct.
+When both rules agree across entities, action accuracy is 48/48; when both differ,
+it is 14/36. Thus aggregate success under distractors does not demonstrate entity
+discrimination. `attention-entity-stratification.json` records counts and hashes;
+`scripts/analyze_entity_binding.py` reproduces the analysis without model calls.
