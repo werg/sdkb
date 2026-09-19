@@ -162,9 +162,9 @@ sdkb launch --recipe recipes/tiny_looped_smoke.yaml --output runs/offline
 sdkb launch --recipe recipes/tiny_looped_smoke.yaml --output runs/offline --resume
 ```
 
-Core tests do not download models/data. Current execution evidence is in
-[validation-v0.4.md](docs/validation-v0.4.md). The earlier tiny-model learning result
-remains historical CPU evidence, not a pretrained LFM result.
+Core tests do not download models/data. Current execution and capability evidence
+is in [Spark validation](docs/validation-spark.md). The earlier
+[0.4 handoff](docs/validation-v0.4.md) remains historical CPU evidence.
 
 [Recurrent conversion](docs/recurrence.md) · [Architecture](docs/architecture.md) · [Implementation](docs/implementation.md) ·
 [Dataset guide](docs/datasets.md) · [Training](docs/training.md) ·

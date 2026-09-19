@@ -1,0 +1,86 @@
+# Current Spark validation
+
+19 September 2026. This is the current machine-validation record. The earlier
+[0.4 handoff](validation-v0.4.md) remains a historical CPU execution record.
+
+## Runtime and implementation
+
+Native ARM64 execution on DGX Spark/GB10 uses the retained NVIDIA Torch 2.11
+development build with CUDA 13.2 and Transformers 5.17.0. The NVIDIA Torch/CUDA
+stack was preserved. No x86 emulation was used for SDKB work.
+
+The actual pretrained student is `LiquidAI/LFM2.5-230M`, pinned to
+`40cb2ad3b3044d5a41eee083a6103c8b523afa45`. Its numerical/gradient preflight
+and native GPU curricula have run. Middle-block recurrence repeats layers
+`[4:10]`; the writer remains one pass and evaluation reads serialized BF16
+payloads. This verifies execution of the real model, not a simulated GPU backend.
+
+The latest full suite passed **235 tests**, with four existing dependency/runtime
+warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
+downloads. Coverage includes full/replay gradients, causal prefixes, serialized
+precision, checkpoint recovery, storage visibility and concurrent invalidation.
+
+## Operational evidence
+
+| Check | Result and scope |
+|---|---|
+| Native Muon | New binding runs use native Muon for eligible matrix parameters with AdamW for the excluded parameter groups. Both components and their actual group settings are checkpointed. |
+| Emergency resume | A real BF16 LFM run stopped after one of two accumulated microbatches and reproduced the uninterrupted final model, complete optimizer state and RNG state exactly. No partial optimizer update was taken. |
+| Checkpoint placement | Twenty-five retained stage/diagnostic checkpoint directories were verified and moved externally. The internal run tree fell from about 49 GiB to 52 MiB; internal free space increased by about 48 GiB. |
+| Future launches | This checkout's ignored storage settings select the external run root. Configured directories must exist; relative container training output paths are rejected. Environment overrides remain available on other machines. |
+| Save cadence | Defaults and current real-model recipes use 1,000 updates, plus initial, final and emergency saves. Short 200–400-update stages normally save only their initial and final states. |
+| Memory and stalls | Optional host-memory reserve, CUDA allocation fraction and compute stack watchdog are implemented. New source versions log host/CUDA memory trends and checkpoint start/commit duration. |
+| Checkpointing cost | Two 100-update Muon profiles had identical training metrics and final weight-file hash. Disabling activation/reader-chunk checkpointing cut median update time 18% and raised peak CUDA allocation from 2.14 to 2.53 GiB. This applies only to the measured short binding distribution, with existing GPU contention. |
+| Offline bank writes | Native BF16 individual/bulk writes produced byte-identical stored records and identical results for all 88 evaluation rows, with the writer disabled during reads. Atomic batching avoids a durable commit per record. |
+| Concurrent writes/deletions | Regressions reproduced check/insert and lineage/delete races. Explicit SQLite writer reservations now protect those operations; failed bulk writes roll back without exposing partial records. |
+
+Detailed evidence: [checkpoint relocation](../experiments/operations-20260919/checkpoint-relocation.json),
+[emergency resume](../experiments/operations-20260919/muon-emergency-resume.json),
+[checkpointing profile](../experiments/operations-20260919/checkpointing-profile.json),
+[bank equivalence](../experiments/operations-20260919/bank-batch-parity.json).
+See the [bgkit adoption audit](bgkit-audit.md) and [operating guide](operations.md).
+
+Direct external checkpoint writes can take minutes under disk contention. They
+do not silently make an internal emergency copy. The optional asynchronous archive
+path can stage locally, with explicit retention/relocation responsibilities. A
+blocked native call must return before cooperative stopping can complete.
+
+## Capability evidence
+
+The [Boolean pilot](../experiments/causal-pilot-20260919/) established narrow
+stored-memory dependence on its trained synthetic family, including adjusted-answer
+counterfactuals. Its text and warmup controls also succeeded; more shared depth did
+not establish an additional benefit. This is not general agent capability or
+parameter substitution.
+
+The [Muon binding study](../experiments/binding-muon-20260919/) is a harder test
+of permission, restoration, exact identifiers and their combination:
+
+- Both MLP curricula completed their 200/200/400/400 training budgets without
+  nonfinite gradients. Earlier AdamW pilots remain explicitly interrupted records.
+- The completed all-context MLP scored 46.6% on its 320 fresh binding questions,
+  equal to zeroed payloads. Action counterfactuals had no both-correct pairs.
+  This run does **not** establish useful binding or composition.
+- A separate 100-update Muon warm-start diagnostic recovered both direct rule
+  facts, including their counterfactuals, but action composition remained weak.
+  Candidate-free generation reproduced zero of sixteen exact identifiers.
+- The selected-support final evaluation and matched attention control are still
+  being completed. Common-world comparisons are queued separately from each
+  launcher's independently generated tests.
+
+The all-context model's lower NLL versus no memory did not translate into a benefit
+over zeroed payloads. Tests, falling losses, linear probes and successful execution
+must not be substituted for the causal behavior measurements.
+
+## What remains unproven
+
+Useful multi-entity latent binding; reliable procedural composition beyond the
+narrow Boolean family; literal identifier reproduction; learned retrieval at scale;
+behavior-preserving compaction of a useful real-student memory system; additional
+capability from recurrent depth; agent execution success; and a quality/memory/latency
+frontier showing substitution for resident model parameters.
+
+These are research outcomes to establish, not implemented-module checkboxes. The
+current priority is the matched reader and stage comparisons, followed by a
+controlled intervention addressing the demonstrated bottleneck. No paid teacher
+collection, license change or public-visibility change has been initiated.
