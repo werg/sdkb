@@ -1,0 +1,136 @@
+{
+  "schema_version": 2,
+  "protocol": "write-once, serialize/reload, global stored-only bank",
+  "choice_scoring": "sum of target token NLL including EOS",
+  "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+  "summary": {
+    "all": {
+      "n": 20,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 5.481700980068114,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 20,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 5.481994852407326,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 20,
+      "choice_accuracy": 0.5,
+      "mean_target_nll": 5.481744898896541,
+      "complete_support_recall": 1.0
+    }
+  },
+  "by_family": {
+    "multiuse/action": {
+      "all": {
+        "n": 8,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 5.575264705930437,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 8,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 5.5729776337033226,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 8,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 5.575140598842076,
+        "complete_support_recall": 1.0
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 4,
+        "choice_accuracy": 0.25,
+        "mean_target_nll": 5.481843601573598,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 4,
+        "choice_accuracy": 0.25,
+        "mean_target_nll": 5.501103314486417,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 4,
+        "choice_accuracy": 0.25,
+        "mean_target_nll": 5.481830336830833,
+        "complete_support_recall": 1.0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 4,
+        "choice_accuracy": 0.75,
+        "mean_target_nll": 5.268622040748596,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 4,
+        "choice_accuracy": 0.75,
+        "mean_target_nll": 5.2532336711883545,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 4,
+        "choice_accuracy": 0.75,
+        "mean_target_nll": 5.269099235534668,
+        "complete_support_recall": 1.0
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 4,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 5.507509846157498,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 4,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 5.509682008955213,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 4,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 5.507513724433052,
+        "complete_support_recall": 1.0
+      }
+    }
+  },
+  "paired_memory_benefit": {
+    "n_worlds": 2,
+    "n_queries": 20,
+    "mean_gain": 0.0,
+    "ci95": [
+      0.0,
+      0.0
+    ],
+    "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 334462976,
+    "system_mem_available_bytes": 4921688064
+  },
+  "write_phase": {
+    "unique_sources": 8,
+    "writer_calls": 8,
+    "queries": 20,
+    "worlds": 2
+  },
+  "store": {
+    "records": 8,
+    "serialized_payload_bytes": 960,
+    "key_bytes": 384,
+    "physical_sqlite_bytes": 32768,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "/mnt/data/sdkb/runs/release-causal/latent_joint/transfer-v2-1789800754256077964"
+}

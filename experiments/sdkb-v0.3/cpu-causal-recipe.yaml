@@ -1,0 +1,31 @@
+base_config: configs/tiny_trajectories_cpu.yaml
+protocol: causal
+seed: 17
+validation_fraction: 0.25
+sources: []
+preparation:
+  max_supports: 2
+  max_targets_per_trajectory: 2
+  recent_messages: 1
+  recent_tokens: 160
+  task_tokens: 100
+stages:
+- name: text_bootstrap
+  arm: oracle_text
+  steps: 1
+  freeze_backbone: false
+- name: latent_warmup
+  arm: memory
+  steps: 1
+  freeze_backbone: true
+  init_from: text_bootstrap
+- name: latent_joint
+  arm: memory
+  steps: 1
+  freeze_backbone: false
+  init_from: latent_warmup
+  oracle_anchor_weight: 0.1
+evaluation:
+  max_episodes: 2
+  causal_worlds: 2
+causal_train_worlds: 4

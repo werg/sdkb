@@ -1,0 +1,64 @@
+{
+  "format": 1,
+  "protocol": "prefix",
+  "seed": 17,
+  "validation_fraction": 0.25,
+  "sources": [
+    {
+      "spec": {
+        "local_file": "tests/fixtures/trajectories.jsonl",
+        "adapter": "ultrachat",
+        "path": "sdkb/authored-fixtures",
+        "license": "project-authored",
+        "max_rows": 60,
+        "revision": "5d4b732a722dec8b2e9f1fea71220eb3e735989161a5bcad420004f3ff905c95",
+        "shuffle_seed": 17
+      },
+      "counts": {
+        "rows_scanned": 60,
+        "accepted_validation": 14,
+        "accepted_train": 46
+      }
+    }
+  ],
+  "budgets": {
+    "max_supports": 2,
+    "max_targets_per_trajectory": 2,
+    "recent_messages": 1,
+    "recent_tokens": 160,
+    "task_tokens": 100,
+    "max_source_tokens": 128,
+    "max_prompt_tokens": 1400,
+    "max_target_tokens": 64
+  },
+  "summary": {
+    "train": {
+      "skipped_without_memory": 46,
+      "episodes": 46,
+      "complete_target_tokens": 223,
+      "trajectories": 46,
+      "groups": 46
+    },
+    "validation": {
+      "skipped_without_memory": 14,
+      "episodes": 14,
+      "complete_target_tokens": 67,
+      "trajectories": 14,
+      "groups": 14
+    }
+  },
+  "sha256": {
+    "train.jsonl": "93bf2f67c3ca81590a0fb04774080b99bd264fbc4096e1ec09e1c9fb1c847981",
+    "validation.jsonl": "218e822b70fc053e128df182609311ee74f41f3471da813dead1c5a9d0fc0583",
+    "normalized.jsonl": "8aa715df755f8a74d986f970c63535c1eb9739a2e917d15aff589cbd98feca38"
+  },
+  "teacher_policy": "Recorded assistant targets; no live teacher calls or tool execution.",
+  "support_labels": "Provided context, not verified sufficient or necessary support.",
+  "split_policy": "Group-disjoint subsets of the specified upstream split; SWE grouped by repository.",
+  "leakage_checks": {
+    "overlapping_groups": 0,
+    "exact_trajectory_dedup": true,
+    "near_duplicate_detection": false,
+    "external_benchmark_decontamination": false
+  }
+}

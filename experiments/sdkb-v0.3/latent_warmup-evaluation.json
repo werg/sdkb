@@ -1,0 +1,58 @@
+{
+  "protocol": "Write-once/serialize/reload, time-filtered per-trajectory stored-only reads.",
+  "summary": {
+    "all": {
+      "episodes": 2,
+      "token_weighted_nll": 5.4754954251376065,
+      "perplexity": 238.76872966382498,
+      "macro_mean_nll": 5.475867780049642
+    },
+    "none": {
+      "episodes": 2,
+      "token_weighted_nll": 5.489036733453924,
+      "perplexity": 242.02396095206643,
+      "macro_mean_nll": 5.4881023406982425
+    },
+    "zero_values": {
+      "episodes": 2,
+      "token_weighted_nll": 5.475688934326172,
+      "perplexity": 238.81493807768916,
+      "macro_mean_nll": 5.4760539372762045
+    },
+    "wrong_values": {
+      "episodes": 2,
+      "token_weighted_nll": 5.4754954251376065,
+      "perplexity": 238.76872966382498,
+      "macro_mean_nll": 5.475867780049642
+    }
+  },
+  "paired_memory_nll_benefit": {
+    "gain": 0.012234560648599846,
+    "ci95": [
+      -0.0021396636962895954,
+      0.026608784993489287
+    ],
+    "trajectories": 2,
+    "sign": "positive = reduced mean-token NLL with memory",
+    "scope": "Bootstrap trajectories, not training seeds."
+  },
+  "notice": "Teacher likelihood is not task success. Payload interventions affect latent arms only; supplied context is not annotated sufficient. No environment commands are executed.",
+  "write_phase": {
+    "unique_sources": 4,
+    "writer_calls": 4,
+    "wrong_values_distinct_record_available": true,
+    "wrong_values_policy": "Cyclic distinct-record payload permutation; semantic disagreement not guaranteed."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 351145984,
+    "system_mem_available_bytes": 4894224384
+  },
+  "store": {
+    "records": 8,
+    "serialized_payload_bytes": 960,
+    "key_bytes": 384,
+    "physical_sqlite_bytes": 32768,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "/mnt/data/sdkb/runs/release-validation/latent_warmup/teacher-eval-1789800708013185404"
+}

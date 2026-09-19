@@ -1,0 +1,13 @@
+{"step": 1, "loss": 5.551743030548096, "nll": 5.551743030548096, "routing_loss": 0.0, "compaction_loss": 0.0, "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 1.0, "oracle_anchor_nll": 0.0, "optimization_loss": 5.551743030548096, "grad_norm": 3.465958833694458, "elapsed_seconds": 0.014595103000033305}
+{"step": 1, "loss": 5.442691802978516, "nll": 5.442691802978516, "routing_loss": 0.0, "compaction_loss": 0.0, "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 1.0, "oracle_anchor_nll": 0.0, "optimization_loss": 5.442691802978516, "grad_norm": 0.12430673092603683, "elapsed_seconds": 0.022687562999976763}
+{"step": 1, "loss": 5.437436103820801, "nll": 5.437436103820801, "routing_loss": 0.0, "compaction_loss": 0.0, "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 1.0, "oracle_anchor_nll": 5.4003143310546875, "optimization_loss": 5.9774675369262695, "grad_norm": 3.4162890911102295, "elapsed_seconds": 0.03916800600006809}
+{
+  "status": "complete",
+  "output": "/mnt/data/sdkb/runs/release-validation",
+  "stages": [
+    "text_bootstrap",
+    "latent_warmup",
+    "latent_joint"
+  ],
+  "scientific_claim": "Inspect stored-memory and counterfactual effects; execution alone is not evidence of transfer."
+}

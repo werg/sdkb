@@ -1,0 +1,10 @@
+{
+  "status": "complete",
+  "output": "/mnt/data/sdkb/runs/release-validation",
+  "stages": [
+    "text_bootstrap",
+    "latent_warmup",
+    "latent_joint"
+  ],
+  "scientific_claim": "Inspect stored-memory and counterfactual effects; execution alone is not evidence of transfer."
+}

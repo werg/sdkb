@@ -1,0 +1,45 @@
+{
+  "steps": 1,
+  "requested_steps": 1,
+  "stopped_early": false,
+  "last": {
+    "step": 1,
+    "loss": 5.442691802978516,
+    "nll": 5.442691802978516,
+    "routing_loss": 0.0,
+    "compaction_loss": 0.0,
+    "raw_nll": 0.0,
+    "compact_nll": 0.0,
+    "behavior_kl": 0.0,
+    "read_count": 1.0,
+    "oracle_anchor_nll": 0.0,
+    "optimization_loss": 5.442691802978516,
+    "grad_norm": 0.12430673092603683,
+    "elapsed_seconds": 0.022687562999976763
+  },
+  "environment": {
+    "python": "3.13.5",
+    "machine": "x86_64",
+    "torch": "2.10.0+cpu",
+    "cuda_runtime": null,
+    "cuda_available": false,
+    "git_commit": "49bcf24a020d9bca7562cb6e31e6a7eba5107810",
+    "git_dirty": false,
+    "transformers": null,
+    "resolved_model_revision": "local-tiny",
+    "total_parameters": 101228,
+    "trainable_parameters": 16716,
+    "notice": "Prototype measurements; not evidence of capacity substitution."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 351145984,
+    "system_mem_available_bytes": 4894236672
+  },
+  "store": {
+    "records": 2,
+    "serialized_payload_bytes": 240,
+    "key_bytes": 96,
+    "physical_sqlite_bytes": 32768,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  }
+}
