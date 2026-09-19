@@ -1,0 +1,24 @@
+{
+  "source_checkpoint": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/checkpoints/step-000000400-421032105456",
+  "source_manifest_sha256": "f90b27924a9f0815f38ac525737041850c260a159e6f3241447676ba13181e81",
+  "episodes_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+  "optimizer_reset": true,
+  "configs": {
+    "selected_supports": {
+      "config": "/archive/runs/binding-attention-context-20260919/selected_supports.yaml",
+      "sha256": "8a19f2b1824304e8a85622aa401c956ba5f7da573ce28d1352a7b3f121943c6c",
+      "run": "/archive/runs/binding-attention-context-20260919/selected_supports"
+    },
+    "all_world": {
+      "config": "/archive/runs/binding-attention-context-20260919/all_world.yaml",
+      "sha256": "71af8ed874f30525334acb4437d2b65cc7fbf71d39e3a7bb851c22f6006d4f2e",
+      "run": "/archive/runs/binding-attention-context-20260919/all_world"
+    }
+  },
+  "order": [
+    "selected_supports",
+    "all_world"
+  ],
+  "status": "prepared; not launched",
+  "validation": "Source checkpoint verified; both configs validate and differ only in train.evidence_scope."
+}

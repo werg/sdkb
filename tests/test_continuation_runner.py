@@ -100,3 +100,14 @@ def test_resume_restores_existing_arm_and_warm_starts_only_new_arm(study, monkey
     state = json.loads((control_dir(root) / 'process.json').read_text())
     assert state['status'] == 'complete'
     assert state['completed_arms'] == ['recurrent_core', 'all']
+
+
+def test_invalid_arm_order_fails_before_training(study, monkeypatch):
+    module, root = study
+    path = root / 'inputs.json'
+    inputs = json.loads(path.read_text())
+    inputs['order'] = ['recurrent_core', 'recurrent_core']
+    path.write_text(json.dumps(inputs))
+    monkeypatch.setattr(module, 'train', lambda *args, **kwargs: pytest.fail('Training started'))
+    with pytest.raises(ValueError, match='exactly once'):
+        module.run(root, False)

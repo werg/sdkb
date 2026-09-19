@@ -15,6 +15,9 @@ from sdkb.trajectories import file_sha256
 def run(root: Path, resume: bool):
     inputs = json.loads((root / 'inputs.json').read_text())
     source = Path(inputs['source_checkpoint'])
+    order = inputs.get('order', list(inputs['configs']))
+    if len(order) != len(set(order)) or set(order) != set(inputs['configs']):
+        raise ValueError('Arm order must include every prepared arm exactly once')
     if file_sha256(source / 'manifest.json') != inputs['source_manifest_sha256']:
         raise ValueError('Source checkpoint identity changed')
     configs = {}
@@ -33,7 +36,7 @@ def run(root: Path, resume: bool):
     with run_lock(root), stop_on_signal() as stop:
         atomic_json(state_path, state)
         try:
-            for arm in ('recurrent_core', 'all'):
+            for arm in order:
                 if stop['signal'] is not None or stop_requested(root):
                     state['status'] = 'stopped'
                     break
