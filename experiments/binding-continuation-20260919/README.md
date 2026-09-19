@@ -40,3 +40,17 @@ configs and source/data hashes without launching GPU work. Source must be the
 completed selected-support Muon MLP stage. All paths are arguments; platform defaults
 are inherited from its validated config. Launch provenance must record the frozen
 code commit used for training.
+
+The full-backbone native preflight passed on source `2112c9f`: one-loop identity
+and causal-prefix error were both zero, with finite nonzero memory/bridge gradients.
+`all-preflight.json` retains the runtime and numerical record. This validates
+execution, not a capability result. The sequential runner has regressions for
+stops, failures, configuration drift and partial-run resume; core recovery tests
+separately verify full optimizer/RNG restoration.
+
+Run `run.py --study EXTERNAL_STUDY_ROOT` from a frozen checkout; add `--resume`
+to resume explicitly. Redirect its console to the path reported by
+`sdkb runs status --output EXTERNAL_STUDY_ROOT`. Stop with
+`sdkb runs stop --output EXTERNAL_STUDY_ROOT`; an interrupted first arm prevents
+the second from starting. Existing arm checkpoints resume; new arms warm-start
+from the captured source checkpoint. Training has not launched yet.
