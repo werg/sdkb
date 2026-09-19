@@ -1,4 +1,4 @@
-# Attention continuation with distractor records (running)
+# Attention continuation with distractor records (completed)
 
 The selected-support attention model composes permission and restoration correctly
 on unseen worlds, including action counterfactuals, but action accuracy falls from
@@ -45,3 +45,35 @@ The selected-support control completed all 800 updates and the all-world arm is
 training. Both initial weight files have exactly the same SHA256 as the captured
 source checkpoint, and both optimizers start fresh (`initialization-check.json`).
 Final evaluations remain pending.
+
+## Completed common-world result
+
+Both arms completed their prescribed 800 updates. On the same 32 new worlds:
+
+| Measure | Source | Extra selected-support training | All-world training |
+|---|---:|---:|---:|
+| All-world action accuracy | 63.3% | 59.4% | 62.5% |
+| Selected-pair action accuracy | 99.2% | 100.0% | 100.0% |
+| All-world permission | 71.9% | 70.3% | 70.3% |
+| All-world restoration | 76.6% | 76.6% | 76.6% |
+| All-world identifier choice | 35.9% | 29.7% | 26.6% |
+
+All-world training's paired action gain is −0.8 points versus the source
+(world-bootstrap 95% interval −5.5 to +4.7) and +3.1 points versus the matched
+extra-training control (−0.8 to +7.0). It has both action answers correct in only
+43/128 permission-flip pairs and 19/64 changing restoration pairs, and makes 9/64
+spurious changes on unchanged restoration branches.
+
+Both continued models give the same fact answer for the two entities in **all 19
+opposed-permission worlds and all 15 opposed-restoration worlds**. Zero pairs are
+jointly correct. The source has one correct opposed-permission pair and zero
+opposed-restoration pairs. More exposure to distractors at this budget therefore
+does not establish entity discrimination, despite preserving selected-pair skill.
+
+`completed-training.json` records exact final checkpoint and environment identities;
+`confirmation-summaries.json`, `paired-results.json` and `entity-stratification.json`
+retain controls, shared episode/raw-report hashes and paired intervals. This is
+one training seed; intervals resample worlds and are not multiplicity-corrected.
+The result motivates inspecting entity information in queries and stored payloads
+before another training intervention, rather than assuming that more updates alone
+will fix binding. No such diagnostic is asserted as completed here.

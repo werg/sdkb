@@ -1,0 +1,200 @@
+{
+  "source": {
+    "diagnostic": "Post-hoc descriptive stratification of a completed two-entity evaluation.",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "results_sha256": "9d4eedac133992216b786a174d1e528810b5c36211f663c42b8b02e93956a2ce",
+    "by_family": {
+      "multiuse/action": {
+        "permission_same=False,restoration_same=False": {
+          "n": 40,
+          "correct": 16,
+          "accuracy": 0.4
+        },
+        "permission_same=False,restoration_same=True": {
+          "n": 36,
+          "correct": 18,
+          "accuracy": 0.5
+        },
+        "permission_same=True,restoration_same=False": {
+          "n": 20,
+          "correct": 15,
+          "accuracy": 0.75
+        },
+        "permission_same=True,restoration_same=True": {
+          "n": 32,
+          "correct": 32,
+          "accuracy": 1.0
+        }
+      },
+      "multiuse/permission": {
+        "opposed_rule": {
+          "n": 38,
+          "correct": 20,
+          "accuracy": 0.5263157894736842
+        },
+        "same_rule": {
+          "n": 26,
+          "correct": 26,
+          "accuracy": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "opposed_rule": {
+          "n": 30,
+          "correct": 15,
+          "accuracy": 0.5
+        },
+        "same_rule": {
+          "n": 34,
+          "correct": 34,
+          "accuracy": 1.0
+        }
+      }
+    },
+    "entity_pairs": {
+      "multiuse/permission": {
+        "opposed_worlds": 19,
+        "same_prediction_for_both_entities": 18,
+        "both_correct": 1
+      },
+      "multiuse/restoration": {
+        "opposed_worlds": 15,
+        "same_prediction_for_both_entities": 15,
+        "both_correct": 0
+      }
+    },
+    "notice": "Agreement cases can be solved without entity discrimination. Inspect opposed-rule pairs before claiming binding; these are not independent training seeds."
+  },
+  "selected_supports": {
+    "diagnostic": "Post-hoc descriptive stratification of a completed two-entity evaluation.",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "results_sha256": "062a4d9d65797e2dbaca7ae826844568bf8636911b2be0509733ee06ba4e6a49",
+    "by_family": {
+      "multiuse/action": {
+        "permission_same=False,restoration_same=False": {
+          "n": 40,
+          "correct": 14,
+          "accuracy": 0.35
+        },
+        "permission_same=False,restoration_same=True": {
+          "n": 36,
+          "correct": 18,
+          "accuracy": 0.5
+        },
+        "permission_same=True,restoration_same=False": {
+          "n": 20,
+          "correct": 12,
+          "accuracy": 0.6
+        },
+        "permission_same=True,restoration_same=True": {
+          "n": 32,
+          "correct": 32,
+          "accuracy": 1.0
+        }
+      },
+      "multiuse/permission": {
+        "opposed_rule": {
+          "n": 38,
+          "correct": 19,
+          "accuracy": 0.5
+        },
+        "same_rule": {
+          "n": 26,
+          "correct": 26,
+          "accuracy": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "opposed_rule": {
+          "n": 30,
+          "correct": 15,
+          "accuracy": 0.5
+        },
+        "same_rule": {
+          "n": 34,
+          "correct": 34,
+          "accuracy": 1.0
+        }
+      }
+    },
+    "entity_pairs": {
+      "multiuse/permission": {
+        "opposed_worlds": 19,
+        "same_prediction_for_both_entities": 19,
+        "both_correct": 0
+      },
+      "multiuse/restoration": {
+        "opposed_worlds": 15,
+        "same_prediction_for_both_entities": 15,
+        "both_correct": 0
+      }
+    },
+    "notice": "Agreement cases can be solved without entity discrimination. Inspect opposed-rule pairs before claiming binding; these are not independent training seeds."
+  },
+  "all_world": {
+    "diagnostic": "Post-hoc descriptive stratification of a completed two-entity evaluation.",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "results_sha256": "22ca6bfb90a0747de731e20d5abb02a5c46b8a43445c6090709ab72ec6205a0d",
+    "by_family": {
+      "multiuse/action": {
+        "permission_same=False,restoration_same=False": {
+          "n": 40,
+          "correct": 14,
+          "accuracy": 0.35
+        },
+        "permission_same=False,restoration_same=True": {
+          "n": 36,
+          "correct": 19,
+          "accuracy": 0.5277777777777778
+        },
+        "permission_same=True,restoration_same=False": {
+          "n": 20,
+          "correct": 15,
+          "accuracy": 0.75
+        },
+        "permission_same=True,restoration_same=True": {
+          "n": 32,
+          "correct": 32,
+          "accuracy": 1.0
+        }
+      },
+      "multiuse/permission": {
+        "opposed_rule": {
+          "n": 38,
+          "correct": 19,
+          "accuracy": 0.5
+        },
+        "same_rule": {
+          "n": 26,
+          "correct": 26,
+          "accuracy": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "opposed_rule": {
+          "n": 30,
+          "correct": 15,
+          "accuracy": 0.5
+        },
+        "same_rule": {
+          "n": 34,
+          "correct": 34,
+          "accuracy": 1.0
+        }
+      }
+    },
+    "entity_pairs": {
+      "multiuse/permission": {
+        "opposed_worlds": 19,
+        "same_prediction_for_both_entities": 19,
+        "both_correct": 0
+      },
+      "multiuse/restoration": {
+        "opposed_worlds": 15,
+        "same_prediction_for_both_entities": 15,
+        "both_correct": 0
+      }
+    },
+    "notice": "Agreement cases can be solved without entity discrimination. Inspect opposed-rule pairs before claiming binding; these are not independent training seeds."
+  }
+}

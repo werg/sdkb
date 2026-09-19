@@ -95,7 +95,9 @@ capability from recurrent depth; agent execution success; and a quality/memory/l
 frontier showing substitution for resident model parameters.
 
 These are research outcomes to establish, not implemented-module checkboxes. The
-current work is a paired MLP continuation (extra training versus broader backbone
-adaptation) and a matched attention continuation with/without entity distractors,
-following its confirmed selected-support composition and measured binding failure. No paid teacher
+current work is the paired MLP continuation (extra training versus broader backbone
+adaptation) and diagnosis of entity binding. A completed matched attention
+continuation with/without distractors did not improve binding: all-world action
+accuracy was 62.5% versus 63.3% for its source and 59.4% for extra selected-support
+training, with no jointly correct opposed-rule entity pairs after either continuation. No paid teacher
 collection, license change or public-visibility change has been initiated.

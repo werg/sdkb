@@ -1,0 +1,1397 @@
+{
+  "source": {
+    "protocol": "World-scoped evidence, competing entities, frozen stored-only read.",
+    "checkpoint": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/checkpoints/step-000000400-421032105456",
+    "checkpoint_manifest_sha256": "f90b27924a9f0815f38ac525737041850c260a159e6f3241447676ba13181e81",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.621875,
+        "mean_target_nll": 1.7020634190015815,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.86875,
+        "mean_target_nll": 0.5720848749799206,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.415625,
+        "mean_target_nll": 2.418559602477577,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.428125,
+        "mean_target_nll": 2.2384126913571167,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.490625,
+        "mean_target_nll": 2.5473391262233323,
+        "complete_support_recall": 0.2
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.390625,
+        "mean_target_nll": 1.7186157338145935,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.6125,
+        "mean_target_nll": 1.7451765152398075,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.609375,
+        "mean_target_nll": 1.696374581312638,
+        "complete_support_recall": 1.0
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.6328125,
+          "mean_target_nll": 1.0227678848844395,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 0.9921875,
+          "mean_target_nll": 0.008107040710328983,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.3984375,
+          "mean_target_nll": 1.275962908535545,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.3828125,
+          "mean_target_nll": 1.2552125632584616,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.546875,
+          "mean_target_nll": 1.3897953178282998,
+          "complete_support_recall": 0.5
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.390625,
+          "mean_target_nll": 1.7186157338145935,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.6171875,
+          "mean_target_nll": 1.043119869587935,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.6171875,
+          "mean_target_nll": 1.0375341710219215,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.359375,
+          "mean_target_nll": 2.8423039195083435,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.359375,
+          "mean_target_nll": 2.84420233863805,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.28125,
+          "mean_target_nll": 4.164365480095148,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.34375,
+          "mean_target_nll": 2.843289866670966,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.359375,
+          "mean_target_nll": 2.8444107253281845,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.359375,
+          "mean_target_nll": 2.844538827311425,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.34375,
+          "mean_target_nll": 2.8433277673841943,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.71875,
+          "mean_target_nll": 2.379205245240436,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.1222358491380646e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.484375,
+          "mean_target_nll": 4.962959909544177,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 4.133790768680057,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 5.271158608523645,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.5459018740635315,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.4411522871383164,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 1.2432721604902497,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 6.832605045303808e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.4135468056774698,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 1.7045576949176393,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.59375,
+          "mean_target_nll": 1.8415356616082335,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 1.2492021356482113,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 1.1223245099968366,
+          "complete_support_recall": 1.0
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.390625,
+          "appropriate_prediction_change": 0.390625,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.140625
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.328125,
+          "appropriate_prediction_change": 0.40625,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.015625
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.03125
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.265625
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.421875,
+          "appropriate_prediction_change": 0.421875,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.53125,
+          "appropriate_prediction_change": 0.53125,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "paired_gains": {
+      "multiuse/action": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": -0.359375,
+          "ci95": [
+            -0.4375,
+            -0.265625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.25,
+          "ci95": [
+            0.140625,
+            0.3671875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.234375,
+          "ci95": [
+            0.109375,
+            0.375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/identifier": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.015625,
+          "ci95": [
+            0.0,
+            0.046875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.078125,
+          "ci95": [
+            -0.046875,
+            0.203125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/permission": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.28125,
+          "ci95": [
+            -0.359375,
+            -0.1875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.203125,
+          "ci95": [
+            0.078125,
+            0.34375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.234375,
+          "ci95": [
+            0.09375,
+            0.375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/restoration": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.234375,
+          "ci95": [
+            -0.3125,
+            -0.15625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.25,
+          "ci95": [
+            0.125,
+            0.40625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.25,
+          "ci95": [
+            0.125,
+            0.40625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    },
+    "read_evaluation_seconds": 212.18012624299445,
+    "resources": {
+      "process_peak_rss_bytes": 3288018944,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2047746048,
+      "cuda_peak_reserved_bytes": 2082471936,
+      "system_mem_available_bytes": 78319697920
+    },
+    "notice": "All-world versus selected-pair reads differ in information/compute budget. World membership is supplied; routing across worlds is not tested. Zero-payload interventions apply only to latent arms; text stays unchanged."
+  },
+  "selected_supports": {
+    "protocol": "World-scoped evidence, competing entities, frozen stored-only read.",
+    "checkpoint": "/archive/runs/binding-attention-context-20260919/selected_supports/checkpoints/step-000000800-9ae23c68b2fb",
+    "checkpoint_manifest_sha256": "9e981f0e0c2f332dde8233c6b19135ddae3eda82dbefd84aa236f0608336e19f",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.590625,
+        "mean_target_nll": 2.1355705405017456,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.859375,
+        "mean_target_nll": 0.6961129728628672,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.4125,
+        "mean_target_nll": 2.739962116236019,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.39375,
+        "mean_target_nll": 3.4301133463991995,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.465625,
+        "mean_target_nll": 3.252721781046578,
+        "complete_support_recall": 0.2
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.3671875,
+        "mean_target_nll": 3.079067613484459,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.609375,
+        "mean_target_nll": 2.107162957338846,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.609375,
+        "mean_target_nll": 2.1500739764109458,
+        "complete_support_recall": 1.0
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.59375,
+          "mean_target_nll": 1.7633366546261986,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.5007720870739507e-05,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.3984375,
+          "mean_target_nll": 1.5570937398350984,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.3671875,
+          "mean_target_nll": 5.012694344302419,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.546875,
+          "mean_target_nll": 2.4525155127081013,
+          "complete_support_recall": 0.5
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.3671875,
+          "mean_target_nll": 3.079067613484459,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.640625,
+          "mean_target_nll": 1.692082526857027,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.640625,
+          "mean_target_nll": 1.7736065594215313,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 3.479116325080395,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 3.4805310872693855,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.265625,
+          "mean_target_nll": 5.553385784476996,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 3.4663053849978107,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 3.499897809858833,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 3.480916650752936,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 3.473209299289045,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.8237317819127896,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.1296915599090518e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.484375,
+          "mean_target_nll": 4.646454977073496,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.484375,
+          "mean_target_nll": 3.013189124439279,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 5.7377943927405655,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.8569347392752573,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.8247083490694154,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 0.8483312862631465,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 2.631911648620644e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.38578233995940536,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 0.6456835339540703,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 2.120885677217288,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 0.8137983429519835,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 0.905239114853206,
+          "complete_support_recall": 1.0
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.390625,
+          "appropriate_prediction_change": 0.421875,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.15625
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.3046875,
+          "appropriate_prediction_change": 0.4296875,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.40625,
+          "appropriate_prediction_change": 0.40625,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.53125,
+          "appropriate_prediction_change": 0.53125,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "paired_gains": {
+      "multiuse/action": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": -0.40625,
+          "ci95": [
+            -0.4921875,
+            -0.3125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.2265625,
+          "ci95": [
+            0.1171875,
+            0.34375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.1953125,
+          "ci95": [
+            0.0703125,
+            0.3359375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/identifier": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            -0.046875,
+            0.046875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.015625,
+          "ci95": [
+            -0.078125,
+            0.03125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.03125,
+          "ci95": [
+            -0.09375,
+            0.15625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/permission": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.296875,
+          "ci95": [
+            -0.375,
+            -0.203125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.21875,
+          "ci95": [
+            0.09375,
+            0.375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.21875,
+          "ci95": [
+            0.09375,
+            0.375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/restoration": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.234375,
+          "ci95": [
+            -0.3125,
+            -0.15625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.328125,
+          "ci95": [
+            0.1875,
+            0.46875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.25,
+          "ci95": [
+            0.078125,
+            0.4375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    },
+    "read_evaluation_seconds": 302.39075020799646,
+    "resources": {
+      "process_peak_rss_bytes": 4508610560,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2057187328,
+      "cuda_peak_reserved_bytes": 2082471936,
+      "system_mem_available_bytes": 96802942976
+    },
+    "notice": "All-world versus selected-pair reads differ in information/compute budget. World membership is supplied; routing across worlds is not tested. Zero-payload interventions apply only to latent arms; text stays unchanged."
+  },
+  "all_world": {
+    "protocol": "World-scoped evidence, competing entities, frozen stored-only read.",
+    "checkpoint": "/archive/runs/binding-attention-context-20260919/all_world/checkpoints/step-000000800-f16ee9589e07",
+    "checkpoint_manifest_sha256": "43d9e91808e8aa8570e1121a326fd252dc1998d6e100ccbe79928085d5c85d4f",
+    "episodes_sha256": "09f9afacc8625f2b919ca80cf99182a1eabf9bc5b63d935527db5f471e2e225d",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.596875,
+        "mean_target_nll": 0.8476433094997207,
+        "complete_support_recall": 1.0
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.85,
+        "mean_target_nll": 0.6566232412722199,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.415625,
+        "mean_target_nll": 1.654341111028249,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.415625,
+        "mean_target_nll": 0.9441799087977658,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.46875,
+        "mean_target_nll": 1.28431352768632,
+        "complete_support_recall": 0.2
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.3671875,
+        "mean_target_nll": 0.8448737702685343,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.596875,
+        "mean_target_nll": 0.8478536949260492,
+        "complete_support_recall": 1.0
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.596875,
+        "mean_target_nll": 0.8562418092319038,
+        "complete_support_recall": 1.0
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.625,
+          "mean_target_nll": 0.21640578199464602,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 0.0103689029201091,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.3984375,
+          "mean_target_nll": 0.4856353722813462,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.3984375,
+          "mean_target_nll": 0.32728968367778827,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.578125,
+          "mean_target_nll": 0.2678008129374207,
+          "complete_support_recall": 0.5
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.3671875,
+          "mean_target_nll": 0.8448737702685343,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.625,
+          "mean_target_nll": 0.21263707477428506,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.625,
+          "mean_target_nll": 0.21228474038456452,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.265625,
+          "mean_target_nll": 3.24178697578609,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.25,
+          "mean_target_nll": 3.2611961226555564,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.265625,
+          "mean_target_nll": 5.20616750344634,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.265625,
+          "mean_target_nll": 3.2270363342726514,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.25,
+          "mean_target_nll": 3.2485631974147897,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.265625,
+          "mean_target_nll": 3.2459617205141558,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.265625,
+          "mean_target_nll": 3.2421146308559745,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 0.35507590392228394,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 0.00010082609486516958,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 1.1488426154674016,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.484375,
+          "mean_target_nll": 0.5299387652194127,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 1.8437436979127142,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 0.36173424402829824,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 0.3829715597593122,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 0.20854210380093718,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 0.0010814517704602622,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.9454246916648117,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 0.3093450771411881,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 0.7936591172292538,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 0.2062983605392219,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.765625,
+          "mean_target_nll": 0.2315533747751033,
+          "complete_support_recall": 1.0
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.296875,
+          "appropriate_prediction_change": 0.375,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.140625
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.3359375,
+          "appropriate_prediction_change": 0.421875,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.015625
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.03125
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.40625,
+          "appropriate_prediction_change": 0.40625,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.53125,
+          "appropriate_prediction_change": 0.53125,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "paired_gains": {
+      "multiuse/action": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": -0.375,
+          "ci95": [
+            -0.4609375,
+            -0.28125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.2265625,
+          "ci95": [
+            0.109375,
+            0.3671875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.2265625,
+          "ci95": [
+            0.109375,
+            0.3671875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/identifier": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.015625,
+          "ci95": [
+            0.0,
+            0.046875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            -0.09375,
+            0.09375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/permission": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.296875,
+          "ci95": [
+            -0.375,
+            -0.203125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.21875,
+          "ci95": [
+            0.09375,
+            0.375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.203125,
+          "ci95": [
+            0.078125,
+            0.34375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "multiuse/restoration": {
+        "selected_pair": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.234375,
+          "ci95": [
+            -0.3125,
+            -0.15625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.234375,
+          "ci95": [
+            0.109375,
+            0.375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.25,
+          "ci95": [
+            0.125,
+            0.40625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    },
+    "read_evaluation_seconds": 309.32824533099483,
+    "resources": {
+      "process_peak_rss_bytes": 4508610560,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2057187328,
+      "cuda_peak_reserved_bytes": 2082471936,
+      "system_mem_available_bytes": 43203428352
+    },
+    "notice": "All-world versus selected-pair reads differ in information/compute budget. World membership is supplied; routing across worlds is not tested. Zero-payload interventions apply only to latent arms; text stays unchanged."
+  }
+}

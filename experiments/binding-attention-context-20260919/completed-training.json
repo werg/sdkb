@@ -1,0 +1,194 @@
+{
+  "selected_supports": {
+    "checkpoint": "step-000000800-9ae23c68b2fb",
+    "manifest_sha256": "9e981f0e0c2f332dde8233c6b19135ddae3eda82dbefd84aa236f0608336e19f",
+    "manifest": {
+      "format": 1,
+      "step": 800,
+      "dataset_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "sha256": {
+        "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+        "config.json": "4dc7236a7f4936e5d90cf5ff6b3a2877ede288393a46dc0f7c1770b9c4a3a242",
+        "run-identity.json": "da8b3d16caec976c772e5ac760fa3920189b2999f1f7358cf7262022ad863b7c",
+        "model.safetensors": "0d92db9d9f7938313ad7dc2b2c1d8050a325ab57b2b98f1471d51368021df2b8",
+        "training_state.pt": "433215f2663f4b6ef981874426ec0fe478d67cf3431fe41ea3dfe69ee7da8096"
+      }
+    },
+    "steps": 800,
+    "resources": {
+      "process_peak_rss_bytes": 4163919872,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2720003584,
+      "cuda_peak_reserved_bytes": 2734686208,
+      "system_mem_available_bytes": 80360636416
+    },
+    "environment": {
+      "python": "3.12.3",
+      "machine": "aarch64",
+      "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+      "cuda_runtime": "13.2",
+      "cuda_available": true,
+      "gpu": "NVIDIA GB10",
+      "compute_capability": [
+        12,
+        1
+      ],
+      "bf16_supported": true,
+      "cuda_total_bytes": 130594091008,
+      "git_commit": "97a9ded11cdeb25782cefcd51025611af9593913",
+      "git_dirty": false,
+      "transformers": "5.17.0",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "runtime_limits": {
+        "host_available_bytes": 74743586816,
+        "cuda_memory_fraction": 0.35,
+        "min_system_available_bytes": 8589934592
+      },
+      "total_parameters": 255706052,
+      "trainable_parameters": 95240772,
+      "notice": "Prototype measurements; not evidence of capacity substitution.",
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          4
+        ],
+        "core": [
+          4,
+          10
+        ],
+        "coda": [
+          10,
+          14
+        ],
+        "loops": 3,
+        "layer_visits": 26,
+        "layer_types": [
+          "conv",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv"
+        ],
+        "new_bridge_parameters": 3148803,
+        "input_mix": 0.10510784387588501,
+        "update_mix": 0.10700676590204239,
+        "memory_mix": 0.10585049539804459,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary",
+        "training_depths": [
+          2,
+          3
+        ],
+        "writer_loops": 1
+      },
+      "resume": false,
+      "attempt": "242e0a707178"
+    }
+  },
+  "all_world": {
+    "checkpoint": "step-000000800-f16ee9589e07",
+    "manifest_sha256": "43d9e91808e8aa8570e1121a326fd252dc1998d6e100ccbe79928085d5c85d4f",
+    "manifest": {
+      "format": 1,
+      "step": 800,
+      "dataset_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "sha256": {
+        "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+        "config.json": "e31adea8984507a3e55ca300e68061dd647bdf571e5f8905d07a124b6d3ada17",
+        "run-identity.json": "12a5443b4ff6a751b74b4e9e7d062bd111fb9f50ca8b12231042c52bf5e76e3d",
+        "model.safetensors": "5523ca70943be49f2ec0f5e059bb7d1ddcc8645b9344cb966e3102c787bdefb4",
+        "training_state.pt": "ba1336d4492f1058116b35822a8ad220f1ed7f2f2ab8296b63ac0f8214afdc6e"
+      }
+    },
+    "steps": 800,
+    "resources": {
+      "process_peak_rss_bytes": 5249269760,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2758972928,
+      "cuda_peak_reserved_bytes": 2898264064,
+      "system_mem_available_bytes": 88935968768
+    },
+    "environment": {
+      "python": "3.12.3",
+      "machine": "aarch64",
+      "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+      "cuda_runtime": "13.2",
+      "cuda_available": true,
+      "gpu": "NVIDIA GB10",
+      "compute_capability": [
+        12,
+        1
+      ],
+      "bf16_supported": true,
+      "cuda_total_bytes": 130594091008,
+      "git_commit": "97a9ded11cdeb25782cefcd51025611af9593913",
+      "git_dirty": false,
+      "transformers": "5.17.0",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "runtime_limits": {
+        "host_available_bytes": 80304111616,
+        "cuda_memory_fraction": 0.35,
+        "min_system_available_bytes": 8589934592
+      },
+      "total_parameters": 255706052,
+      "trainable_parameters": 95240772,
+      "notice": "Prototype measurements; not evidence of capacity substitution.",
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          4
+        ],
+        "core": [
+          4,
+          10
+        ],
+        "coda": [
+          10,
+          14
+        ],
+        "loops": 3,
+        "layer_visits": 26,
+        "layer_types": [
+          "conv",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv"
+        ],
+        "new_bridge_parameters": 3148803,
+        "input_mix": 0.10510784387588501,
+        "update_mix": 0.10700676590204239,
+        "memory_mix": 0.10585049539804459,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary",
+        "training_depths": [
+          2,
+          3
+        ],
+        "writer_loops": 1
+      },
+      "resume": false,
+      "attempt": "6ba07eb81b8a"
+    }
+  }
+}
