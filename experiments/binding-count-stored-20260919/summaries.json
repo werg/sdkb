@@ -1,0 +1,1746 @@
+{
+  "compressed_learned_count": {
+    "protocol": "World-scoped exact learned ranking of stored keys; frozen stored-only reads.",
+    "checkpoint": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "d40ad841e258133f1fdf185809e986b1bac5d1f2a9bb43f6dbe5c0ce7584d8d4",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.55,
+        "mean_target_nll": 2.777958123032439,
+        "complete_support_recall": 0.478125
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.859375,
+        "mean_target_nll": 0.9147615892510869,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.465625,
+        "mean_target_nll": 2.357086640214404,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.459375,
+        "mean_target_nll": 2.4532370983253076,
+        "complete_support_recall": 0.478125
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.43125,
+        "mean_target_nll": 3.6651683363913348,
+        "complete_support_recall": 0.165625
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.3203125,
+        "mean_target_nll": 3.362593060456106,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.534375,
+        "mean_target_nll": 2.6278026527565785,
+        "complete_support_recall": 0.478125
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.575,
+        "mean_target_nll": 2.589229717938591,
+        "complete_support_recall": 0.471875
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.4921875,
+          "mean_target_nll": 2.4603581491959496,
+          "complete_support_recall": 0.375
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 2.4641773257238513e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.4921875,
+          "mean_target_nll": 0.9179718394110685,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 1.3810815699605017,
+          "complete_support_recall": 0.375
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 2.144075063673424,
+          "complete_support_recall": 0.4140625
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.3203125,
+          "mean_target_nll": 3.362593060456106,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.453125,
+          "mean_target_nll": 2.145272123128708,
+          "complete_support_recall": 0.375
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.5546875,
+          "mean_target_nll": 2.022129597754146,
+          "complete_support_recall": 0.359375
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 4.577466608489317,
+          "complete_support_recall": 0.546875
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.573797473760824,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.375,
+          "mean_target_nll": 6.122514733979626,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.622041153612118,
+          "complete_support_recall": 0.546875
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 4.6106821732625125,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 4.577466608489317,
+          "complete_support_recall": 0.546875
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 4.586697251704477,
+          "complete_support_recall": 0.546875
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.902346091342099,
+          "complete_support_recall": 0.515625
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.981849716115036e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.453125,
+          "mean_target_nll": 2.8789048682804634,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 2.6265408409601214,
+          "complete_support_recall": 0.515625
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.375,
+          "mean_target_nll": 6.010256676001784,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.902346091342099,
+          "complete_support_recall": 0.515625
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 2.825930525541307,
+          "complete_support_recall": 0.515625
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.75,
+          "mean_target_nll": 1.4892616169388795,
+          "complete_support_recall": 0.578125
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 3.5622902423426694e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.9480699199897913,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 2.2554403571332955,
+          "complete_support_recall": 0.578125
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 3.4167527053455284,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.75,
+          "mean_target_nll": 1.368656317694061,
+          "complete_support_recall": 0.578125
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.75,
+          "mean_target_nll": 1.4892616169388795,
+          "complete_support_recall": 0.578125
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.203125,
+          "appropriate_prediction_change": 0.375,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.21875
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.2578125,
+          "appropriate_prediction_change": 0.5625,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.03125
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.703125,
+          "appropriate_prediction_change": 1.0,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.75,
+          "appropriate_prediction_change": 1.0,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "read_evaluation_seconds": 201.57221503999608,
+    "resources": {
+      "process_peak_rss_bytes": 4903403520,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2046192640,
+      "cuda_peak_reserved_bytes": 2076180480,
+      "system_mem_available_bytes": 110305652736
+    },
+    "notice": "Selected-pair is an oracle control. Learned ranking receives all eligible world records, never required-support IDs. World membership is supplied; this is not cross-world retrieval or learned authorization.",
+    "routing": {
+      "read_budget": 2,
+      "candidate_scope": "supplied world membership",
+      "search": "exact scan, not ANN",
+      "interventions": "Zero values and counterfactuals preserve original read plans; support removal excludes the record before reranking."
+    },
+    "routing_probe": {
+      "probe_sha256": "d6b2628f99dc1f314cb96442a6622c82ab5b661834f10a5dc48cba3ab047273d",
+      "identity": {
+        "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+        "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+        "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+        "steps": 800,
+        "train_config": {
+          "seed": 29,
+          "steps": 1600,
+          "learning_rate": 0.0001,
+          "backbone_learning_rate": 5e-06,
+          "optimizer": "muon",
+          "weight_decay": 0.01,
+          "adam_betas": [
+            0.9,
+            0.999
+          ],
+          "adam_eps": 1e-08,
+          "muon_momentum": 0.95,
+          "muon_ns_steps": 5,
+          "gradient_accumulation": 4,
+          "clip_grad_norm": 1.0,
+          "precision": "bf16",
+          "device": "cuda",
+          "replay": true,
+          "verify_replay": false,
+          "live_fraction": 1.0,
+          "train_worlds": 128,
+          "distractors": 2,
+          "eval_worlds": 16,
+          "log_every": 10,
+          "max_source_tokens": 512,
+          "max_prompt_tokens": 4096,
+          "arm": "memory",
+          "retrieval": "oracle",
+          "routing_weight": 0.1,
+          "routing_warmup": 100,
+          "threads": 8,
+          "cuda_memory_fraction": 0.35,
+          "min_system_available_bytes": 8589934592,
+          "stall_timeout_seconds": 300,
+          "optimization_scope": "all",
+          "checkpoint_every": 1000,
+          "keep_checkpoints": 2,
+          "max_target_tokens": 512,
+          "loop_counts": [
+            2,
+            3
+          ],
+          "oracle_anchor_loops": 1,
+          "allow_recurrence_conversion": false,
+          "parent_kl_weight": 0.0,
+          "oracle_anchor_weight": 0.1,
+          "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+          "evidence_scope": "required",
+          "archive_dir": null,
+          "archive_keep_checkpoints": 3,
+          "min_free_disk_bytes": 10737418240,
+          "wandb_mode": "offline",
+          "wandb_project": "sdkb",
+          "wandb_entity": null,
+          "wandb_group": "binding-muon-continuation"
+        },
+        "seed": 43,
+        "learning_rate": 0.0001,
+        "optimizer": "native Muon",
+        "batch": 1280,
+        "train_worlds": 1024,
+        "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+        "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+      },
+      "independent_routing_query": false,
+      "notice": "Address-only overlay; base reader, payload writer and decoder remain frozen."
+    },
+    "read_count_policy": {
+      "policy_sha256": "a14dc6b73130085b992f22db4187d050c26e669a27483071d518e53c59a51b27",
+      "choices": [
+        1,
+        2
+      ],
+      "representation": "reader_query",
+      "parameters": 130,
+      "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+      "notice": "Frozen count classifier; no support-group labels are used during inference."
+    },
+    "counts_by_family": {
+      "multiuse/action": {
+        "2": 128
+      },
+      "multiuse/identifier": {
+        "1": 64
+      },
+      "multiuse/permission": {
+        "1": 64
+      },
+      "multiuse/restoration": {
+        "1": 64
+      }
+    }
+  },
+  "full_fixed_one": {
+    "protocol": "World-scoped exact learned ranking of stored keys; frozen stored-only reads.",
+    "checkpoint": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "d40ad841e258133f1fdf185809e986b1bac5d1f2a9bb43f6dbe5c0ce7584d8d4",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.609375,
+        "mean_target_nll": 2.1029835146860125,
+        "complete_support_recall": 0.51875
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.859375,
+        "mean_target_nll": 0.9147615892510869,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.465625,
+        "mean_target_nll": 2.357086640214404,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.4625,
+        "mean_target_nll": 2.4501422885711177,
+        "complete_support_recall": 0.51875
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.434375,
+        "mean_target_nll": 3.6230571253051993,
+        "complete_support_recall": 0.11875
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.4375,
+        "mean_target_nll": 2.167830812753961,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.621875,
+        "mean_target_nll": 2.1923844993568347,
+        "complete_support_recall": 0.51875
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.63125,
+        "mean_target_nll": 2.0869364772601537,
+        "complete_support_recall": 0.50625
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.5234375,
+          "mean_target_nll": 1.7695435303406861,
+          "complete_support_recall": 0.1953125
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 2.4641773257238513e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.4921875,
+          "mean_target_nll": 0.9179718394110685,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.5078125,
+          "mean_target_nll": 1.3733445455750268,
+          "complete_support_recall": 0.1953125
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.546875,
+          "mean_target_nll": 2.041128630274536,
+          "complete_support_recall": 0.296875
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 2.167830812753961,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.5546875,
+          "mean_target_nll": 1.9976583591497046,
+          "complete_support_recall": 0.1953125
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.5625,
+          "mean_target_nll": 1.559154298138817,
+          "complete_support_recall": 0.1640625
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.585443770696246,
+          "complete_support_recall": 0.6875
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.573797473760824,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.375,
+          "mean_target_nll": 6.122514733979626,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.622041153612118,
+          "complete_support_recall": 0.6875
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.614319626182791,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.585740825344645,
+          "complete_support_recall": 0.6875
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.567100053552597,
+          "complete_support_recall": 0.6875
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.78125,
+          "mean_target_nll": 1.936769762072539,
+          "complete_support_recall": 0.640625
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.981849716115036e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.453125,
+          "mean_target_nll": 2.8789048682804634,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 2.6265408409601214,
+          "complete_support_recall": 0.640625
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.359375,
+          "mean_target_nll": 6.112307488916777,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.78125,
+          "mean_target_nll": 1.936769762072539,
+          "complete_support_recall": 0.640625
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.78125,
+          "mean_target_nll": 2.295656756490634,
+          "complete_support_recall": 0.640625
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.921875,
+          "mean_target_nll": 0.45361697997990547,
+          "complete_support_recall": 0.875
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 3.5622902423426694e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.9480699199897913,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 2.2554403571332955,
+          "complete_support_recall": 0.875
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.421875,
+          "mean_target_nll": 3.3064012508773555,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.921875,
+          "mean_target_nll": 0.44409519106757855,
+          "complete_support_recall": 0.875
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.921875,
+          "mean_target_nll": 0.45361697997990547,
+          "complete_support_recall": 0.875
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.03125,
+          "appropriate_prediction_change": 0.296875,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.265625
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.1953125,
+          "appropriate_prediction_change": 0.484375,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.03125
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.78125,
+          "appropriate_prediction_change": 1.0,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.921875,
+          "appropriate_prediction_change": 1.0,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "read_evaluation_seconds": 198.79850770901248,
+    "resources": {
+      "process_peak_rss_bytes": 4632031232,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2046454784,
+      "cuda_peak_reserved_bytes": 2076180480,
+      "system_mem_available_bytes": 98274762752
+    },
+    "notice": "Selected-pair is an oracle control. Learned ranking receives all eligible world records, never required-support IDs. World membership is supplied; this is not cross-world retrieval or learned authorization.",
+    "routing": {
+      "read_budget": 1,
+      "candidate_scope": "supplied world membership",
+      "search": "exact scan, not ANN",
+      "interventions": "Zero values and counterfactuals preserve original read plans; support removal excludes the record before reranking."
+    },
+    "routing_probe": {
+      "probe_sha256": "2884bf2ef50fd26cfa4619e72e48595bb5eea29cb3ea1909e968cc93cb23d15c",
+      "identity": {
+        "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+        "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+        "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+        "steps": 800,
+        "train_config": {
+          "seed": 29,
+          "steps": 1600,
+          "learning_rate": 0.0001,
+          "backbone_learning_rate": 5e-06,
+          "optimizer": "muon",
+          "weight_decay": 0.01,
+          "adam_betas": [
+            0.9,
+            0.999
+          ],
+          "adam_eps": 1e-08,
+          "muon_momentum": 0.95,
+          "muon_ns_steps": 5,
+          "gradient_accumulation": 4,
+          "clip_grad_norm": 1.0,
+          "precision": "bf16",
+          "device": "cuda",
+          "replay": true,
+          "verify_replay": false,
+          "live_fraction": 1.0,
+          "train_worlds": 128,
+          "distractors": 2,
+          "eval_worlds": 16,
+          "log_every": 10,
+          "max_source_tokens": 512,
+          "max_prompt_tokens": 4096,
+          "arm": "memory",
+          "retrieval": "oracle",
+          "routing_weight": 0.1,
+          "routing_warmup": 100,
+          "threads": 8,
+          "cuda_memory_fraction": 0.35,
+          "min_system_available_bytes": 8589934592,
+          "stall_timeout_seconds": 300,
+          "optimization_scope": "all",
+          "checkpoint_every": 1000,
+          "keep_checkpoints": 2,
+          "max_target_tokens": 512,
+          "loop_counts": [
+            2,
+            3
+          ],
+          "oracle_anchor_loops": 1,
+          "allow_recurrence_conversion": false,
+          "parent_kl_weight": 0.0,
+          "oracle_anchor_weight": 0.1,
+          "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+          "evidence_scope": "required",
+          "archive_dir": null,
+          "archive_keep_checkpoints": 3,
+          "min_free_disk_bytes": 10737418240,
+          "wandb_mode": "offline",
+          "wandb_project": "sdkb",
+          "wandb_entity": null,
+          "wandb_group": "binding-muon-continuation"
+        },
+        "seed": 43,
+        "learning_rate": 0.0001,
+        "optimizer": "native Muon",
+        "batch": 1280,
+        "train_worlds": 1024,
+        "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+        "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+      },
+      "independent_routing_query": true,
+      "notice": "Address-only overlay; base reader, payload writer and decoder remain frozen."
+    },
+    "read_count_policy": null,
+    "counts_by_family": {
+      "multiuse/action": {
+        "1": 128
+      },
+      "multiuse/identifier": {
+        "1": 64
+      },
+      "multiuse/permission": {
+        "1": 64
+      },
+      "multiuse/restoration": {
+        "1": 64
+      }
+    }
+  },
+  "full_fixed_two": {
+    "protocol": "World-scoped exact learned ranking of stored keys; frozen stored-only reads.",
+    "checkpoint": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "d40ad841e258133f1fdf185809e986b1bac5d1f2a9bb43f6dbe5c0ce7584d8d4",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.628125,
+        "mean_target_nll": 2.2768844267714785,
+        "complete_support_recall": 0.828125
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.859375,
+        "mean_target_nll": 0.9147615892510869,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.465625,
+        "mean_target_nll": 2.357086640214404,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.459375,
+        "mean_target_nll": 2.4517763898881184,
+        "complete_support_recall": 0.828125
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.428125,
+        "mean_target_nll": 3.478351436614017,
+        "complete_support_recall": 0.171875
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.40625,
+        "mean_target_nll": 2.7587301442221603,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.634375,
+        "mean_target_nll": 2.2812313808697273,
+        "complete_support_recall": 0.828125
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.646875,
+        "mean_target_nll": 2.2763633235516934,
+        "complete_support_recall": 0.821875
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 1.3014804147960433,
+          "complete_support_recall": 0.578125
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 2.4641773257238513e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.4921875,
+          "mean_target_nll": 0.9179718394110685,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 1.3810815699605017,
+          "complete_support_recall": 0.578125
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.484375,
+          "mean_target_nll": 2.34788067060763,
+          "complete_support_recall": 0.4296875
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 2.7587301442221603,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 1.3777234502218783,
+          "complete_support_recall": 0.578125
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.7265625,
+          "mean_target_nll": 1.2217905922766905,
+          "complete_support_recall": 0.5625
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 4.607867129407231,
+          "complete_support_recall": 0.984375
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.573797473760824,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.375,
+          "mean_target_nll": 6.122514733979626,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.626678891976675,
+          "complete_support_recall": 0.984375
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.60509803887634,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.3125,
+          "mean_target_nll": 4.601142871143326,
+          "complete_support_recall": 0.984375
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.34375,
+          "mean_target_nll": 4.593323362476769,
+          "complete_support_recall": 0.984375
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.671875,
+          "mean_target_nll": 3.198800725860756,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.981849716115036e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.453125,
+          "mean_target_nll": 2.8789048682804634,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 2.628729850185305,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 4.833763632225857,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.71875,
+          "mean_target_nll": 3.0537120923378263,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.6875,
+          "mean_target_nll": 3.3701186282500277,
+          "complete_support_recall": 1.0
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.75,
+          "mean_target_nll": 0.9747934489973193,
+          "complete_support_recall": 1.0
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 3.5622902423426694e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.9480699199897913,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 2.2413100673576096,
+          "complete_support_recall": 1.0
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 3.2571341707526287,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.734375,
+          "mean_target_nll": 0.9958550404237272,
+          "complete_support_recall": 1.0
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.75,
+          "mean_target_nll": 0.9747934424782887,
+          "complete_support_recall": 1.0
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.59375,
+          "appropriate_prediction_change": 0.65625,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.1875
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.609375,
+          "appropriate_prediction_change": 0.84375,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.03125
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.046875
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.359375,
+          "appropriate_prediction_change": 0.359375,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.484375,
+          "appropriate_prediction_change": 0.484375,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "read_evaluation_seconds": 194.80521803699958,
+    "resources": {
+      "process_peak_rss_bytes": 3421052928,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2035971072,
+      "cuda_peak_reserved_bytes": 2055208960,
+      "system_mem_available_bytes": 113859215360
+    },
+    "notice": "Selected-pair is an oracle control. Learned ranking receives all eligible world records, never required-support IDs. World membership is supplied; this is not cross-world retrieval or learned authorization.",
+    "routing": {
+      "read_budget": 2,
+      "candidate_scope": "supplied world membership",
+      "search": "exact scan, not ANN",
+      "interventions": "Zero values and counterfactuals preserve original read plans; support removal excludes the record before reranking."
+    },
+    "routing_probe": {
+      "probe_sha256": "2884bf2ef50fd26cfa4619e72e48595bb5eea29cb3ea1909e968cc93cb23d15c",
+      "identity": {
+        "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+        "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+        "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+        "steps": 800,
+        "train_config": {
+          "seed": 29,
+          "steps": 1600,
+          "learning_rate": 0.0001,
+          "backbone_learning_rate": 5e-06,
+          "optimizer": "muon",
+          "weight_decay": 0.01,
+          "adam_betas": [
+            0.9,
+            0.999
+          ],
+          "adam_eps": 1e-08,
+          "muon_momentum": 0.95,
+          "muon_ns_steps": 5,
+          "gradient_accumulation": 4,
+          "clip_grad_norm": 1.0,
+          "precision": "bf16",
+          "device": "cuda",
+          "replay": true,
+          "verify_replay": false,
+          "live_fraction": 1.0,
+          "train_worlds": 128,
+          "distractors": 2,
+          "eval_worlds": 16,
+          "log_every": 10,
+          "max_source_tokens": 512,
+          "max_prompt_tokens": 4096,
+          "arm": "memory",
+          "retrieval": "oracle",
+          "routing_weight": 0.1,
+          "routing_warmup": 100,
+          "threads": 8,
+          "cuda_memory_fraction": 0.35,
+          "min_system_available_bytes": 8589934592,
+          "stall_timeout_seconds": 300,
+          "optimization_scope": "all",
+          "checkpoint_every": 1000,
+          "keep_checkpoints": 2,
+          "max_target_tokens": 512,
+          "loop_counts": [
+            2,
+            3
+          ],
+          "oracle_anchor_loops": 1,
+          "allow_recurrence_conversion": false,
+          "parent_kl_weight": 0.0,
+          "oracle_anchor_weight": 0.1,
+          "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+          "evidence_scope": "required",
+          "archive_dir": null,
+          "archive_keep_checkpoints": 3,
+          "min_free_disk_bytes": 10737418240,
+          "wandb_mode": "offline",
+          "wandb_project": "sdkb",
+          "wandb_entity": null,
+          "wandb_group": "binding-muon-continuation"
+        },
+        "seed": 43,
+        "learning_rate": 0.0001,
+        "optimizer": "native Muon",
+        "batch": 1280,
+        "train_worlds": 1024,
+        "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+        "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+      },
+      "independent_routing_query": true,
+      "notice": "Address-only overlay; base reader, payload writer and decoder remain frozen."
+    },
+    "read_count_policy": null,
+    "counts_by_family": {
+      "multiuse/action": {
+        "2": 128
+      },
+      "multiuse/identifier": {
+        "2": 64
+      },
+      "multiuse/permission": {
+        "2": 64
+      },
+      "multiuse/restoration": {
+        "2": 64
+      }
+    }
+  },
+  "full_learned_count": {
+    "protocol": "World-scoped exact learned ranking of stored keys; frozen stored-only reads.",
+    "checkpoint": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "d40ad841e258133f1fdf185809e986b1bac5d1f2a9bb43f6dbe5c0ce7584d8d4",
+    "writes": {
+      "all": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "restoration": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      },
+      "permission": {
+        "unique_sources": 128,
+        "writer_calls": 128,
+        "queries": 320,
+        "worlds": 32
+      }
+    },
+    "summary": {
+      "all": {
+        "n": 320,
+        "choice_accuracy": 0.68125,
+        "mean_target_nll": 1.9157582684681553,
+        "complete_support_recall": 0.671875
+      },
+      "selected_pair": {
+        "n": 320,
+        "choice_accuracy": 0.859375,
+        "mean_target_nll": 0.9147615892510869,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 320,
+        "choice_accuracy": 0.465625,
+        "mean_target_nll": 2.357086640214404,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 320,
+        "choice_accuracy": 0.459375,
+        "mean_target_nll": 2.4532370983253076,
+        "complete_support_recall": 0.671875
+      },
+      "drop_0": {
+        "n": 320,
+        "choice_accuracy": 0.409375,
+        "mean_target_nll": 3.7457579414384368,
+        "complete_support_recall": 0.171875
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.40625,
+        "mean_target_nll": 2.7587301442221603,
+        "complete_support_recall": 0.0
+      },
+      "cf_restoration": {
+        "n": 320,
+        "choice_accuracy": 0.68125,
+        "mean_target_nll": 1.944410535785704,
+        "complete_support_recall": 0.671875
+      },
+      "cf_permission": {
+        "n": 320,
+        "choice_accuracy": 0.696875,
+        "mean_target_nll": 1.9519909949153036,
+        "complete_support_recall": 0.665625
+      }
+    },
+    "by_family": {
+      "multiuse/action": {
+        "all": {
+          "n": 128,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 1.3014804147960433,
+          "complete_support_recall": 0.578125
+        },
+        "selected_pair": {
+          "n": 128,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 2.4641773257238513e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 128,
+          "choice_accuracy": 0.4921875,
+          "mean_target_nll": 0.9179718394110685,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 128,
+          "choice_accuracy": 0.5,
+          "mean_target_nll": 1.3810815699605017,
+          "complete_support_recall": 0.578125
+        },
+        "drop_0": {
+          "n": 128,
+          "choice_accuracy": 0.484375,
+          "mean_target_nll": 2.34788067060763,
+          "complete_support_recall": 0.4296875
+        },
+        "drop_1": {
+          "n": 128,
+          "choice_accuracy": 0.40625,
+          "mean_target_nll": 2.7587301442221603,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 128,
+          "choice_accuracy": 0.703125,
+          "mean_target_nll": 1.3777234502218783,
+          "complete_support_recall": 0.578125
+        },
+        "cf_permission": {
+          "n": 128,
+          "choice_accuracy": 0.7265625,
+          "mean_target_nll": 1.2217905922766905,
+          "complete_support_recall": 0.5625
+        }
+      },
+      "multiuse/identifier": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.585443770696246,
+          "complete_support_recall": 0.6875
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.573797473760824,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.375,
+          "mean_target_nll": 6.122514733979626,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.622041153612118,
+          "complete_support_recall": 0.6875
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.614319626182791,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.296875,
+          "mean_target_nll": 4.585740825344645,
+          "complete_support_recall": 0.6875
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.328125,
+          "mean_target_nll": 4.567100053552597,
+          "complete_support_recall": 0.6875
+        }
+      },
+      "multiuse/permission": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.78125,
+          "mean_target_nll": 1.936769762072539,
+          "complete_support_recall": 0.640625
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 1.981849716115036e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.453125,
+          "mean_target_nll": 2.8789048682804634,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.53125,
+          "mean_target_nll": 2.6265408409601214,
+          "complete_support_recall": 0.640625
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.359375,
+          "mean_target_nll": 6.112307488916777,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.78125,
+          "mean_target_nll": 1.936769762072539,
+          "complete_support_recall": 0.640625
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.78125,
+          "mean_target_nll": 2.295656756490634,
+          "complete_support_recall": 0.640625
+        }
+      },
+      "multiuse/restoration": {
+        "all": {
+          "n": 64,
+          "choice_accuracy": 0.921875,
+          "mean_target_nll": 0.45361697997990547,
+          "complete_support_recall": 0.875
+        },
+        "selected_pair": {
+          "n": 64,
+          "choice_accuracy": 1.0,
+          "mean_target_nll": 3.5622902423426694e-06,
+          "complete_support_recall": 1.0
+        },
+        "none": {
+          "n": 64,
+          "choice_accuracy": 0.515625,
+          "mean_target_nll": 0.9480699199897913,
+          "complete_support_recall": 0.0
+        },
+        "zero_values": {
+          "n": 64,
+          "choice_accuracy": 0.4375,
+          "mean_target_nll": 2.2554403571332955,
+          "complete_support_recall": 0.875
+        },
+        "drop_0": {
+          "n": 64,
+          "choice_accuracy": 0.421875,
+          "mean_target_nll": 3.3064012508773555,
+          "complete_support_recall": 0.0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "choice_accuracy": 0.921875,
+          "mean_target_nll": 0.44409519106757855,
+          "complete_support_recall": 0.875
+        },
+        "cf_permission": {
+          "n": 64,
+          "choice_accuracy": 0.921875,
+          "mean_target_nll": 0.45361697997990547,
+          "complete_support_recall": 0.875
+        }
+      }
+    },
+    "counterfactuals_by_family": {
+      "multiuse/action": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.59375,
+          "appropriate_prediction_change": 0.65625,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.1875
+        },
+        "cf_permission": {
+          "change_pairs": 128,
+          "both_correct_on_change": 0.609375,
+          "appropriate_prediction_change": 0.84375,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/identifier": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.03125
+        }
+      },
+      "multiuse/permission": {
+        "cf_restoration": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        },
+        "cf_permission": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.78125,
+          "appropriate_prediction_change": 1.0,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        }
+      },
+      "multiuse/restoration": {
+        "cf_restoration": {
+          "change_pairs": 64,
+          "both_correct_on_change": 0.921875,
+          "appropriate_prediction_change": 1.0,
+          "unchanged_pairs": 0,
+          "false_change_rate": null
+        },
+        "cf_permission": {
+          "change_pairs": 0,
+          "both_correct_on_change": null,
+          "appropriate_prediction_change": null,
+          "unchanged_pairs": 64,
+          "false_change_rate": 0.0
+        }
+      }
+    },
+    "read_evaluation_seconds": 200.14351231399633,
+    "resources": {
+      "process_peak_rss_bytes": 4684943360,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2046454784,
+      "cuda_peak_reserved_bytes": 2076180480,
+      "system_mem_available_bytes": 50673659904
+    },
+    "notice": "Selected-pair is an oracle control. Learned ranking receives all eligible world records, never required-support IDs. World membership is supplied; this is not cross-world retrieval or learned authorization.",
+    "routing": {
+      "read_budget": 2,
+      "candidate_scope": "supplied world membership",
+      "search": "exact scan, not ANN",
+      "interventions": "Zero values and counterfactuals preserve original read plans; support removal excludes the record before reranking."
+    },
+    "routing_probe": {
+      "probe_sha256": "2884bf2ef50fd26cfa4619e72e48595bb5eea29cb3ea1909e968cc93cb23d15c",
+      "identity": {
+        "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+        "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+        "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+        "steps": 800,
+        "train_config": {
+          "seed": 29,
+          "steps": 1600,
+          "learning_rate": 0.0001,
+          "backbone_learning_rate": 5e-06,
+          "optimizer": "muon",
+          "weight_decay": 0.01,
+          "adam_betas": [
+            0.9,
+            0.999
+          ],
+          "adam_eps": 1e-08,
+          "muon_momentum": 0.95,
+          "muon_ns_steps": 5,
+          "gradient_accumulation": 4,
+          "clip_grad_norm": 1.0,
+          "precision": "bf16",
+          "device": "cuda",
+          "replay": true,
+          "verify_replay": false,
+          "live_fraction": 1.0,
+          "train_worlds": 128,
+          "distractors": 2,
+          "eval_worlds": 16,
+          "log_every": 10,
+          "max_source_tokens": 512,
+          "max_prompt_tokens": 4096,
+          "arm": "memory",
+          "retrieval": "oracle",
+          "routing_weight": 0.1,
+          "routing_warmup": 100,
+          "threads": 8,
+          "cuda_memory_fraction": 0.35,
+          "min_system_available_bytes": 8589934592,
+          "stall_timeout_seconds": 300,
+          "optimization_scope": "all",
+          "checkpoint_every": 1000,
+          "keep_checkpoints": 2,
+          "max_target_tokens": 512,
+          "loop_counts": [
+            2,
+            3
+          ],
+          "oracle_anchor_loops": 1,
+          "allow_recurrence_conversion": false,
+          "parent_kl_weight": 0.0,
+          "oracle_anchor_weight": 0.1,
+          "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+          "evidence_scope": "required",
+          "archive_dir": null,
+          "archive_keep_checkpoints": 3,
+          "min_free_disk_bytes": 10737418240,
+          "wandb_mode": "offline",
+          "wandb_project": "sdkb",
+          "wandb_entity": null,
+          "wandb_group": "binding-muon-continuation"
+        },
+        "seed": 43,
+        "learning_rate": 0.0001,
+        "optimizer": "native Muon",
+        "batch": 1280,
+        "train_worlds": 1024,
+        "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+        "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+      },
+      "independent_routing_query": true,
+      "notice": "Address-only overlay; base reader, payload writer and decoder remain frozen."
+    },
+    "read_count_policy": {
+      "policy_sha256": "a14dc6b73130085b992f22db4187d050c26e669a27483071d518e53c59a51b27",
+      "choices": [
+        1,
+        2
+      ],
+      "representation": "reader_query",
+      "parameters": 130,
+      "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+      "notice": "Frozen count classifier; no support-group labels are used during inference."
+    },
+    "counts_by_family": {
+      "multiuse/action": {
+        "2": 128
+      },
+      "multiuse/identifier": {
+        "1": 64
+      },
+      "multiuse/permission": {
+        "1": 64
+      },
+      "multiuse/restoration": {
+        "1": 64
+      }
+    }
+  }
+}
