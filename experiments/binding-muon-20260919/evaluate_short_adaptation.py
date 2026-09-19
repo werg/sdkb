@@ -16,7 +16,8 @@ for name, source in sources.items():
  view=root/name
  view.mkdir(exist_ok=True)
  link=view/'checkpoints'
- if not link.exists(): link.symlink_to(checkpoint.parent.resolve(), target_is_directory=True)
+ if not link.exists():
+  link.symlink_to(checkpoint.parent.resolve(), target_is_directory=True)
  (view/'CURRENT').write_text(checkpoint.name+'\n')
  result=evaluate_transfer_run(view, '/runs/binding-pilot-20260919/data/validation.jsonl',
    drop_supports=True, binding_counterfactuals=True)
