@@ -1,0 +1,21 @@
+{
+  "commit": "dbb3435",
+  "native_bf16_muon": true,
+  "interrupted_step": 21,
+  "final_step": 40,
+  "equal_keys": [
+    "head",
+    "optimizer",
+    "sampling_rng",
+    "torch_rng",
+    "cuda_rng",
+    "parameter_names",
+    "step"
+  ],
+  "reconciled_metric_steps": [
+    20,
+    40
+  ],
+  "driver_sha256": "b2f94cfab6b6379ae18bba1dae73ebefe4e9f0c5c6c61f236382cbec2009e881",
+  "notice": "Frozen-feature count probe; no backbone training or new capability claim."
+}

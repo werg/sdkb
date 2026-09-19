@@ -232,3 +232,10 @@ Standalone bank and compact-code publication now survive interruption atomically
 Native BF16 validation interrupted after bank creation, resumed with writer calls
 forbidden, and preserved every bank hash and completed report on another restart.
 Evidence: `experiments/operations-20260919/compact-bank-resume.json`.
+
+
+Expanding the same frozen router to all 32 worlds (128 records) exposes a global
+addressing failure: action choices fall from 90/128 to 50/128, full required-pair
+retrieval from 62/128 to 0/128, and free actions match the zero-value control at
+16/32. Oracle/no-memory controls and the existing bank are unchanged. See the
+[global routing diagnostic](../experiments/binding-global-routing-20260919/README.md).

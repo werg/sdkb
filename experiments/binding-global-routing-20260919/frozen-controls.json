@@ -1,0 +1,13 @@
+{
+  "one_world_scores_match_previous": 1280,
+  "matched_fields": [
+    "answer",
+    "selected_ids",
+    "choice_correct",
+    "target_mean_nll",
+    "target_sequence_nll",
+    "predicted_action",
+    "choice_sequence_nll"
+  ],
+  "oracle_and_no_memory_rows_match_across_pools": 640
+}
