@@ -71,7 +71,8 @@ def build_shared_bank(agent, store: DiskStore, episodes: list[Episode], *, names
 def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode], *,
                                namespace: str = 'global', generation: str = 'frozen-v1',
                                compact: bool = False, drop_supports: bool = False, cluster_bank=None,
-                               fixed_plans_by_episode=None, capture_plans=None) -> dict:
+                               fixed_plans_by_episode=None, capture_plans=None,
+                               full_evidence_only: bool = False) -> dict:
     """Never calls the writer. Retrieval competes across worlds in a shared bank."""
     if agent.training:
         raise ValueError('Evaluation requires frozen weights')
@@ -81,13 +82,15 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
             original_plans = (None if fixed_plans_by_episode is None else
                               [[replace(p, namespace=namespace) for p in step]
                                for step in fixed_plans_by_episode[episode.episode_id]])
-            conditions = ['all', 'none', 'zero_values']
-            if compact:
-                conditions.append('compact')
-            if cluster_bank is not None:
-                conditions.append('persistent')
-            if drop_supports:
-                conditions.extend(f'drop_{i}' for i in range(len(episode.required_ids)))
+            conditions = ['all']
+            if not full_evidence_only:
+                conditions.extend(('none', 'zero_values'))
+                if compact:
+                    conditions.append('compact')
+                if cluster_bank is not None:
+                    conditions.append('persistent')
+                if drop_supports:
+                    conditions.extend(f'drop_{i}' for i in range(len(episode.required_ids)))
             for condition in conditions:
                 arm = agent.config.train.arm
                 excluded = frozenset([episode.required_ids[int(condition.split('_')[1])]]) if condition.startswith('drop_') else frozenset()
@@ -172,6 +175,7 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
             build_shared_bank(agent, store, variants, namespace=f"flip-{bit}")
             variant_results = stored_transfer_evaluation(agent, DiskStore(store.path), variants,
                                                          namespace=f"flip-{bit}",
+                                                         full_evidence_only=True,
                                                          fixed_plans_by_episode=original_plans if config.train.arm in {'memory', 'direct_latent'} else None)
             for row in variant_results["rows"]:
                 if row["condition"] == "all":

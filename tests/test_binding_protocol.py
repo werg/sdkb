@@ -35,7 +35,14 @@ def test_binding_counterfactual_preserves_world_identity_and_shared_sources(kind
     assert changed and (unchanged or kind == 'permission')
 
 
-def test_binding_curriculum_uses_separate_worlds_and_evaluates_counterfactuals(tmp_path, tiny_config):
+def test_binding_curriculum_uses_separate_worlds_and_evaluates_counterfactuals(tmp_path, tiny_config, monkeypatch):
+    import sdkb.evaluation as evaluation
+    calls, original = [], evaluation.stored_transfer_evaluation
+    def observe(*args, **kwargs):
+        result = original(*args, **kwargs)
+        calls.append((kwargs.get('full_evidence_only', False), {r['condition'] for r in result['rows']}))
+        return result
+    monkeypatch.setattr(evaluation, 'stored_transfer_evaluation', observe)
     tiny_config.train.max_prompt_tokens = 1500
     config = tmp_path / 'base.yaml'
     config.write_text(yaml.safe_dump(asdict(tiny_config)))
@@ -54,6 +61,8 @@ def test_binding_curriculum_uses_separate_worlds_and_evaluates_counterfactuals(t
     report = json.loads((out / 'multiuse-evaluation.json').read_text())
     assert set(report['counterfactuals']) == {'cf_restoration', 'cf_permission'}
     assert 'drop_0' in report['summary']
+    assert [flag for flag, _ in calls] == [False, True, True, False, True, True]
+    assert all(conditions == {'all'} for flag, conditions in calls if flag)
     assert launch(recipe, out, resume=True)['status'] == 'complete'
     script = Path(__file__).parents[1] / 'scripts/evaluate_binding_context.py'
     spec = importlib.util.spec_from_file_location('binding_context', script)
@@ -69,3 +78,16 @@ def test_binding_curriculum_uses_separate_worlds_and_evaluates_counterfactuals(t
     dropped = [r for r in action_rows if r['condition'].startswith('drop_') and r['answer'] != 'STOP']
     assert dropped and all(r['selected_record_count'] == 3 and not r['complete_support'] for r in dropped)
     assert result['writes']['all']['writer_calls'] == 4
+
+
+def test_full_evidence_fast_path_matches_reference_rows(tmp_path, tiny_config):
+    from sdkb.agent import SDKBAgent
+    from sdkb.evaluation import build_shared_bank, stored_transfer_evaluation
+    from sdkb.store import DiskStore
+    episodes = make_multiuse_world(2, bindings=2)
+    agent = SDKBAgent(tiny_config).eval()
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    build_shared_bank(agent, store, episodes)
+    reference = stored_transfer_evaluation(agent, store, episodes)
+    fast = stored_transfer_evaluation(agent, store, episodes, full_evidence_only=True)
+    assert fast['rows'] == [r for r in reference['rows'] if r['condition'] == 'all']
