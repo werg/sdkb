@@ -17,3 +17,9 @@ training reaches 86/128 complete heldout action pairs after 3,200 updates, versu
 45/128 after 800 and 3/128 for the long within-world control. These are not yet
 stored task outcomes; the frozen native bank comparison is the required next test.
 No new model copies or periodic checkpoints are created; artifacts stay external.
+
+A targeted-source follow-up additionally changes only the specific required rule
+record. The original type-wide flip can also affect wrong-world selections; targeted
+interventions isolate whether the intended evidence controls the answer. They keep
+original learned selections and every unrelated stored payload fixed and must leave
+predictions exactly unchanged when the target was not retrieved.

@@ -254,3 +254,10 @@ output path for offline rebuilding. This optional path is used by the standalone
 compactor probe and confirmation builders; ordinary immutable inserts retain their
 previous behavior. Compact-code markers, lineage and membership publish in one
 writer transaction, including the disjointness and live-child checks.
+
+Evaluation can also substitute only explicitly designated payloads from an offline
+counterfactual bank. `TargetedPayloadStore` requires captured fixed plans, validates
+original visibility first, and checks alternative visibility, source/time provenance,
+shape and serialized precision before replacement. Every unselected or untargeted
+record remains the original payload. Target IDs are intervention annotations used
+only by the diagnostic, not model inputs, routing hints or authorization decisions.

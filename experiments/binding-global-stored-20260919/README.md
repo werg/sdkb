@@ -57,3 +57,14 @@ pairs score 25/64 versus 12/64; invariant restoration answers falsely change for
 action grid. Cross-world training makes some stored evidence useful, but global
 composition and conditional behavior remain unreliable. This is not an agent or
 parameter-substitution result.
+
+### Stronger targeted-source follow-up
+
+The rule-type counterfactual above changes that type throughout the bank. A wrongly
+retrieved source from another world can therefore also change, so those counts alone
+do not establish dependence on the specific required source. A new follow-up changes
+only the query-required permission or restoration record, retaining base payloads
+for every other ID and the exact original learned selection. Both banks' visibility
+and provenance are checked. If the target was not selected, scores and generation
+must equal the original exactly. Keep this stricter result separate from the original
+whole-bank rule-flip record; do not silently replace its numbers.
