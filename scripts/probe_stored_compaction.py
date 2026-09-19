@@ -22,6 +22,7 @@ from sdkb.evaluation import build_shared_bank, stored_transfer_evaluation
 from sdkb.evaluation_adapter import load_frozen_agent
 from sdkb.operations import atomic_json, control_dir, run_lock, stop_requested
 from sdkb.optimizers import MuonAdamW
+from sdkb.recurrence import LoopMemory
 from sdkb.runtime import configure_memory, available_host_memory, memory_metrics, compute_watchdog
 from sdkb.store import DiskStore, ReadPlan, Selection
 from sdkb.tracking import Tracking
@@ -45,6 +46,14 @@ def serialized_codes(compactor, raw):
     """Differentiable cast reproduces the persisted BF16-value/FP32-mass forward."""
     values, weights = compactor(raw, raw.new_ones(raw.shape[:2]))
     return values.bfloat16().float(), weights.float()
+
+
+def single_read_memory(agent, prompt, tokens):
+    """Replay one completed first-boundary aggregate at every later core pass."""
+    if agent.config.memory.read_steps != 1 or agent.config.memory.read_timing != 'loop_boundary':
+        raise ValueError('Cached first-query compactor fitting requires exactly one recurrent read')
+    return LoopMemory(prompt.shape[1], agent.config.memory.read_slots, agent.backbone.loops,
+                      (tokens,) * (agent.backbone.loops - 1))
 
 
 @torch.no_grad()
@@ -112,9 +121,9 @@ def persist_codes(agent, compactor, store, episodes, view):
     return bank
 
 
-def run(source, train_file, output, steps=400, batch_size=32, seed=59):
-    if steps < 1 or batch_size < 1:
-        raise ValueError('Positive optimizer steps and batch size required')
+def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=None, task_weight=0.):
+    if steps < 1 or batch_size < 1 or task_weight < 0:
+        raise ValueError('Positive steps/batch size and nonnegative task weight required')
     output.mkdir(parents=True, exist_ok=True)
     with run_lock(output, clear_stop=False):
         checkpoint = resolve_checkpoint(source, verify=True)
@@ -133,7 +142,8 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
         config.train.retrieval = 'oracle'
         config.train.evidence_scope = 'required'
         config.train.episodes_file = str(train_file)
-        config.train.wandb_group = 'frozen-reader-posthoc-compaction'
+        config.train.wandb_group = ('frozen-reader-compaction-continuation' if initial is not None else
+                                    'frozen-reader-posthoc-compaction')
         configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
         torch.manual_seed(seed)
@@ -147,6 +157,8 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
                     'batch_size': batch_size, 'steps': steps, 'seed': seed,
                     'compactor': {'width': config.memory.reader_width, 'records': 1},
                     'frozen_base_model': True, 'optimizer_ownership': 'SyntheticCompactor only',
+                    'initial_compactor_sha256': file_sha256(initial) if initial else None,
+                    'task_nll_weight': task_weight,
                     'script_sha256': file_sha256(__file__), 'reader_hash': state_fingerprint(agent.reader),
                     'objective': 'conditional numerator/mass and free reader rollout on serialized BF16 codes'}
         if (output / 'inputs.json').exists() and json.loads((output / 'inputs.json').read_text()) != identity:
@@ -166,6 +178,15 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
             raise AssertionError('Writer invoked after offline feature/bank creation')
         agent.produce = forbidden
         compactor = SyntheticCompactor(config.memory.payload_dims[0], config.memory.reader_width, 1).to(agent.device)
+        if initial is not None:
+            previous = torch.load(initial, weights_only=True, map_location=agent.device)
+            if (previous['step'] != previous['identity']['steps'] or
+                    previous['identity']['checkpoint_manifest_sha256'] != identity['checkpoint_manifest_sha256']):
+                raise ValueError('Initial compactor must be complete and bound to this frozen base')
+            compactor.load_state_dict(previous['compactor'])
+        training_actions = [e for e in episodes['train'] if len(e.required_ids) == 2]
+        if len(training_actions) != len(data['train']['raw']):
+            raise ValueError('Feature/episode alignment changed')
         names = [[n for n, p in compactor.named_parameters() if (p.ndim == 2) == matrix]
                  for matrix in (True, False)]
         named = dict(compactor.named_parameters())
@@ -213,12 +234,26 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
                     with autocast_context(config):
                         values, weights = serialized_codes(compactor, raw)
                         loss = contribution_loss(agent.reader, raw, raw.new_ones(raw.shape[:2]), values, weights, query)
-                    loss.backward()
+                    loss.backward(retain_graph=bool(task_weight))
+                    task_total = 0.
+                    if task_weight:
+                        for offset, index in enumerate(indices.tolist()):
+                            episode = training_actions[index]
+                            prompt = agent.prompt_ids(episode.query)
+                            with autocast_context(config):
+                                tokens = agent.reader(values[offset:offset + 1], query[offset:offset + 1],
+                                                      weights[offset:offset + 1]).tokens
+                                memory = single_read_memory(agent, prompt, tokens)
+                                nll = agent.conditioned_nll(prompt, agent.target_ids(episode.answer), memory)
+                            (task_weight * nll / len(indices)).backward(retain_graph=offset + 1 < len(indices))
+                            task_total += nll.item() / len(indices)
                     torch.nn.utils.clip_grad_norm_(compactor.parameters(), 1., error_if_nonfinite=True)
                     optimizer.step()
                 completed += 1
                 if completed % 20 == 0:
-                    row = {'step': completed, 'loss': loss.item(), **memory_metrics(config.train.device)}
+                    row = {'step': completed, 'loss': loss.item() + task_weight * task_total,
+                           'contribution_loss': loss.item(), 'task_nll': task_total if task_weight else None,
+                           **memory_metrics(config.train.device)}
                     with (output / 'metrics.jsonl').open('a') as handle:
                         handle.write(json.dumps(row) + '\n')
                     tracking.log(row)
@@ -266,9 +301,13 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--steps', type=int, default=400)
     parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--seed', type=int, default=59)
+    parser.add_argument('--initial-compactor', type=Path)
+    parser.add_argument('--task-weight', type=float, default=0.)
     args = parser.parse_args()
     def stop(_signal, _frame):
         (control_dir(args.output) / 'STOP').touch()
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
-    run(args.source, args.train, args.output, args.steps, args.batch_size)
+    run(args.source, args.train, args.output, args.steps, args.batch_size, args.seed,
+        args.initial_compactor, args.task_weight)
