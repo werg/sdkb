@@ -1,0 +1,748 @@
+{
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "episodes_sha256": "842108f3b3b2447965f0dff72e01b1d03d6fe85d85965709dec7b6b66aef1896",
+  "bank_sha256": "5c27f97ea697e29db2634689069437808130fd410e83ffd76aeeb98ddb143ae5",
+  "batch_size": 4,
+  "queries": 40,
+  "rows": [
+    {
+      "episode": "fc187c63504823fa",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        25.250003814697266,
+        8.344647994817933e-07
+      ],
+      "batched_nll": [
+        25.125003814697266,
+        8.344647994817933e-07
+      ],
+      "maximum_absolute_nll_error": 0.125,
+      "same_choice": true,
+      "serial_seconds": 0.12401669200335164,
+      "batched_seconds": 0.08251428500807378
+    },
+    {
+      "episode": "a3e6dea5c13880b7",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        14.250004768371582,
+        5.245202373771463e-06
+      ],
+      "batched_nll": [
+        14.125004768371582,
+        5.841246547788614e-06
+      ],
+      "maximum_absolute_nll_error": 0.125,
+      "same_choice": true,
+      "serial_seconds": 0.12674524300382473,
+      "batched_seconds": 0.07550873199943453
+    },
+    {
+      "episode": "e7703c478858d95a",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        33.12006378173828,
+        26.00782012939453,
+        30.737998962402344
+      ],
+      "batched_nll": [
+        32.55063247680664,
+        25.72011375427246,
+        30.78937530517578
+      ],
+      "maximum_absolute_nll_error": 0.5694313049316406,
+      "same_choice": true,
+      "serial_seconds": 0.19916998299595434,
+      "batched_seconds": 0.07886405198951252
+    },
+    {
+      "episode": "9ccc702165736aea",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        3.6954836559743853e-06,
+        20.125003814697266,
+        26.75004768371582
+      ],
+      "batched_nll": [
+        3.6954836559743853e-06,
+        20.125003814697266,
+        26.81255340576172
+      ],
+      "maximum_absolute_nll_error": 0.06250572204589844,
+      "same_choice": true,
+      "serial_seconds": 0.19641508100903593,
+      "batched_seconds": 0.08681151099153794
+    },
+    {
+      "episode": "1d69279f7529b172",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        14.125004768371582,
+        8.940681254898664e-06,
+        18.125038146972656
+      ],
+      "batched_nll": [
+        14.375004768371582,
+        7.629383162566228e-06,
+        18.375032424926758
+      ],
+      "maximum_absolute_nll_error": 0.25,
+      "same_choice": true,
+      "serial_seconds": 0.18560028499632608,
+      "batched_seconds": 0.08450573100708425
+    },
+    {
+      "episode": "c64aec142830373d",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        6.3180750657920726e-06,
+        13.500005722045898
+      ],
+      "batched_nll": [
+        5.006779247196391e-06,
+        13.625004768371582
+      ],
+      "maximum_absolute_nll_error": 0.1249990463256836,
+      "same_choice": true,
+      "serial_seconds": 0.1212130369967781,
+      "batched_seconds": 0.07247251599619631
+    },
+    {
+      "episode": "49f222e54da84a60",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        13.500005722045898,
+        6.9141269705141895e-06
+      ],
+      "batched_nll": [
+        13.500005722045898,
+        6.914126061019488e-06
+      ],
+      "maximum_absolute_nll_error": 9.094947017729282e-13,
+      "same_choice": true,
+      "serial_seconds": 0.12191137499758042,
+      "batched_seconds": 0.07251074000669178
+    },
+    {
+      "episode": "f903b65f252137bf",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        24.823646545410156,
+        22.072229385375977,
+        21.458396911621094
+      ],
+      "batched_nll": [
+        24.500701904296875,
+        22.162267684936523,
+        21.554641723632812
+      ],
+      "maximum_absolute_nll_error": 0.32294464111328125,
+      "same_choice": true,
+      "serial_seconds": 0.18916074201115407,
+      "batched_seconds": 0.08316817499871831
+    },
+    {
+      "episode": "1241f4830a9f97e0",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        15.625011444091797,
+        1.3709013728657737e-05,
+        21.62505340576172
+      ],
+      "batched_nll": [
+        15.750011444091797,
+        1.3947430488769896e-05,
+        21.812543869018555
+      ],
+      "maximum_absolute_nll_error": 0.18749046325683594,
+      "same_choice": true,
+      "serial_seconds": 0.20196735000354238,
+      "batched_seconds": 0.084762498998316
+    },
+    {
+      "episode": "9100d88e6b2fe9ad",
+      "environment": "world_8bd040f8",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        6.914121058798628e-06,
+        15.12501049041748,
+        20.375022888183594
+      ],
+      "batched_nll": [
+        8.344622983713634e-06,
+        15.000012397766113,
+        20.125024795532227
+      ],
+      "maximum_absolute_nll_error": 0.2499980926513672,
+      "same_choice": true,
+      "serial_seconds": 0.18798389099538326,
+      "batched_seconds": 0.08291142199595924
+    },
+    {
+      "episode": "8ca1f584f493e17a",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        24.5625057220459,
+        1.5497197409786168e-06
+      ],
+      "batched_nll": [
+        24.75000762939453,
+        1.1920923270736239e-06
+      ],
+      "maximum_absolute_nll_error": 0.1875019073486328,
+      "same_choice": true,
+      "serial_seconds": 0.11583929599146359,
+      "batched_seconds": 0.06576387600216549
+    },
+    {
+      "episode": "5570da957a8717ca",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        7.271743470482761e-06,
+        19.062519073486328
+      ],
+      "batched_nll": [
+        5.483614586410113e-06,
+        19.18752098083496
+      ],
+      "maximum_absolute_nll_error": 0.1250019073486328,
+      "same_choice": true,
+      "serial_seconds": 0.1404864770011045,
+      "batched_seconds": 0.06233674600662198
+    },
+    {
+      "episode": "e7dcf5e109da107d",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        26.542682647705078,
+        27.7811279296875,
+        30.145774841308594
+      ],
+      "batched_nll": [
+        26.53484535217285,
+        27.85721778869629,
+        30.022411346435547
+      ],
+      "maximum_absolute_nll_error": 0.12336349487304688,
+      "same_choice": true,
+      "serial_seconds": 0.18590815798961557,
+      "batched_seconds": 0.08481185900745913
+    },
+    {
+      "episode": "f5e54b361fdefbd0",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        3.4570653042464983e-06,
+        20.875003814697266,
+        22.375024795532227
+      ],
+      "batched_nll": [
+        3.0994383450888563e-06,
+        21.000003814697266,
+        22.62502098083496
+      ],
+      "maximum_absolute_nll_error": 0.24999618530273438,
+      "same_choice": true,
+      "serial_seconds": 0.20151546099805273,
+      "batched_seconds": 0.08017644000938162
+    },
+    {
+      "episode": "6a5e058f64a24cc9",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        25.875003814697266,
+        23.000009536743164,
+        2.1219188056420535e-05
+      ],
+      "batched_nll": [
+        26.062503814697266,
+        22.937509536743164,
+        1.7881349776871502e-05
+      ],
+      "maximum_absolute_nll_error": 0.1875,
+      "same_choice": true,
+      "serial_seconds": 0.19236942200222984,
+      "batched_seconds": 0.08597923800698482
+    },
+    {
+      "episode": "7e439d9987bd2933",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        5.245196916803252e-06,
+        13.750005722045898
+      ],
+      "batched_nll": [
+        5.3644052968593314e-06,
+        13.750004768371582
+      ],
+      "maximum_absolute_nll_error": 9.5367431640625e-07,
+      "same_choice": true,
+      "serial_seconds": 0.1291457769984845,
+      "batched_seconds": 0.07856478699250147
+    },
+    {
+      "episode": "ce180eec0313c6d1",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        14.250005722045898,
+        8.344630259671248e-06
+      ],
+      "batched_nll": [
+        13.875006675720215,
+        8.82146559888497e-06
+      ],
+      "maximum_absolute_nll_error": 0.3749990463256836,
+      "same_choice": true,
+      "serial_seconds": 0.10867020599835087,
+      "batched_seconds": 0.04587153799366206
+    },
+    {
+      "episode": "deba055a815ea58f",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        27.934112548828125,
+        35.28544998168945,
+        34.07129669189453
+      ],
+      "batched_nll": [
+        28.003650665283203,
+        35.3011589050293,
+        34.29039001464844
+      ],
+      "maximum_absolute_nll_error": 0.21909332275390625,
+      "same_choice": true,
+      "serial_seconds": 0.1939990899991244,
+      "batched_seconds": 0.08219846000429243
+    },
+    {
+      "episode": "aa0e93b4b8ffce72",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        16.3750057220459,
+        7.987006938492414e-06,
+        22.312557220458984
+      ],
+      "batched_nll": [
+        16.0000057220459,
+        8.702258128323592e-06,
+        22.00005531311035
+      ],
+      "maximum_absolute_nll_error": 0.375,
+      "same_choice": true,
+      "serial_seconds": 0.1914095480024116,
+      "batched_seconds": 0.059327315000700764
+    },
+    {
+      "episode": "aebd663f9d1d89b2",
+      "environment": "world_05c27e22",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        6.675703389191767e-06,
+        14.375009536743164,
+        19.625022888183594
+      ],
+      "batched_nll": [
+        7.0333289841073565e-06,
+        14.250009536743164,
+        19.625022888183594
+      ],
+      "maximum_absolute_nll_error": 0.125,
+      "same_choice": true,
+      "serial_seconds": 0.1469073250045767,
+      "batched_seconds": 0.05042983699240722
+    },
+    {
+      "episode": "7a48216f0be43b92",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        7.033326710370602e-06,
+        13.250007629394531
+      ],
+      "batched_nll": [
+        6.3180750657920726e-06,
+        13.250007629394531
+      ],
+      "maximum_absolute_nll_error": 7.152516445785295e-07,
+      "same_choice": true,
+      "serial_seconds": 0.09938227898965124,
+      "batched_seconds": 0.05917712301015854
+    },
+    {
+      "episode": "387217ed4afb64cd",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        13.625005722045898,
+        7.152541911636945e-06
+      ],
+      "batched_nll": [
+        13.500004768371582,
+        7.152542821131647e-06
+      ],
+      "maximum_absolute_nll_error": 0.1250009536743164,
+      "same_choice": true,
+      "serial_seconds": 0.12912564899306744,
+      "batched_seconds": 0.07500004199391697
+    },
+    {
+      "episode": "d0fc71f01b748717",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        22.857933044433594,
+        29.476058959960938,
+        50.191429138183594
+      ],
+      "batched_nll": [
+        22.704206466674805,
+        29.75082778930664,
+        50.33068084716797
+      ],
+      "maximum_absolute_nll_error": 0.2747688293457031,
+      "same_choice": true,
+      "serial_seconds": 0.1924275510100415,
+      "batched_seconds": 0.08119605798856355
+    },
+    {
+      "episode": "38da54c7d78a40aa",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        15.500019073486328,
+        2.2172760509420186e-05,
+        22.125062942504883
+      ],
+      "batched_nll": [
+        15.500014305114746,
+        1.9073360817856155e-05,
+        22.250059127807617
+      ],
+      "maximum_absolute_nll_error": 0.12499618530273438,
+      "same_choice": true,
+      "serial_seconds": 0.19525210099527612,
+      "batched_seconds": 0.08155308300047182
+    },
+    {
+      "episode": "a8feceafeae93a5c",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        8.463831363769714e-06,
+        15.500012397766113,
+        18.750024795532227
+      ],
+      "batched_nll": [
+        8.583040653320495e-06,
+        15.500011444091797,
+        18.750022888183594
+      ],
+      "maximum_absolute_nll_error": 1.9073486328125e-06,
+      "same_choice": true,
+      "serial_seconds": 0.19898199799354188,
+      "batched_seconds": 0.0821997890016064
+    },
+    {
+      "episode": "20b8c524bf09f78c",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        6.675700205960311e-06,
+        13.375007629394531
+      ],
+      "batched_nll": [
+        6.1988653214939404e-06,
+        13.500006675720215
+      ],
+      "maximum_absolute_nll_error": 0.1249990463256836,
+      "same_choice": true,
+      "serial_seconds": 0.1327204580011312,
+      "batched_seconds": 0.07208845099376049
+    },
+    {
+      "episode": "fa6906a54d5d25b8",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        7.271742560988059e-06,
+        18.62502098083496
+      ],
+      "batched_nll": [
+        7.0333258008759e-06,
+        18.687522888183594
+      ],
+      "maximum_absolute_nll_error": 0.06250190734863281,
+      "same_choice": true,
+      "serial_seconds": 0.10490936400310602,
+      "batched_seconds": 0.06779544899472967
+    },
+    {
+      "episode": "f568035a0505cb3d",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        28.084115982055664,
+        33.3518180847168,
+        51.423274993896484
+      ],
+      "batched_nll": [
+        27.22882652282715,
+        33.23210906982422,
+        51.432891845703125
+      ],
+      "maximum_absolute_nll_error": 0.8552894592285156,
+      "same_choice": true,
+      "serial_seconds": 0.14023626899870578,
+      "batched_seconds": 0.059883844005526043
+    },
+    {
+      "episode": "d648b504d832739a",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        19.000003814697266,
+        13.750006675720215,
+        1.859660005720798e-05
+      ],
+      "batched_nll": [
+        19.250003814697266,
+        14.125005722045898,
+        1.931184669956565e-05
+      ],
+      "maximum_absolute_nll_error": 0.3749990463256836,
+      "same_choice": true,
+      "serial_seconds": 0.1432868679985404,
+      "batched_seconds": 0.06332105399633292
+    },
+    {
+      "episode": "8f37831c23488c31",
+      "environment": "world_2301f2d5",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        1.2516928109107539e-05,
+        17.625015258789062,
+        14.000021934509277
+      ],
+      "batched_nll": [
+        1.239771972905146e-05,
+        17.500017166137695,
+        13.750021934509277
+      ],
+      "maximum_absolute_nll_error": 0.25,
+      "same_choice": true,
+      "serial_seconds": 0.19172226900991518,
+      "batched_seconds": 0.08654311099962797
+    },
+    {
+      "episode": "a45cb09766a4256c",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        5.722031346522272e-06,
+        13.625005722045898
+      ],
+      "batched_nll": [
+        6.914117875567172e-06,
+        13.437506675720215
+      ],
+      "maximum_absolute_nll_error": 0.1874990463256836,
+      "same_choice": true,
+      "serial_seconds": 0.12630330500542186,
+      "batched_seconds": 0.06938300500041805
+    },
+    {
+      "episode": "837614df2a188a7e",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        6.198867140483344e-06,
+        19.437517166137695
+      ],
+      "batched_nll": [
+        5.125988991494523e-06,
+        19.562515258789062
+      ],
+      "maximum_absolute_nll_error": 0.12499809265136719,
+      "same_choice": true,
+      "serial_seconds": 0.1574269350094255,
+      "batched_seconds": 0.07529745099600405
+    },
+    {
+      "episode": "895462e61cff808a",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        29.875545501708984,
+        31.337726593017578,
+        41.14690017700195
+      ],
+      "batched_nll": [
+        30.101083755493164,
+        31.216121673583984,
+        40.69633865356445
+      ],
+      "maximum_absolute_nll_error": 0.4505615234375,
+      "same_choice": true,
+      "serial_seconds": 0.21528915900853463,
+      "batched_seconds": 0.0879073700052686
+    },
+    {
+      "episode": "00a97339d0a87858",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        17.87501335144043,
+        12.125014305114746,
+        3.194792952854186e-05
+      ],
+      "batched_nll": [
+        17.750011444091797,
+        12.250014305114746,
+        2.8252481570234522e-05
+      ],
+      "maximum_absolute_nll_error": 0.1250019073486328,
+      "same_choice": true,
+      "serial_seconds": 0.2253643839940196,
+      "batched_seconds": 0.09181598799477797
+    },
+    {
+      "episode": "2fcb185b8c27cc78",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        7.033334441075567e-06,
+        17.62501335144043,
+        15.750019073486328
+      ],
+      "batched_nll": [
+        7.390960490738507e-06,
+        17.500015258789062,
+        15.875019073486328
+      ],
+      "maximum_absolute_nll_error": 0.125,
+      "same_choice": true,
+      "serial_seconds": 0.22607915400294587,
+      "batched_seconds": 0.10054373799357563
+    },
+    {
+      "episode": "1e0b4558a55597a4",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/permission",
+      "serial_nll": [
+        6.675701570202364e-06,
+        13.375006675720215
+      ],
+      "batched_nll": [
+        6.6757020249497145e-06,
+        13.250007629394531
+      ],
+      "maximum_absolute_nll_error": 0.1249990463256836,
+      "same_choice": true,
+      "serial_seconds": 0.13898335400153883,
+      "batched_seconds": 0.08603519000462256
+    },
+    {
+      "episode": "f270fc298c9a6590",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/restoration",
+      "serial_nll": [
+        12.375016212463379,
+        1.5020294085843489e-05
+      ],
+      "batched_nll": [
+        12.375016212463379,
+        1.7762080460670404e-05
+      ],
+      "maximum_absolute_nll_error": 2.7417863748269156e-06,
+      "same_choice": true,
+      "serial_seconds": 0.12434579699765891,
+      "batched_seconds": 0.07249771700298879
+    },
+    {
+      "episode": "f676f8f05ae5eebe",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/identifier",
+      "serial_nll": [
+        28.479251861572266,
+        33.79056167602539,
+        39.948333740234375
+      ],
+      "batched_nll": [
+        28.885454177856445,
+        33.936058044433594,
+        40.16383361816406
+      ],
+      "maximum_absolute_nll_error": 0.4062023162841797,
+      "same_choice": true,
+      "serial_seconds": 0.19183146800787654,
+      "batched_seconds": 0.08038512800703757
+    },
+    {
+      "episode": "06eee9068c9e7280",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        15.875015258789062,
+        1.859654366853647e-05,
+        21.750049591064453
+      ],
+      "batched_nll": [
+        15.500018119812012,
+        2.1815150830661878e-05,
+        21.75005531311035
+      ],
+      "maximum_absolute_nll_error": 0.3749971389770508,
+      "same_choice": true,
+      "serial_seconds": 0.1883553480001865,
+      "batched_seconds": 0.08890474900545087
+    },
+    {
+      "episode": "7d2e4981c2cd68ba",
+      "environment": "world_a15a614d",
+      "task_family": "multiuse/action",
+      "serial_nll": [
+        8.106206223601475e-06,
+        15.250012397766113,
+        20.250022888183594
+      ],
+      "batched_nll": [
+        7.033329893602058e-06,
+        15.375011444091797,
+        20.500022888183594
+      ],
+      "maximum_absolute_nll_error": 0.25,
+      "same_choice": true,
+      "serial_seconds": 0.1894109030108666,
+      "batched_seconds": 0.08646939799655229
+    }
+  ],
+  "changed_choices": 0,
+  "maximum_absolute_nll_error": 0.8552894592285156,
+  "median_serial_seconds": 0.18575422149297083,
+  "median_batched_seconds": 0.0802807840082096,
+  "resources": {
+    "host_available_bytes": 69596016640,
+    "cuda_allocated_bytes": 1027979264,
+    "cuda_reserved_bytes": 2063597568,
+    "cuda_attempt_peak_allocated_bytes": 2035708928
+  },
+  "notice": "Warm per-question shapes and captured memory; alternating timing order on a contended GPU. No cold storage, global throughput, bit-exact BF16 or automatic adoption claim."
+}
