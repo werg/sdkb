@@ -1,0 +1,93 @@
+{
+  "applied": true,
+  "potential_bytes": 14270385404,
+  "released_bytes": 14270385404,
+  "replacements": [
+    {
+      "source": "/archive/runs/binding-attention-context-20260919/all_world/checkpoints/step-000000000-5e8fd4b37434/model.safetensors",
+      "target": "/archive/runs/binding-attention-context-20260919/selected_supports/checkpoints/step-000000000-9ccf2b38c9ba/model.safetensors",
+      "sha256": "11a333781bb6535057b37831e06a9c7e41fc060775686980c25054cf66f469ea",
+      "bytes": 1022847664
+    },
+    {
+      "source": "/archive/runs/binding-attention-context-20260919/all_world/checkpoints/step-000000000-5e8fd4b37434/model.safetensors",
+      "target": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/checkpoints/step-000000400-421032105456/model.safetensors",
+      "sha256": "11a333781bb6535057b37831e06a9c7e41fc060775686980c25054cf66f469ea",
+      "bytes": 1022847664
+    },
+    {
+      "source": "/archive/runs/binding-muon-all-20260919/latent_warmup/checkpoints/step-000000000-661368b77c96/model.safetensors",
+      "target": "/archive/runs/binding-muon-all-20260919/recurrence_bridge/checkpoints/step-000000200-0906dc4e4fea/model.safetensors",
+      "sha256": "ea7b0515785ebfd0b8e3e3982dc45e11d3773666e54e73a3f157ccef6659e121",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-all-20260919/latent_warmup/checkpoints/step-000000400-a0be3e61216e/model.safetensors",
+      "target": "/archive/runs/binding-muon-all-20260919/recurrent_joint/checkpoints/step-000000000-e3dbbfd4cfa2/model.safetensors",
+      "sha256": "61d246bbf9a5fd973a28480bcec6705ce8c9ea8023882c1ffc7c397bd16aef71",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-all-20260919/recurrence_bridge/checkpoints/step-000000000-1e3d978b05aa/model.safetensors",
+      "target": "/archive/runs/binding-muon-all-20260919/text_bootstrap/checkpoints/step-000000200-050bcf0fae9c/model.safetensors",
+      "sha256": "cbdf08ad7dace2b48476513b248e6fce20b49132abc9e4b72d0ba4f71d94d6ad",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-all-20260919/text_bootstrap/checkpoints/step-000000000-052bd70d136d/model.safetensors",
+      "target": "/archive/runs/binding-muon-selected-20260919/text_bootstrap/checkpoints/step-000000000-b46164a91266/model.safetensors",
+      "sha256": "05817f483a349663a69930a4ba4cc8f7be2a3b12446ac875452dd6a0697ffd3d",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-attention-20260919/latent_warmup/checkpoints/step-000000000-5a61309519f6/model.safetensors",
+      "target": "/archive/runs/binding-muon-attention-20260919/recurrence_bridge/checkpoints/step-000000200-172c038b439b/model.safetensors",
+      "sha256": "cc49a30bd7a4657833117ee60adf3faaa703e89ace0b0434e6477abd9daedfe6",
+      "bytes": 1022847664
+    },
+    {
+      "source": "/archive/runs/binding-muon-attention-20260919/latent_warmup/checkpoints/step-000000400-9d93734a4741/model.safetensors",
+      "target": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/checkpoints/step-000000000-bd52e949b721/model.safetensors",
+      "sha256": "b298004956adde75659a8f4c6e25b84c798543c7f291856b950f3e4db12cc7cd",
+      "bytes": 1022847664
+    },
+    {
+      "source": "/archive/runs/binding-muon-attention-20260919/recurrence_bridge/checkpoints/step-000000000-246934e0ac77/model.safetensors",
+      "target": "/archive/runs/binding-muon-attention-20260919/text_bootstrap/checkpoints/step-000000200-c3db1e987281/model.safetensors",
+      "sha256": "0099c6633b4ff9b1e3355b7730b9123bd5d873ae36e537818d805b66b653402e",
+      "bytes": 1022847664
+    },
+    {
+      "source": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c/model.safetensors",
+      "target": "/archive/runs/binding-muon-routing-20260919/group_routing/checkpoints/step-000000000-8db516ab6d2a/model.safetensors",
+      "sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c/model.safetensors",
+      "target": "/archive/runs/binding-muon-routing-20260919/no_routing_loss/checkpoints/step-000000000-5c0b5c76e16c/model.safetensors",
+      "sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-selected-20260919/latent_warmup/checkpoints/step-000000000-e7d4f58fe79a/model.safetensors",
+      "target": "/archive/runs/binding-muon-selected-20260919/recurrence_bridge/checkpoints/step-000000200-3f117ebcad46/model.safetensors",
+      "sha256": "c4a9e34f29df6c0aa95c28c5761d5c302478857cc65b5efca1982117371742f1",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-selected-20260919/latent_warmup/checkpoints/step-000000400-fe2e241301c1/model.safetensors",
+      "target": "/archive/runs/binding-muon-selected-20260919/recurrent_joint/checkpoints/step-000000000-12482495b9da/model.safetensors",
+      "sha256": "e1167444ba4d3aa5fa16c1671acc3dd0a50afbf56faee2d3668e90e8dcc86bee",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/binding-muon-selected-20260919/recurrence_bridge/checkpoints/step-000000000-ba0569c2f10b/model.safetensors",
+      "target": "/archive/runs/binding-muon-selected-20260919/text_bootstrap/checkpoints/step-000000200-c4c7eb92f9ee/model.safetensors",
+      "sha256": "a1534c1cd30a053bf3e125ba4dbac3911b4de248190d71f00e7462f1247a1eff",
+      "bytes": 1017349676
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place.",
+  "postcheck": "Every replacement shares its verified source inode. Checkpoint manifests and all non-weight files are preserved."
+}

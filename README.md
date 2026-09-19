@@ -7,7 +7,8 @@ The [Muon binding study](experiments/binding-muon-20260919/README.md) and
 [longer MLP continuation](experiments/binding-continuation-20260919/README.md) confirm
 narrow stored-memory action composition with both attention and the pooled MLP.
 Competing-entity binding and exact unseen identifiers remain unresolved;
-[learned routing experiments](experiments/binding-routing-20260919/README.md) are running.
+the first [learned routing intervention](experiments/binding-routing-20260919/README.md)
+learned source types but did not solve entity selection.
 
 **Spatially Superposed Differentiable Knowledge Base**
 

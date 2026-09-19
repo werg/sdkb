@@ -44,3 +44,12 @@ GPU emergency validation is recorded in
 The performance comparison is recorded in
 `experiments/operations-20260919/checkpointing-profile.json`; compressed operator
 traces and training artifacts remain on the external disk.
+
+
+A follow-up inventory found 13.29 GiB of byte-identical warm-start weights in
+separate external checkpoint sets. Verified hard-link deduplication reclaimed those
+redundant copies without dropping any checkpoint or optimizer/RNG/cache state.
+The command requires inactive stage/parent locks, matching metadata and SHA256
+verification before atomic replacement. See the operations guide and
+`experiments/operations-20260919/checkpoint-weight-dedup.json`. Internal run data
+remains about 52 MiB; external free space was about 248 GiB after this maintenance.

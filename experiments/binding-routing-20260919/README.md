@@ -1,4 +1,4 @@
-# MLP world-scoped learned selection (running)
+# MLP world-scoped learned selection (complete)
 
 The longer selected-support MLP now composes both rule facts correctly. Test whether
 verified group supervision can teach its existing key/query path to select records
@@ -58,4 +58,42 @@ externally in 24.2 seconds (1.393 GB); its only checkpoint sets are initial and 
 The supervised arm then started. `initialization-check.json` verifies both initial
 weight-file hashes equal the shared source. Their first task NLL and raw routing
 loss are identical (0.00328392605 and 1.13250297308); the weighted objectives and
-gradients differ as intended. Final routing capability results remain pending.
+gradients differ as intended. Final routing capability results follow below.
+
+
+## Fixed-endpoint results
+
+Both arms completed 800 updates without a resource stop. New common-world choice
+results (32 worlds) are:
+
+| Metric | Source | No routing loss | Group routing loss |
+|---|---:|---:|---:|
+| Action accuracy | 63.28125% | 60.9375% | 52.34375% |
+| Action sufficient-support recall | 46.875% | 48.4375% | 3.90625% |
+| Identifier accuracy | 29.6875% | 31.25% | 29.6875% |
+| Permission accuracy | 57.8125% | 79.6875% | 79.6875% |
+| Restoration accuracy | 51.5625% | 43.75% | 70.3125% |
+
+Supervised minus control action accuracy is −8.59375 percentage points,
+world-bootstrap 95% interval [−14.0625, −3.90625]. The supervised model's oracle
+selected-pair action score also falls to 69.53125%, showing interference with its
+previously successful composition. Action permission counterfactuals have only
+1/128 jointly correct pairs; restoration changes have 1/64, with 3/64 false changes
+on unchanged branches.
+
+The apparently perfect direct-fact support recall does not establish entity
+selection: all permission/identifier queries select both entities' permission
+records; all restoration queries select both restoration records. Action queries
+select two restoration records in 117/128 cases, two permission records in 6/128,
+and mixed types in 5/128. None select the full required pair. Sufficient-support
+recall can count permission alone on STOP branches; it is distinct from this
+full-pair count. `selection-patterns.json` preserves both definitions.
+
+Candidate-free generation on the first eight worlds scores 17/32 actions for both
+continued arms (source 19/32); all three generate 0/16 exact identifiers. These
+results reject success of this particular 800-update joint routing intervention.
+They do not prove routing or the MLP architecture impossible. Training fit versus
+held-out selection, and interference from updating the shared writer/reader, remain
+separate diagnostic questions. See `confirmation-summaries.json`, `paired-results.json`,
+`generation-summaries.json` and `completed-training.json` for controls and identities.
+Training and choice evaluation used frozen `304fb17`; generation used `baba9ef`.

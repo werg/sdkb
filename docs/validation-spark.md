@@ -126,8 +126,8 @@ Both longer MLP endpoints were subsequently tested with competing entities. Both
 fell to 61.7% action accuracy and gave identical answers to both entities in all
 opposed-rule worlds (17 permission, 19 restoration), with no jointly correct fact
 pairs. The selected-support composition success therefore does not resolve binding.
-A fixed-budget, matched routing-supervision study is now running from `304fb17`;
-its results remain pending. Checkpoints and banks remain on the external disk.
+A fixed-budget, matched routing-supervision study ran from `304fb17`;
+its negative results are summarized below. Checkpoints and banks remain on the external disk.
 
 
 Candidate-free generation now also supports explicit world-scoped learned ranking.
@@ -140,3 +140,16 @@ An explicitly training-only identifier diagnostic gets 7/16 exact for the longer
 core-only MLP and 13/16 for the full-backbone MLP, versus 7/16 and 12/16 with
 zero payloads. Held-out identifiers remain 0/16. Training fit largely surviving
 payload removal is not evidence of reading identifiers from storage.
+
+
+### Learned routing intervention
+
+The matched 800-update routing-loss intervention reduced held-out action accuracy
+from the control's 60.9% to 52.3% (paired change −8.6 points, world-bootstrap
+interval [−14.1, −3.9]). It learned source-type selection: direct-fact queries always
+retrieve both entities' records of the requested type, while 117/128 action queries
+retrieve two restoration records. No action query retrieves its complete required
+pair. Even oracle-support action accuracy regresses to 69.5%, so joint adaptation
+also interferes with composition. Candidate-free action generation is 17/32 in
+both continued arms; identifiers remain 0/16. This does not establish entity-aware
+routing. See [the full study](../experiments/binding-routing-20260919/README.md).
