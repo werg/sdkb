@@ -1,0 +1,12 @@
+{
+  "source_commit": "0d6c0a4",
+  "isolated_checkout": ".sdkb/muon-continuation",
+  "container": "sdkb-causal-pilot",
+  "study": "/archive/runs/binding-muon-continuation-20260919",
+  "console": "/archive/runs/.sdkb-control/205b517eb14291e6f5ff1d4c/console.log",
+  "order": [
+    "recurrent_core",
+    "all"
+  ],
+  "status": "launched; results pending"
+}

@@ -241,5 +241,8 @@ This is positive evidence of narrow stored-memory action composition, subject to
 confirmation on the same worlds as MLP. Identifier choice remains weak at 28.1%
 (zeroed 32.8%, no-memory 35.9%). `attention-final.json` records the complete
 aggregate results and source/checkpoint/input identities. Candidate-free generation
-is running separately; the choice result does not establish executable agent skill,
+also reproduced all 32 action answers and all 32 direct rule facts in the first eight
+worlds (24-token greedy budget, stored bank, writer disabled). It reproduced zero
+of sixteen identifiers. `attention-generation.json` records input and raw-result
+hashes. These checks do not establish executable agent skill,
 multi-entity retrieval or capacity substitution.

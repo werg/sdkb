@@ -1,0 +1,74 @@
+{
+  "protocol": "Greedy stored-only generation; no candidate answers supplied; writer disabled.",
+  "notice": "First requested validation worlds, chosen by file order. Exact strings after decoder whitespace stripping; no agent execution or capacity-substitution claim.",
+  "max_new_tokens": 24,
+  "worlds": 8,
+  "inputs": {
+    "checkpoint": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/checkpoints/step-000000400-421032105456",
+    "checkpoint_manifest_sha256": "f90b27924a9f0815f38ac525737041850c260a159e6f3241447676ba13181e81",
+    "bank": "/archive/runs/binding-muon-attention-20260919/recurrent_joint/transfer-v2-1789826954686073391/bank.sqlite",
+    "bank_sha256": "41ffdbf45b556b039fb19858fa15c76030846588baf1fce0724ce8185eb8d0b6",
+    "episodes": "/archive/runs/binding-muon-attention-20260919/fresh-multiuse.jsonl",
+    "episodes_sha256": "65e9cc505c05f5663a83465950cda46f8afcf172194a8d76c1d65f70c7ece54d"
+  },
+  "by_family": {
+    "multiuse/action": {
+      "all": {
+        "n": 32,
+        "exact_match": 1.0
+      },
+      "zero_values": {
+        "n": 32,
+        "exact_match": 0.34375
+      },
+      "none": {
+        "n": 32,
+        "exact_match": 0.34375
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 16,
+        "exact_match": 0.0
+      },
+      "zero_values": {
+        "n": 16,
+        "exact_match": 0.0
+      },
+      "none": {
+        "n": 16,
+        "exact_match": 0.0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 16,
+        "exact_match": 1.0
+      },
+      "zero_values": {
+        "n": 16,
+        "exact_match": 0.5
+      },
+      "none": {
+        "n": 16,
+        "exact_match": 0.5
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 16,
+        "exact_match": 1.0
+      },
+      "zero_values": {
+        "n": 16,
+        "exact_match": 0.375
+      },
+      "none": {
+        "n": 16,
+        "exact_match": 0.375
+      }
+    }
+  },
+  "source_commit": "2112c9f",
+  "raw_results_sha256": "34e066853e6864b80d9508a75dde5376e97c0448ab8027608e168f22d7734eb0"
+}

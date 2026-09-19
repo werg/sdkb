@@ -73,8 +73,9 @@ of permission, restoration, exact identifiers and their combination:
   perfect direct facts. Final latent action accuracy is 54.7% versus 49.2%, with
   a paired interval including zero. The attention launcher reaches 100% action and rule-fact choice accuracy, with
   every action counterfactual pair correct and no spurious action changes on
-  unchanged restoration branches. Common-world reader confirmation and
-  candidate-free generation are in progress; identifier choice remains weak.
+  unchanged restoration branches. Candidate-free generation also emits all
+  action and rule-fact answers on eight worlds, but zero of sixteen identifiers.
+  Common-world reader confirmation is in progress; identifier choice remains weak.
 
 The all-context model's lower NLL versus no memory did not translate into a benefit
 over zeroed payloads. Tests, falling losses, linear probes and successful execution

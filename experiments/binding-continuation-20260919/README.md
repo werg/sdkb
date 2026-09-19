@@ -1,4 +1,4 @@
-# MLP adaptation-scope continuation (prepared, not launched)
+# MLP adaptation-scope continuation (running)
 
 The completed selected-support Muon curriculum interprets source text correctly
 and retrieves single rule facts, but fails conditional action composition through
@@ -53,4 +53,9 @@ to resume explicitly. Redirect its console to the path reported by
 `sdkb runs status --output EXTERNAL_STUDY_ROOT`. Stop with
 `sdkb runs stop --output EXTERNAL_STUDY_ROOT`; an interrupted first arm prevents
 the second from starting. Existing arm checkpoints resume; new arms warm-start
-from the captured source checkpoint. Training has not launched yet.
+from the captured source checkpoint. Training launched sequentially from frozen source `0d6c0a4`; the recurrent-core
+control runs first. Its console is external at
+`/archive/runs/.sdkb-control/205b517eb14291e6f5ff1d4c/console.log`.
+The full-backbone preflight used `2112c9f`; model, training and optimizer modules
+are unchanged across these commits. The generation diagnostic on the earlier
+checkout finished before that checkout was advanced for training.
