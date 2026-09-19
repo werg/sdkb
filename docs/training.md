@@ -5,7 +5,7 @@ described in [portable operations](operations.md).
 
 
 > **v0.4 update:** the recommended entry points are `recipes/looped_smoke.yaml`,
-> `recipes/looped_starter.yaml` and `recipes/looped_causal.yaml`. They add native
+> `recipes/looped_starter_muon.yaml` and `recipes/looped_causal.yaml`. They add native
 > middle-block recurrence and in-loop reads. See [recurrent conversion](recurrence.md)
 > for the four-stage protocol. The one-pass recipes below remain control experiments.
 

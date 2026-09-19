@@ -9,6 +9,11 @@ narrow stored-memory action composition with both attention and the pooled MLP.
 Reliable competing-entity composition and exact unseen identifiers remain unresolved;
 the first [learned routing intervention](experiments/binding-routing-20260919/README.md)
 learned source types but did not solve entity selection.
+Later [global retrieval tests](experiments/binding-global-routing-20260919/README.md)
+exposed the dependence on supplied world membership.
+[Persistent compaction](experiments/binding-compaction-20260919/README.md) preserves
+sampled attention-system actions, while the MLP still loses conditional behavior.
+The [bgkit audit](docs/bgkit-audit.md) records storage, recovery and runtime adoption.
 
 **Spatially Superposed Differentiable Knowledge Base**
 
@@ -39,7 +44,7 @@ checks memory gradients and runs two updates in each of four stages. It is not
 a capability experiment. After inspecting its outputs, start the main curriculum:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/looped-starter
+./scripts/start_spark.sh --recipe recipes/looped_starter_muon.yaml --output /runs/looped-starter-muon
 ```
 
 | Stage | Optimizer updates | Training behavior |
@@ -49,6 +54,12 @@ a capability experiment. After inspecting its outputs, start the main curriculum
 | `latent_warmup` | 400 | Two passes with an actual inter-pass SDKB read; freeze the base while training the latent interface. |
 | `recurrent_joint` | 400 | Sample 2/3 passes; update shared core + SDKB modules, retain one-pass text anchoring. |
 
+The Muon starter uses native Muon for eligible matrices and AdamW for embedding,
+output, slot and other excluded tensors. It requires a runtime providing native
+Muon; keep the NVIDIA Torch installation intact. Checkpoints default to every
+1,000 updates plus initial, final and graceful-stop saves; configure output storage
+through the operations guide.
+
 These are initial run budgets, not promised convergence thresholds. The starter scans
 up to 2,000 Hermes and 2,000 UltraChat rows with seeded source shuffling. It records
 how many complete, budget-fitting examples survive preparation. No live teacher API,
@@ -57,7 +68,7 @@ experiment-tracking account or paid inference endpoint is required.
 Resume the identical recipe/output:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/looped-starter --resume
+./scripts/start_spark.sh --recipe recipes/looped_starter_muon.yaml --output /runs/looped-starter-muon --resume
 ```
 
 The job runs synchronously in the foreground. A graceful interruption checkpoints
@@ -77,7 +88,8 @@ To download, pin and inspect data without loading the training model:
 
 | Recipe | Purpose |
 |---|---|
-| `looped_starter.yaml` | Hermes tool conversations + UltraChat; bounded first real-data curriculum. |
+| `looped_starter_muon.yaml` | Hermes tool conversations + UltraChat with Muon/AdamW parameter split, sparse saves and offline W&B; initial budgets. |
+| `looped_starter.yaml` | Historical AdamW starter control. |
 | `tools.yaml` / `chat.yaml` | Separate tool-use and general conversational continuation runs. |
 | `coding.yaml` | Successful SWE-smith traces; earlier-prefix memory. |
 | `openhands.yaml` | Successful Nebius SWE-rebench/OpenHands coding traces. |
@@ -134,9 +146,10 @@ Native masks and positional conventions are retained; no KV/conv cache crosses a
 loop. The initial gates are small but live, not zeroed across all extra computation.
 
 The recurrent set readers, multiscale transforms, selective producer replay, and
-checkpointing remain. In-loop raw reads are implemented; combining them with
-persistent compaction or streamed readers is explicitly deferred. Those experiments
-remain available in prefix mode. This avoids silently comparing different read graphs.
+checkpointing remain. In-loop raw reads and persisted full-cluster codes are
+implemented, with complete cumulative aggregation at each boundary and raw fallback
+for partial clusters. Streaming in-loop reads and temporary in-loop compaction
+training remain deferred. Offline code fitting is separate from stored-only reads.
 
 [The research and conversion note](docs/recurrence.md) explains the choice, equations,
 2025–September 2026 primary evidence, conversion curriculum, limitations, and exact
