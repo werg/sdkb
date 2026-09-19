@@ -23,3 +23,22 @@ Single-child questions retain raw fallback. No net disk savings, learned routing
 agent success or parameter-substitution claim follows from lower target NLL.
 The inherited 32-world set is now a development comparison; any selected method
 needs a fresh-world confirmation after selection.
+
+## Completed development comparison
+
+Both forks completed from `13aeb05`. Statistics-only continuation reaches 113/128
+compact action choices; statistics plus answer loss reaches 111/128. Their common
+starting compactor scored 103/128. Task minus statistics is −1.56 points with
+paired world-bootstrap interval [−3.91, 0]. This does not establish a benefit from
+the answer-loss term. Its lower compact target NLL does not imply higher choice
+accuracy. Raw action accuracy remains 128/128.
+
+All 1,728 mean-view rows and all 1,408 non-persistent raw/control rows are exactly
+identical between the two forks. Only the fitted code changes. The native BF16
+preflight reproduced the full causal prefix-plan task loss and every compactor
+gradient exactly; base gradients remain absent. Full resume files and feature
+caches are external, with no backbone copies or periodic saves.
+
+Freeze these endpoints for a new-world comparison with the original compactor,
+raw payloads and mean-plus-mass. Continue to report candidate-free answers and
+counterfactual sensitivity separately from teacher NLL and choice accuracy.

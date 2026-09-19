@@ -1,0 +1,5 @@
+{
+  "identical_all_mean_rows": 1728,
+  "identical_raw_control_rows": 1408,
+  "notice": "Task and statistics arms use exactly the same frozen raw/mean controls."
+}
