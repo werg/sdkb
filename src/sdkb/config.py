@@ -77,6 +77,8 @@ class TrainConfig:
     optimization_scope: str = "all"  # compactor freezes writer, reader and controller
     checkpoint_every: int = 50
     keep_checkpoints: int = 2
+    max_target_tokens: int = 512
+    oracle_anchor_weight: float = 0.0
     episodes_file: str | None = None  # optional general support/query JSONL
 
 
@@ -106,7 +108,7 @@ class Config:
         if not 0 <= t.live_fraction <= 1 or not 0 <= r.compaction_probability <= 1:
             raise ValueError("Probabilities must be between zero and one")
         if min(t.steps, t.train_worlds, t.eval_worlds, t.gradient_accumulation, t.log_every,
-               t.max_source_tokens, t.max_prompt_tokens, t.threads, t.checkpoint_every, t.keep_checkpoints) < 1:
+               t.max_source_tokens, t.max_prompt_tokens, t.max_target_tokens, t.threads, t.checkpoint_every, t.keep_checkpoints) < 1:
             raise ValueError("Training counts must be positive")
         if t.arm not in {"memory", "no_memory", "oracle_text", "direct_latent", "shared_compute"}:
             raise ValueError("Unknown comparison arm")
@@ -132,6 +134,8 @@ class Config:
             raise ValueError("Invalid optimization scope")
         if t.optimization_scope == "compactor" and (r.compaction != "synthetic" or r.compaction_probability != 1.0 or r.compaction_warmup != 0):
             raise ValueError("Compactor-only runs require synthetic compaction on every step without warmup")
+        if t.oracle_anchor_weight < 0:
+            raise ValueError("Negative oracle anchor")
         if t.distractors < 0 or min(t.learning_rate, t.backbone_learning_rate) <= 0:
             raise ValueError("Invalid distractor count or learning rate")
 

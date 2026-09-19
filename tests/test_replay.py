@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch import nn
 
-from elm.replay import ReplayTape
+from sdkb.replay import ReplayTape
 
 
 class SharedModel(nn.Module):

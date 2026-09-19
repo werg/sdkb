@@ -2,7 +2,7 @@ import copy
 import pytest
 import torch
 
-from elm.readers import SetReader, MultiSpaceReader, merge_statistics
+from sdkb.readers import SetReader, MultiSpaceReader, merge_statistics
 
 
 def reader(kind="mlp", **kwargs):
@@ -107,7 +107,7 @@ def test_bf16_autocast_finite():
 
 
 def test_attention_zero_multiplicity_gradient_matches_explicit_formula():
-    from elm.readers import AttentionRound, Statistics
+    from sdkb.readers import AttentionRound, Statistics
     import math
     block = AttentionRound(4, 3, 6, 2).double()
     x = torch.randn(1, 3, 4, dtype=torch.double)

@@ -9,6 +9,6 @@ assignees: ''
 
 ## Minimal command and configuration
 
-## elm doctor output (remove private paths)
+## sdkb doctor output (remove private paths)
 
 ## Stack trace and failing parity test

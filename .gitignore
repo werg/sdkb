@@ -20,3 +20,6 @@ checkpoints/
 *.bin
 *.log
 *.bundle
+# Local launch cache and credentials.
+.sdkb/
+*.token

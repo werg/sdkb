@@ -6,8 +6,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from elm.data import make_boolean_world, counterfactual_boolean
-from elm.probes import model_probe
+from sdkb.data import make_boolean_world, counterfactual_boolean
+from sdkb.probes import model_probe
 
 
 @pytest.mark.parametrize('spaces', [1, 2])

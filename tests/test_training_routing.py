@@ -2,12 +2,12 @@ import math
 import pytest
 import torch
 
-from elm.agent import MemoryAgent
-from elm.config import load_config
-from elm.data import make_episode
-from elm.routing import group_plan_loss, utility_ranking_loss, complete_support_recall
-from elm.store import DiskStore
-from elm.training import train, build_evaluation_store, stored_evaluation
+from sdkb.agent import SDKBAgent
+from sdkb.config import load_config
+from sdkb.data import make_episode
+from sdkb.routing import group_plan_loss, utility_ranking_loss, complete_support_recall
+from sdkb.store import DiskStore
+from sdkb.training import train, build_evaluation_store, stored_evaluation
 
 
 def test_group_starters_get_nonzero_gradient():
@@ -46,7 +46,7 @@ def test_train_smoke_save_resume(tmp_path, tiny_config):
 
 
 def test_stored_only_eval_never_calls_writer(tmp_path, tiny_config, monkeypatch):
-    agent = MemoryAgent(tiny_config).eval()
+    agent = SDKBAgent(tiny_config).eval()
     episodes = [make_episode(0, split="unseen", distractors=1)]
     store = DiskStore(tmp_path / "evaluation.sqlite")
     build_evaluation_store(agent, store, episodes, "frozen")
@@ -68,8 +68,8 @@ def test_unknown_config_fields_rejected(tmp_path):
 
 def test_general_support_query_training_and_stored_eval(tiny_config, tmp_path):
     import json
-    from elm.training import train, evaluate_episode_file
-    from elm.data import load_episodes
+    from sdkb.training import train, evaluate_episode_file
+    from sdkb.data import load_episodes
     row = {"episode_id": "new-task", "query_time": 10,
            "supports": [{"record_id": "experience-a", "text": "The API takes a snapshot before retry.", "created_at": 1}],
            "query": "How do I retry safely?", "answer": "Take a snapshot first.",

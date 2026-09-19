@@ -1,4 +1,4 @@
-# External Latent Memory for Small Recurrent Language Models
+# Spatially Superposed Differentiable Knowledge Base (SDKB)
 
 ## Read-time superposition, selective replay, and learned cluster compaction
 
@@ -1031,3 +1031,30 @@ Original primary-source bibliography retained from the first specification; revi
 [^23]: Ballé, J., Laparra, V., and Simoncelli, E. P. (2017). [End-to-end Optimized Image Compression](https://arxiv.org/abs/1611.01704). ICLR. See also the [authors' description of the quantization surrogate](https://www.cns.nyu.edu/~lcv/iclr2017/).
 
 [^24]: Zhao, B., and Bilen, H. (2021 preprint; CVPR 2023). [Dataset Condensation with Distribution Matching](https://arxiv.org/abs/2110.04181). A precedent for synthetic-set feature-distribution matching, not for preserving this reader's full conditional behavior.
+
+
+## SDKB 0.3: implemented real-student curriculum
+
+The project is now **Spatially Superposed Differentiable Knowledge Base (SDKB)**.
+The full research hypotheses above remain intact. The current runnable operational
+plan is in [training.md](training.md), with researched source choices in
+[datasets.md](datasets.md) and Spark runtime setup in [spark.md](spark.md).
+
+The default real student remains LiquidAI/LFM2.5-230M. A documented NVIDIA 25.11
+ARM64 PyTorch image replaces the previously untested latest-tag default while
+preserving the vendor runtime. The pretrained one-pass path is the starting control;
+recurrence, multiscale geometry and learned routing remain independent variants.
+
+Teacher data now have two explicit executable protocols: earlier-prefix compression
+and prior different-instance experience. Neither lets a prior write see a later
+target. Preparation uses actual tokenizer budgets, complete targets, group-held-out
+splits, source revisions/provenance and matched evidence for the text comparison.
+The causal recipe uses the real student on controlled supports before fresh-world
+stored-only evaluation with frozen weights.
+
+The implemented curriculum stages text bootstrap, frozen-backbone latent warmup and
+low-rate joint adaptation. A same-example oracle-text anchor is optional and logged
+separately from the memory objective. This tests the coordination issue observed in
+the CPU study without claiming all students require the same curriculum. Existing
+compaction, replay and set-reader mechanisms remain available. A completed script run
+is not automatically a successful transfer/composition/substitution result.

@@ -26,7 +26,7 @@ class ForwardResult:
     read_count: int = 1
 
 
-class MemoryAgent(nn.Module):
+class SDKBAgent(nn.Module):
     def __init__(self, config: Config) -> None:
         super().__init__()
         self.config = config
@@ -84,9 +84,8 @@ class MemoryAgent(nn.Module):
         return torch.tensor([ids], dtype=torch.long, device=self.device)
 
     def prompt_ids(self, query: str, support_text: str = "") -> Tensor:
-        content = ("Prior experiences:\n" + support_text + "\n\n" if support_text else "") + query
-        text = self.tokenizer.apply_chat_template(
-            [{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True)
+        from .text import render_prompt
+        text = render_prompt(self.tokenizer, query, support_text)
         return self.text_ids(text)
 
     def produce(self, source_ids: Tensor) -> tuple[Tensor, ...]:
@@ -188,7 +187,9 @@ class MemoryAgent(nn.Module):
         ids = self.tokenizer.encode(answer, add_special_tokens=False)
         if self.tokenizer.eos_token_id is not None:
             ids.append(self.tokenizer.eos_token_id)
-        return torch.tensor([ids], device=self.device)
+        if len(ids) > self.config.train.max_target_tokens:
+            raise ValueError(f"Target uses {len(ids)} tokens; limit is {self.config.train.max_target_tokens}. Do not silently truncate complete targets.")
+        return torch.tensor([ids], dtype=torch.long, device=self.device)
 
     def forward(self, prompt: Tensor, target: Tensor, records: list[tuple[Tensor, ...]],
                 required: list[int], *, step: int = 0, arm: str | None = None,

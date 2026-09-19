@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from elm.compaction import (SyntheticCompactor, mean_and_mass, contribution_loss,
+from sdkb.compaction import (SyntheticCompactor, mean_and_mass, contribution_loss,
     field_responsibilities, FullClusterCode, random_partition, storage_noise)
-from elm.readers import SetReader, merge_statistics
+from sdkb.readers import SetReader, merge_statistics
 
 
 @pytest.mark.parametrize("kind", ["mlp", "attention"])

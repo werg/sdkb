@@ -1,3 +1,5 @@
+> Historical evidence/development document. Current SDKB operations: [training](training.md), [Spark](spark.md), [validation](validation-v0.3.md).
+
 > Historical v0.1 bootstrap report. For the current implementation and executed
 > learning/compaction study, see [validation-v0.2.md](validation-v0.2.md).
 
@@ -13,7 +15,7 @@ installation and no model downloads. Real LFM weights, Spark hardware and Docker
 image execution have not been validated. The optional random-LFM architecture test
 is skipped without Transformers; it is configured to run in CPU CI and on Spark.
 
-The editable package was installed without downloading dependencies, and its `elm`
+The editable package was installed without downloading dependencies, and its `sdkb`
 CLI was executed. Core unit tests cover readers, compaction, replay, storage,
 causality, training/resume, general support/query import and stored-only evaluation.
 Shell scripts receive syntax checks, not a claim of GitHub publication or Docker
@@ -78,12 +80,12 @@ Model weights and database caches are intentionally not committed.
 
 ```bash
 python -m pytest -q --disable-warnings
-elm train --config configs/tiny_cpu.yaml --output runs/reproduce-tiny --steps 30
-elm evaluate --run runs/reproduce-tiny --count 8
-elm train --config configs/tiny_compaction_cpu.yaml --output runs/reproduce-compact --steps 12
-elm compact-probe --steps 100 --reader mlp --output runs/mlp-probe.json
-elm compact-probe --steps 100 --reader attention --output runs/attention-probe.json
-elm io-bench --path runs/reproduce-io.sqlite --records 128 --reads 8 --output runs/io.json
+sdkb train --config configs/tiny_cpu.yaml --output runs/reproduce-tiny --steps 30
+sdkb evaluate --run runs/reproduce-tiny --count 8
+sdkb train --config configs/tiny_compaction_cpu.yaml --output runs/reproduce-compact --steps 12
+sdkb compact-probe --steps 100 --reader mlp --output runs/mlp-probe.json
+sdkb compact-probe --steps 100 --reader attention --output runs/attention-probe.json
+sdkb io-bench --path runs/reproduce-io.sqlite --records 128 --reads 8 --output runs/io.json
 ```
 
 Wall-clock times and allocator counters are environment-specific. Neither timing

@@ -1,16 +1,35 @@
 {
-  "name": "ELM on DGX Spark",
-  "build": {"dockerfile": "../docker/Dockerfile.spark", "context": ".."},
-  "workspaceFolder": "/workspace/elm",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/elm,type=bind",
-  "runArgs": ["--gpus=all", "--shm-size=8g"],
-  "mounts": ["source=elm-hf-cache,target=/cache,type=volume"],
-  "containerEnv": {"HF_HOME": "/cache/huggingface"},
+  "name": "SDKB on DGX Spark",
+  "build": {
+    "dockerfile": "../docker/Dockerfile.spark",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace/sdkb",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/sdkb,type=bind",
+  "runArgs": [
+    "--gpus=all",
+    "--shm-size=8g",
+    "--ulimit=memlock=-1",
+    "--ulimit=stack=67108864"
+  ],
+  "mounts": [
+    "source=sdkb-hf-cache,target=/cache,type=volume"
+  ],
+  "containerEnv": {
+    "HF_HOME": "/cache/huggingface",
+    "NVIDIA_IMEX_CHANNELS": "0"
+  },
   "customizations": {
     "vscode": {
-      "extensions": ["ms-python.python", "ms-python.debugpy", "charliermarsh.ruff"],
-      "settings": {"python.defaultInterpreterPath": "/opt/elm-venv/bin/python"}
+      "extensions": [
+        "ms-python.python",
+        "ms-python.debugpy",
+        "charliermarsh.ruff"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/sdkb-venv/bin/python"
+      }
     }
   },
-  "postCreateCommand": "elm doctor"
+  "postCreateCommand": "sdkb doctor --require-spark"
 }

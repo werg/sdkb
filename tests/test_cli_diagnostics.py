@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from elm.cli import main
-from elm.config import load_config
-from elm.diagnostics import compact_probe, io_benchmark
+from sdkb.cli import main
+from sdkb.config import load_config
+from sdkb.diagnostics import compact_probe, io_benchmark
 
 
 def test_doctor_cli(capsys):

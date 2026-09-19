@@ -1,59 +1,36 @@
-# Repository handoff
+# SDKB 0.3 handoff and publication
 
-The v0.2 work is committed locally and supplied as a self-contained Git bundle,
-source ZIP/tarball, and a patch from the v0.1 handoff. The connected GitHub tools
-now include writes to existing repositories, but not repository creation. A fresh
-lookup of `werg/external-latent-memory` returned 404 (absent or inaccessible). No
-remote was created or pushed. No authenticated shell GitHub CLI was available.
+The rewritten repository is delivered as `sdkb-v0.3.bundle` with complete Git history,
+plus source ZIP/tarball and a patch from the previous version.
 
-The bundle `external-latent-memory-v0.2.bundle` preserves all commits and `main`.
-Source archives exclude Git metadata, model checkpoints, caches and dependencies.
+The existing `werg/sdkb` GitHub repository was readable and empty when checked.
+An actual contents write was rejected with **HTTP 403: Resource not accessible by
+integration**. Consequently the handoff does **not** claim a remote commit or push.
+The connection must permit repository contents writes, or use authenticated local Git.
 
-To update an unchanged v0.1 checkout without replacing local work:
+Start from the supplied bundle on the Spark:
 
 ```bash
-git fetch /path/to/external-latent-memory-v0.2.bundle main
-git merge --ff-only FETCH_HEAD
-# Only after verifying your origin is the intended GitHub repository:
+git clone sdkb-v0.3.bundle sdkb
+cd sdkb
+./scripts/start_spark.sh --recipe recipes/spark_smoke.yaml --output runs/spark-smoke
+./scripts/start_spark.sh --recipe recipes/starter.yaml --output runs/starter
+```
+
+A bundle clone has a local-file `origin`. To publish to the currently empty repository
+with an authenticated Git installation, inspect and rename that remote first:
+
+```bash
 git remote -v
-git push origin main
+git remote rename origin handoff-bundle
+git remote add origin https://github.com/werg/sdkb.git
+git push -u origin main
 ```
 
-A divergent checkout intentionally fails the fast-forward merge rather than
-silently overwriting work. The provided patch is an alternative for review.
+A normal non-forced push fails rather than discarding any unrelated upstream work.
+Do not use `--force`. `scripts/publish_github.sh` is an optional authenticated local
+helper with an existing-repository and ancestry check. It never changes visibility,
+replaces an unexpected origin, creates an unrelated repository or bypasses permissions.
 
-To preserve the committed history:
-
-```bash
-git clone external-latent-memory-v0.2.bundle external-latent-memory
-cd external-latent-memory
-# Cloning a bundle creates an origin pointing at the local bundle. Remove only
-# that local origin before asking the helper to create the actual GitHub remote.
-git remote -v
-git remote remove origin
-gh auth login  # omit when already authenticated
-./scripts/publish_github.sh werg/external-latent-memory
-```
-
-Check the printed remote URL and `isPrivate: true`. The script uses the standard
-[GitHub CLI creation workflow](https://cli.github.com/manual/gh_repo_create),
-creates a new private repo, pushes existing commits, fetches the remote main branch,
-and checks commit equality. It refuses an existing repo or remote and never force
-pushes. Authentication happens locally through GitHub CLI; do not put tokens in
-this repository or paste them into a research configuration.
-
-For source-only initialization instead:
-
-```bash
-mkdir external-latent-memory
-cd external-latent-memory
-tar -xzf ../external-latent-memory-v0.2.tar.gz
-git init -b main
-git add .
-git commit -m 'Initialize external latent memory research project'
-./scripts/publish_github.sh werg/external-latent-memory
-```
-
-Git author identity must already be configured for the latter option. The supplied
-bundle avoids reconstructing the initial commits. Neither archive includes weights
-or experiment databases. Recorded diagnostics are in `experiments/bootstrap` and `experiments/development-v2`.
+Credentials belong in normal Git/HF credential tooling, not source, Docker build args,
+configuration or issues. Data/download/checkpoint locations are ignored by Git.

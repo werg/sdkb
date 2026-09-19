@@ -1,3 +1,5 @@
+> Historical evidence/development document. Current SDKB operations: [training](training.md), [Spark](spark.md), [validation](validation-v0.3.md).
+
 # Development validation — v0.2
 
 Date: 2026-09-19. This report supersedes the original bootstrap report for the new

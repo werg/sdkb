@@ -1,4 +1,4 @@
-# Implementation specification — 0.2
+# Implementation specification — 0.3
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
@@ -6,7 +6,7 @@ Operational details are in [development-v0.2.md](development-v0.2.md).
 
 ## Shared writer, query and decoder
 
-`MemoryAgent` uses a shared pretrained backbone (or the offline tiny model). A
+`SDKBAgent` uses a shared pretrained backbone (or the offline tiny model). A
 source is tokenized using the student tokenizer, followed by `write_slots + 1`
 learned input embeddings. The first resulting state produces the single canonical
 key; the remaining states produce a fixed sequence of canonical value vectors.
@@ -170,3 +170,20 @@ distributed checkpoint system.
 A mutable `model.revision: main` is logged as the actual resolved commit but should
 be pinned before training. Different runs can otherwise fetch different initial
 weights/tokenizers even though their YAML strings look identical.
+
+
+## SDKB 0.3 trajectory implementation
+
+Current operations: [training](training.md), [datasets](datasets.md), [Spark](spark.md).
+`launch.py` pins/prepares inputs, verifies the backbone, and runs independent resumable
+stages and evaluations. `trajectories.py` provides explicit upstream adapters and
+causal source/target construction. `episode_index.py` validates identities/hashes
+while keeping byte offsets rather than all episode text. `trajectory_eval.py` separates
+source materialization from writer-free stored reads and scores full target likelihood.
+The command/package is `sdkb` and the model class is `SDKBAgent`.
+
+Real-data supports are marked provided context, not verified sufficient groups. Loss
+is recorded-assistant imitation, not environment reward or unavailable teacher logits.
+The initial fixed-chunk producer is a bootstrap interface, not yet an adaptive learned
+whole-trajectory lesson extractor. Stage evidence and exact tested hardware scope are
+recorded in [validation-v0.3.md](validation-v0.3.md).

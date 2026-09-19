@@ -1,3 +1,5 @@
+> Historical evidence/development document. Current SDKB operations: [training](training.md), [Spark](spark.md), [validation](validation-v0.3.md).
+
 # Development guide — v0.2
 
 The governing research plan remains [architecture.md](architecture.md). This guide
@@ -11,15 +13,15 @@ atomic after model parameters, optimizer/RNG state, config, and the training-cac
 SQLite snapshot are complete. Every component has a checksum. Root model/state
 symlinks are conveniences, not recovery authorities.
 
-`elm train --resume` verifies source-data identity and model revision, restores the
+`sdkb train --resume` verifies source-data identity and model revision, restores the
 committed stale/live cache distribution, and truncates later or incomplete log
 rows. SIGINT/SIGTERM request a checkpoint after the current complete optimizer
 step. They do not interrupt a producer replay halfway through backward. SIGKILL
 can lose steps since the last checkpoint; restarting uses the last committed one.
 
 ```bash
-elm train --config configs/tiny_cpu.yaml --output runs/demo --steps 10 --stop-after 3
-elm train --config configs/tiny_cpu.yaml --output runs/demo --steps 10 --resume
+sdkb train --config configs/tiny_cpu.yaml --output runs/demo --steps 10 --stop-after 3
+sdkb train --config configs/tiny_cpu.yaml --output runs/demo --steps 10 --resume
 ```
 
 `--init-from RUN` instead copies compatible model weights with a **new optimizer,
@@ -33,12 +35,12 @@ incremental distributed checkpoint system. Budget this copying cost in larger ru
 
 ## 2. Write once, then test multiple uses
 
-`elm make-multiuse` creates independently named environments, multiple bindings,
+`sdkb make-multiuse` creates independently named environments, multiple bindings,
 and questions about normal action, permission, restoration, and exact identifiers.
-`elm make-boolean` supplies the minimal A/B/XOR diagnostic. JSONL episodes support
+`sdkb make-boolean` supplies the minimal A/B/XOR diagnostic. JSONL episodes support
 `task_family`, candidate `choices`, and alternative `sufficient_groups`.
 
-`elm evaluate-transfer` creates one heterogeneous bank across all supplied worlds.
+`sdkb evaluate-transfer` creates one heterogeneous bank across all supplied worlds.
 Each source is written once; the writer is frozen and unavailable to the stored
 read API. Different questions use the same serialized value. Learned retrieval
 searches the complete namespace rather than an episode-private bank. Oracle
@@ -120,7 +122,7 @@ closed. Deleting a child invalidates its parent code. Code generation is offline
 the stored reader receives neither source trajectories nor a compactor callback.
 
 ```bash
-elm evaluate-transfer --run runs/compact-trained --episodes runs/test.jsonl \
+sdkb evaluate-transfer --run runs/compact-trained --episodes runs/test.jsonl \
   --compact --persistent-compact --drop-supports
 ```
 
@@ -140,10 +142,10 @@ gated shared-stack refinement remains experimental.
 
 ```bash
 ./scripts/spark.sh build
-./scripts/spark.sh run elm doctor --require-spark
+./scripts/spark.sh run sdkb doctor --require-spark
 ./scripts/spark.sh run python scripts/pin_model.py \
   --config configs/lfm25_230m_spark.yaml --output runs/lfm-pinned.yaml
-./scripts/spark.sh run elm model-probe \
+./scripts/spark.sh run sdkb model-probe \
   --config runs/lfm-pinned.yaml --output runs/lfm-model-probe.json
 ./scripts/spark.sh run python scripts/prepare_matrix.py \
   --config runs/lfm-pinned.yaml --output runs/lfm-matrix \

@@ -1,4 +1,4 @@
-"""Command line interface. Run python -m elm.cli or the installed elm command."""
+"""Command line interface. Run python -m sdkb.cli or the installed sdkb command."""
 from __future__ import annotations
 
 import argparse
@@ -9,8 +9,21 @@ from .config import load_config
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="External latent memory research reference")
+    parser = argparse.ArgumentParser(description="SDKB: Spatially Superposed Differentiable Knowledge Base")
+    from . import __version__
+    parser.add_argument("--version", action="version", version=f"SDKB {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser("launch", help="Prepare pinned data and execute a staged training curriculum")
+    p.add_argument("--recipe", default="recipes/starter.yaml")
+    p.add_argument("--output", required=True)
+    p.add_argument("--resume", action="store_true")
+    p.add_argument("--prepare-only", action="store_true")
+    p = sub.add_parser("datasets", help="List supported upstream teacher datasets")
+    p = sub.add_parser("evaluate-teachers", help="Stored-only teacher NLL and payload interventions")
+    p.add_argument("--run", required=True)
+    p.add_argument("--episodes", required=True)
+    p.add_argument("--max-episodes", type=int, default=64)
+    p.add_argument("--generate-tokens", type=int, default=0)
     p = sub.add_parser("doctor", help="Inspect runtime and test BF16 CUDA when available")
     p.add_argument("--require-spark", action="store_true")
     p = sub.add_parser("model-probe", help="Execute backbone causality, zero-gate recurrence and memory gradients")
@@ -68,7 +81,17 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--output")
     args = parser.parse_args(argv)
     result = None
-    if args.command == "doctor":
+    if args.command == "launch":
+        from .launch import launch
+        result = launch(args.recipe, args.output, resume=args.resume, prepare_only=args.prepare_only)
+    elif args.command == "datasets":
+        from .trajectories import CATALOG
+        result = CATALOG
+    elif args.command == "evaluate-teachers":
+        from .trajectory_eval import evaluate_teacher_run
+        result = evaluate_teacher_run(args.run, args.episodes, max_episodes=args.max_episodes,
+                                      generate_tokens=args.generate_tokens)
+    elif args.command == "doctor":
         from .diagnostics import doctor
         result = doctor(args.require_spark)
     elif args.command == "model-probe":

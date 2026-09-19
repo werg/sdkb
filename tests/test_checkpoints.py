@@ -6,9 +6,9 @@ import pytest
 import torch
 from safetensors.torch import load_file
 
-from elm.checkpoints import resolve_checkpoint
-from elm.store import DiskStore, StoredRecord
-from elm.training import train
+from sdkb.checkpoints import resolve_checkpoint
+from sdkb.store import DiskStore, StoredRecord
+from sdkb.training import train
 
 
 def test_interrupted_resume_matches_uninterrupted_with_cache_and_noise(tmp_path, tiny_config):
@@ -48,7 +48,7 @@ def test_interrupted_resume_matches_uninterrupted_with_cache_and_noise(tmp_path,
 
 
 def test_partial_publish_keeps_old_checkpoint(tmp_path, tiny_config, monkeypatch):
-    import elm.checkpoints as checkpoints
+    import sdkb.checkpoints as checkpoints
     run = tmp_path / 'run'
     original = checkpoints._atomic_text
     writes = 0

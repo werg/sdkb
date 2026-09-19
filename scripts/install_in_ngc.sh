@@ -1,19 +1,24 @@
 #!/usr/bin/env bash
-# Preserve NVIDIA's torch/CUDA stack. New Python dependencies are isolated.
+# Isolate HF dependencies while preserving NVIDIA's native torch/CUDA installation.
 set -euo pipefail
-repo="${1:-/workspace/elm}"
-python -m venv --system-site-packages /opt/elm-venv
-python - <<'PY' > /tmp/elm-torch-constraints.txt
-from importlib.metadata import version, PackageNotFoundError
-for name in ('torch', 'torchvision', 'torchaudio', 'triton'):
-    try:
-        print(f'{name}=={version(name)}')
-    except PackageNotFoundError:
-        pass
+repo="${1:-/workspace/sdkb}"
+python -m venv --system-site-packages /opt/sdkb-venv
+python - <<'PY' >/opt/sdkb-runtime-constraints.txt
+from importlib.metadata import distributions
+for d in distributions():
+    name = d.metadata['Name'].lower().replace('_', '-')
+    if name in {'torch', 'torchvision', 'torchaudio', 'triton'} or name.startswith('nvidia-'):
+        print(f'{name}=={d.version}')
 PY
-before="$(python -c 'import torch; print(torch.__version__, torch.version.cuda)')"
-# Keep an inherited PIP_CONSTRAINT as well; conflicts should fail, not silently
-# replace the vendor runtime. Choose another documented base image if needed.
-/opt/elm-venv/bin/python -m pip install -c /tmp/elm-torch-constraints.txt -e "$repo[hf,dev]"
-after="$(/opt/elm-venv/bin/python -c 'import torch; print(torch.__version__, torch.version.cuda)')"
-[[ "$before" == "$after" ]] || { echo 'NVIDIA torch runtime changed; refusing build.' >&2; exit 1; }
+before="$(python -c 'import torch; print(torch.__version__, torch.version.cuda, torch.__file__)')"
+# Remove general vendor pins only inside this venv, keeping explicit GPU runtime pins.
+env -u PIP_CONSTRAINT -u PIP_BUILD_CONSTRAINT /opt/sdkb-venv/bin/python -m pip install \
+    -c /opt/sdkb-runtime-constraints.txt -e "$repo[hf,data,dev]"
+after="$(/opt/sdkb-venv/bin/python -c 'import torch; print(torch.__version__, torch.version.cuda, torch.__file__)')"
+[[ "$before" == "$after" ]] || { echo 'Vendor torch changed; refusing build.' >&2; exit 1; }
+/opt/sdkb-venv/bin/python - <<'PY'
+from transformers import AutoTokenizer, Lfm2ForCausalLM
+import datasets, sdkb
+print('SDKB imports validated:', sdkb.__version__, datasets.__version__)
+PY
+/opt/sdkb-venv/bin/python -m pip freeze >/opt/sdkb-python-freeze.txt

@@ -8,7 +8,7 @@ import time
 import torch
 from safetensors.torch import load_model
 
-from .agent import MemoryAgent
+from .agent import SDKBAgent
 from .checkpoints import resolve_checkpoint
 from .data import Episode, load_episodes, counterfactual_boolean
 from .metrics import summarize_rows, paired_world_bootstrap
@@ -131,7 +131,7 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
         raise ValueError('Run was not configured with a compactor')
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
-    agent = MemoryAgent(config).to(config.train.device).eval()
+    agent = SDKBAgent(config).to(config.train.device).eval()
     load_model(agent, str(resolve_checkpoint(run) / 'model.safetensors'), device=config.train.device)
     episodes = load_episodes(episodes_path)
     output = run / ('transfer-v2-' + str(time.time_ns()))

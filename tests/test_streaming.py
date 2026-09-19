@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from elm.readers import SetReader
-from elm.streaming import read_stream
-from elm.store import DiskStore, StoredRecord, ReadPlan, Selection
+from sdkb.readers import SetReader
+from sdkb.streaming import read_stream
+from sdkb.store import DiskStore, StoredRecord, ReadPlan, Selection
 
 
 @pytest.mark.parametrize('kind', ['mlp', 'attention'])
@@ -43,11 +43,11 @@ def test_plan_mutation_and_visibility_fail_closed(tmp_path):
 
 
 def test_streamed_session_matches_loaded_session(tmp_path, tiny_config):
-    from elm.agent import MemoryAgent
-    from elm.data import make_episode
-    from elm.evaluation import build_shared_bank
-    from elm.sessions import read_session
-    agent = MemoryAgent(tiny_config).eval()
+    from sdkb.agent import SDKBAgent
+    from sdkb.data import make_episode
+    from sdkb.evaluation import build_shared_bank
+    from sdkb.sessions import read_session
+    agent = SDKBAgent(tiny_config).eval()
     e = make_episode(0, distractors=0)
     store = DiskStore(tmp_path / 'store.sqlite')
     build_shared_bank(agent, store, [e])

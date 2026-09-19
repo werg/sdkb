@@ -31,3 +31,12 @@ before changing behavior. Do not describe a proposed module as implemented.
 
 Run `python -m pytest -q`, `ruff check src tests scripts`, and relevant end-to-end
 commands. Add regression tests before changing replay, causal masking or storage.
+
+
+## SDKB 0.3 development
+
+Use `sdkb` and `SDKBAgent`; do not edit historical result records for a rename.
+Read the dataset/training guides before changing causal boundaries. Keep source and
+target identities/versioned payloads intact; source commands are inert data. Preserve
+NVIDIA torch/CUDA and run the model preflight for actual-HF changes. Core tests must
+work without downloads. Distinguish teacher NLL, controlled transfer and agent success.

@@ -3,18 +3,19 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "external-latent-memory"
-version = "0.2.0"
-description = "Transfer-trained external latent memory, recurrent set readers, and conditional compaction"
+name = "sdkb"
+version = "0.3.0"
+description = "Spatially Superposed Differentiable Knowledge Base"
 requires-python = ">=3.11"
 dependencies = ["torch>=2.6", "numpy>=1.26", "safetensors>=0.5", "PyYAML>=6"]
 
 [project.optional-dependencies]
 hf = ["transformers==5.17.0"]
+data = ["datasets==5.0.1"]
 dev = ["pytest>=8", "ruff>=0.11"]
 
 [project.scripts]
-elm = "elm.cli:main"
+sdkb = "sdkb.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

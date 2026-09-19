@@ -16,6 +16,16 @@ from .training import environment_report, resource_report
 
 def doctor(require_spark: bool = False) -> dict:
     report = environment_report()
+    from importlib.metadata import PackageNotFoundError, version
+    report['packages'] = {}
+    for name in ('sdkb', 'transformers', 'datasets', 'safetensors'):
+        try:
+            report['packages'][name] = version(name)
+        except PackageNotFoundError:
+            report['packages'][name] = 'not installed'
+    image = Path('/opt/sdkb-base-image.txt')
+    report['container_base_image'] = image.read_text().strip() if image.exists() else None
+    report['torch_import_path'] = torch.__file__
     if torch.cuda.is_available():
         a = torch.randn(256, 256, device="cuda", dtype=torch.bfloat16)
         b = a @ a.T

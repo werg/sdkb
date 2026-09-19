@@ -1,0 +1,56 @@
+model:
+  backend: tiny
+  model_id: LiquidAI/LFM2.5-230M
+  revision: main
+  loops: 1
+  tiny_width: 32
+  tiny_layers: 1
+  tiny_heads: 4
+  gradient_checkpointing: false
+  freeze_backbone: false
+memory:
+  key_dim: 12
+  write_slots: 2
+  read_slots: 2
+  payload_dims:
+  - 24
+  neighbors:
+  - 2
+  reader_width: 24
+  reader_rounds: 2
+  reader: mlp
+  chunk_size: 2
+  checkpoint_chunks: false
+  storage_dtype: bfloat16
+  compaction: none
+  compact_records: 2
+  compaction_probability: 0.25
+  compaction_loss_weight: 0.1
+  compaction_warmup: 100
+  noise_std: 0.0
+  quantization_step: 0.0
+train:
+  seed: 17
+  steps: 30
+  learning_rate: 0.001
+  backbone_learning_rate: 0.001
+  gradient_accumulation: 1
+  clip_grad_norm: 1.0
+  precision: fp32
+  device: cpu
+  replay: true
+  verify_replay: false
+  live_fraction: 1.0
+  train_worlds: 16
+  distractors: 2
+  eval_worlds: 4
+  log_every: 10
+  max_source_tokens: 128
+  max_prompt_tokens: 1400
+  arm: memory
+  retrieval: oracle
+  routing_weight: 0.1
+  routing_warmup: 100
+  threads: 2
+  max_target_tokens: 64
+  checkpoint_every: 1

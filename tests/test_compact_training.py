@@ -2,11 +2,11 @@ import copy
 import pytest
 import torch
 
-from elm.agent import MemoryAgent
-from elm.compaction import compact_view
-from elm.readers import SetReader
-from elm.replay import ReplayTape
-from elm.training import stored_channel
+from sdkb.agent import SDKBAgent
+from sdkb.compaction import compact_view
+from sdkb.readers import SetReader
+from sdkb.replay import ReplayTape
+from sdkb.training import stored_channel
 
 
 @pytest.mark.parametrize('kind', ['mlp', 'attention'])
@@ -43,7 +43,7 @@ def test_paired_compaction_replay_gradient_parity(tiny_config, grouping):
     config.memory.compaction_group_size = 2
     config.memory.behavior_kl_weight = 0.2
     config.memory.noise_std = 0.01
-    full = MemoryAgent(config)
+    full = SDKBAgent(config)
     replay = copy.deepcopy(full)
     state = torch.get_rng_state()
     def run(agent, use_tape):
@@ -74,7 +74,7 @@ def test_multiread_replay_and_causal_query_updates(tiny_config):
     config.memory.read_steps = 3
     config.memory.read_top_k = 1
     config.validate()
-    full, replay = MemoryAgent(config), None
+    full, replay = SDKBAgent(config), None
     replay = copy.deepcopy(full)
     queries = []
     original = full.query

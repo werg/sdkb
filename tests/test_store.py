@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from elm.store import (DiskStore, StoredRecord, ReadPlan, Selection, AsyncRetriever, lookup_record)
+from sdkb.store import (DiskStore, StoredRecord, ReadPlan, Selection, AsyncRetriever, lookup_record)
 
 
 def record(rid, key, **kwargs):

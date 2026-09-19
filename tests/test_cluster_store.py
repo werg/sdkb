@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from elm.cluster_store import ClusterBank, state_fingerprint
-from elm.readers import SetReader
-from elm.store import DiskStore, StoredRecord, ReadPlan, Selection
+from sdkb.cluster_store import ClusterBank, state_fingerprint
+from sdkb.readers import SetReader
+from sdkb.store import DiskStore, StoredRecord, ReadPlan, Selection
 
 
 def setup_bank(tmp_path, domain='research'):
@@ -60,12 +60,12 @@ def test_state_fingerprint_detects_reader_change():
 
 
 def test_stored_codes_need_neither_writer_nor_compactor_at_read(tmp_path, tiny_config, monkeypatch):
-    from elm.agent import MemoryAgent
-    from elm.data import make_boolean_world
-    from elm.evaluation import build_shared_bank, build_persistent_codes, stored_transfer_evaluation
+    from sdkb.agent import SDKBAgent
+    from sdkb.data import make_boolean_world
+    from sdkb.evaluation import build_shared_bank, build_persistent_codes, stored_transfer_evaluation
     tiny_config.memory.compaction = 'synthetic'
     tiny_config.memory.compact_records = 1
-    agent = MemoryAgent(tiny_config).eval()
+    agent = SDKBAgent(tiny_config).eval()
     episodes = make_boolean_world(0, operations=('a','b','xor'))
     store = DiskStore(tmp_path / 'bank.sqlite')
     build_shared_bank(agent, store, episodes)

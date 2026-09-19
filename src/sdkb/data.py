@@ -5,7 +5,7 @@ not real-world coding ability or capacity substitution.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, replace, field
 from pathlib import Path
 import hashlib
 import json
@@ -35,6 +35,8 @@ class Episode:
     task_family: str = "retry"
     choices: tuple[str, ...] = ()
     sufficient_groups: tuple[tuple[str, ...], ...] = ()
+    support_annotation: str = "verified"
+    provenance: dict = field(default_factory=dict)
 
 
 def _opaque(text: str) -> str:
@@ -104,35 +106,37 @@ def save_episodes(path: str | Path, episodes: list[Episode]) -> None:
             handle.write(json.dumps(asdict(episode), sort_keys=True) + "\n")
 
 
+def episode_from_dict(row: dict) -> Episode:
+    row = dict(row)
+    row.setdefault("environment", row["episode_id"])
+    row.setdefault("task_family", "custom")
+    row.setdefault("restore", False)
+    row.setdefault("allowed_capability", 0)
+    row.setdefault("capability", 0)
+    row["supports"] = tuple(Source(**({"kind": "experience"} | source)) for source in row["supports"])
+    row["required_ids"] = tuple(row["required_ids"])
+    row["choices"] = tuple(row.get("choices", ()))
+    row["sufficient_groups"] = tuple(tuple(g) for g in row.get("sufficient_groups", ()))
+    episode = Episode(**row)
+    if any(s.created_at >= episode.query_time for s in episode.supports):
+        raise ValueError("Source is not causally prior to the query")
+    if episode.episode_id in {s.record_id for s in episode.supports}:
+        raise ValueError("Query cannot be its own source")
+    ids = [s.record_id for s in episode.supports]
+    if len(ids) != len(set(ids)) or not set(episode.required_ids) <= set(ids):
+        raise ValueError("Support IDs must be unique and include required_ids")
+    if episode.choices and (episode.answer not in episode.choices or len(set(episode.choices)) != len(episode.choices)):
+        raise ValueError("Distinct choices must contain the correct answer")
+    if any(not g or not set(g) <= set(ids) for g in episode.sufficient_groups):
+        raise ValueError("Invalid sufficient support group")
+    if not episode.answer or not episode.query:
+        raise ValueError("Query and answer cannot be empty")
+    return episode
+
+
 def load_episodes(path: str | Path) -> list[Episode]:
-    episodes = []
     with open(path, encoding="utf-8") as handle:
-        for line in handle:
-            row = json.loads(line)
-            row.setdefault("environment", row["episode_id"])
-            row.setdefault("task_family", "custom")
-            row.setdefault("restore", False)
-            row.setdefault("allowed_capability", 0)
-            row.setdefault("capability", 0)
-            row["supports"] = tuple(Source(**({"kind": "experience"} | source)) for source in row["supports"])
-            row["required_ids"] = tuple(row["required_ids"])
-            row["choices"] = tuple(row.get("choices", ()))
-            row["sufficient_groups"] = tuple(tuple(g) for g in row.get("sufficient_groups", ()))
-            episode = Episode(**row)
-            if any(s.created_at >= episode.query_time for s in episode.supports):
-                raise ValueError("Source is not causally prior to the query")
-            if episode.episode_id in {s.record_id for s in episode.supports}:
-                raise ValueError("Query cannot be its own source")
-            ids = [s.record_id for s in episode.supports]
-            if len(ids) != len(set(ids)) or not set(episode.required_ids) <= set(ids):
-                raise ValueError("Support IDs must be unique and include required_ids")
-            if episode.choices and (episode.answer not in episode.choices or len(set(episode.choices)) != len(episode.choices)):
-                raise ValueError("Distinct choices must contain the correct answer")
-            if any(not g or not set(g) <= set(ids) for g in episode.sufficient_groups):
-                raise ValueError("Invalid sufficient support group")
-            if not episode.answer or not episode.query:
-                raise ValueError("Query and answer cannot be empty")
-            episodes.append(episode)
+        episodes = [episode_from_dict(json.loads(line)) for line in handle if line.strip()]
     seen = {}
     episode_ids = set()
     for episode in episodes:

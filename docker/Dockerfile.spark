@@ -1,12 +1,18 @@
-# Native ARM64 NVIDIA PyTorch environment. Override BASE_IMAGE when required by
-# the installed Spark driver. No x86 emulation and no replacement torch wheel.
-ARG BASE_IMAGE=nvcr.io/nvidia/pytorch:26.08-py3
+# Documented NVIDIA Spark baseline. The build script resolves it to a digest.
+ARG BASE_IMAGE=nvcr.io/nvidia/pytorch:25.11-py3
 FROM ${BASE_IMAGE}
-ENV PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1 HF_HOME=/cache/huggingface
-WORKDIR /workspace/elm
-COPY pyproject.toml /workspace/elm/
-COPY src /workspace/elm/src
+ARG BASE_IMAGE
+LABEL org.opencontainers.image.title="SDKB" \
+      org.opencontainers.image.description="Spatially Superposed Differentiable Knowledge Base"
+ENV PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    HF_HOME=/cache/huggingface HF_HUB_DISABLE_TELEMETRY=1 \
+    NVIDIA_IMEX_CHANNELS=0 TOKENIZERS_PARALLELISM=false
+WORKDIR /workspace/sdkb
+COPY pyproject.toml /workspace/sdkb/
+COPY src /workspace/sdkb/src
 COPY scripts/install_in_ngc.sh /tmp/install_in_ngc.sh
-RUN bash /tmp/install_in_ngc.sh /workspace/elm
-ENV PATH=/opt/elm-venv/bin:$PATH
+RUN printf '%s\n' "$BASE_IMAGE" >/opt/sdkb-base-image.txt \
+    && bash /tmp/install_in_ngc.sh /workspace/sdkb
+ENV PATH=/opt/sdkb-venv/bin:$PATH \
+    PIP_CONSTRAINT=/opt/sdkb-runtime-constraints.txt
 CMD ["bash"]

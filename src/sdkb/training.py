@@ -15,7 +15,7 @@ import time
 import torch
 from safetensors.torch import load_model
 
-from .agent import MemoryAgent
+from .agent import SDKBAgent
 from .checkpoints import save_checkpoint, restore_checkpoint, resolve_checkpoint, stop_on_signal
 from .config import Config
 from .data import Episode, Source, counterfactual, make_episode, save_episodes, load_episodes
@@ -68,14 +68,14 @@ def resource_report() -> dict:
     return report
 
 
-def stored_channel(agent: MemoryAgent, outputs: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
+def stored_channel(agent: SDKBAgent, outputs: tuple[torch.Tensor, ...]) -> tuple[torch.Tensor, ...]:
     dtype = getattr(torch, agent.config.memory.storage_dtype)
     # Cast is part of the captured forward. Cached and live payloads pass through
     # the same representational precision, then return to the resident compute dtype.
     return tuple(x.float() if i % 2 == 0 else x.to(dtype).float() for i, x in enumerate(outputs))
 
 
-def persist_outputs(store: DiskStore, agent: MemoryAgent, source: Source,
+def persist_outputs(store: DiskStore, agent: SDKBAgent, source: Source,
                     outputs: tuple[torch.Tensor, ...], namespace: str, generation: str) -> None:
     dtype = getattr(torch, agent.config.memory.storage_dtype)
     for space in range(len(agent.config.memory.payload_dims)):
@@ -84,7 +84,7 @@ def persist_outputs(store: DiskStore, agent: MemoryAgent, source: Source,
             generation=generation, created_at=source.created_at, source_id=source.record_id))
 
 
-def read_cached(store: DiskStore, agent: MemoryAgent, source: Source,
+def read_cached(store: DiskStore, agent: SDKBAgent, source: Source,
                 namespace: str, generation: str) -> tuple[torch.Tensor, ...]:
     outputs = []
     for space in range(len(agent.config.memory.payload_dims)):
@@ -112,7 +112,7 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
     random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
     rng = random.Random(config.train.seed)
-    agent = MemoryAgent(config).to(config.train.device)
+    agent = SDKBAgent(config).to(config.train.device)
     agent.train()
     if init_from is not None:
         source_checkpoint = resolve_checkpoint(init_from, verify=True)
@@ -158,10 +158,12 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
         "trainable_parameters": sum(p.numel() for p in agent.parameters() if p.requires_grad),
         "notice": "Prototype measurements; not evidence of capacity substitution."}
     (output / "environment.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    episodes = (load_episodes(config.train.episodes_file) if config.train.episodes_file else
+    from .episode_index import EpisodeIndex
+    episodes = (EpisodeIndex(config.train.episodes_file) if config.train.episodes_file else
                 [make_episode(i, split=f"train-{config.train.seed}", distractors=config.train.distractors)
                  for i in range(config.train.train_worlds)])
-    fingerprint = hashlib.sha256(json.dumps([asdict(e) for e in episodes], sort_keys=True).encode()).hexdigest()
+    fingerprint = (episodes.sha256 if isinstance(episodes, EpisodeIndex) else
+                   hashlib.sha256(json.dumps([asdict(e) for e in episodes], sort_keys=True).encode()).hexdigest())
     data_manifest = output / "data_manifest.json"
     if resume and data_manifest.exists() and json.loads(data_manifest.read_text())["sha256"] != fingerprint:
         raise ValueError("Episode contents changed since checkpoint; refusing stale-cache reuse")
@@ -184,6 +186,7 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
             optimizer.zero_grad(set_to_none=True)
             totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
                       "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0}
+            anchor_total = 0.0
             for _ in range(config.train.gradient_accumulation):
                 episode = rng.choice(episodes)
                 tape = ReplayTape(verify_outputs=config.train.verify_replay)
@@ -214,7 +217,13 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
                                and rng.random() < config.memory.compaction_probability)
                     result = agent(prompt, agent.target_ids(episode.answer), records, required,
                                    step=step, compact=compact)
-                    loss = result.loss / config.train.gradient_accumulation
+                    loss = result.loss
+                    if config.train.oracle_anchor_weight and config.train.arm == "memory":
+                        oracle_prompt = agent.prompt_ids(episode.query, support_text)
+                        anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None)
+                        loss = loss + config.train.oracle_anchor_weight * anchor
+                        anchor_total += float(anchor.detach()) / config.train.gradient_accumulation
+                    loss = loss / config.train.gradient_accumulation
                 if not torch.isfinite(loss):
                     raise FloatingPointError(f"Nonfinite loss at step {step}")
                 if loss.requires_grad:
@@ -229,7 +238,9 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
             grad_norm = torch.nn.utils.clip_grad_norm_(agent.parameters(), config.train.clip_grad_norm,
                                                        error_if_nonfinite=True)
             optimizer.step()
-            row = {"step": step + 1, **totals, "grad_norm": float(grad_norm),
+            row = {"step": step + 1, **totals, "oracle_anchor_nll": anchor_total,
+                   "optimization_loss": totals["loss"] + config.train.oracle_anchor_weight * anchor_total,
+                   "grad_norm": float(grad_norm),
                    "elapsed_seconds": time.perf_counter() - start_time}
             log.write(json.dumps(row) + "\n")
             log.flush()
@@ -258,7 +269,7 @@ def config_from_run(path: Path) -> Config:
 
 
 @torch.no_grad()
-def build_evaluation_store(agent: MemoryAgent, store: DiskStore,
+def build_evaluation_store(agent: SDKBAgent, store: DiskStore,
                            episodes: list[Episode], generation: str) -> None:
     if agent.training:
         raise ValueError("Freeze the writer in eval mode before building an evaluation bank")
@@ -275,7 +286,7 @@ def build_evaluation_store(agent: MemoryAgent, store: DiskStore,
 
 
 @torch.no_grad()
-def stored_evaluation(agent: MemoryAgent, store: DiskStore, episodes: list[Episode],
+def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode],
                       generation: str, *, generate: bool = False) -> dict:
     """Stored-only causal interventions. Full-sequence scoring; no writer calls."""
     from .evaluation import score_answers
@@ -342,7 +353,7 @@ def evaluate_run(run: str | Path, *, count: int | None = None, generate: bool = 
     run = Path(run)
     config = config_from_run(run)
     torch.set_num_threads(config.train.threads)
-    agent = MemoryAgent(config).to(config.train.device)
+    agent = SDKBAgent(config).to(config.train.device)
     load_model(agent, str(resolve_checkpoint(run) / "model.safetensors"), device=config.train.device)
     agent.eval()
     episodes = [make_episode(i, split=f"heldout-{config.train.seed}", distractors=config.train.distractors)
@@ -373,7 +384,7 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
     config = config_from_run(run)
     episodes = load_episodes(path)
     torch.set_num_threads(config.train.threads)
-    agent = MemoryAgent(config).to(config.train.device)
+    agent = SDKBAgent(config).to(config.train.device)
     load_model(agent, str(resolve_checkpoint(run) / "model.safetensors"), device=config.train.device)
     agent.eval()
     output = run / ("transfer-" + str(time.time_ns()))

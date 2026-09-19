@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import torch
 
-from .agent import MemoryAgent
+from .agent import SDKBAgent
 from .training import autocast_context, environment_report, resource_report
 
 
@@ -11,7 +11,7 @@ def model_probe(config) -> dict:
     config.validate()
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
-    agent = MemoryAgent(config).to(config.train.device)
+    agent = SDKBAgent(config).to(config.train.device)
     agent.eval()
     ids = agent.text_ids('An earlier experience has a retry rule.', source=True)
     with torch.no_grad(), autocast_context(config):
@@ -43,6 +43,8 @@ def model_probe(config) -> dict:
         if parameter.grad is None or not torch.isfinite(parameter.grad).all():
             raise AssertionError(f'Missing/nonfinite soft-memory gradient: {name}')
         gradients[name] = float(parameter.grad.norm())
+        if gradients[name] <= 0:
+            raise AssertionError(f'Zero soft-memory gradient: {name}')
     return {'environment': environment_report(), 'backend': config.model.backend, 'model_id': config.model.model_id,
             'resolved_revision': agent.resolved_revision, 'width': agent.width,
             'parameters': sum(p.numel() for p in agent.parameters()),

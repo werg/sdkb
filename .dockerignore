@@ -11,3 +11,5 @@ __pycache__
 *.pt
 *.sqlite*
 .env*
+.sdkb
+experiments

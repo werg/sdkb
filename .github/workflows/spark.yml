@@ -11,5 +11,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./scripts/spark.sh build
-      - run: ./scripts/spark.sh run elm doctor --require-spark
+      - run: ./scripts/spark.sh run sdkb doctor --require-spark
       - run: ./scripts/spark.sh run python -m pytest -q
