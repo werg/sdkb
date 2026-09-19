@@ -88,3 +88,13 @@ formats. Current-source resume rejects the old format rather than guessing at
 missing state. Use the original checkout to resume an old run, or an explicit
 warm-start fork for a changed protocol. Main-trainer microbatch/replay recovery
 remains a stronger, separate contract; these small probes stop between updates.
+
+The post-hoc compactor probe now uses that same shared recovery helper. Its prior
+standalone saver retained Torch/CUDA/sampler state but omitted Python RNG and did
+not remove a failed temporary save. The replacement includes both and budgets
+from actual state tensors. A download-free end-to-end regression stops after one
+Muon update, reuses the committed bank/features, resumes, and exactly matches the
+uninterrupted final model, optimizer, named groups and all RNG state. The shared
+failed-save regression preserves the previous checkpoint and removes the partial
+file. Existing compactor endpoints remain valid explicit warm-start sources;
+resuming an older run requires its original checkout and format.

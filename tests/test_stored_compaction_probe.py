@@ -68,3 +68,62 @@ def test_cached_single_read_task_gradient_matches_causal_prefix_plan(tiny_config
         torch.testing.assert_close(a, b, rtol=1e-5, atol=1e-7)
     assert any(g.abs().sum() > 0 for g in gradients)
     assert all(p.grad is None for p in agent.parameters())
+
+
+def test_compactor_probe_emergency_resume_preserves_complete_state(tmp_path, tiny_config, monkeypatch):
+    import pytest
+    from sdkb.data import make_multiuse_world, save_episodes
+    from sdkb.training import train
+    path = Path(__file__).parents[1] / 'scripts/probe_stored_compaction.py'
+    spec = importlib.util.spec_from_file_location('recover_compaction_probe', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    c = tiny_config
+    c.model.tiny_layers = 4
+    c.model.recurrence_mode = 'middle_block'
+    c.model.recurrent_start, c.model.recurrent_end = 1, 3
+    c.model.loops, c.model.writer_loops = 3, 1
+    c.memory.read_timing, c.memory.read_steps = 'loop_boundary', 1
+    c.train.live_fraction = 1.
+    c.train.max_source_tokens = 512
+    c.train.max_prompt_tokens = 512
+    source = tmp_path/'source'
+    train(c, source)
+    data = tmp_path/'episodes.jsonl'
+    save_episodes(data, make_multiuse_world(0, split='compactor-recovery-train', bindings=2))
+    # Keep real bank creation, feature extraction, optimization and stored evaluation,
+    # using one held-out world for a small download-free recovery regression.
+    monkeypatch.setattr(module, 'make_multiuse_world', lambda i, **kw: make_multiuse_world(i, **kw) if i == 0 else [])
+    full, resumed = tmp_path/'full', tmp_path/'resumed'
+    module.run(source, data, full, steps=2, batch_size=2)
+    original = module.MuonAdamW.step
+    updates = []
+    def update(optimizer):
+        original(optimizer)
+        updates.append(1)
+    monkeypatch.setattr(module.MuonAdamW, 'step', update)
+    monkeypatch.setattr(module, 'stop_requested', lambda _: bool(updates))
+    with pytest.raises(RuntimeError, match='Stopped'):
+        module.run(source, data, resumed, steps=2, batch_size=2)
+    state = torch.load(resumed/'resume.pt', weights_only=True)
+    assert state['step'] == 1
+    assert state['format'] == 'sdkb-probe-v1'
+    assert 'python_rng' in state
+    monkeypatch.setattr(module, 'stop_requested', lambda _: False)
+    module.run(source, data, resumed, steps=2, batch_size=2)
+    expected = torch.load(full/'resume.pt', weights_only=True)
+    actual = torch.load(resumed/'resume.pt', weights_only=True)
+    def same(a, b):
+        if isinstance(a, torch.Tensor):
+            torch.testing.assert_close(a, b, rtol=0, atol=0)
+        elif isinstance(a, dict):
+            assert a.keys() == b.keys()
+            for k in a:
+                same(a[k], b[k])
+        elif isinstance(a, (tuple, list)):
+            assert len(a) == len(b)
+            for x, y in zip(a, b, strict=True):
+                same(x, y)
+        else:
+            assert a == b
+    same(actual, expected)

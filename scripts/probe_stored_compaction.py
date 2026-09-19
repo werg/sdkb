@@ -8,13 +8,13 @@ import copy
 from dataclasses import asdict
 import json
 from pathlib import Path
+import random
 import signal
 
 from safetensors.torch import load_file, save_file
 import torch
 
-from sdkb.archiving import ensure_free
-from sdkb.checkpoints import resolve_checkpoint, reconcile_metrics, _fsync, _fsync_dir
+from sdkb.checkpoints import resolve_checkpoint, _fsync, _fsync_dir
 from sdkb.cluster_store import ClusterBank, state_fingerprint
 from sdkb.compaction import SyntheticCompactor, contribution_loss, mean_and_mass
 from sdkb.data import load_episodes, make_multiuse_world, save_episodes
@@ -22,6 +22,7 @@ from sdkb.evaluation import build_shared_bank, stored_transfer_evaluation
 from sdkb.evaluation_adapter import load_frozen_agent
 from sdkb.operations import atomic_json, control_dir, run_lock, stop_requested
 from sdkb.optimizers import MuonAdamW
+from sdkb.probe_state import restore_probe_state, save_probe_state
 from sdkb.recurrence import LoopMemory
 from sdkb.runtime import configure_memory, available_host_memory, memory_metrics, compute_watchdog
 from sdkb.store import DiskStore, ReadPlan, Selection
@@ -146,6 +147,7 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=N
                                     'frozen-reader-posthoc-compaction')
         configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
+        random.seed(seed)
         torch.manual_seed(seed)
         agent, _ = load_frozen_agent(config, checkpoint)
         agent.requires_grad_(False)
@@ -193,30 +195,11 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=N
         groups = [{'params': [named[n] for n in group], 'lr': config.train.learning_rate} for group in names]
         optimizer = MuonAdamW(groups[:1], groups[1:], config.train)
         sampler = torch.Generator().manual_seed(seed)
-        completed, path = 0, output / 'resume.pt'
-        if path.exists():
-            state = torch.load(path, weights_only=True, map_location=agent.device)
-            if state['identity'] != identity or state['parameter_names'] != names:
-                raise ValueError('Compactor resume identity/ownership changed')
-            compactor.load_state_dict(state['compactor'])
-            optimizer.load_state_dict(state['optimizer'])
-            sampler.set_state(state['sampling_rng'].cpu())
-            torch.set_rng_state(state['torch_rng'].cpu())
-            if state['cuda_rng']:
-                torch.cuda.set_rng_state_all([v.cpu() for v in state['cuda_rng']])
-            completed = state['step']
-        reconcile_metrics(output, completed)
+        path = output / 'resume.pt'
+        completed = restore_probe_state(path, compactor, optimizer, sampler, identity, model_key='compactor')
         def save():
-            ensure_free(output, sum(p.numel() * p.element_size() for p in compactor.parameters()) * 4,
-                        config.train.min_free_disk_bytes)
-            temporary = path.with_suffix('.tmp')
-            torch.save({'identity': identity, 'compactor': compactor.state_dict(),
-                        'optimizer': optimizer.state_dict(), 'parameter_names': names, 'step': completed,
-                        'sampling_rng': sampler.get_state(), 'torch_rng': torch.get_rng_state(),
-                        'cuda_rng': torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []}, temporary)
-            _fsync(temporary)
-            temporary.replace(path)
-            _fsync_dir(path.parent)
+            save_probe_state(path, compactor, optimizer, sampler, identity, completed,
+                             reserve_bytes=config.train.min_free_disk_bytes, model_key='compactor')
             print(json.dumps({'checkpoint_saved': completed}), flush=True)
         if not path.exists():
             save()
