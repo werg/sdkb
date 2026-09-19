@@ -241,3 +241,22 @@ warm-cache, exact-scan and ANN claims separate. Model-specific bgkit DeltaNet
 kernels do not apply to this LFM2 convolution/attention backbone.
 
 The detailed adoption inventory is in [the bgkit audit](bgkit-audit.md).
+
+
+## Deduplicate immutable warm-start weights
+
+Completed warm starts can retain byte-identical weight files in separate checkpoint
+sets. `scripts/deduplicate_checkpoint_weights.py --root RUNS_ROOT --report PLAN.json`
+is a dry run. Add `--apply` with a new report path to replace verified duplicate
+weight files with hard links on the same filesystem. Every candidate SHA256 is
+checked before any replacement; stage and parent run locks must be available.
+Permissions, ownership and extended attributes must match. Symlinked checkpoint
+aliases and already-shared destination files are excluded. Failed atomic publication
+preserves the original destination. Optimizer/RNG/cache/config files and manifests
+are unchanged; ordinary independent checkpoint retention still works.
+
+This relies on the existing immutable-checkpoint contract: never edit checkpoint
+files in place. Hard-link support is required; unsupported filesystems fail without
+silently copying or deleting payloads. Reported bytes are deduplicated logical file
+lengths; open readers can delay physical release. This is explicit maintenance,
+not an automatic background mutation of running training checkpoints.
