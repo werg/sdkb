@@ -1,0 +1,11 @@
+{
+  "equal_raw_payload_and_provenance_records": 128,
+  "equal_oracle_no_memory_rows": 640,
+  "compared": [
+    "fp32/global",
+    "fp32/world",
+    "historical/global_long",
+    "historical/world_long"
+  ],
+  "keys_excluded_from_payload_parity": true
+}

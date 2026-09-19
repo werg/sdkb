@@ -1,0 +1,8 @@
+{
+  "step": 3200,
+  "equal_to_corrected_global_64": {
+    "model": true,
+    "optimizer": true,
+    "sampling_rng": true
+  }
+}

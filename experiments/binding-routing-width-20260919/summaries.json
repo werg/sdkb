@@ -1,0 +1,377 @@
+{
+  "64": {
+    "initial": 0.0,
+    "parameters": 139264,
+    "key_bytes": 256,
+    "train": {
+      "world": {
+        "objective_loss": 0.43290763534605503,
+        "by_family": {
+          "multiuse/action": {
+            "n": 4096,
+            "full_required": 3851,
+            "top_one_required": 4076,
+            "only_target_world": 4096
+          },
+          "multiuse/identifier": {
+            "n": 2048,
+            "full_required": 2038,
+            "top_one_required": 1879,
+            "only_target_world": 2048
+          },
+          "multiuse/permission": {
+            "n": 2048,
+            "full_required": 2034,
+            "top_one_required": 1892,
+            "only_target_world": 2048
+          },
+          "multiuse/restoration": {
+            "n": 2048,
+            "full_required": 2047,
+            "top_one_required": 2004,
+            "only_target_world": 2048
+          }
+        }
+      },
+      "global": {
+        "objective_loss": 2.9588507562875748,
+        "by_family": {
+          "multiuse/action": {
+            "n": 4096,
+            "full_required": 3742,
+            "top_one_required": 4068,
+            "only_target_world": 3973
+          },
+          "multiuse/identifier": {
+            "n": 2048,
+            "full_required": 2012,
+            "top_one_required": 1846,
+            "only_target_world": 1462
+          },
+          "multiuse/permission": {
+            "n": 2048,
+            "full_required": 2009,
+            "top_one_required": 1867,
+            "only_target_world": 1523
+          },
+          "multiuse/restoration": {
+            "n": 2048,
+            "full_required": 2045,
+            "top_one_required": 1996,
+            "only_target_world": 1440
+          }
+        }
+      }
+    },
+    "heldout": {
+      "world": {
+        "objective_loss": 0.799654483795166,
+        "by_family": {
+          "multiuse/action": {
+            "n": 128,
+            "full_required": 99,
+            "top_one_required": 126,
+            "only_target_world": 128
+          },
+          "multiuse/identifier": {
+            "n": 64,
+            "full_required": 56,
+            "top_one_required": 35,
+            "only_target_world": 64
+          },
+          "multiuse/permission": {
+            "n": 64,
+            "full_required": 55,
+            "top_one_required": 37,
+            "only_target_world": 64
+          },
+          "multiuse/restoration": {
+            "n": 64,
+            "full_required": 64,
+            "top_one_required": 63,
+            "only_target_world": 64
+          }
+        }
+      },
+      "global": {
+        "objective_loss": 1.5167855024337769,
+        "by_family": {
+          "multiuse/action": {
+            "n": 128,
+            "full_required": 87,
+            "top_one_required": 124,
+            "only_target_world": 107
+          },
+          "multiuse/identifier": {
+            "n": 64,
+            "full_required": 52,
+            "top_one_required": 35,
+            "only_target_world": 55
+          },
+          "multiuse/permission": {
+            "n": 64,
+            "full_required": 52,
+            "top_one_required": 35,
+            "only_target_world": 52
+          },
+          "multiuse/restoration": {
+            "n": 64,
+            "full_required": 64,
+            "top_one_required": 63,
+            "only_target_world": 43
+          }
+        }
+      }
+    }
+  },
+  "128": {
+    "initial": 0.007178544998168945,
+    "parameters": 294912,
+    "key_bytes": 512,
+    "train": {
+      "world": {
+        "objective_loss": 0.3918088637292385,
+        "by_family": {
+          "multiuse/action": {
+            "n": 4096,
+            "full_required": 4011,
+            "top_one_required": 4089,
+            "only_target_world": 4096
+          },
+          "multiuse/identifier": {
+            "n": 2048,
+            "full_required": 2046,
+            "top_one_required": 1991,
+            "only_target_world": 2048
+          },
+          "multiuse/permission": {
+            "n": 2048,
+            "full_required": 2048,
+            "top_one_required": 1989,
+            "only_target_world": 2048
+          },
+          "multiuse/restoration": {
+            "n": 2048,
+            "full_required": 2048,
+            "top_one_required": 2037,
+            "only_target_world": 2048
+          }
+        }
+      },
+      "global": {
+        "objective_loss": 2.408400961756706,
+        "by_family": {
+          "multiuse/action": {
+            "n": 4096,
+            "full_required": 4003,
+            "top_one_required": 4089,
+            "only_target_world": 4088
+          },
+          "multiuse/identifier": {
+            "n": 2048,
+            "full_required": 2045,
+            "top_one_required": 1988,
+            "only_target_world": 1921
+          },
+          "multiuse/permission": {
+            "n": 2048,
+            "full_required": 2046,
+            "top_one_required": 1987,
+            "only_target_world": 1941
+          },
+          "multiuse/restoration": {
+            "n": 2048,
+            "full_required": 2048,
+            "top_one_required": 2037,
+            "only_target_world": 1887
+          }
+        }
+      }
+    },
+    "heldout": {
+      "world": {
+        "objective_loss": 0.8103842496871948,
+        "by_family": {
+          "multiuse/action": {
+            "n": 128,
+            "full_required": 95,
+            "top_one_required": 126,
+            "only_target_world": 128
+          },
+          "multiuse/identifier": {
+            "n": 64,
+            "full_required": 57,
+            "top_one_required": 32,
+            "only_target_world": 64
+          },
+          "multiuse/permission": {
+            "n": 64,
+            "full_required": 55,
+            "top_one_required": 28,
+            "only_target_world": 64
+          },
+          "multiuse/restoration": {
+            "n": 64,
+            "full_required": 64,
+            "top_one_required": 63,
+            "only_target_world": 64
+          }
+        }
+      },
+      "global": {
+        "objective_loss": 1.4881687402725219,
+        "by_family": {
+          "multiuse/action": {
+            "n": 128,
+            "full_required": 80,
+            "top_one_required": 126,
+            "only_target_world": 108
+          },
+          "multiuse/identifier": {
+            "n": 64,
+            "full_required": 52,
+            "top_one_required": 32,
+            "only_target_world": 57
+          },
+          "multiuse/permission": {
+            "n": 64,
+            "full_required": 50,
+            "top_one_required": 28,
+            "only_target_world": 56
+          },
+          "multiuse/restoration": {
+            "n": 64,
+            "full_required": 64,
+            "top_one_required": 63,
+            "only_target_world": 47
+          }
+        }
+      }
+    }
+  },
+  "256": {
+    "initial": 0.011795997619628906,
+    "parameters": 655360,
+    "key_bytes": 1024,
+    "train": {
+      "world": {
+        "objective_loss": 0.3828822964802384,
+        "by_family": {
+          "multiuse/action": {
+            "n": 4096,
+            "full_required": 4016,
+            "top_one_required": 4091,
+            "only_target_world": 4096
+          },
+          "multiuse/identifier": {
+            "n": 2048,
+            "full_required": 2047,
+            "top_one_required": 1999,
+            "only_target_world": 2048
+          },
+          "multiuse/permission": {
+            "n": 2048,
+            "full_required": 2048,
+            "top_one_required": 1999,
+            "only_target_world": 2048
+          },
+          "multiuse/restoration": {
+            "n": 2048,
+            "full_required": 2048,
+            "top_one_required": 2037,
+            "only_target_world": 2048
+          }
+        }
+      },
+      "global": {
+        "objective_loss": 2.362220272421837,
+        "by_family": {
+          "multiuse/action": {
+            "n": 4096,
+            "full_required": 4013,
+            "top_one_required": 4091,
+            "only_target_world": 4093
+          },
+          "multiuse/identifier": {
+            "n": 2048,
+            "full_required": 2046,
+            "top_one_required": 1998,
+            "only_target_world": 1940
+          },
+          "multiuse/permission": {
+            "n": 2048,
+            "full_required": 2046,
+            "top_one_required": 1997,
+            "only_target_world": 1956
+          },
+          "multiuse/restoration": {
+            "n": 2048,
+            "full_required": 2048,
+            "top_one_required": 2037,
+            "only_target_world": 1899
+          }
+        }
+      }
+    },
+    "heldout": {
+      "world": {
+        "objective_loss": 0.8098703145980835,
+        "by_family": {
+          "multiuse/action": {
+            "n": 128,
+            "full_required": 93,
+            "top_one_required": 126,
+            "only_target_world": 128
+          },
+          "multiuse/identifier": {
+            "n": 64,
+            "full_required": 57,
+            "top_one_required": 33,
+            "only_target_world": 64
+          },
+          "multiuse/permission": {
+            "n": 64,
+            "full_required": 55,
+            "top_one_required": 29,
+            "only_target_world": 64
+          },
+          "multiuse/restoration": {
+            "n": 64,
+            "full_required": 64,
+            "top_one_required": 63,
+            "only_target_world": 64
+          }
+        }
+      },
+      "global": {
+        "objective_loss": 1.4901650905609132,
+        "by_family": {
+          "multiuse/action": {
+            "n": 128,
+            "full_required": 79,
+            "top_one_required": 126,
+            "only_target_world": 111
+          },
+          "multiuse/identifier": {
+            "n": 64,
+            "full_required": 53,
+            "top_one_required": 33,
+            "only_target_world": 58
+          },
+          "multiuse/permission": {
+            "n": 64,
+            "full_required": 51,
+            "top_one_required": 29,
+            "only_target_world": 58
+          },
+          "multiuse/restoration": {
+            "n": 64,
+            "full_required": 64,
+            "top_one_required": 63,
+            "only_target_world": 46
+          }
+        }
+      }
+    }
+  }
+}

@@ -24,3 +24,23 @@ file request a checkpoint after the current complete optimizer update.
 
 Use `scripts/probe_routing_width.py`; any promising feature result must be
 validated through actual stored banks before claiming a model improvement.
+
+## Completed result
+
+| Width | Address parameters | Key bytes/record | Train full pairs /4096 | Held-out full pairs /128 |
+|---|---:|---:|---:|---:|
+| 64 | 139,264 | 256 | 3,742 | 87 |
+| 128 | 294,912 | 512 | 4,003 | 80 |
+| 256 | 655,360 | 1,024 | 4,013 | 79 |
+
+Wider matrices fit the training pairs better without improving this held-out
+feature diagnostic. Keep the 64-dimensional production interface; these results
+do not justify a wider adapter. They suggest a generalization problem under this
+initialization and budget, rather than establish a universal optimal width.
+The unchanged-width control reproduces the corrected global run's final model,
+optimizer and sampling RNG exactly. Initial maximum score changes were 0,
+0.00718 and 0.01180 respectively (temperature-scaled scores).
+
+All arms completed using native Muon from immutable commit `5cb9cfb`. Checkpoints
+contain only these small routing matrices and optimizer state; no backbone copies
+were created. Tests: 329 passed, four existing warnings; Ruff clean.

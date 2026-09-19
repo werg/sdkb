@@ -18,3 +18,33 @@ Use a new output and identity; never relabel or resume the historical checkpoint
 Then compare real stored outcomes on the existing known confirmation corpus as a
 paired implementation diagnostic, not a fresh scientific confirmation. Preserve
 all payload/reader/decoder controls and candidate-free generation.
+
+## Completed stored diagnostic
+
+Corrected global training produces 102/128 freely generated actions, compared
+with 58/128 for corrected within-world training. Both-required-source retrieval
+is 73/128 versus 10/128. The paired action difference is 34.38 percentage points
+(world-bootstrap 95% interval 21.88–47.66). Historical global training produced
+101/128 on these same questions; this correction preserves the narrow result.
+
+Targeted permission changes yield 74/128 pairs correct before and after the
+change, versus 8/128 for within-world training. Restoration changes yield
+47/64 versus 11/64; invariant restoration answers falsely change 10/64 versus
+7/64. Original raw payloads and provenance are identical for all 128 records
+across both corrected and historical arms. All 640 oracle/no-memory scoring
+rows are identical. Exact identifier generation remains zero even with oracle
+supports. Full records and checkpoints remain on the external disk.
+
+These are paired implementation diagnostics on an already inspected corpus,
+with one training seed and uncorrected world-bootstrap intervals. They do not
+resolve the larger-bank degradation, exact-detail failure or general agent task
+performance. Validation after adding the separate width probe: 329 tests pass,
+four existing warnings; `ruff check src tests scripts` passes.
+
+### Larger-bank follow-up
+
+Repeat the 4,096-record exact-search diagnostic with the corrected global router,
+the same expanded corpus and the original 32 query worlds. Keep all 1,024 worlds
+as retrieval candidates. Output: `/archive/probes/global-stored-fp32-scale-20260919`.
+This checks whether the previously observed scaling loss survives the arithmetic
+correction; it is another known-corpus implementation diagnostic.
