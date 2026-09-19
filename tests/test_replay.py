@@ -1,0 +1,100 @@
+import copy
+import pytest
+import torch
+from torch import nn
+
+from elm.replay import ReplayTape
+
+
+class SharedModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear = nn.Linear(5, 5)
+        self.dropout = nn.Dropout(0.3)
+
+    def producer(self, x):
+        h = self.dropout(self.linear(x))
+        return h.sin(), h.cos()
+
+    def consumer(self, values, x):
+        key, value = values
+        # Includes shared parameters, repeated use, key and value gradient paths.
+        return (self.linear(x) * key).sum() + value.square().sum() + value.sum() * 0.13
+
+
+@pytest.mark.parametrize("live", [(True, True), (True, False), (False, True)])
+def test_exact_full_graph_parity(live):
+    ref = SharedModel().double()
+    replay = copy.deepcopy(ref)
+    xs = [torch.randn(3, 5).double(), torch.randn(3, 5).double()]
+    state = torch.get_rng_state()
+    outputs = [ref.producer(x) for x in xs]
+    outputs = [v if active else tuple(t.detach() for t in v) for v, active in zip(outputs, live, strict=True)]
+    loss = sum(ref.consumer(v, x) for v, x in zip(outputs, xs, strict=True))
+    loss.backward()
+    torch.set_rng_state(state)
+    tape = ReplayTape(verify_outputs=True)
+    values = []
+    for x, active in zip(xs, live, strict=True):
+        if active:
+            values.append(tape.capture(replay, lambda x=x: replay.producer(x)))
+        else:
+            with torch.no_grad():
+                values.append(replay.producer(x))
+    loss_replayed = sum(replay.consumer(v, x) for v, x in zip(values, xs, strict=True))
+    loss_replayed.backward()
+    rng_before = torch.get_rng_state().clone()
+    tape.backward()
+    assert torch.equal(rng_before, torch.get_rng_state())
+    torch.testing.assert_close(loss, loss_replayed)
+    for p, rp in zip(ref.parameters(), replay.parameters(), strict=True):
+        torch.testing.assert_close(p.grad, rp.grad, atol=1e-10, rtol=1e-10)
+
+
+def test_optimizer_step_before_replay_rejected():
+    model = SharedModel()
+    tape = ReplayTape()
+    values = tape.capture(model, lambda: model.producer(torch.randn(1, 5)))
+    sum(x.sum() for x in values).backward()
+    with torch.no_grad():
+        model.linear.weight.add_(1)
+    with pytest.raises(RuntimeError, match="Parameters changed"):
+        tape.backward()
+
+
+def test_mode_change_rejected():
+    model = SharedModel()
+    tape = ReplayTape()
+    values = tape.capture(model, lambda: model.producer(torch.randn(1, 5)))
+    sum(x.sum() for x in values).backward()
+    model.eval()
+    with pytest.raises(RuntimeError, match="training mode"):
+        tape.backward()
+
+
+def test_single_use():
+    tape = ReplayTape()
+    tape.backward()
+    with pytest.raises(RuntimeError):
+        tape.backward()
+
+
+def test_mutable_buffer_rejected_and_restored():
+    model = nn.BatchNorm1d(5)
+    old = model.running_mean.clone()
+    tape = ReplayTape()
+    with pytest.raises(RuntimeError, match="buffer"):
+        tape.capture(model, lambda: (model(torch.randn(3, 5)),))
+    assert torch.equal(old, model.running_mean)
+
+
+def test_cpu_autocast_replayed_under_original_precision():
+    model = SharedModel()
+    x = torch.randn(3, 5)
+    tape = ReplayTape(verify_outputs=True)
+    with torch.autocast("cpu", dtype=torch.bfloat16):
+        values = tape.capture(model, lambda: model.producer(x))
+        loss = sum(x.float().square().mean() for x in values)
+    loss.backward()
+    tape.backward()
+    assert model.linear.weight.grad is not None

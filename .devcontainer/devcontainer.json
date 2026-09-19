@@ -1,0 +1,16 @@
+{
+  "name": "ELM on DGX Spark",
+  "build": {"dockerfile": "../docker/Dockerfile.spark", "context": ".."},
+  "workspaceFolder": "/workspace/elm",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/elm,type=bind",
+  "runArgs": ["--gpus=all", "--shm-size=8g"],
+  "mounts": ["source=elm-hf-cache,target=/cache,type=volume"],
+  "containerEnv": {"HF_HOME": "/cache/huggingface"},
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-python.debugpy", "charliermarsh.ruff"],
+      "settings": {"python.defaultInterpreterPath": "/opt/elm-venv/bin/python"}
+    }
+  },
+  "postCreateCommand": "elm doctor"
+}

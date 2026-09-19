@@ -1,0 +1,13 @@
+.git
+.venv
+.cache
+runs
+data
+checkpoints
+__pycache__
+.pytest_cache
+*.bundle
+*.safetensors
+*.pt
+*.sqlite*
+.env*

@@ -1,0 +1,12 @@
+# Native ARM64 NVIDIA PyTorch environment. Override BASE_IMAGE when required by
+# the installed Spark driver. No x86 emulation and no replacement torch wheel.
+ARG BASE_IMAGE=nvcr.io/nvidia/pytorch:26.08-py3
+FROM ${BASE_IMAGE}
+ENV PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1 HF_HOME=/cache/huggingface
+WORKDIR /workspace/elm
+COPY pyproject.toml /workspace/elm/
+COPY src /workspace/elm/src
+COPY scripts/install_in_ngc.sh /tmp/install_in_ngc.sh
+RUN bash /tmp/install_in_ngc.sh /workspace/elm
+ENV PATH=/opt/elm-venv/bin:$PATH
+CMD ["bash"]
