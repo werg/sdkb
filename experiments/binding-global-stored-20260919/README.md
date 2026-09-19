@@ -25,3 +25,11 @@ questions report both-correct changed pairs and false changes on invariant pairs
 also generate counterfactual action strings on the original first-eight-world
 subset. This isolates sensitivity to retrieved values, not an end-to-end changed-key
 retrieval score. Run both continuations without selecting the better ordinary arm.
+
+After ordinary results, the first-eight-world subset gives 17/32 generated global
+arm actions versus 15/32 control, while whole-corpus choice results are 80/128
+versus 55/128. Choice and free predictions agree on every sampled action, suggesting
+subset composition rather than a decoding discrepancy. Extend candidate-free action
+generation and counterfactual pairs to all 32 worlds, for both frozen arms, keeping
+the original smaller result intact and checking every previously generated row.
+This is a post-result measurement expansion, with no training or endpoint selection.

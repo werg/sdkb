@@ -20,7 +20,7 @@ from sdkb.trajectories import file_sha256
 
 
 @torch.no_grad()
-def run(source, reference_path, episodes_file, router, count_policy, output):
+def run(source, reference_path, episodes_file, router, count_policy, output, generations_file=None):
     output.mkdir(parents=True, exist_ok=True)
     with run_lock(output, clear_stop=False):
         reference = json.loads(reference_path.read_text())
@@ -41,12 +41,20 @@ def run(source, reference_path, episodes_file, router, count_policy, output):
         identity = {'reference_sha256': file_sha256(reference_path), 'source_inputs': prior,
                     'script_sha256': file_sha256(__file__),
                     'selection': 'Captured original full-bank learned selections; no counterfactual reranking'}
+        generation_reference = reference
+        if generations_file is not None:
+            generation_reference = json.loads(generations_file.read_text())
+            if (generation_reference['source_inputs'] != prior or
+                    generation_reference['source_reference_sha256'] != file_sha256(reference_path)):
+                raise ValueError('Expanded generation reference differs')
+            identity['generation_reference_sha256'] = file_sha256(generations_file)
+            identity['generation_worlds'] = generation_reference['worlds']
         if (output / 'inputs.json').exists() and json.loads((output / 'inputs.json').read_text()) != identity:
             raise ValueError('Counterfactual inputs changed')
         atomic_json(output / 'inputs.json', identity)
         original = load_episodes(episodes_file)
         baseline = {r['episode']: r for r in reference['rows'] if r['condition'] == 'all'}
-        generated = {r['episode']: r for r in reference['generation_rows'] if r['condition'] == 'all'}
+        generated = {r['episode']: r for r in generation_reference['generation_rows'] if r['condition'] == 'all'}
         if set(baseline) != {e.episode_id for e in original}:
             raise ValueError('Counterfactual episode grid differs')
         groups, stores = {}, {}
@@ -122,5 +130,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('source', 'reference', 'episodes', 'router', 'count-policy', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--generations', type=Path)
     args = parser.parse_args()
-    run(args.source, args.reference, args.episodes, args.router, args.count_policy, args.output)
+    run(args.source, args.reference, args.episodes, args.router, args.count_policy, args.output, args.generations)
