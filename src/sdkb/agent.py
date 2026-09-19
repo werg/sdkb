@@ -1,6 +1,8 @@
 """Shared-backbone writing, querying, composition and soft-token-conditioned loss."""
 from __future__ import annotations
 
+import copy
+
 from dataclasses import dataclass
 import torch
 from torch import Tensor, nn
@@ -83,6 +85,7 @@ class SDKBAgent(nn.Module):
                           if r.compaction == "synthetic" else None)
         self.memory_norm = nn.LayerNorm(self.width)
         self.memory_gate = nn.Parameter(torch.tensor(-1.0))
+        self.routing_query_head = copy.deepcopy(self.query_head) if r.independent_routing_query else None
 
     @property
     def device(self) -> torch.device:
@@ -121,11 +124,23 @@ class SDKBAgent(nn.Module):
             output.extend((F.normalize(address(key), dim=-1), codec(canonical)))
         return tuple(output)
 
-    def query(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
+    def _query_features(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
         embeddings = self._context(prompt_ids, memory)
         # Query uses ONLY the prompt, never teacher-forced target tokens.
         h = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long), loops=1)
-        return F.normalize(self.query_head(h[:, -1]), dim=-1)
+        return h[:, -1]
+
+    def query(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
+        return F.normalize(self.query_head(self._query_features(prompt_ids, memory)), dim=-1)
+
+    def query_pair(self, prompt_ids: Tensor, memory: Tensor | None = None) -> tuple[Tensor, Tensor]:
+        """Reader conditioning and one retrieval key, both from the causal prefix."""
+        if self.routing_query_head is None:
+            query = self.query(prompt_ids, memory)
+            return query, query
+        features = self._query_features(prompt_ids, memory)
+        return (F.normalize(self.query_head(features), dim=-1),
+                F.normalize(self.routing_query_head(features), dim=-1))
 
     def _prepare_values(self, payloads: list[Tensor], ablate_values: bool = False):
         r = self.config.memory
@@ -230,12 +245,22 @@ class SDKBAgent(nn.Module):
         index = prefix_length + self.config.memory.read_slots - 1
         return F.normalize(self.query_head(self.loop_query_norm(state[:, index])), dim=-1)
 
-    def plan_loop_memory(self, prompt: Tensor, provider) -> LoopMemory:
+    def loop_query_pair(self, state: Tensor, prefix_length: int) -> tuple[Tensor, Tensor]:
+        if self.routing_query_head is None:
+            query = self.loop_query(state, prefix_length)
+            return query, query
+        index = prefix_length + self.config.memory.read_slots - 1
+        features = self.loop_query_norm(state[:, index])
+        return (F.normalize(self.query_head(features), dim=-1),
+                F.normalize(self.routing_query_head(features), dim=-1))
+
+    def plan_loop_memory(self, prompt: Tensor, provider, *, include_routing_query: bool = False) -> LoopMemory:
         """Run ONLY the available prefix, collecting state-conditioned read results.
 
-        provider(completed_core_passes, query_key) may read stored payloads but must
+        provider(completed_core_passes, reader_query) may read stored payloads but must
         never access a target. Captured results can be replayed for different answer
         candidates, preserving a common read plan without calling the writer.
+        include_routing_query supplies a third provider argument for address search.
         """
         if not isinstance(self.backbone, MiddleBlockBackbone):
             raise ValueError("A middle-block backbone is required")
@@ -243,7 +268,9 @@ class SDKBAgent(nn.Module):
         blank = LoopMemory(length, self.config.memory.read_slots, count, (None,) * (count - 1))
         context, events = self._context(prompt, blank), []
         def boundary(completed, state, _anchor):
-            tokens = provider(completed, self.loop_query(state, length))
+            query, routing_query = self.loop_query_pair(state, length)
+            tokens = (provider(completed, query, routing_query) if include_routing_query
+                      else provider(completed, query))
             events.append(tokens)
             return None if tokens is None else LoopWrite(length, tokens)
         if count > 1:
@@ -275,7 +302,7 @@ class SDKBAgent(nn.Module):
         def boundary(completed, state, _anchor):
             nonlocal memory, routing, read_count, auxiliary
             if completed <= r.read_steps:
-                query = self.loop_query(state, length)
+                query, routing_query = self.loop_query_pair(state, length)
                 payloads, progressed = [], False
                 for space, dim in enumerate(r.payload_dims):
                     if shared_compute:
@@ -285,7 +312,7 @@ class SDKBAgent(nn.Module):
                     candidates = [i for i in range(len(records)) if i not in selected[space]]
                     if candidates:
                         keys = torch.cat([records[i][2 * space] for i in candidates], 0)
-                        scores = cosine_scores(self.query_maps[space](query), keys)[0]
+                        scores = cosine_scores(self.query_maps[space](routing_query), keys)[0]
                         remaining = [candidates.index(i) for i in required if i in candidates]
                         if t.retrieval == "learned" and remaining:
                             routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)
@@ -347,13 +374,13 @@ class SDKBAgent(nn.Module):
             return ForwardResult(nll, nll, zero, zero, [], raw_nll=nll)
         if r.read_steps > 1:
             return self.forward_multiread(prompt, target, records, required, step=step)
-        q = self.query(prompt)
+        q, routing_query = self.query_pair(prompt)
         selected, payloads = [], []
         routing = zero
         for space, dim in enumerate(r.payload_dims):
             keys = torch.cat([record[2 * space] for record in records], 0) if records else q.new_empty(0, r.key_dim)
             values = torch.cat([record[2 * space + 1] for record in records], 0) if records else q.new_empty(0, dim)
-            scores = cosine_scores(F.normalize(self.query_maps[space](q), dim=-1), keys)[0]
+            scores = cosine_scores(F.normalize(self.query_maps[space](routing_query), dim=-1), keys)[0]
             if t.retrieval == "learned" and required and records:
                 routing = routing + group_plan_loss(scores, [tuple(required)]) / len(r.payload_dims)
             oracle = t.retrieval == "oracle" or (self.training and step < t.routing_warmup)
@@ -401,13 +428,13 @@ class SDKBAgent(nn.Module):
         memory, routing, reads = None, zero, 0
         oracle = t.retrieval == "oracle" or (self.training and step < t.routing_warmup)
         for _ in range(r.read_steps):
-            q = self.query(prompt, memory)
+            q, routing_query = self.query_pair(prompt, memory)
             payloads, progressed = [], False
             for space, dim in enumerate(r.payload_dims):
                 candidates = [i for i in range(len(records)) if i not in selected[space]]
                 if candidates:
                     keys = torch.cat([records[i][2 * space] for i in candidates], 0)
-                    scores = cosine_scores(self.query_maps[space](q), keys)[0]
+                    scores = cosine_scores(self.query_maps[space](routing_query), keys)[0]
                     remaining = [candidates.index(i) for i in required if i in candidates]
                     if self.training and t.retrieval == "learned" and remaining:
                         routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)

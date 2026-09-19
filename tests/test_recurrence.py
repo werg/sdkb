@@ -142,7 +142,9 @@ def test_integrated_training_matches_stored_prefix_plan(loop_config, tmp_path, m
 
 @pytest.mark.parametrize('checkpoint', [False, True])
 @pytest.mark.parametrize('retrieval', ['oracle', 'learned'])
-def test_native_inloop_selective_replay_gradient_parity(loop_config, checkpoint, retrieval):
+@pytest.mark.parametrize('independent', [False, True])
+def test_native_inloop_selective_replay_gradient_parity(loop_config, checkpoint, retrieval, independent):
+    loop_config.memory.independent_routing_query = independent
     loop_config.model.gradient_checkpointing = checkpoint
     loop_config.memory.checkpoint_chunks = checkpoint
     loop_config.train.retrieval = retrieval
@@ -173,6 +175,8 @@ def test_native_inloop_selective_replay_gradient_parity(loop_config, checkpoint,
     if retrieval == 'learned':
         assert ref.routing_loss > 0
         assert ref.selected == test.selected
+        if independent:
+            assert b.routing_query_head.weight.grad.abs().sum() > 0
         for parameter in (b.key_head.weight, b.query_head.weight, b.address_maps[0].weight):
             assert parameter.grad is not None and parameter.grad.abs().sum() > 0
 
@@ -374,7 +378,9 @@ def test_random_native_llama_split_matches_parent():
     assert model.bridge.reentry.weight.grad.abs().sum() > 0
 
 
-def test_routing_only_training_preserves_payloads_and_oracle_outputs(tmp_path, loop_config):
+@pytest.mark.parametrize('independent', [False, True])
+def test_routing_only_training_preserves_payloads_and_oracle_outputs(tmp_path, loop_config, independent):
+    loop_config.memory.independent_routing_query = independent
     from safetensors.torch import load_model
     from sdkb.checkpoints import resolve_checkpoint
     loop_config.train.optimization_scope = 'routing'
@@ -398,7 +404,7 @@ def test_routing_only_training_preserves_payloads_and_oracle_outputs(tmp_path, l
     load_model(b, str(resolve_checkpoint(run, verify=True) / 'model.safetensors'))
     for name, value in b.state_dict().items():
         torch.testing.assert_close(value, resumed.state_dict()[name], rtol=0, atol=0, msg=name)
-    prefixes = ('key_head.', 'address_maps.', 'query_maps.')
+    prefixes = ('key_head.', 'address_maps.', 'query_maps.', 'routing_query_head.')
     changed = []
     for name, value in a.state_dict().items():
         other = b.state_dict()[name]
@@ -428,3 +434,68 @@ def test_routing_only_scope_requires_a_live_routing_objective(tiny_config, setti
     setattr(tiny_config.train, setting, value)
     with pytest.raises(ValueError, match='Routing-only'):
         tiny_config.validate()
+
+
+@pytest.mark.parametrize('timing', ['prefix', 'loop_boundary'])
+def test_independent_routing_head_preserves_reader_query_and_causality(loop_config, timing):
+    loop_config.memory.read_timing = timing
+    loop_config.memory.independent_routing_query = True
+    loop_config.memory.read_steps = 1
+    agent = SDKBAgent(loop_config).eval()
+    e = make_episode(7, distractors=2)
+    prompt = agent.prompt_ids(e.query)
+    records = [stored_channel(agent, agent.produce(agent.text_ids(s.text, source=True))) for s in e.supports]
+    agent.config.train.retrieval = 'oracle'
+    target = agent.target_ids(e.answer)
+    before = agent(prompt, target, records, [0, 1]).nll.detach()
+    with torch.no_grad():
+        agent.routing_query_head.weight.normal_()
+    after = agent(prompt, target, records, [0, 1]).nll.detach()
+    torch.testing.assert_close(before, after, atol=0, rtol=0)
+    queries = []
+    hook = agent.routing_query_head.register_forward_hook(lambda m, args, out: queries.append(out.detach().clone()))
+    agent(prompt, target, records, [0, 1])
+    a = queries.pop()
+    agent(prompt, agent.target_ids('a wholly different future'), records, [0, 1])
+    b = queries.pop()
+    hook.remove()
+    torch.testing.assert_close(a, b, atol=1e-6, rtol=1e-6)
+
+
+def test_warm_start_copies_trained_query_into_independent_router(tmp_path, loop_config):
+    from safetensors.torch import load_file
+    loop_config.train.steps = 1
+    source = tmp_path / 'source'
+    train(loop_config, source)
+    target_config = copy.deepcopy(loop_config)
+    target_config.memory.independent_routing_query = True
+    target_config.train.steps = 1
+    target = tmp_path / 'independent'
+    train(target_config, target, init_from=source)
+    initial = next((target / 'checkpoints').glob('step-000000000-*'))
+    weights = load_file(str(initial / 'model.safetensors'))
+    torch.testing.assert_close(weights['routing_query_head.weight'], weights['query_head.weight'], atol=0, rtol=0)
+
+
+@pytest.mark.parametrize('timing', ['prefix', 'loop_boundary'])
+@pytest.mark.parametrize('reads', [1, 2])
+def test_independent_learned_routing_matches_stored_sessions(tmp_path, loop_config, monkeypatch, timing, reads):
+    loop_config.memory.read_timing = timing
+    loop_config.memory.read_steps = reads
+    loop_config.memory.independent_routing_query = True
+    loop_config.train.retrieval = 'learned'
+    loop_config.train.routing_warmup = 0
+    agent = SDKBAgent(loop_config).eval()
+    with torch.no_grad():
+        agent.routing_query_head.weight.normal_()
+    e = make_episode(4, distractors=2)
+    prompt, target = agent.prompt_ids(e.query), agent.target_ids(e.answer)
+    records = [stored_channel(agent, agent.produce(agent.text_ids(s.text, source=True))) for s in e.supports]
+    integrated = agent(prompt, target, records, [0, 1])
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    build_shared_bank(agent, store, [e])
+    monkeypatch.setattr(agent, 'produce', lambda *args: pytest.fail('Inference called writer'))
+    session = read_session(agent, store, prompt, namespace='global', generation='frozen-v1', query_time=e.query_time)
+    expected = [[e.supports[i].record_id for i in indices] for indices in integrated.selected]
+    assert session.selected_ids == expected
+    torch.testing.assert_close(integrated.nll, agent.conditioned_nll(prompt, target, session.memory), atol=1e-6, rtol=1e-6)

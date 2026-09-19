@@ -52,15 +52,15 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
     for read in range(r.read_steps):
         if fixed_plans is not None and read >= len(fixed_plans):
             break
-        q = agent.query(prompt, memory)
-        keys.append(q.detach().cpu())
+        q, routing_query = agent.query_pair(prompt, memory)
+        keys.append(routing_query.detach().cpu())
         step_plans, progressed = [], False
         payloads = []
         for space, dim in enumerate(r.payload_dims):
             if fixed_plans is not None:
                 plan = fixed_plans[read][space]
             elif oracle_ids is None:
-                plan = store.search(agent.query_maps[space](q)[0], namespace=namespace,
+                plan = store.search(agent.query_maps[space](routing_query)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
                                     top_k=r.neighbors[space] if r.read_steps == 1 else r.read_top_k,
@@ -118,7 +118,7 @@ def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str
     plans, keys, memory = [], [], None
     if agent.backbone.loops == 1:
         return ReadSession(None, [], selected, [])
-    def provider(completed, query):
+    def provider(completed, query, routing_query):
         nonlocal memory
         if completed > r.read_steps or (fixed_plans is not None and completed > len(fixed_plans)):
             return memory
@@ -127,7 +127,7 @@ def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str
             if fixed_plans is not None:
                 plan = fixed_plans[completed - 1][space]
             elif oracle_ids is None:
-                plan = store.search(agent.query_maps[space](query)[0], namespace=namespace,
+                plan = store.search(agent.query_maps[space](routing_query)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
                                     top_k=r.neighbors[space] if r.read_steps == 1 else r.read_top_k,
@@ -146,10 +146,10 @@ def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str
             payloads.append(torch.stack(values).float().to(agent.device) if values else query.new_empty(0, dim))
         if progressed:
             plans.append(step_plans)
-            keys.append(query.detach().cpu())
+            keys.append(routing_query.detach().cpu())
             memory, _ = agent.read_tokens(payloads, query, ablate_values=ablate_values)
         return memory
-    schedule = agent.plan_loop_memory(prompt, provider)
+    schedule = agent.plan_loop_memory(prompt, provider, include_routing_query=True)
     return ReadSession(schedule, plans, selected, keys)
 
 

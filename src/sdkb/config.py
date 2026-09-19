@@ -56,6 +56,7 @@ class MemoryConfig:
     read_top_k: int = 1
     noise_std: float = 0.0
     quantization_step: float = 0.0
+    independent_routing_query: bool = False
 
 
 @dataclass

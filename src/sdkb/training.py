@@ -201,13 +201,18 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                         strict=False, device=config.train.device)
         allowed_missing = ("compactor.",)
         allowed_unexpected = ("compactor.",)
+        routing_conversion = config.memory.independent_routing_query and not old.memory.independent_routing_query
+        if routing_conversion:
+            allowed_missing += ('routing_query_head.',)
         if converting:
             allowed_missing += ("backbone.bridge.", "loop_workspace", "loop_query_norm.")
             allowed_unexpected += ("backbone.loop_gate", "backbone.feedback_norm.")
         if (any(not name.startswith(allowed_missing) for name in missing)
                 or any(not name.startswith(allowed_unexpected) for name in unexpected)):
             raise ValueError(f"Incompatible warm-start state: missing={missing}, unexpected={unexpected}")
-        provenance = {"checkpoint": str(source_checkpoint), "optimizer_reset": True,
+        if routing_conversion:
+            agent.routing_query_head.load_state_dict(agent.query_head.state_dict())
+        provenance = {"routing_query_conversion": routing_conversion, "checkpoint": str(source_checkpoint), "optimizer_reset": True,
                       "missing_initialized": sorted(missing), "unused": sorted(unexpected),
                       "recurrence_conversion": converting}
         (output / "initialization.json").write_text(json.dumps(provenance, indent=2) + "\n")
@@ -218,7 +223,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         agent.compactor.train()
     if config.train.optimization_scope == 'routing':
         for name, parameter in agent.named_parameters():
-            parameter.requires_grad_(name.startswith(('key_head.', 'address_maps.', 'query_maps.')))
+            parameter.requires_grad_(name.startswith(('key_head.', 'address_maps.', 'query_maps.', 'routing_query_head.')))
         # Keep frozen feature/payload/reader paths deterministic. The top-level
         # training flag still honors the configured routing warmup.
         for module in agent.children():

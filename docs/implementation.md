@@ -207,3 +207,21 @@ is recorded-assistant imitation, not environment reward or unavailable teacher l
 The initial fixed-chunk producer is a bootstrap interface, not yet an adaptive learned
 whole-trajectory lesson extractor. Stage evidence and exact tested hardware scope are
 recorded in [validation-v0.3.md](validation-v0.3.md).
+
+
+## Optional independent routing query
+
+`memory.independent_routing_query: true` adds a second projection of the same
+causal prefix state for address search. The existing query continues to condition
+the reader; its behavior is preserved when only address parameters train. Stored
+records still have one key per space and unchanged payload shapes. This is an
+experimental addressing variant, not established general entity retrieval.
+
+The default shares the original query and adds no parameters. A warm-start from
+that default copies the loaded, trained query-head weights into the new head.
+Routing-only optimization then includes the new head while freezing the reader
+query, writer payload path and backbone. Resume retains the flag and named Muon
+ownership. Prefix, multiread and loop-boundary training and stored sessions use
+the separate routing key; target tokens remain excluded from both queries.
+Full-graph/replay, stored-plan parity, frozen payload/oracle outputs and exact
+Muon resume are covered by regressions.

@@ -40,6 +40,8 @@ def model_probe(config) -> dict:
     with autocast_context(config):
         records = [agent.produce(agent.text_ids(text, source=True)) for text in
                    ['Prior experience: restore state before retry.', 'Prior experience: retry is permitted.']]
+        if config.memory.independent_routing_query and config.train.retrieval == 'learned':
+            records.append(agent.produce(agent.text_ids('Unrelated prior experience: a different task.', source=True)))
         result = agent(agent.prompt_ids('What should happen next?'), agent.target_ids('Restore and retry.'),
                        records, [0, 1], arm='memory')
     result.loss.backward()
@@ -53,6 +55,8 @@ def model_probe(config) -> dict:
             ('bridge_update_gate', agent.backbone.bridge.update_logit),
             ('bridge_memory_projection', agent.backbone.bridge.memory_projection.weight),
             ('bridge_memory_gate', agent.backbone.bridge.memory_logit)]
+    if config.memory.independent_routing_query and config.train.retrieval == 'learned':
+        gradient_parameters.append(('routing_query_head', agent.routing_query_head.weight))
     for name, parameter in gradient_parameters:
         if parameter.grad is None or not torch.isfinite(parameter.grad).all():
             raise AssertionError(f'Missing/nonfinite soft-memory gradient: {name}')
