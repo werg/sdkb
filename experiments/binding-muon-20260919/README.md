@@ -81,6 +81,14 @@ differ; this is equal source access and interface capacity, not equal FLOPs or a
 identical-initialization claim. Neither arm currently uses compaction. Both reader
 implementations retain contribution-compaction support for later experiments.
 
+A tensor comparison after text bootstrap found all backbone tensors exactly
+identical between selected-support MLP and attention. Of 194 common tensors, 167
+were identical; the 27 differing common tensors were all inside the reader.
+The two architectures also have different reader-specific tensors. This narrows
+the initialization difference to the reader at that boundary; it does not assert
+identical reader initialization or equal parameter count. Checkpoint-manifest
+hashes and the tensor-name audit are in `reader-text-initialization.json`.
+
 Primary question: can the attention system combine permission and restoration
 to choose actions while responding correctly to changing and unchanged
 counterfactual branches? Permission fact accuracy alone is insufficient.
