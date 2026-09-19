@@ -33,3 +33,34 @@ permission/restoration rules and all non-identifier answers. Read the offline
 alternate payloads under original oracle plans. Report both-correct identifier
 pairs and false changes in unrelated answers. This is a generated-data diagnostic,
 not a transformation of external/private source content.
+
+## Completed fresh confirmation
+
+Both arms completed 1,600 updates and exactly the same sampled decoder-depth
+schedule. Final checkpoints and actual exposure counts are retained separately.
+All three frozen models (source, narrow continuation and broad continuation)
+generate **128/128 oracle-selected actions, 64/64 permission facts and 64/64
+restoration facts**, including their appropriate rule changes. Changing endpoint
+strings causes zero spurious action/fact changes.
+
+All three still generate **0/64 exact identifiers**, both originally and after
+endpoint-only changes. Identifier target-token NLL improves from 4.906 at source
+to 3.989 (narrow) and 2.799 (broad); this likelihood gain does not establish exact
+generation. The source/narrow/broad models change their incorrect
+identifier predictions on 5/64, 23/64 and 47/64 endpoint changes, respectively;
+these changes are not successful recall. Unrelated permission changes also alter
+49/64, 42/64 and 45/64 identifier predictions. Broader exposure increases sensitivity
+to endpoint content without establishing exact copying or field independence.
+
+Narrow and broad identifier supervision covers 253 versus 941 distinct questions
+in 1,244 versus 1,285 sampled examples. Every held-out endpoint is absent from the
+source and both continuation training corpora. The equal-update comparison does
+not equate repetitions per endpoint. Results remain from one training seed and a
+synthetic oracle-selection setting; no learned-global retrieval benefit is claimed.
+
+Training source `602cb06`; evaluator `3ebc2e5`; all three full reports and banks
+remain external. Initial/final checkpoints were the only saves. After completion,
+verified sharing of the identical initial weight files reclaimed 1.90 GiB without
+removing recovery state. The next hypothesis is to present identical training
+queries with multiple explicitly versioned endpoint memories, making query-only
+memorization insufficient at the same update budget.
