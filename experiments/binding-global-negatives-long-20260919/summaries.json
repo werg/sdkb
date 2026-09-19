@@ -1,0 +1,258 @@
+{
+  "world": {
+    "train": {
+      "report_sha256": "47ccb834a2544db1740ca71a7a78ba337c6cea8b2ad46d4462036ea4d579e73d",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.03534420831128955,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 4096,
+              "top_one_required": 4096,
+              "only_target_world": 4096
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 2048,
+              "top_one_required": 2048,
+              "only_target_world": 2048
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 2048,
+              "top_one_required": 2048,
+              "only_target_world": 2048
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 2048,
+              "top_one_required": 2048,
+              "only_target_world": 2048
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 7.8381054520607,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 9,
+              "top_one_required": 139,
+              "only_target_world": 9
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 139,
+              "top_one_required": 75,
+              "only_target_world": 0
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 128,
+              "top_one_required": 60,
+              "only_target_world": 0
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 331,
+              "top_one_required": 207,
+              "only_target_world": 0
+            }
+          }
+        }
+      }
+    },
+    "heldout": {
+      "report_sha256": "faf453f602b823b4908620b4a25ed0c97f175b1bb36565e91b61ede82f354da5",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.4243511438369751,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 100,
+              "top_one_required": 121,
+              "only_target_world": 128
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 63,
+              "top_one_required": 53,
+              "only_target_world": 64
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 63,
+              "top_one_required": 54,
+              "only_target_world": 64
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 63,
+              "only_target_world": 64
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 4.342185020446777,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 3,
+              "top_one_required": 32,
+              "only_target_world": 4
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 16,
+              "top_one_required": 11,
+              "only_target_world": 2
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 18,
+              "top_one_required": 10,
+              "only_target_world": 0
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 35,
+              "top_one_required": 25,
+              "only_target_world": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "global": {
+    "train": {
+      "report_sha256": "4c8c30ee2e8f02bf412d4fa69ab9d567880974135c9b8edb27dc3a7aef126199",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.43441672511398793,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 3856,
+              "top_one_required": 4074,
+              "only_target_world": 4096
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 2038,
+              "top_one_required": 1876,
+              "only_target_world": 2048
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 2035,
+              "top_one_required": 1889,
+              "only_target_world": 2048
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 2047,
+              "top_one_required": 2007,
+              "only_target_world": 2048
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 2.9611884117126466,
+          "by_family": {
+            "multiuse/action": {
+              "n": 4096,
+              "full_required": 3745,
+              "top_one_required": 4067,
+              "only_target_world": 3972
+            },
+            "multiuse/identifier": {
+              "n": 2048,
+              "full_required": 2009,
+              "top_one_required": 1845,
+              "only_target_world": 1466
+            },
+            "multiuse/permission": {
+              "n": 2048,
+              "full_required": 2013,
+              "top_one_required": 1863,
+              "only_target_world": 1539
+            },
+            "multiuse/restoration": {
+              "n": 2048,
+              "full_required": 2045,
+              "top_one_required": 2001,
+              "only_target_world": 1430
+            }
+          }
+        }
+      }
+    },
+    "heldout": {
+      "report_sha256": "cfe233400ff800c2fceb1e1126fda23b0295e55064a7b580fea6b384008c3c2f",
+      "by_scope": {
+        "world": {
+          "objective_loss": 0.8049786806106567,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 98,
+              "top_one_required": 126,
+              "only_target_world": 128
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 56,
+              "top_one_required": 35,
+              "only_target_world": 64
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 56,
+              "top_one_required": 37,
+              "only_target_world": 64
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 62,
+              "only_target_world": 64
+            }
+          }
+        },
+        "global": {
+          "objective_loss": 1.5190576314926147,
+          "by_family": {
+            "multiuse/action": {
+              "n": 128,
+              "full_required": 86,
+              "top_one_required": 124,
+              "only_target_world": 107
+            },
+            "multiuse/identifier": {
+              "n": 64,
+              "full_required": 52,
+              "top_one_required": 35,
+              "only_target_world": 56
+            },
+            "multiuse/permission": {
+              "n": 64,
+              "full_required": 51,
+              "top_one_required": 35,
+              "only_target_world": 50
+            },
+            "multiuse/restoration": {
+              "n": 64,
+              "full_required": 64,
+              "top_one_required": 62,
+              "only_target_world": 43
+            }
+          }
+        }
+      }
+    }
+  }
+}

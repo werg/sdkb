@@ -1,0 +1,66 @@
+{
+  "world": {
+    "none": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": -0.078125,
+      "ci95": [
+        -0.1875,
+        0.0234375
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    },
+    "zero_values": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": -0.0703125,
+      "ci95": [
+        -0.171875,
+        0.03125
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    },
+    "selected_pair": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": -0.5703125,
+      "ci95": [
+        -0.671875,
+        -0.46875
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    }
+  },
+  "global": {
+    "none": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": 0.1171875,
+      "ci95": [
+        0.0,
+        0.2265625
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    },
+    "zero_values": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": 0.125,
+      "ci95": [
+        0.0078125,
+        0.2421875
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    },
+    "selected_pair": {
+      "n_worlds": 32,
+      "n_queries": 128,
+      "mean_gain": -0.375,
+      "ci95": [
+        -0.4921875,
+        -0.2578125
+      ],
+      "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+    }
+  }
+}

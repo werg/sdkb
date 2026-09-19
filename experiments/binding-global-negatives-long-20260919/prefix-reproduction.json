@@ -1,0 +1,10 @@
+{
+  "source_commit": "e6c13b9",
+  "first_updates": 800,
+  "identical_logged_loss_rows_per_arm": 40,
+  "arms": [
+    "world",
+    "global"
+  ],
+  "notice": "Scalar trajectory check, not a separate full-state equivalence test."
+}

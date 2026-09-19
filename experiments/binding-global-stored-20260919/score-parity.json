@@ -1,0 +1,7 @@
+{
+  "oracle_and_no_memory_rows_identical_per_pool": 640,
+  "pools": [
+    1,
+    32
+  ]
+}

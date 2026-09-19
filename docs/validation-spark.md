@@ -239,3 +239,13 @@ addressing failure: action choices fall from 90/128 to 50/128, full required-pai
 retrieval from 62/128 to 0/128, and free actions match the zero-value control at
 16/32. Oracle/no-memory controls and the existing bank are unchanged. See the
 [global routing diagnostic](../experiments/binding-global-routing-20260919/README.md).
+
+
+Matched cross-world routing supervision improves fresh full-bank action choices
+and candidate-free answers to 80/128 versus 55/128 for the within-world continuation;
+zero/no-memory controls are 64/128 and 65/128, oracle 128/128. Counterfactual free
+permission pairs retain both correct answers for 52/128, restoration for 25/64,
+with 14/64 false restoration changes. This is a narrow, unreliable learned-global
+memory benefit, not robust composition. See [stored confirmation](../experiments/binding-global-stored-20260919/README.md).
+A longer matched feature run reaches 86/128 global development action-pair recall;
+its separate fresh stored confirmation is pending.
