@@ -3,9 +3,11 @@
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
 See [current Spark validation](docs/validation-spark.md) for tested behavior and remaining limits.
-The [Muon binding study](experiments/binding-muon-20260919/README.md) confirms
-narrow stored-memory action composition with attention, while the pooled MLP,
-competing entity records and literal identifiers remain active research problems.
+The [Muon binding study](experiments/binding-muon-20260919/README.md) and
+[longer MLP continuation](experiments/binding-continuation-20260919/README.md) confirm
+narrow stored-memory action composition with both attention and the pooled MLP.
+Competing-entity binding and exact unseen identifiers remain unresolved;
+[learned routing experiments](experiments/binding-routing-20260919/README.md) are running.
 
 **Spatially Superposed Differentiable Knowledge Base**
 

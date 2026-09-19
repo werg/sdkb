@@ -178,8 +178,9 @@ This narrow API is intentionally separate from claims about overlap performance.
 ## Run artifacts
 
 A run records config, dependency/model revision, dataset content hash, metrics,
-resource counters, a safetensors checkpoint and local optimizer state. Resume only
-allows changing total step count; changing episode content is rejected before
+resource counters, a safetensors checkpoint and complete optimizer state. Resume
+allows changing total step count and the explicit operational checkpoint policy;
+scientific hyperparameter changes require a new warm-start fork. Changing episode content is rejected before
 reusing stale cache data. Periodic immutable checkpoint sets include model, optimizer, RNG, config, and the
 stale training-cache snapshot. An atomic CURRENT pointer commits the set. Resume
 verifies hashes, restores that snapshot, and truncates later log fragments. The
