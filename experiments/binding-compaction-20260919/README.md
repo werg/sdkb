@@ -24,3 +24,28 @@ All banks, feature caches, W&B files and small compactor states live externally.
 Save initial, final and requested emergency state only, including named optimizer
 ownership, hyperparameters, source identity and Torch/CUDA/sampling RNGs. No
 backbone checkpoints are copied. Resume rejects changed run identity.
+
+## Completed initial stored comparison
+
+Both fits and initial stored evaluations completed from `868a1b3`. On the same
+32 new worlds, MLP action choice accuracy is 128/128 raw, 96/128 mean-plus-mass,
+and 103/128 fitted. Fitted minus mean is +5.47 points, paired world-bootstrap
+interval [1.56, 10.16]. Attention is 127/128 raw and 128/128 with either compact
+code. The two source models have different training budgets; this result does
+not isolate reader architecture.
+
+Each compact full-pair read uses one BF16 value plus FP32 multiplicity: 4,100
+logical tensor bytes, 4,236 serialized code bytes. There are 64 persisted codes
+per heldout view. Permission, restoration and identifier questions select single
+children and retain exact raw fallback. Their scores therefore do not establish
+compact-code capability. All raw values remain in the store.
+
+Both fits together occupy about 43 MiB externally after stored result files;
+each complete compactor/optimizer resume state is about 9 MiB. The initial source
+config still contains inherited training flags, but the actual optimizer owns
+only SyntheticCompactor parameters and every base parameter is frozen. The
+recorded launch and script identify this scope. Later source versions make those
+metadata explicit and add compute-only stack diagnostics/progress reports.
+
+Counterfactual and candidate-free confirmation is running separately from
+`e69de72`, under `/archive/probes/posthoc-compaction-confirmation-20260919`.
