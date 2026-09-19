@@ -16,6 +16,7 @@ from safetensors.torch import load_model
 from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes, counterfactual_multiuse
+from sdkb.evaluation_adapter import load_frozen_agent
 from sdkb.evaluation import build_shared_bank, score_answers
 from sdkb.metrics import summarize_rows, counterfactual_metrics, paired_world_bootstrap
 from sdkb.operations import atomic_json
@@ -34,7 +35,8 @@ def progress(event, **fields):
 
 
 @torch.no_grad()
-def evaluate(run, episodes_file, output, *, learned_world=False, read_budget=2):
+def evaluate(run, episodes_file, output, *, learned_world=False, read_budget=2,
+             routing_probe=None, independent_routing_query=False):
     config = config_from_run(run)
     if config.train.arm not in {'memory', 'oracle_text', 'direct_latent'}:
         raise ValueError('Use a text or latent checkpoint')
@@ -53,8 +55,15 @@ def evaluate(run, episodes_file, output, *, learned_world=False, read_budget=2):
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
     reset_resource_peaks()
-    agent = SDKBAgent(config).to(config.train.device).eval()
-    load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
+    adapter = None
+    if routing_probe is not None:
+        agent, adapter = load_frozen_agent(config, checkpoint, routing_probe=routing_probe,
+                                          independent_routing_query=independent_routing_query)
+    else:
+        if independent_routing_query:
+            raise ValueError('Supply a routing probe for the independent query override')
+        agent = SDKBAgent(config).to(config.train.device).eval()
+        load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     output.mkdir(parents=True, exist_ok=False)
     store = DiskStore(output / 'bank.sqlite')
     progress('evaluation_offline_write', variant='all', queries=len(episodes))
@@ -133,6 +142,7 @@ def evaluate(run, episodes_file, output, *, learned_world=False, read_budget=2):
         result['notice'] = ('Selected-pair is an oracle control. Learned ranking receives all eligible world '
                             'records, never required-support IDs. World membership is supplied; '
                             'this is not cross-world retrieval or learned authorization.')
+    result['routing_probe'] = adapter
     atomic_json(output / 'results.json', result)
     atomic_json(output / 'summary.json', {k: v for k, v in result.items() if k != 'rows'})
     progress('evaluation_committed', output=str(output), scored_rows=len(rows))
@@ -145,7 +155,10 @@ if __name__ == '__main__':
     parser.add_argument('--episodes', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--learned-world', action='store_true', help='Rank eligible world records by stored keys')
+    parser.add_argument('--routing-probe', type=Path)
+    parser.add_argument('--independent-routing-query', action='store_true')
     parser.add_argument('--read-budget', type=int, default=2, help='Record budget for --learned-world')
     args = parser.parse_args()
     print(json.dumps({'summary': str(evaluate(args.run, args.episodes, args.output,
-                     learned_world=args.learned_world, read_budget=args.read_budget))}, indent=2))
+                     learned_world=args.learned_world, read_budget=args.read_budget,
+                     routing_probe=args.routing_probe, independent_routing_query=args.independent_routing_query))}, indent=2))
