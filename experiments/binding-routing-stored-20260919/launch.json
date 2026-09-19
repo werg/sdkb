@@ -1,0 +1,16 @@
+{
+  "source_commit": "23d54fcc4b9669b811720bc5d09320f1bc233975",
+  "frozen_worktree": ".sdkb/routing-stored",
+  "output": "/archive/probes/routing-stored-20260919",
+  "host_pid": 1239667,
+  "status": "running",
+  "arms": [
+    "source",
+    "compressed_query",
+    "full_state_query"
+  ],
+  "worlds": 32,
+  "generation_worlds": 8,
+  "generation_tokens": 24,
+  "backbone_copies_written": 0
+}

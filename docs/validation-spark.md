@@ -162,3 +162,22 @@ rows exactly. Oracle action accuracy stays 100%. Learned action accuracy is
 candidate-free actions are 14/32 versus 15/32 with zero payloads. This isolates
 address learning as an unresolved problem without sacrificing working composition.
 See [the projection-only study](../experiments/binding-routing-scope-20260919/README.md).
+
+### Address feature diagnostics
+
+Frozen-feature Muon probes now compare the existing compressed query with an
+adaptable projection from the full causal state. With 1,024 fresh training worlds
+and matched update/query-exposure budgets, full required action-pair recall is
+66/128 versus 22/128 for the compressed query on 32 common held-out worlds.
+The paired difference is +34.38 points [24.22, 43.75]. Increasing training breadth
+from 128 to 1,024 worlds improves the full-state arm by +14.06 points [3.13, 25.00].
+These are feature-space retrieval counts, not downstream action accuracy; the
+full-state arm has 65,536 extra trainable parameters and only one training seed.
+See [the breadth study](../experiments/binding-routing-breadth-20260919/README.md).
+
+An opt-in independent routing head now preserves the original reader query while
+using that full-state projection for address search. Native LFM preflight from
+`38a2634` gives zero one-pass identity and causal-prefix error and a nonzero routing
+head gradient. The frozen stored-memory confirmation is running; source-bound
+small address overlays avoid writing redundant backbone checkpoints. Its protocol
+and preflight are in [the stored study](../experiments/binding-routing-stored-20260919/README.md).
