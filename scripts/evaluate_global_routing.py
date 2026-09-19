@@ -28,7 +28,9 @@ def pool_worlds(worlds, target, size):
 
 
 @torch.no_grad()
-def run(source, bank_path, episodes_file, routing_probe, count_policy, output, pools=(1, 4, 16, 32)):
+def run(source, bank_path, episodes_file, routing_probe, count_policy, output, pools=(1, 4, 16, 32), generation_worlds=8):
+    if generation_worlds < 1:
+        raise ValueError('Positive generation world count required')
     if not bank_path.is_file():
         raise FileNotFoundError(bank_path)
     output.mkdir(parents=True, exist_ok=True)
@@ -50,7 +52,7 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
         identity = {'source_manifest_sha256': file_sha256(checkpoint / 'manifest.json'),
                     'episodes_sha256': file_sha256(episodes_file), 'bank_sha256': file_sha256(bank_path),
                     'reference_sha256': file_sha256(reference_path), 'routing_probe': adapter,
-                    'read_count_policy': count, 'pool_sizes': list(pools), 'generation_worlds': 8,
+                    'read_count_policy': count, 'pool_sizes': list(pools), 'generation_worlds': generation_worlds,
                     'max_new_tokens': 24, 'script_sha256': file_sha256(__file__)}
         if (reference['routing_probe'] != adapter or reference['read_count_policy'] != count or
                 reference['checkpoint_manifest_sha256'] != identity['source_manifest_sha256'] or
@@ -58,6 +60,7 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
             raise ValueError('Stored-bank source/data/address/count identity differs')
         episodes = load_episodes(episodes_file)
         worlds = list(dict.fromkeys(e.environment for e in episodes))
+        identity['generation_worlds'] = min(generation_worlds, len(worlds))
         world_ids = {w: frozenset(s.record_id for e in episodes if e.environment == w for s in e.supports) for w in worlds}
         universe = frozenset().union(*world_ids.values())
         if len(universe) != sum(map(len, world_ids.values())):
@@ -115,7 +118,7 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
                             'all_required': set(e.required_ids) <= set(selected),
                             'only_target_world': bool(selected) and set(selected) <= world_ids[e.environment],
                             **scorer.score(prompt, memory, e.answer, e.choices)})
-                        if e.environment in worlds[:8]:
+                        if e.environment in worlds[:generation_worlds]:
                             prediction = scorer.generate(prompt, memory, max_new_tokens=24)
                             generations.append({'episode': e.episode_id, 'environment': e.environment,
                                 'task_family': e.task_family, 'condition': condition, 'answer': e.answer,
@@ -139,5 +142,6 @@ if __name__ == '__main__':
     for name in ('source', 'bank', 'episodes', 'routing-probe', 'count-policy', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--pools', nargs='+', type=int, default=[1, 4, 16, 32])
+    parser.add_argument('--generation-worlds', type=int, default=8)
     args = parser.parse_args()
-    run(args.source, args.bank, args.episodes, args.routing_probe, args.count_policy, args.output, args.pools)
+    run(args.source, args.bank, args.episodes, args.routing_probe, args.count_policy, args.output, args.pools, args.generation_worlds)
