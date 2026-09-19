@@ -2,9 +2,10 @@
 
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
-See [local GPU revalidation](docs/validation-local.md) for tested behavior and remaining limits.
-The [pretrained causal pilot](experiments/causal-pilot-20260919/README.md) records
-successful two-bit stored-memory composition and its broader-transfer limits.
+See [current Spark validation](docs/validation-spark.md) for tested behavior and remaining limits.
+The [Muon binding study](experiments/binding-muon-20260919/README.md) confirms
+narrow stored-memory action composition with attention, while the pooled MLP,
+competing entity records and literal identifiers remain active research problems.
 
 **Spatially Superposed Differentiable Knowledge Base**
 
@@ -14,7 +15,8 @@ questions or actions. Selective replay trains the writer without retaining every
 source graph. Compaction learns to replace groups with synthetic records while
 preserving their conditional contributions.
 
-**Version 0.4.0 · Student `LiquidAI/LFM2.5-230M` · Target: one NVIDIA DGX Spark.**
+**Version 0.4.0 · Student `LiquidAI/LFM2.5-230M` · Initial GPU validation: DGX Spark.**
+The Python runtime supports CPU/CUDA; Spark-specific checks live in the container wrapper.
 The Python package, CLI, agent class, scripts, container and active documentation now
 use SDKB (`sdkb`, `SDKBAgent`). Historical experiment logs remain immutable evidence.
 
@@ -79,6 +81,8 @@ To download, pin and inspect data without loading the training model:
 | `cross_experience.yaml` | Different prior SWE-smith instances in the same repository; repository-held-out validation. |
 | `looped_causal.yaml` | **Real LFM student** text-to-latent training on controlled rules, then fresh-world counterfactual and binding evaluation. |
 | `looped_binding.yaml` | Selected-pair permission, restoration, action and identifier curriculum with rule counterfactuals; oracle routing. |
+| `looped_binding_muon_selected.yaml` / `looped_binding_muon_all.yaml` | Native Muon MLP curricula with selected versus all-world evidence; external-storage operating policy and sparse checkpoints. |
+| `looped_binding_muon_attention.yaml` | Matched attention control; demonstrated selected-support action composition, with explicit distractor/identifier limits. |
 | `looped_smoke.yaml` | Real model and starter sources, two updates per stage, native recurrence preflight. |
 | `tiny_looped_smoke.yaml` | Tiny CPU recurrent curriculum and fresh causal worlds, no downloads. |
 
