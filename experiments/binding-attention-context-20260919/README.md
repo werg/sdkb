@@ -40,3 +40,8 @@ follow-up analysis will report opposed-rule entity pairs separately, using
 `scripts/analyze_entity_binding.py`, rather than crediting agreement cases as
 binding. This is an additional diagnostic chosen before either continuation's
 final evaluation; the declared primary action endpoint is unchanged.
+
+The selected-support control completed all 800 updates and the all-world arm is
+training. Both initial weight files have exactly the same SHA256 as the captured
+source checkpoint, and both optimizers start fresh (`initialization-check.json`).
+Final evaluations remain pending.

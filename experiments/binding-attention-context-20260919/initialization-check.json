@@ -1,0 +1,174 @@
+{
+  "source_model_sha256": "11a333781bb6535057b37831e06a9c7e41fc060775686980c25054cf66f469ea",
+  "arms": {
+    "selected_supports": {
+      "initial_checkpoint": "step-000000000-9ccf2b38c9ba",
+      "model_sha256": "11a333781bb6535057b37831e06a9c7e41fc060775686980c25054cf66f469ea",
+      "trainable_parameters": 95240772,
+      "optimizer": {
+        "kind": "muon",
+        "groups": [
+          {
+            "index": 0,
+            "parameters": 69206016,
+            "tensors": 36,
+            "lr": 5e-06,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 1,
+            "parameters": 25970368,
+            "tensors": 32,
+            "lr": 0.0001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 2,
+            "parameters": 21888,
+            "tensors": 21,
+            "lr": 5e-06,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          },
+          {
+            "index": 3,
+            "parameters": 42500,
+            "tensors": 36,
+            "lr": 0.0001,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          }
+        ],
+        "resumed": false,
+        "completed_steps": 0
+      }
+    },
+    "all_world": {
+      "initial_checkpoint": "step-000000000-5e8fd4b37434",
+      "model_sha256": "11a333781bb6535057b37831e06a9c7e41fc060775686980c25054cf66f469ea",
+      "trainable_parameters": 95240772,
+      "optimizer": {
+        "kind": "muon",
+        "groups": [
+          {
+            "index": 0,
+            "parameters": 69206016,
+            "tensors": 36,
+            "lr": 5e-06,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 1,
+            "parameters": 25970368,
+            "tensors": 32,
+            "lr": 0.0001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 2,
+            "parameters": 21888,
+            "tensors": 21,
+            "lr": 5e-06,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          },
+          {
+            "index": 3,
+            "parameters": 42500,
+            "tensors": 36,
+            "lr": 0.0001,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          }
+        ],
+        "resumed": false,
+        "completed_steps": 0
+      }
+    }
+  },
+  "verification": "Both initial weight-file SHA256 values equal the source checkpoint; both optimizers start fresh."
+}
