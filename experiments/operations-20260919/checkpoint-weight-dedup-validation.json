@@ -1,0 +1,31 @@
+{
+  "profiles": {
+    "applied": true,
+    "potential_bytes": 1017349676,
+    "released_bytes": 1017349676,
+    "replacements": [
+      {
+        "source": "/archive/profiles/binding-muon-checkpoint-off-20260919/training/checkpoints/step-000000100-4c442aaeb1fc/model.safetensors",
+        "target": "/archive/profiles/binding-muon-checkpoint-on-20260919/training/checkpoints/step-000000100-4e2ce0c055d8/model.safetensors",
+        "sha256": "0cb02ddbae644897c1bb93e9a7150397c91e7b1147a70d17cd5a9bdc4da08d87",
+        "bytes": 1017349676
+      }
+    ],
+    "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+  },
+  "validation": {
+    "applied": true,
+    "potential_bytes": 1017349676,
+    "released_bytes": 1017349676,
+    "replacements": [
+      {
+        "source": "/archive/validation/muon-emergency-resume-20260919/full/checkpoints/step-000000002-ef1e275dead5/model.safetensors",
+        "target": "/archive/validation/muon-emergency-resume-20260919/stopped/checkpoints/step-000000002-01b1acf8f31b/model.safetensors",
+        "sha256": "56598ba69c07d762f9644ddc32d1f3bf0e3adddacf7e11ac511986e2920b5517",
+        "bytes": 1017349676
+      }
+    ],
+    "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+  },
+  "postcheck": "All replacements share their verified source inode; the active training run was excluded."
+}

@@ -53,3 +53,10 @@ The command requires inactive stage/parent locks, matching metadata and SHA256
 verification before atomic replacement. See the operations guide and
 `experiments/operations-20260919/checkpoint-weight-dedup.json`. Internal run data
 remains about 52 MiB; external free space was about 248 GiB after this maintenance.
+
+
+Two additional duplicate final weight files in completed profiling and emergency
+resume validation runs were then deduplicated (1.90 GiB), bringing this maintenance
+pass to about 15.19 GiB of redundant weight copies removed. Their original
+checkpoint paths and validation evidence remain intact. The current active run's
+initial copy was explicitly excluded until training completes.
