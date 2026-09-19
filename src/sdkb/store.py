@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
 
 import numpy as np
@@ -86,6 +86,22 @@ class DiskStore:
             db.close()
 
     def put(self, record: StoredRecord, *, children: tuple[str, ...] = ()) -> None:
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            self._put(db, record, children)
+
+    def put_many(self, records: Iterable[StoredRecord]) -> None:
+        """Stream raw records through one atomic transaction for offline bank creation.
+
+        No partial batch is visible or retained after an exception. Derived
+        compact records still use put(..., children=...) to record their lineage.
+        """
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            for record in records:
+                self._put(db, record, ())
+
+    def _put(self, db, record: StoredRecord, children: tuple[str, ...]) -> None:
         key = record.key.detach().float().cpu().contiguous()
         value = record.payload.detach().cpu().contiguous()
         if key.ndim != 1 or not value.is_floating_point() or not torch.isfinite(key).all() or not torch.isfinite(value).all():
@@ -94,25 +110,24 @@ class DiskStore:
             raise ValueError("Record identity and version cannot be empty")
         key_blob = key.numpy().astype("<f4", copy=False).tobytes()
         value_blob = save({"payload": value})
-        with self.connect() as db:
-            if db.execute("SELECT 1 FROM tombstones WHERE namespace=? AND record_id=?",
-                          (record.namespace, record.record_id)).fetchone():
-                raise ValueError("Deleted IDs cannot be resurrected; use a new generation ID")
-            for child in children:
-                rows = db.execute(
-                    "SELECT domain,deleted FROM records WHERE namespace=? AND record_id=?",
-                    (record.namespace, child)).fetchall()
-                if not rows or any(d != record.domain or deleted for d, deleted in rows):
-                    raise PermissionError("Compaction requires live authorization-homogeneous children")
-                if child == record.record_id:
-                    raise ValueError("A record cannot compact itself")
-            # Immutable versions: overwriting a payload would invalidate captured plans.
-            db.execute("INSERT INTO records VALUES (?,?,?,?,?,?,?,?,?,?,0)", (
-                record.namespace, record.record_id, record.space, record.generation,
-                record.domain, record.created_at, key_blob, key.numel(), value_blob, record.source_id))
-            for child in children:
-                db.execute("INSERT OR IGNORE INTO lineage VALUES (?,?,?)",
-                           (record.namespace, record.record_id, child))
+        if db.execute("SELECT 1 FROM tombstones WHERE namespace=? AND record_id=?",
+                      (record.namespace, record.record_id)).fetchone():
+            raise ValueError("Deleted IDs cannot be resurrected; use a new generation ID")
+        for child in children:
+            rows = db.execute(
+                "SELECT domain,deleted FROM records WHERE namespace=? AND record_id=?",
+                (record.namespace, child)).fetchall()
+            if not rows or any(d != record.domain or deleted for d, deleted in rows):
+                raise PermissionError("Compaction requires live authorization-homogeneous children")
+            if child == record.record_id:
+                raise ValueError("A record cannot compact itself")
+        # Immutable versions: overwriting a payload would invalidate captured plans.
+        db.execute("INSERT INTO records VALUES (?,?,?,?,?,?,?,?,?,?,0)", (
+            record.namespace, record.record_id, record.space, record.generation,
+            record.domain, record.created_at, key_blob, key.numel(), value_blob, record.source_id))
+        for child in children:
+            db.execute("INSERT OR IGNORE INTO lineage VALUES (?,?,?)",
+                       (record.namespace, record.record_id, child))
 
     def search(self, query: Tensor, *, top_k: int = 16, namespace: str = "default",
                space: str = "s0", generation: str = "v0", domain: str = "research",
@@ -169,6 +184,7 @@ class DiskStore:
     def delete(self, namespace: str, record_id: str) -> set[str]:
         """Tombstone a source and invalidate all transitive compacted derivatives."""
         with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             rows = db.execute("""WITH RECURSIVE affected(id) AS (
                 SELECT ? UNION SELECT lineage.parent_id FROM lineage JOIN affected
                 ON lineage.child_id=affected.id WHERE lineage.namespace=?)

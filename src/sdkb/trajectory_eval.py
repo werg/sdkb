@@ -20,7 +20,7 @@ from .episode_index import EpisodeIndex
 from .data import evidence_ids
 from .sessions import read_session
 from .store import DiskStore
-from .training import autocast_context, config_from_run, persist_outputs, stored_channel, resource_report, reset_resource_peaks
+from .training import autocast_context, config_from_run, output_records, stored_channel, resource_report, reset_resource_peaks
 
 
 @torch.no_grad()
@@ -40,16 +40,18 @@ def build_teacher_bank(agent, store, episodes):
                 outputs[rid] = tuple(t.detach().cpu() for t in stored_channel(agent, agent.produce(agent.text_ids(s.text, source=True))))
         ids, seen = sorted(outputs), set()
         peers = {rid: ids[(i + 1) % len(ids)] for i, rid in enumerate(ids)}
-        for e in episodes:
-            for s in e.supports:
-                key = (e.environment, s.record_id)
-                if key in seen:
-                    continue
-                seen.add(key)
-                original, peer = outputs[s.record_id], outputs[peers[s.record_id]]
-                wrong = tuple(original[i] if i % 2 == 0 else peer[i] for i in range(len(original)))
-                for variant, tensors in [('all', original), ('wrong_values', wrong)]:
-                    persist_outputs(store, agent, s, tensors, variant + '/' + e.environment, 'teacher-eval-v1')
+        def records():
+            for e in episodes:
+                for s in e.supports:
+                    key = (e.environment, s.record_id)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    original, peer = outputs[s.record_id], outputs[peers[s.record_id]]
+                    wrong = tuple(original[i] if i % 2 == 0 else peer[i] for i in range(len(original)))
+                    for variant, tensors in [('all', original), ('wrong_values', wrong)]:
+                        yield from output_records(agent, s, tensors, variant + '/' + e.environment, 'teacher-eval-v1')
+        store.put_many(records())
     return dict(unique_sources=len(sources), writer_calls=len(outputs),
                 wrong_values_distinct_record_available=len(sources) > 1,
                 wrong_values_policy='Cyclic distinct-record payload permutation; semantic disagreement not guaranteed.')

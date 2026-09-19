@@ -156,6 +156,16 @@ captures IDs and scores; values are rechecked for visibility when fetched. Tombs
 prevent resurrection under the same logical ID, and deletion invalidates transitive
 compact parents. Regeneration needs a new logical record ID after deletion.
 
+Writes reserve the SQLite writer before checking tombstones or child visibility;
+deletions reserve it before collecting the transitive lineage snapshot. This closes
+check/insert and lineage/delete races between concurrent writers. Offline frozen-bank
+builders stream records through one atomic transaction, preserving the same record
+bytes while avoiding a durable commit for every payload. A failed batch rolls back;
+readers never see a partial batch. Training-cache writes retain their existing
+per-record publication. Bulk raw insertion does not replace the lineage-aware
+compaction API. Large offline builds hold the writer reservation until completion,
+so they should use their own bank rather than share an active write destination.
+
 Authorization domains are caller-provided research boundaries, not user
 authentication: a production service must bind caller identity to permitted domains.
 Do not compact incompatible domains. Deletion is logical invalidation, not certified

@@ -90,11 +90,17 @@ def stored_channel(agent: SDKBAgent, outputs: tuple[torch.Tensor, ...]) -> tuple
 
 def persist_outputs(store: DiskStore, agent: SDKBAgent, source: Source,
                     outputs: tuple[torch.Tensor, ...], namespace: str, generation: str) -> None:
+    for record in output_records(agent, source, outputs, namespace, generation):
+        store.put(record)
+
+
+def output_records(agent: SDKBAgent, source: Source, outputs: tuple[torch.Tensor, ...],
+                   namespace: str, generation: str):
     dtype = getattr(torch, agent.config.memory.storage_dtype)
     for space in range(len(agent.config.memory.payload_dims)):
-        store.put(StoredRecord(source.record_id, outputs[2 * space][0],
+        yield StoredRecord(source.record_id, outputs[2 * space][0],
             outputs[2 * space + 1][0].to(dtype), namespace=namespace, space=f"s{space}",
-            generation=generation, created_at=source.created_at, source_id=source.record_id))
+            generation=generation, created_at=source.created_at, source_id=source.record_id)
 
 
 def read_cached(store: DiskStore, agent: SDKBAgent, source: Source,

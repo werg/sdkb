@@ -16,7 +16,7 @@ from .metrics import summarize_rows, paired_world_bootstrap
 from .routing import complete_support_recall
 from .sessions import read_session
 from .store import DiskStore
-from .training import autocast_context, persist_outputs, stored_channel, config_from_run, resource_report, reset_resource_peaks
+from .training import autocast_context, output_records, stored_channel, config_from_run, resource_report, reset_resource_peaks
 
 
 @torch.no_grad()
@@ -56,10 +56,12 @@ def build_shared_bank(agent, store: DiskStore, episodes: list[Episode], *, names
                 raise ValueError('Source ID maps to incompatible experiences')
             unique[source.record_id] = source
     if agent.config.train.arm in {'memory', 'direct_latent'}:
-        with autocast_context(agent.config):
-            for source in unique.values():
-                result = stored_channel(agent, agent.produce(agent.text_ids(source.text, source=True)))
-                persist_outputs(store, agent, source, result, namespace, generation)
+        def records():
+            with autocast_context(agent.config):
+                for source in unique.values():
+                    result = stored_channel(agent, agent.produce(agent.text_ids(source.text, source=True)))
+                    yield from output_records(agent, source, result, namespace, generation)
+        store.put_many(records())
         writes = len(unique)
     else:
         writes = 0
