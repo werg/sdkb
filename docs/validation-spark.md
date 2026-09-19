@@ -15,10 +15,30 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **259 tests**, with four existing dependency/runtime
+The latest full suite passed **283 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
+
+## Latest research boundary
+
+The longer core-only MLP continuation preserves 100% oracle action composition,
+as does the earlier attention source. Learned retrieval remains weaker. On a
+fresh 32-world stored confirmation, an independent routing-query head plus a
+frozen 130-parameter one/two-record classifier reaches 70.31% action choice
+accuracy and 19/32 candidate-free actions. The classifier predicts every required
+cardinality in this finite split, but that does not guarantee correct selected
+entities. Permission/restoration choice accuracy is 78.13%/92.19%; unseen
+identifier generation remains 0/16. Oracle/no-memory rows and serialized payloads
+are exactly preserved across count and routing interventions. See
+`experiments/binding-count-stored-20260919/` for paired intervals and controls.
+
+Persistent single-space compact codes now work at native recurrent boundaries,
+including cumulative partial-selection fallback, mass and visibility checks.
+Two frozen-reader Muon compactor fits reduce heldout conditional-statistics and
+rollout losses versus mean-plus-mass. Their stored semantic and counterfactual
+confirmation is still in progress. This does not establish net disk savings,
+arbitrary subset decoding, real agent success or parameter substitution.
 
 ## Operational evidence
 

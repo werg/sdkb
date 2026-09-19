@@ -22,7 +22,7 @@ from sdkb.evaluation import build_shared_bank, stored_transfer_evaluation
 from sdkb.evaluation_adapter import load_frozen_agent
 from sdkb.operations import atomic_json, control_dir, run_lock, stop_requested
 from sdkb.optimizers import MuonAdamW
-from sdkb.runtime import configure_memory, available_host_memory, memory_metrics
+from sdkb.runtime import configure_memory, available_host_memory, memory_metrics, compute_watchdog
 from sdkb.store import DiskStore, ReadPlan, Selection
 from sdkb.tracking import Tracking
 from sdkb.training import config_from_run, autocast_context
@@ -116,6 +116,9 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
                 or len(config.memory.payload_dims) != 1 or config.memory.storage_dtype != 'bfloat16'):
             raise ValueError('Probe requires a one-read, single-space BF16 recurrent checkpoint')
         config.train.optimizer = 'muon'
+        config.model.freeze_backbone = True
+        config.train.replay = False
+        config.train.oracle_anchor_weight = 0.
         config.train.steps, config.train.seed = steps, seed
         config.train.learning_rate = 1e-4
         config.train.gradient_accumulation = 1
@@ -136,6 +139,7 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
                     'train_episodes_sha256': file_sha256(train_file), 'config': asdict(config),
                     'batch_size': batch_size, 'steps': steps, 'seed': seed,
                     'compactor': {'width': config.memory.reader_width, 'records': 1},
+                    'frozen_base_model': True, 'optimizer_ownership': 'SyntheticCompactor only',
                     'script_sha256': file_sha256(__file__), 'reader_hash': state_fingerprint(agent.reader),
                     'objective': 'conditional numerator/mass and free reader rollout on serialized BF16 codes'}
         if (output / 'inputs.json').exists() and json.loads((output / 'inputs.json').read_text()) != identity:
@@ -197,13 +201,14 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
                     raise RuntimeError('Stopped at complete optimizer boundary with full resume state')
                 indices = torch.randint(len(data['train']['raw']), (batch_size,), generator=sampler).to(agent.device)
                 raw, query = data['train']['raw'][indices], data['train']['query'][indices]
-                optimizer.zero_grad(set_to_none=True)
-                with autocast_context(config):
-                    values, weights = serialized_codes(compactor, raw)
-                    loss = contribution_loss(agent.reader, raw, raw.new_ones(raw.shape[:2]), values, weights, query)
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(compactor.parameters(), 1., error_if_nonfinite=True)
-                optimizer.step()
+                with compute_watchdog(config.train.stall_timeout_seconds):
+                    optimizer.zero_grad(set_to_none=True)
+                    with autocast_context(config):
+                        values, weights = serialized_codes(compactor, raw)
+                        loss = contribution_loss(agent.reader, raw, raw.new_ones(raw.shape[:2]), values, weights, query)
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(compactor.parameters(), 1., error_if_nonfinite=True)
+                    optimizer.step()
                 completed += 1
                 if completed % 20 == 0:
                     row = {'step': completed, 'loss': loss.item(), **memory_metrics(config.train.device)}
