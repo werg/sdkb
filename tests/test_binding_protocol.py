@@ -1,4 +1,6 @@
 from dataclasses import asdict
+import importlib.util
+from pathlib import Path
 import json
 
 import pytest
@@ -53,3 +55,17 @@ def test_binding_curriculum_uses_separate_worlds_and_evaluates_counterfactuals(t
     assert set(report['counterfactuals']) == {'cf_restoration', 'cf_permission'}
     assert 'drop_0' in report['summary']
     assert launch(recipe, out, resume=True)['status'] == 'complete'
+    script = Path(__file__).parents[1] / 'scripts/evaluate_binding_context.py'
+    spec = importlib.util.spec_from_file_location('binding_context', script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.evaluate(out / 'memory', out / 'fresh-multiuse.jsonl', out / 'world-context')
+    result = json.loads((out / 'world-context/results.json').read_text())
+    action_rows = [r for r in result['rows'] if r['task_family'] == 'multiuse/action']
+    assert all(r['selected_record_count'] == 4 for r in action_rows if r['condition'] == 'all')
+    assert all(r['selected_record_count'] == 2 for r in action_rows if r['condition'] == 'selected_pair')
+    # Two distractors remain visible after removing a true required support, but
+    # they cannot satisfy the missing contribution on an allowed retry branch.
+    dropped = [r for r in action_rows if r['condition'].startswith('drop_') and r['answer'] != 'STOP']
+    assert dropped and all(r['selected_record_count'] == 3 and not r['complete_support'] for r in dropped)
+    assert result['writes']['all']['writer_calls'] == 4

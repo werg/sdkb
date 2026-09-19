@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Expose every entity in a world to a frozen text/latent reader.
+
+The oracle supplies world membership, not the relevant entity's source pair.
+True sufficient groups remain unchanged and govern support-removal controls.
+"""
+from dataclasses import replace
+from pathlib import Path
+import argparse
+import json
+import time
+
+import torch
+from safetensors.torch import load_model
+
+from sdkb.agent import SDKBAgent
+from sdkb.checkpoints import resolve_checkpoint
+from sdkb.data import load_episodes, counterfactual_multiuse
+from sdkb.evaluation import build_shared_bank, score_answers
+from sdkb.metrics import summarize_rows, counterfactual_metrics, paired_world_bootstrap
+from sdkb.operations import atomic_json
+from sdkb.sessions import read_session
+from sdkb.store import DiskStore
+from sdkb.training import config_from_run, autocast_context, resource_report, reset_resource_peaks
+from sdkb.trajectories import file_sha256
+
+
+@torch.no_grad()
+def evaluate(run, episodes_file, output):
+    config = config_from_run(run)
+    if config.train.arm not in {'memory', 'oracle_text', 'direct_latent'}:
+        raise ValueError('Use a text or latent checkpoint')
+    if config.memory.read_steps != 1:
+        raise ValueError('This world-context diagnostic requires one complete read')
+    episodes = load_episodes(episodes_file)
+    variants = {kind: [counterfactual_multiuse(e, kind) for e in episodes]
+                for kind in ('restoration', 'permission')}
+    checkpoint = resolve_checkpoint(run, verify=True)
+    torch.set_num_threads(config.train.threads)
+    torch.manual_seed(config.train.seed)
+    reset_resource_peaks()
+    agent = SDKBAgent(config).to(config.train.device).eval()
+    load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
+    output.mkdir(parents=True, exist_ok=False)
+    store = DiskStore(output / 'bank.sqlite')
+    writes = {'all': build_shared_bank(agent, store, episodes)}
+    for kind, changed in variants.items():
+        writes[kind] = build_shared_bank(agent, store, changed, namespace=kind)
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Writer invoked after offline bank creation')
+    agent.produce = forbidden
+    store = DiskStore(store.path)
+    rows, originals, plans = [], {e.episode_id: e for e in episodes}, {}
+    start = time.perf_counter()
+    with autocast_context(config):
+        for kind, group in [('all', episodes), *variants.items()]:
+            for e in group:
+                conditions = (['all', 'selected_pair', 'none', 'zero_values'] +
+                              [f'drop_{i}' for i in range(len(e.required_ids))]) if kind == 'all' else ['cf_' + kind]
+                for condition in conditions:
+                    selected = tuple(s.record_id for s in e.supports)
+                    if condition == 'selected_pair':
+                        selected = e.required_ids
+                    elif condition == 'none':
+                        selected = ()
+                    elif condition.startswith('drop_'):
+                        selected = tuple(rid for rid in selected if rid != e.required_ids[int(condition[5:])])
+                    text = '\n'.join(s.text for s in e.supports if s.record_id in selected)
+                    prompt = agent.prompt_ids(e.query, text if config.train.arm == 'oracle_text' else '')
+                    memory = None
+                    if config.train.arm != 'oracle_text' and selected:
+                        namespace = 'global' if kind == 'all' else kind
+                        fixed = ([[replace(p, namespace=namespace) for p in step] for step in plans[e.episode_id]]
+                                 if condition == 'zero_values' or kind != 'all' else None)
+                        session = read_session(agent, store, prompt, namespace=namespace, generation='frozen-v1',
+                            query_time=e.query_time, oracle_ids=selected,
+                            ablate_values=condition == 'zero_values', fixed_plans=fixed)
+                        memory = session.memory
+                        if condition == 'all':
+                            plans[e.episode_id] = session.plans
+                    groups = e.sufficient_groups or (e.required_ids,)
+                    row = dict(episode=e.episode_id, environment=e.environment, task_family=e.task_family,
+                        condition=condition, answer=e.answer, selected_ids=list(selected),
+                        selected_record_count=len(selected), complete_support=any(set(g) <= set(selected) for g in groups),
+                        **score_answers(agent, prompt, memory, e.answer, e.choices))
+                    if kind != 'all':
+                        row['counterfactual_should_change'] = e.answer != originals[e.episode_id].answer
+                    rows.append(row)
+    names = ('cf_restoration', 'cf_permission')
+    families = sorted({e.task_family for e in episodes})
+    result = dict(protocol='World-scoped evidence, competing entities, frozen stored-only read.',
+        checkpoint=str(checkpoint), checkpoint_manifest_sha256=file_sha256(checkpoint / 'manifest.json'),
+        episodes_sha256=file_sha256(episodes_file), writes=writes, summary=summarize_rows(rows),
+        by_family={f: summarize_rows([r for r in rows if r['task_family'] == f]) for f in families},
+        counterfactuals_by_family={f: counterfactual_metrics([r for r in rows if r['task_family'] == f], names)
+                                  for f in families},
+        paired_gains={f: {c: paired_world_bootstrap([r for r in rows if r['task_family'] == f], b=c)
+                         for c in ('selected_pair', 'zero_values', 'none')} for f in families},
+        read_evaluation_seconds=time.perf_counter() - start, resources=resource_report(), rows=rows,
+        notice='All-world versus selected-pair reads differ in information/compute budget. '
+               'World membership is supplied; routing across worlds is not tested. '
+               'Zero-payload interventions apply only to latent arms; text stays unchanged.')
+    atomic_json(output / 'results.json', result)
+    atomic_json(output / 'summary.json', {k: v for k, v in result.items() if k != 'rows'})
+    return output / 'summary.json'
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--run', type=Path, required=True)
+    parser.add_argument('--episodes', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    print(json.dumps({'summary': str(evaluate(args.run, args.episodes, args.output))}, indent=2))
