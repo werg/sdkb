@@ -1,0 +1,11 @@
+{
+  "source_commit": "19a23a218176293c44a07f749db51cfbccbc4251",
+  "output": "/archive/probes/routing-features-20260919",
+  "source_checkpoint": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+  "status": "running",
+  "host_pid": 1196896,
+  "frozen_worktree": ".sdkb/routing-features",
+  "steps": 800,
+  "precision": "native BF16 autocast",
+  "checkpoint_policy": "small address model/optimizer only at completed arm or cooperative stop; feature caches external"
+}

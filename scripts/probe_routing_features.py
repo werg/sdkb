@@ -37,13 +37,13 @@ class AddressProbe(nn.Module):
         self.key = copy.deepcopy(agent.key_head)
         self.address = copy.deepcopy(agent.address_maps[0])
         self.query_map = copy.deepcopy(agent.query_maps[0])
-        self.query_head = copy.deepcopy(agent.query_head) if raw_query else None
+        self.query_head = copy.deepcopy(agent.query_head)
+        self.query_head.requires_grad_(raw_query)
 
     def forward(self, features):
         key = F.normalize(self.key(features['key']), dim=-1)
         key = F.normalize(self.address(key), dim=-1)
-        query = (F.normalize(self.query_head(features['raw_query']), dim=-1)
-                 if self.raw_query else features['query'])
+        query = F.normalize(self.query_head(features['raw_query']), dim=-1)
         query = self.query_map(query)
         return (F.normalize(query.float(), dim=-1)[:, None] *
                 F.normalize(key.float(), dim=-1)).sum(-1) / .1
@@ -163,10 +163,14 @@ def run(checkpoint, root, steps):
             a, b = [model(features['train']) for model in models.values()]
         if not torch.equal(a, b):
             raise ValueError(f'Initial scores differ: {(a-b).abs().max().item()}')
+        with torch.no_grad(), autocast_context(config):
+            reconstructed = F.normalize(models['compressed_query'].query_head(features['train']['raw_query']), dim=-1)
+        drift = (reconstructed - features['train']['query']).abs().max().item()
         del agent
-        report = {'identity': identity, 'initial_scores_exact': True, 'arms': {}}
+        report = {'identity': identity, 'initial_scores_exact': True,
+                  'batched_vs_single_query_max_abs': drift, 'arms': {}}
         for name, model in models.items():
-            optimizer = torch.optim.Muon(model.parameters(), lr=config.train.learning_rate,
+            optimizer = torch.optim.Muon([p for p in model.parameters() if p.requires_grad], lr=config.train.learning_rate,
                 momentum=config.train.muon_momentum, ns_steps=config.train.muon_ns_steps,
                 weight_decay=config.train.weight_decay, adjust_lr_fn='match_rms_adamw')
             state_path = root / f'{name}-resume.pt'
@@ -197,7 +201,7 @@ def run(checkpoint, root, steps):
                 if (step + 1) % 100 == 0:
                     print(json.dumps({'arm': name, 'step': step + 1, 'loss': loss.item()}), flush=True)
             save(steps)
-            report['arms'][name] = {'parameters': sum(p.numel() for p in model.parameters()),
+            report['arms'][name] = {'parameters': sum(p.numel() for p in model.parameters() if p.requires_grad),
                 'initial_train': initial, 'train': score(model, features['train'], train, config),
                 'heldout': score(model, features['heldout'], heldout, config)}
             atomic_json(root / 'results.json', report)

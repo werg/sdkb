@@ -30,3 +30,11 @@ restart uses the same immutable inputs and deterministic full-batch computation.
 Feature extraction can be repeated if stopped before committing its cache.
 No backbone copies or frequent checkpoints are written. Production training and
 its full emergency recovery remain in the standard runner.
+
+The first attempt aborted before training: BF16 single-query versus batched query
+head GEMMs differed enough to change scores by at most 0.005354. Both arms now
+recompute the head in the same batch shape, with its weights frozen in the
+compressed-query arm. This preserves identical initial scores and the intended
+trainable-parameter difference. The report records the query rounding difference
+against captured single-query outputs. Feature caches from the aborted extraction
+remain valid; neither arm trained in that attempt.
