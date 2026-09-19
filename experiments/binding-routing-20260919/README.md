@@ -97,3 +97,14 @@ held-out selection, and interference from updating the shared writer/reader, rem
 separate diagnostic questions. See `confirmation-summaries.json`, `paired-results.json`,
 `generation-summaries.json` and `completed-training.json` for controls and identities.
 Training and choice evaluation used frozen `304fb17`; generation used `baba9ef`.
+
+
+### Training-fit follow-up
+
+A frozen `304fb17` diagnostic evaluates the first eight existing training worlds,
+all 80 questions, using the same stored-only learned-selection protocol. Supervised
+action accuracy is 65.625% and sufficient-support recall only 12.5%, versus control
+68.75% and 53.125%. Thus failure is visible on this training subset too, not only
+on held-out worlds. Direct-fact recall is again 100%; identifier choice reaches
+93.75% in both continued arms. This is explicitly training fit, not generalization.
+`training-fit.json` records the subset and result hashes.
