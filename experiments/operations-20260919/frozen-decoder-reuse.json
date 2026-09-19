@@ -1,0 +1,46 @@
+{
+  "source_commit": "f5c7f8c",
+  "reference_commit": "e69de72",
+  "results": {
+    "raw": {
+      "exact_score_rows": 128,
+      "exact_generation_rows": 60,
+      "decoder_reuse": {
+        "hits": {
+          "score": 24,
+          "generation": 0
+        },
+        "unique_score_inputs": 104,
+        "unique_generation_inputs": 60,
+        "notice": "Serial decoder results reused only after matching full prompt/memory bytes and scoring controls; stored reads and visibility checks still execute."
+      }
+    },
+    "mean": {
+      "exact_score_rows": 128,
+      "exact_generation_rows": 60,
+      "decoder_reuse": {
+        "hits": {
+          "score": 128,
+          "generation": 52
+        },
+        "unique_score_inputs": 128,
+        "unique_generation_inputs": 68,
+        "notice": "Serial decoder results reused only after matching full prompt/memory bytes and scoring controls; stored reads and visibility checks still execute."
+      }
+    },
+    "trained": {
+      "exact_score_rows": 128,
+      "exact_generation_rows": 60,
+      "decoder_reuse": {
+        "hits": {
+          "score": 232,
+          "generation": 104
+        },
+        "unique_score_inputs": 152,
+        "unique_generation_inputs": 76,
+        "notice": "Serial decoder results reused only after matching full prompt/memory bytes and scoring controls; stored reads and visibility checks still execute."
+      }
+    }
+  },
+  "notice": "Native BF16 two-world comparison; complete rows and generations match uncached serial execution exactly."
+}

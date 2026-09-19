@@ -1,0 +1,7 @@
+{
+  "episodes_sha256": "c6c4215a5cc90573e766ff5cb11da19ab5100c9d00578a217fa2511f9a536eb6",
+  "worlds": 32,
+  "queries": 320,
+  "split": "posthoc-compaction-fresh-confirmation-20260919",
+  "disjoint_from_training_and_development_worlds": true
+}
