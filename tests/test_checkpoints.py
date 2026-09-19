@@ -78,6 +78,17 @@ def test_detects_corrupt_optimizer_before_loading(tmp_path, tiny_config):
         resolve_checkpoint(run, verify=True)
 
 
+def test_direct_checkpoint_path_still_verifies_its_manifest(tmp_path, tiny_config):
+    run = tmp_path / 'run'
+    train(tiny_config, run)
+    checkpoint = resolve_checkpoint(run)
+    assert resolve_checkpoint(checkpoint, verify=True) == checkpoint
+    with (checkpoint / 'training_state.pt').open('ab') as handle:
+        handle.write(b'corrupt')
+    with pytest.raises(ValueError, match='checksum'):
+        resolve_checkpoint(checkpoint, verify=True)
+
+
 def test_raw_to_paired_compaction_warm_start(tmp_path, tiny_config):
     raw = tmp_path / 'raw'
     train(tiny_config, raw)

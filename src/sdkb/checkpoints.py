@@ -58,12 +58,16 @@ def resolve_checkpoint(run: str | Path, *, verify: bool = False) -> Path:
     run = Path(run)
     if not (run / "CURRENT").exists():
         if (run / "model.safetensors").exists():
-            return run  # Read compatibility with the 0.1 handoff.
-        raise FileNotFoundError("No committed checkpoint")
-    name = (run / "CURRENT").read_text().strip()
-    if not name.startswith("step-") or Path(name).name != name:
-        raise ValueError("Invalid checkpoint pointer")
-    path = run / "checkpoints" / name
+            if not (run / 'manifest.json').exists():
+                return run  # Read compatibility with the unmanifested 0.1 handoff.
+            path = run  # Direct immutable checkpoint paths retain full verification.
+        else:
+            raise FileNotFoundError("No committed checkpoint")
+    else:
+        name = (run / "CURRENT").read_text().strip()
+        if not name.startswith("step-") or Path(name).name != name:
+            raise ValueError("Invalid checkpoint pointer")
+        path = run / "checkpoints" / name
     manifest = json.loads((path / "manifest.json").read_text())
     if manifest["format"] != 1:
         raise ValueError("Unsupported checkpoint format")
