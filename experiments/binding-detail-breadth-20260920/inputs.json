@@ -1,0 +1,19 @@
+{
+  "worlds-128": {
+    "data_sha256": "bb88fafbd72bb7a9df67d4eef7064957509fb590379fea95f3b8f62f3d34599d",
+    "config_sha256": "8b86223d4ffec2516201980fab7f5961a425256e9b210b26d9d2f485f27ff269",
+    "worlds": 128,
+    "queries": 1280
+  },
+  "worlds-1024": {
+    "data_sha256": "8cf08e7184085ef131d262dff7c1fa75b6392f351efd79e52e10bd02ead3edbe",
+    "config_sha256": "47a0e3fb6c4307cc4aa14acd45f40e1044712855a65e51d03683b49b46d97e11",
+    "worlds": 1024,
+    "queries": 10240
+  },
+  "source": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "heldout_sha256": "9cf675c63e7c7374ef45b2752ac584f0234ef1904518652df3afa9ce51ca63db",
+  "nested_training_prefix_exact": true,
+  "train_heldout_source_ids_disjoint": true
+}

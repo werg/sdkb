@@ -48,3 +48,10 @@ the same expanded corpus and the original 32 query worlds. Keep all 1,024 worlds
 as retrieval candidates. Output: `/archive/probes/global-stored-fp32-scale-20260919`.
 This checks whether the previously observed scaling loss survives the arithmetic
 correction; it is another known-corpus implementation diagnostic.
+
+Completed: free actions fall from 102/128 at 128 records to **78/128** at 4,096;
+both-required-source retrieval falls from 73/128 to 37/128. The large-bank free
+action advantage is 10.94 points over no memory (world-bootstrap interval
+0–21.88) and 11.72 over zero payloads (0.78–22.66). This still leaves substantial
+scaling loss; the small, single-seed diagnostic does not establish robust global
+retrieval. Historical large-bank free actions were 76/128.

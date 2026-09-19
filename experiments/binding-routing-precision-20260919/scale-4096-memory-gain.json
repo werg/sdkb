@@ -1,0 +1,22 @@
+{
+  "none": {
+    "n_worlds": 32,
+    "n_queries": 128,
+    "mean_gain": 0.109375,
+    "ci95": [
+      0.0,
+      0.21875
+    ],
+    "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+  },
+  "zero_values": {
+    "n_worlds": 32,
+    "n_queries": 128,
+    "mean_gain": 0.1171875,
+    "ci95": [
+      0.0078125,
+      0.2265625
+    ],
+    "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+  }
+}

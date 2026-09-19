@@ -1,0 +1,43 @@
+{
+  "inputs": {
+    "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "2c538db936b41d8e2fae0573f85db5c346f90b7f3b6663f780b7582c84a39ba7",
+    "bank_sha256": "36d7c1c4468ece98a1f95b6f9cbd29f0a3c6f7d8e49de10a12f2f4e178209e87",
+    "reference_sha256": "ffdf4330c2cdafdd01517dac9e24ea99127cf906e5ade435accc49cd5d7d82ac",
+    "script_sha256": "a6c4d64b0e73450b1a39959f7375dc2e32a1074ece8e915263f55c25597bd231",
+    "max_new_tokens": 24
+  },
+  "summary": {
+    "stored_required": {
+      "n": 64,
+      "correct": 0
+    },
+    "text_required": {
+      "n": 64,
+      "correct": 64
+    },
+    "none": {
+      "n": 64,
+      "correct": 0
+    }
+  },
+  "notice": "Known-corpus diagnostic; oracle selection and identical source information, unequal text/latent input budgets. Text is a separate control, not an enabled exact-detail inference path. No candidate answers passed to generation.",
+  "serialized_bytes_per_selected_record": {
+    "key": 256,
+    "payload": 4176
+  },
+  "prompt_tokens": {
+    "stored_required": {
+      "min": 30,
+      "max": 36
+    },
+    "text_required": {
+      "min": 69,
+      "max": 83
+    },
+    "none": {
+      "min": 30,
+      "max": 36
+    }
+  }
+}
