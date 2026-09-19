@@ -17,7 +17,7 @@ from safetensors.torch import load_model
 from .agent import SDKBAgent
 from .checkpoints import save_checkpoint, restore_checkpoint, resolve_checkpoint, stop_on_signal
 from .config import Config
-from .data import Episode, Source, counterfactual, make_episode, save_episodes, load_episodes
+from .data import Episode, Source, counterfactual, make_episode, save_episodes, load_episodes, evidence_ids
 from .replay import ReplayTape
 from .store import DiskStore, ReadPlan, Selection, StoredRecord, lookup_record
 
@@ -128,7 +128,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                  for i in range(config.train.train_worlds)])
     validate_routing_dataset(config, episodes)
     if config.train.optimization_scope == 'compactor' and config.train.retrieval == 'oracle' and not any(
-            len(e.required_ids) > config.memory.compact_records for e in episodes):
+            len(evidence_ids(e, config.train.evidence_scope)) > config.memory.compact_records for e in episodes):
         raise ValueError('Compactor-only training cannot reduce any selected group; lower compact_records')
     output = Path(output)
     if config.train.device == "cuda" and not torch.cuda.is_available():
@@ -266,7 +266,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             for _ in range(config.train.gradient_accumulation):
                 episode = rng.choice(episodes)
                 tape = ReplayTape(verify_outputs=config.train.verify_replay)
-                required = [i for i, source in enumerate(episode.supports) if source.record_id in episode.required_ids]
+                visible = evidence_ids(episode, config.train.evidence_scope)
+                read_indices = [i for i, source in enumerate(episode.supports) if source.record_id in visible]
                 with autocast_context(config):
                     records = []
                     if config.train.arm in {"memory", "direct_latent"}:
@@ -287,12 +288,12 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                             else:
                                 value = tuple(x.detach() for x in cached)
                             records.append(value)
-                    support_text = "\n".join(s.text for s in episode.supports if s.record_id in episode.required_ids)
+                    support_text = "\n".join(s.text for s in episode.supports if s.record_id in visible)
                     prompt = agent.prompt_ids(episode.query, support_text if config.train.arm == "oracle_text" else "")
                     compact = (config.train.arm == "memory" and config.memory.compaction != "none"
                                and step >= config.memory.compaction_warmup
                                and rng.random() < config.memory.compaction_probability)
-                    result = agent(prompt, agent.target_ids(episode.answer), records, required,
+                    result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
                                    step=step, compact=compact)
                     loss = result.loss
                     if config.train.oracle_anchor_weight and config.train.arm == "memory":
@@ -396,7 +397,7 @@ def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode
             elif condition == "irrelevant":
                 selected_ids = [s.record_id for s in variant.supports if s.kind == "irrelevant"]
             else:
-                selected_ids = list(episode.required_ids)
+                selected_ids = list(evidence_ids(variant, agent.config.train.evidence_scope))
             with autocast_context(agent.config):
                 arm = agent.config.train.arm
                 text = "\n".join(s.text for s in variant.supports if s.record_id in selected_ids)
@@ -491,7 +492,7 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
         for episode in episodes:
             for condition in ["all", "none", "zero_values"]:
                 arm = config.train.arm
-                selected = list(episode.required_ids) if condition != "none" else []
+                selected = list(evidence_ids(episode, config.train.evidence_scope)) if condition != "none" else []
                 text = "\n".join(s.text for s in episode.supports if s.record_id in selected)
                 prompt = agent.prompt_ids(episode.query, text if arm == "oracle_text" else "")
                 q = agent.query(prompt)

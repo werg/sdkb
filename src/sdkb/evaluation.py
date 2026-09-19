@@ -11,7 +11,7 @@ from safetensors.torch import load_model
 
 from .agent import SDKBAgent
 from .checkpoints import resolve_checkpoint
-from .data import Episode, load_episodes, counterfactual_boolean, counterfactual_multiuse
+from .data import Episode, load_episodes, counterfactual_boolean, counterfactual_multiuse, evidence_ids
 from .metrics import summarize_rows, paired_world_bootstrap
 from .routing import complete_support_recall
 from .sessions import read_session
@@ -91,7 +91,7 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
             for condition in conditions:
                 arm = agent.config.train.arm
                 excluded = frozenset([episode.required_ids[int(condition.split('_')[1])]]) if condition.startswith('drop_') else frozenset()
-                selected = tuple(rid for rid in episode.required_ids if rid not in excluded)
+                selected = tuple(rid for rid in evidence_ids(episode, agent.config.train.evidence_scope) if rid not in excluded)
                 if condition == 'none':
                     selected = ()
                 text = '\n'.join(s.text for s in episode.supports if s.record_id in selected)

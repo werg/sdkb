@@ -17,6 +17,7 @@ from safetensors.torch import load_model
 from .agent import SDKBAgent
 from .checkpoints import resolve_checkpoint
 from .episode_index import EpisodeIndex
+from .data import evidence_ids
 from .sessions import read_session
 from .store import DiskStore
 from .training import autocast_context, config_from_run, persist_outputs, stored_channel, resource_report, reset_resource_peaks
@@ -85,14 +86,15 @@ def stored_teacher_evaluation(agent, store, episodes, *, generate_tokens=0, clus
             original_plans = None
             for condition in conditions:
                 arm = agent.config.train.arm
-                evidence = '\n'.join(s.text for s in e.supports if s.record_id in e.required_ids)
+                visible = evidence_ids(e, agent.config.train.evidence_scope)
+                evidence = '\n'.join(s.text for s in e.supports if s.record_id in visible)
                 prompt = agent.prompt_ids(e.query, evidence if arm == 'oracle_text' and condition != 'none' else '')
                 memory, selected = None, []
                 if arm in {'memory', 'direct_latent'} and condition != 'none':
                     namespace = ('wrong_values' if condition == 'wrong_values' else 'all') + '/' + e.environment
                     session = read_session(agent, store, prompt, namespace=namespace, generation='teacher-eval-v1',
                                            query_time=e.query_time,
-                                           oracle_ids=e.required_ids if agent.config.train.retrieval == 'oracle' else None,
+                                           oracle_ids=visible if agent.config.train.retrieval == 'oracle' else None,
                                            ablate_values=condition == 'zero_values',
                                            cluster_bank=cluster_bank if condition == 'compact' else None,
                                            fixed_plans=None if condition == 'all' else

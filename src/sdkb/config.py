@@ -92,6 +92,7 @@ class TrainConfig:
     parent_kl_weight: float = 0.0  # fixed one-pass parent, only while native base is frozen
     oracle_anchor_weight: float = 0.0
     episodes_file: str | None = None  # optional general support/query JSONL
+    evidence_scope: str = 'required'  # oracle-selected supports or all causally available candidates
     archive_dir: str | None = None  # existing external storage root; never auto-mount
     archive_keep_checkpoints: int = 3
     min_free_disk_bytes: int = 1024 ** 3
@@ -164,6 +165,10 @@ class Config:
             raise ValueError("Unknown comparison arm")
         if t.retrieval not in {"oracle", "learned"}:
             raise ValueError("Unknown retrieval mode")
+        if t.evidence_scope not in {'required', 'available'}:
+            raise ValueError('Invalid evidence scope')
+        if t.evidence_scope == 'available' and t.retrieval != 'oracle':
+            raise ValueError('Available evidence scope requires oracle candidate access; it is not learned routing')
         if r.noise_std < 0 or r.quantization_step < 0 or r.compact_records < 1:
             raise ValueError("Invalid noise or compaction settings")
         if r.compaction_objective not in {"interleaved", "paired"}:

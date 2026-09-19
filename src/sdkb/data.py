@@ -43,6 +43,15 @@ def _opaque(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
+def evidence_ids(episode: Episode, scope: str = 'required') -> tuple[str, ...]:
+    """Choose visible inputs without changing the task's sufficient-support labels."""
+    if scope not in {'required', 'available'}:
+        raise ValueError('Invalid evidence scope')
+    if any(s.created_at >= episode.query_time for s in episode.supports):
+        raise ValueError('Evidence must be causally prior to the query')
+    return episode.required_ids if scope == 'required' else tuple(s.record_id for s in episode.supports)
+
+
 def make_episode(seed: int, *, split: str = "train", distractors: int = 2,
                  restore: bool | None = None, allowed_capability: int | None = None,
                  capability: int | None = None) -> Episode:

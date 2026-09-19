@@ -12,7 +12,7 @@ import time
 import yaml
 from .backbones import ByteTokenizer
 from .config import load_config, TrainConfig
-from .data import make_boolean_world, make_multiuse_world, save_episodes
+from .data import make_boolean_world, make_multiuse_world, save_episodes, evidence_ids
 from .episode_index import EpisodeIndex
 from .text import render_prompt
 from .trajectories import prepare_trajectories, pinned_spec, digest, file_sha256
@@ -64,10 +64,10 @@ def prepare_launch(recipe_path, output, *, resume=False):
     output = Path(output).resolve()
     base = load_config(recipe['base_config'])
     identity_config = asdict(base)
-    # New optional operations defaults must not invalidate an existing 0.4 recipe.
+    # Defaults preserving old behavior must not invalidate an existing 0.4 recipe.
     defaults = TrainConfig()
     for name in ('archive_dir', 'archive_keep_checkpoints', 'min_free_disk_bytes',
-                 'wandb_mode', 'wandb_project', 'wandb_entity', 'wandb_group'):
+                 'wandb_mode', 'wandb_project', 'wandb_entity', 'wandb_group', 'evidence_scope'):
         if identity_config['train'][name] == getattr(defaults, name):
             identity_config['train'].pop(name)
     identity = digest({'recipe': recipe, 'base_config': identity_config})
@@ -139,7 +139,8 @@ def prepare_launch(recipe_path, output, *, resume=False):
         for e in EpisodeIndex(data / f'{split}.jsonl'):
             if len(tokenizer.encode(e.answer, add_special_tokens=False)) + int(tokenizer.eos_token_id is not None) > base.train.max_target_tokens:
                 raise ValueError('Prepared target overflow')
-            support_text = '\n'.join(s.text for s in e.supports if s.record_id in e.required_ids)
+            visible = evidence_ids(e, base.train.evidence_scope)
+            support_text = '\n'.join(s.text for s in e.supports if s.record_id in visible)
             if len(tokenizer.encode(render_prompt(tokenizer, e.query, support_text), add_special_tokens=False)) > base.train.max_prompt_tokens:
                 raise ValueError('Prepared oracle-text overflow')
     stages = []

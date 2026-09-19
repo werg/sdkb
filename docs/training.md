@@ -134,6 +134,15 @@ or correct binding among all competing records. Text controls receive exactly
 the same selected sources. Both rule records are supplied for action queries,
 including STOP branches, so selection cardinality cannot reveal the action.
 
+`train.evidence_scope: available` supplies every candidate in the episode to
+both text and latent arms. The original `required_ids` and `sufficient_groups`
+remain the ground truth for ablations and support metrics; distractors are never
+relabeled as sufficient. This option requires oracle candidate access and does
+not claim learned routing. For generated binding worlds it exposes all entities
+in a world, while world membership is still supplied. The default `required`
+preserves existing recipes. Use `recipes/looped_binding_all.yaml` for the matched
+all-context curriculum. Producer replay and serialized value precision are unchanged.
+
 `sdkb evaluate-transfer --binding-counterfactuals` flips permission or restoration
 rules consistently throughout each world. IDs, queries, timestamps and read plans
 remain fixed. Scores distinguish answer-changing branches from branches that
