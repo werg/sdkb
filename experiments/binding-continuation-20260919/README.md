@@ -59,3 +59,10 @@ control runs first. Its console is external at
 The full-backbone preflight used `2112c9f`; model, training and optimizer modules
 are unchanged across these commits. The generation diagnostic on the earlier
 checkout finished before that checkout was advanced for training.
+
+The recurrent-core control completed 1,600 updates and the full-backbone arm has
+started. Actual trainable counts are 93,866,055 and 254,331,335. Both arms' first
+update has identical loss (0.09923347085197065) and sampled depth (2); gradient
+norms differ because trainable scope differs. `initialization-check.json` records
+the source paths, native optimizer groups and first-update memory counters.
+Final capability results remain pending; the larger arm is not compute-matched.

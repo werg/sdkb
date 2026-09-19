@@ -1,0 +1,209 @@
+{
+  "recurrent_core": {
+    "optimizer": {
+      "kind": "muon",
+      "groups": [
+        {
+          "index": 0,
+          "parameters": 69206016,
+          "tensors": 36,
+          "lr": 5e-06,
+          "weight_decay": 0.01,
+          "momentum": 0.95,
+          "nesterov": true,
+          "ns_coefficients": [
+            3.4445,
+            -4.775,
+            2.0315
+          ],
+          "eps": 1e-07,
+          "ns_steps": 5,
+          "adjust_lr_fn": "match_rms_adamw"
+        },
+        {
+          "index": 1,
+          "parameters": 24594880,
+          "tensors": 35,
+          "lr": 0.0001,
+          "weight_decay": 0.01,
+          "momentum": 0.95,
+          "nesterov": true,
+          "ns_coefficients": [
+            3.4445,
+            -4.775,
+            2.0315
+          ],
+          "eps": 1e-07,
+          "ns_steps": 5,
+          "adjust_lr_fn": "match_rms_adamw"
+        },
+        {
+          "index": 2,
+          "parameters": 21888,
+          "tensors": 21,
+          "lr": 5e-06,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.01,
+          "amsgrad": false,
+          "maximize": false,
+          "foreach": null,
+          "capturable": false,
+          "differentiable": false,
+          "fused": null,
+          "decoupled_weight_decay": true
+        },
+        {
+          "index": 3,
+          "parameters": 43271,
+          "tensors": 42,
+          "lr": 0.0001,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.01,
+          "amsgrad": false,
+          "maximize": false,
+          "foreach": null,
+          "capturable": false,
+          "differentiable": false,
+          "fused": null,
+          "decoupled_weight_decay": true
+        }
+      ],
+      "resumed": false,
+      "completed_steps": 0
+    },
+    "trainable_parameters": 93866055,
+    "first_update": {
+      "loss": 0.09923347085197065,
+      "nll": 0.09923347085197065,
+      "oracle_anchor_nll": 1.114277978153666e-05,
+      "optimization_loss": 0.0992345851299488,
+      "loops": 2,
+      "grad_norm": 8.16904067993164,
+      "memory": {
+        "host_available_bytes": 95668510720,
+        "cuda_allocated_bytes": 1798677504,
+        "cuda_reserved_bytes": 2325741568,
+        "cuda_attempt_peak_allocated_bytes": 2284449280
+      }
+    },
+    "initialization": {
+      "checkpoint": "/archive/runs/binding-muon-selected-20260919/recurrent_joint/checkpoints/step-000000400-916c424054bb",
+      "optimizer_reset": true,
+      "missing_initialized": [],
+      "unused": [],
+      "recurrence_conversion": false
+    }
+  },
+  "all": {
+    "optimizer": {
+      "kind": "muon",
+      "groups": [
+        {
+          "index": 0,
+          "parameters": 162529280,
+          "tensors": 82,
+          "lr": 5e-06,
+          "weight_decay": 0.01,
+          "momentum": 0.95,
+          "nesterov": true,
+          "ns_coefficients": [
+            3.4445,
+            -4.775,
+            2.0315
+          ],
+          "eps": 1e-07,
+          "ns_steps": 5,
+          "adjust_lr_fn": "match_rms_adamw"
+        },
+        {
+          "index": 1,
+          "parameters": 24594880,
+          "tensors": 35,
+          "lr": 0.0001,
+          "weight_decay": 0.01,
+          "momentum": 0.95,
+          "nesterov": true,
+          "ns_coefficients": [
+            3.4445,
+            -4.775,
+            2.0315
+          ],
+          "eps": 1e-07,
+          "ns_steps": 5,
+          "adjust_lr_fn": "match_rms_adamw"
+        },
+        {
+          "index": 2,
+          "parameters": 67163904,
+          "tensors": 50,
+          "lr": 5e-06,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.01,
+          "amsgrad": false,
+          "maximize": false,
+          "foreach": null,
+          "capturable": false,
+          "differentiable": false,
+          "fused": null,
+          "decoupled_weight_decay": true
+        },
+        {
+          "index": 3,
+          "parameters": 43271,
+          "tensors": 42,
+          "lr": 0.0001,
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 1e-08,
+          "weight_decay": 0.01,
+          "amsgrad": false,
+          "maximize": false,
+          "foreach": null,
+          "capturable": false,
+          "differentiable": false,
+          "fused": null,
+          "decoupled_weight_decay": true
+        }
+      ],
+      "resumed": false,
+      "completed_steps": 0
+    },
+    "trainable_parameters": 254331335,
+    "first_update": {
+      "loss": 0.09923347085197065,
+      "nll": 0.09923347085197065,
+      "oracle_anchor_nll": 1.114277978153666e-05,
+      "optimization_loss": 0.0992345851299488,
+      "loops": 2,
+      "grad_norm": 13.729175567626953,
+      "memory": {
+        "host_available_bytes": 78439755776,
+        "cuda_allocated_bytes": 3367749632,
+        "cuda_reserved_bytes": 4007657472,
+        "cuda_attempt_peak_allocated_bytes": 3636071424
+      }
+    },
+    "initialization": {
+      "checkpoint": "/archive/runs/binding-muon-selected-20260919/recurrent_joint/checkpoints/step-000000400-916c424054bb",
+      "optimizer_reset": true,
+      "missing_initialized": [],
+      "unused": [],
+      "recurrence_conversion": false
+    }
+  },
+  "notice": "Same source/seed/data and initial forward loss; gradients, trainable parameter count, memory and compute differ by design. This is not an equal-compute or optimizer-resume comparison."
+}
