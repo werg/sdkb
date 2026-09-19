@@ -56,9 +56,28 @@ def test_dedup_preserves_distinct_permissions_and_existing_links(tmp_path):
     a, b, c = [checkpoint(tmp_path, arm, 0) for arm in ['a', 'b', 'c']]
     (b / 'model.safetensors').chmod(0o600)
     Path(tmp_path / 'other-copy').hardlink_to(c / 'model.safetensors')
+    existing_inode = (c / 'model.safetensors').stat().st_ino
     result = deduplicate_weights([a, b, c], apply=True)
-    assert result['released_bytes'] == 0
+    assert result['released_bytes'] == 7
+    assert (c / 'model.safetensors').stat().st_ino == existing_inode
+    assert (tmp_path / 'other-copy').stat().st_ino == existing_inode
+    assert (a / 'model.safetensors').stat().st_ino == existing_inode
     assert (b / 'model.safetensors').stat().st_mode & 0o777 == 0o600
+
+
+def test_dedup_reuses_existing_shared_copy_for_new_warm_starts(tmp_path):
+    from sdkb.checkpoint_dedup import deduplicate_weights
+    a, b, source = [checkpoint(tmp_path, arm, 0) for arm in ['a-new', 'b-new', 'z-source']]
+    alias = tmp_path/'retained-archive-copy'
+    alias.hardlink_to(source/'model.safetensors')
+    inode = alias.stat().st_ino
+    plan = deduplicate_weights([a, b, source])
+    assert plan['potential_bytes'] == 14
+    assert all(r['source'] == str(source/'model.safetensors') for r in plan['replacements'])
+    result = deduplicate_weights([a, b, source], apply=True)
+    assert result['released_bytes'] == 14
+    assert all((p/'model.safetensors').stat().st_ino == inode for p in (a, b, source))
+    assert alias.stat().st_ino == inode and alias.read_bytes() == b'weights'
 
 
 def test_dedup_rejects_symlinked_payload(tmp_path):

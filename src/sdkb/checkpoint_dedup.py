@@ -35,8 +35,11 @@ def deduplicate_weights(checkpoints, *, apply=False):
         groups[(s.st_dev, s.st_size, digest, s.st_uid, s.st_gid, s.st_mode, attrs)].append(model)
     replacements = []
     for key, models in groups.items():
-        source = models[0]
-        for target in models[1:]:
+        # Keep an already shared inode as the source. Choosing a newer unshared
+        # copy by path order would retain it unnecessarily because shared targets
+        # must remain intact (their other links may be outside this inventory).
+        source = max(models, key=lambda model: model.stat().st_nlink)
+        for target in models:
             # Existing links may belong to another retained archive: leave them intact.
             if _identity(source)[:2] != _identity(target)[:2] and target.stat().st_nlink == 1:
                 replacements.append((source, target, key[2], key[1]))
