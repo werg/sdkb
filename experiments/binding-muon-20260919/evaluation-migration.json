@@ -1,0 +1,63 @@
+{
+  "training_source_commit": "837f592",
+  "evaluation_source_commit": "a962739",
+  "protocol": "Graceful evaluation-boundary stop after all optimizer budgets and checkpoints completed; resume skips training and retains completed evaluation markers.",
+  "runs": {
+    "selected": {
+      "checkpoints": {
+        "text_bootstrap": {
+          "checkpoint": "step-000000200-c4c7eb92f9ee",
+          "step": 200,
+          "model_sha256": "a1534c1cd30a053bf3e125ba4dbac3911b4de248190d71f00e7462f1247a1eff",
+          "training_state_sha256": "082974c36a89ddf2ca2a49ab194b10657491879458f6c8909d85726d3c39f2a7"
+        },
+        "recurrence_bridge": {
+          "checkpoint": "step-000000200-3f117ebcad46",
+          "step": 200,
+          "model_sha256": "c4a9e34f29df6c0aa95c28c5761d5c302478857cc65b5efca1982117371742f1",
+          "training_state_sha256": "8a61c05ea099d0550118594db05fd7c526272eddc378c3c16973bd7bc69072de"
+        },
+        "latent_warmup": {
+          "checkpoint": "step-000000400-fe2e241301c1",
+          "step": 400,
+          "model_sha256": "e1167444ba4d3aa5fa16c1671acc3dd0a50afbf56faee2d3668e90e8dcc86bee",
+          "training_state_sha256": "338824a751d5bad727cf774f37435496b1856a338a3b4b6ebc5f7a094c22be04"
+        },
+        "recurrent_joint": {
+          "checkpoint": "step-000000400-916c424054bb",
+          "step": 400,
+          "model_sha256": "6b8b46e05d201dab982d418eab9a57fcea432ca46888ac278a7f9796c2f2727d",
+          "training_state_sha256": "e2ce766c18cb3c082e9198b592d37a298e445f62f3b010141b04da58854e6836"
+        }
+      }
+    },
+    "all": {
+      "checkpoints": {
+        "text_bootstrap": {
+          "checkpoint": "step-000000200-050bcf0fae9c",
+          "step": 200,
+          "model_sha256": "cbdf08ad7dace2b48476513b248e6fce20b49132abc9e4b72d0ba4f71d94d6ad",
+          "training_state_sha256": "fbf7d0a23338fd81cf20cb4b1482bf7b7320e8dd07c77d025c5bef63e93af5d3"
+        },
+        "recurrence_bridge": {
+          "checkpoint": "step-000000200-0906dc4e4fea",
+          "step": 200,
+          "model_sha256": "ea7b0515785ebfd0b8e3e3982dc45e11d3773666e54e73a3f157ccef6659e121",
+          "training_state_sha256": "82e5e7ab0b7058247d17f367e025adad3037cf3c442b4114d558260b768b22cc"
+        },
+        "latent_warmup": {
+          "checkpoint": "step-000000400-a0be3e61216e",
+          "step": 400,
+          "model_sha256": "61d246bbf9a5fd973a28480bcec6705ce8c9ea8023882c1ffc7c397bd16aef71",
+          "training_state_sha256": "5c4b00230690572f14a9fd3239527f37e494f07ed1d64726d85c5a8643ed8fbf"
+        },
+        "recurrent_joint": {
+          "checkpoint": "step-000000400-a86e0e84f8dc",
+          "step": 400,
+          "model_sha256": "428dd6edb833ed8986f447b3118a16529753479c6e4a315bdbfc777fb7e56689",
+          "training_state_sha256": "9107c48518d12de62a5be59d6b39dff22dbf7007f4588a65d6fb75fa432cf441"
+        }
+      }
+    }
+  }
+}

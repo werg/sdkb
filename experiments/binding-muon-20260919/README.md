@@ -1,7 +1,9 @@
 # Matched Muon binding curricula
 
-Status: two native-GPU curricula started from the pinned pretrained model.
-Their frozen source checkout is `837f592`; they do not inherit AdamW optimizer
+Status: both native-GPU MLP curricula have completed training from the pinned
+pretrained model. The all-context post-freeze evaluation is complete; the selected
+evaluation and the additional attention training/control are still in progress.
+Their frozen training source checkout is `837f592`; they do not inherit AdamW optimizer
 state or claim that the interrupted AdamW curricula completed.
 
 Both use seed 23, 128 training worlds, two entities per world, and stage budgets
@@ -29,6 +31,33 @@ restoration, exact identifiers and their procedural combination in unseen worlds
 Teacher NLL, probe decodability and numerical stability are not substitutes for
 correct answers and appropriate counterfactual changes. One-seed synthetic results
 will not establish agent success or parameter substitution.
+
+## Completed all-context result
+
+The all-context MLP completed its 200/200/400/400 budgets without nonfinite
+gradients. Its own 32 post-freeze worlds gave the following choice accuracies:
+
+| Task | Stored payloads | Zeroed payloads | No memory |
+|---|---:|---:|---:|
+| Action | 49.2% | 50.0% | 50.0% |
+| Identifier | 26.6% | 28.1% | 31.3% |
+| Permission | 56.3% | 56.3% | 53.1% |
+| Restoration | 51.6% | 48.4% | 51.6% |
+| Overall | 46.6% | 46.6% | 47.2% |
+
+Action counterfactuals have **zero** both-correct pairs for either rule change.
+Direct permission flips also have zero both-correct pairs; restoration flips have
+3/64. This run does not establish useful binding or composition. Its out-of-domain
+Boolean result is similarly uninformative (51.0% with payloads, 52.1% with zeros).
+Aggregate reports, frozen-model identity and episode checksums are in
+`all-final.json`. These worlds differ from the other launchers' test sets; the
+queued common-world comparisons remain necessary for paired between-arm claims.
+
+After training and the teacher evaluation completed, this run stopped gracefully
+at an evaluation boundary and resumed from `a962739` for the remaining frozen
+evaluations. Every stage's checkpoint name, model hash and optimizer-state hash
+remained unchanged. This is an evaluation-only source transition, not retraining
+or an optimizer reset.
 
 ## Short adaptation diagnostic (completed)
 
