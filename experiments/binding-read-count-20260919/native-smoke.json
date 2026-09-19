@@ -1,0 +1,111 @@
+{
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "3eb4e49912a057b750b03ea84ab3ca27c4c2852f",
+    "git_dirty": false,
+    "transformers": "5.17.0"
+  },
+  "adapter": {
+    "probe_sha256": "2884bf2ef50fd26cfa4619e72e48595bb5eea29cb3ea1909e968cc93cb23d15c",
+    "identity": {
+      "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+      "train_sha256": "2f899e91c5f71c047699c54d983a0c7e9f7087aeaa498cfd2f6df9936136ff18",
+      "heldout_sha256": "1aa373dcc730894defb31428dee19b7342d6dbe5d2b63c383cdfc1649366a702",
+      "steps": 800,
+      "train_config": {
+        "seed": 29,
+        "steps": 1600,
+        "learning_rate": 0.0001,
+        "backbone_learning_rate": 5e-06,
+        "optimizer": "muon",
+        "weight_decay": 0.01,
+        "adam_betas": [
+          0.9,
+          0.999
+        ],
+        "adam_eps": 1e-08,
+        "muon_momentum": 0.95,
+        "muon_ns_steps": 5,
+        "gradient_accumulation": 4,
+        "clip_grad_norm": 1.0,
+        "precision": "bf16",
+        "device": "cuda",
+        "replay": true,
+        "verify_replay": false,
+        "live_fraction": 1.0,
+        "train_worlds": 128,
+        "distractors": 2,
+        "eval_worlds": 16,
+        "log_every": 10,
+        "max_source_tokens": 512,
+        "max_prompt_tokens": 4096,
+        "arm": "memory",
+        "retrieval": "oracle",
+        "routing_weight": 0.1,
+        "routing_warmup": 100,
+        "threads": 8,
+        "cuda_memory_fraction": 0.35,
+        "min_system_available_bytes": 8589934592,
+        "stall_timeout_seconds": 300,
+        "optimization_scope": "all",
+        "checkpoint_every": 1000,
+        "keep_checkpoints": 2,
+        "max_target_tokens": 512,
+        "loop_counts": [
+          2,
+          3
+        ],
+        "oracle_anchor_loops": 1,
+        "allow_recurrence_conversion": false,
+        "parent_kl_weight": 0.0,
+        "oracle_anchor_weight": 0.1,
+        "episodes_file": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+        "evidence_scope": "required",
+        "archive_dir": null,
+        "archive_keep_checkpoints": 3,
+        "min_free_disk_bytes": 10737418240,
+        "wandb_mode": "offline",
+        "wandb_project": "sdkb",
+        "wandb_entity": null,
+        "wandb_group": "binding-muon-continuation"
+      },
+      "seed": 43,
+      "learning_rate": 0.0001,
+      "optimizer": "native Muon",
+      "batch": 1280,
+      "train_worlds": 1024,
+      "script_sha256": "494fff79f2e4cb21f73f2a2c6fc075a0aaffa38f68ab7c584714f3fced0b26da",
+      "notice": "Frozen-feature learnability probe, unequal parameter counts; no downstream capability claim."
+    },
+    "independent_routing_query": true,
+    "notice": "Address-only overlay; base reader, payload writer and decoder remain frozen."
+  },
+  "policy": {
+    "policy_sha256": "a14dc6b73130085b992f22db4187d050c26e669a27483071d518e53c59a51b27",
+    "choices": [
+      1,
+      2
+    ],
+    "representation": "reader_query",
+    "parameters": 130,
+    "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "notice": "Frozen count classifier; no support-group labels are used during inference."
+  },
+  "episodes_sha256": "4493e162d23f782d6cded92d07daa8fd137859495fc4d3c793617db24ed49ec6",
+  "queries": 20,
+  "correct_counts": 20,
+  "offline_writer_outputs_identical": true,
+  "stored_writer_calls": 0,
+  "notice": "Native mechanics/count smoke only; no downstream capability claim."
+}
