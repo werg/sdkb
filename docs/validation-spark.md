@@ -278,3 +278,13 @@ query batches. Training pair retrieval improves, while held-out full pairs fall
 from 87/128 to 80/128 and 79/128. The unchanged-width endpoint reproduces model,
 optimizer and sampler state exactly. The production address width remains 64;
 the wider feature experiment does not establish a useful model improvement.
+
+An [exact-detail control](../experiments/binding-exact-detail-20260920/README.md)
+gives 64/64 unseen identifiers from the selected source text but 0/64 from the same
+source as a stored latent payload. A separate
+[frozen-payload readout](../experiments/binding-payload-readout-20260920/README.md)
+recovers 137/384 held-out characters linearly (21/384 with shifted payloads), yet
+0/64 complete identifiers. A larger readout fits all training identifiers but also
+gets 0/64 held-out exact strings. Some character information remains accessible;
+the probes do not establish a general exact-detail solution or prove information
+is absent. Matched fresh-world training continuations are evaluating this failure.
