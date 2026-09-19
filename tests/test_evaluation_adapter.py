@@ -82,3 +82,29 @@ def test_probe_choice_and_generation_share_bank_identity(tmp_path, tiny_config):
     with pytest.raises(ValueError, match='bank routing adapter'):
         generation.evaluate(source, output / 'bank.sqlite', episodes, 1, 1, learned_world=True,
                             routing_probe=probe, independent_routing_query=True)
+
+
+def test_legacy_episode_evaluator_uses_independent_routing_query(tmp_path, tiny_config, monkeypatch):
+    from sdkb.data import make_episode, save_episodes
+    from sdkb.store import DiskStore
+    from sdkb.training import evaluate_episode_file
+    tiny_config.memory.independent_routing_query = True
+    tiny_config.train.retrieval = 'learned'
+    tiny_config.train.steps = 1
+    source = tmp_path / 'source'
+    train(tiny_config, source)
+    path = tmp_path / 'episodes.jsonl'
+    save_episodes(path, [make_episode(3, distractors=1)])
+    pair, search = SDKBAgent.query_pair, DiskStore.search
+    expected = []
+    def capture(self, *args, **kwargs):
+        reader_query, routing_query = pair(self, *args, **kwargs)
+        expected[:] = [self.query_maps[0](routing_query)[0]]
+        return reader_query, routing_query
+    def checked_search(self, query, **kwargs):
+        torch.testing.assert_close(query, expected[0])
+        return search(self, query, **kwargs)
+    monkeypatch.setattr(SDKBAgent, 'query_pair', capture)
+    monkeypatch.setattr(SDKBAgent, 'query', lambda *args: pytest.fail('Legacy path bypassed routing query'))
+    monkeypatch.setattr(DiskStore, 'search', checked_search)
+    evaluate_episode_file(source, path)

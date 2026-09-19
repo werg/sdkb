@@ -564,11 +564,11 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
                 selected = list(evidence_ids(episode, config.train.evidence_scope)) if condition != "none" else []
                 text = "\n".join(s.text for s in episode.supports if s.record_id in selected)
                 prompt = agent.prompt_ids(episode.query, text if arm == "oracle_text" else "")
-                q = agent.query(prompt)
+                q, routing_query = agent.query_pair(prompt)
                 payloads, ids = [], []
                 for space, dim in enumerate(config.memory.payload_dims):
                     if config.train.retrieval == "learned" and condition != "none":
-                        plan = store.search(agent.query_maps[space](q)[0], namespace=episode.episode_id,
+                        plan = store.search(agent.query_maps[space](routing_query)[0], namespace=episode.episode_id,
                             space=f"s{space}", generation="frozen-v0", query_time=episode.query_time,
                             top_k=config.memory.neighbors[space])
                     else:

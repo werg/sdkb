@@ -137,8 +137,9 @@ def run(checkpoint, root, steps, train_worlds=0, batch_size=0):
         torch.manual_seed(43)
         agent = SDKBAgent(config).to(config.train.device).eval()
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
-        if config.memory.read_steps != 1 or len(config.memory.payload_dims) != 1:
-            raise ValueError('Probe is limited to first-read single-space models')
+        if (config.memory.read_steps != 1 or len(config.memory.payload_dims) != 1
+                or config.memory.independent_routing_query):
+            raise ValueError('Probe requires a first-read single-space shared-query source')
         if train_worlds:
             train = [e for i in range(train_worlds) for e in make_multiuse_world(
                 i, split='routing-feature-breadth-train-20260919', bindings=2)]

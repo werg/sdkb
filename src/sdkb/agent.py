@@ -131,6 +131,7 @@ class SDKBAgent(nn.Module):
         return h[:, -1]
 
     def query(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
+        """Reader conditioning; use query_pair()[1] for configurable addressing."""
         return F.normalize(self.query_head(self._query_features(prompt_ids, memory)), dim=-1)
 
     def query_pair(self, prompt_ids: Tensor, memory: Tensor | None = None) -> tuple[Tensor, Tensor]:
