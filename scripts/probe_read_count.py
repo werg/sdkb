@@ -21,7 +21,7 @@ from sdkb.training import config_from_run, autocast_context
 from sdkb.trajectories import file_sha256
 
 
-def run(source, features_root, output, steps=200):
+def run(source, features_root, output, steps=200, representation='address_query'):
     output.mkdir(parents=True, exist_ok=True)
     with run_lock(output, clear_stop=False):
         checkpoint = resolve_checkpoint(source, verify=True)
@@ -35,6 +35,8 @@ def run(source, features_root, output, steps=200):
         config.train.oracle_anchor_weight = 0.
         config.train.wandb_group = 'read-count-feature-probe'
         inputs = json.loads((features_root / 'inputs.json').read_text())
+        config.train.train_worlds = inputs['train_worlds']
+        config.train.episodes_file = str(features_root / 'train.jsonl')
         endpoint = features_root / 'full_state_query-resume.pt'
         state = torch.load(endpoint, weights_only=True, map_location='cpu')
         if (state['identity'] != inputs or state['step'] != inputs['steps']
@@ -47,21 +49,27 @@ def run(source, features_root, output, steps=200):
         identity = {'source_endpoint_sha256': file_sha256(endpoint), 'source_identity': inputs,
                     'choices': [1, 2], 'steps': steps, 'batch_size': 1280, 'seed': 53,
                     'learning_rate': .01, 'optimizer': 'Muon matrix + AdamW bias',
-                    'parameters': 130, 'config': asdict(config), 'script_sha256': file_sha256(__file__),
+                    'representation': representation, 'config': asdict(config), 'script_sha256': file_sha256(__file__),
                     'notice': 'Frozen-address query classifier; support cardinality labels are training-only.'}
-        values, labels, scores = {}, {}, {}
+        values, labels = {}, {}
         identity['features_sha256'] = {}
         for split in ('train', 'heldout'):
             path = features_root / f'{split}-features.safetensors'
             identity['features_sha256'][split] = file_sha256(path)
             features = {k: v.to(config.train.device) for k, v in load_file(str(path)).items()}
             with torch.no_grad(), autocast_context(config):
-                query = F.normalize(router.query_head(features['raw_query']), dim=-1)
-                values[split] = F.normalize(router.query_map(query).float(), dim=-1)
-                scores[split], _ = router(features)
+                if representation == 'address_query':
+                    query = F.normalize(router.query_head(features['raw_query']), dim=-1)
+                    value = router.query_map(query).float()
+                elif representation == 'reader_query':
+                    value = features['query'].float()
+                else:
+                    value = features['raw_query'].float()
+                values[split] = F.normalize(value, dim=-1)
             labels[split] = features['lengths'] - 1
             if not torch.all((labels[split] == 0) | (labels[split] == 1)):
                 raise ValueError('Only one/two required-record groups are supported')
+        identity['parameters'] = 2 * (values['train'].shape[-1] + 1)
         if (output / 'inputs.json').exists() and json.loads((output / 'inputs.json').read_text()) != identity:
             raise ValueError('Count probe identity changed')
         atomic_json(output / 'inputs.json', identity)
@@ -123,9 +131,10 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--features', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--representation', choices=['address_query', 'reader_query', 'full_state'], default='address_query')
     args = parser.parse_args()
     def stop(_signal, _frame):
         (control_dir(args.output) / 'STOP').touch()
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
-    run(args.source, args.features, args.output)
+    run(args.source, args.features, args.output, representation=args.representation)
