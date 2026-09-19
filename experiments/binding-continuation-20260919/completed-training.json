@@ -1,0 +1,196 @@
+{
+  "recurrent_core": {
+    "checkpoint": "step-000001600-ae2efaf16b1c",
+    "manifest": {
+      "format": 1,
+      "step": 1600,
+      "dataset_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "sha256": {
+        "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+        "config.json": "f2eb47c05ba4dd2dc8da1821b4366737717c1566ad288c3f22b6cc26e6d7e20d",
+        "run-identity.json": "cc26c05d02bf198c403ba5ea1d7de243cef460355b7548ad744712e07c32ebe1",
+        "model.safetensors": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+        "training_state.pt": "d672516525d0d194c065d4f25ccbabe1cf13582d0a5cf34ba133c4c1d91f2d3a"
+      }
+    },
+    "steps": 1600,
+    "environment": {
+      "python": "3.12.3",
+      "machine": "aarch64",
+      "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+      "cuda_runtime": "13.2",
+      "cuda_available": true,
+      "gpu": "NVIDIA GB10",
+      "compute_capability": [
+        12,
+        1
+      ],
+      "bf16_supported": true,
+      "cuda_total_bytes": 130594091008,
+      "git_commit": "0d6c0a4ae7ad0726439d14ea64b5cbd58dc21fa5",
+      "git_dirty": false,
+      "transformers": "5.17.0",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "runtime_limits": {
+        "host_available_bytes": 101803827200,
+        "cuda_memory_fraction": 0.35,
+        "min_system_available_bytes": 8589934592
+      },
+      "total_parameters": 254331335,
+      "trainable_parameters": 93866055,
+      "notice": "Prototype measurements; not evidence of capacity substitution.",
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          4
+        ],
+        "core": [
+          4,
+          10
+        ],
+        "coda": [
+          10,
+          14
+        ],
+        "loops": 3,
+        "layer_visits": 26,
+        "layer_types": [
+          "conv",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv"
+        ],
+        "new_bridge_parameters": 3148803,
+        "input_mix": 0.10497003048658371,
+        "update_mix": 0.10614748299121857,
+        "memory_mix": 0.10528570413589478,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary",
+        "training_depths": [
+          2,
+          3
+        ],
+        "writer_loops": 1
+      },
+      "resume": false,
+      "attempt": "34031c689855"
+    },
+    "resources": {
+      "process_peak_rss_bytes": 4190916608,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 2701913600,
+      "cuda_peak_reserved_bytes": 2724200448,
+      "system_mem_available_bytes": 77105180672
+    },
+    "last_update_elapsed_seconds": 1942.8783151019888,
+    "timing_notice": "Elapsed training log includes concurrent-machine effects and intermediate saves; excludes final checkpoint commit. Not isolated throughput."
+  },
+  "all": {
+    "checkpoint": "step-000001600-ef9dcd6e8d4e",
+    "manifest": {
+      "format": 1,
+      "step": 1600,
+      "dataset_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "sha256": {
+        "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+        "config.json": "97d4b24f6347856f112fca55c6125c16fc77c6cf2dc48a09e0ac4a4ec89a782b",
+        "run-identity.json": "961e948b5dca619be0a89b9198e7352da34d35faf2b899a182b8c7a02c5e05fb",
+        "model.safetensors": "67b211c2f4d527df1367a6b768aefc8f0a7f165d64c46d36254dfe5f983c2b95",
+        "training_state.pt": "d761eed65edf19298ad5e4f5cb9d4921d951f96c18f9ae534b148b7bd478452e"
+      }
+    },
+    "steps": 1600,
+    "environment": {
+      "python": "3.12.3",
+      "machine": "aarch64",
+      "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+      "cuda_runtime": "13.2",
+      "cuda_available": true,
+      "gpu": "NVIDIA GB10",
+      "compute_capability": [
+        12,
+        1
+      ],
+      "bf16_supported": true,
+      "cuda_total_bytes": 130594091008,
+      "git_commit": "0d6c0a4ae7ad0726439d14ea64b5cbd58dc21fa5",
+      "git_dirty": false,
+      "transformers": "5.17.0",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "runtime_limits": {
+        "host_available_bytes": 77099483136,
+        "cuda_memory_fraction": 0.35,
+        "min_system_available_bytes": 8589934592
+      },
+      "total_parameters": 254331335,
+      "trainable_parameters": 254331335,
+      "notice": "Prototype measurements; not evidence of capacity substitution.",
+      "recurrence": {
+        "mode": "middle_block",
+        "prelude": [
+          0,
+          4
+        ],
+        "core": [
+          4,
+          10
+        ],
+        "coda": [
+          10,
+          14
+        ],
+        "loops": 3,
+        "layer_visits": 26,
+        "layer_types": [
+          "conv",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv",
+          "full_attention",
+          "conv"
+        ],
+        "new_bridge_parameters": 3148803,
+        "input_mix": 0.10497003048658371,
+        "update_mix": 0.10614748299121857,
+        "memory_mix": 0.10528570413589478,
+        "cache": "disabled; no KV or convolution state crosses a depth boundary",
+        "training_depths": [
+          2,
+          3
+        ],
+        "writer_loops": 1
+      },
+      "resume": false,
+      "attempt": "c44fd9c5c8c9"
+    },
+    "resources": {
+      "process_peak_rss_bytes": 5288800256,
+      "rss_scope": "process lifetime; not phase-isolated",
+      "cuda_peak_allocated_bytes": 4951519232,
+      "cuda_peak_reserved_bytes": 5079302144,
+      "system_mem_available_bytes": 104077819904
+    },
+    "last_update_elapsed_seconds": 3387.5306694259925,
+    "timing_notice": "Elapsed training log includes concurrent-machine effects and intermediate saves; excludes final checkpoint commit. Not isolated throughput."
+  }
+}

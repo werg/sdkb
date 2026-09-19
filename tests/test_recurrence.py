@@ -141,17 +141,22 @@ def test_integrated_training_matches_stored_prefix_plan(loop_config, tmp_path, m
 
 
 @pytest.mark.parametrize('checkpoint', [False, True])
-def test_native_inloop_selective_replay_gradient_parity(loop_config, checkpoint):
+@pytest.mark.parametrize('retrieval', ['oracle', 'learned'])
+def test_native_inloop_selective_replay_gradient_parity(loop_config, checkpoint, retrieval):
     loop_config.model.gradient_checkpointing = checkpoint
     loop_config.memory.checkpoint_chunks = checkpoint
-    a, e = SDKBAgent(loop_config), make_episode(2, distractors=0)
+    loop_config.train.retrieval = retrieval
+    loop_config.train.routing_warmup = 0
+    if retrieval == 'learned':
+        loop_config.memory.read_steps = 1
+    a, e = SDKBAgent(loop_config), make_episode(2, distractors=2 if retrieval == 'learned' else 0)
     b = copy.deepcopy(a)
     sources = [a.text_ids(s.text, source=True) for s in e.supports]
     prompt, target = a.prompt_ids(e.query), a.target_ids(e.answer)
-    ref = a(prompt, target, [a.produce(s) for s in sources], [0, 1])
+    ref = a(prompt, target, [stored_channel(a, a.produce(s)) for s in sources], [0, 1])
     ref.loss.backward()
     tape = ReplayTape(verify_outputs=True)
-    records = [tape.capture(b, lambda s=s: b.produce(s)) for s in sources]
+    records = [tape.capture(b, lambda s=s: stored_channel(b, b.produce(s))) for s in sources]
     test = b(prompt, target, records, [0, 1])
     test.loss.backward()
     tape.backward()
@@ -164,6 +169,12 @@ def test_native_inloop_selective_replay_gradient_parity(loop_config, checkpoint)
             torch.testing.assert_close(x.grad, y.grad, atol=2e-5, rtol=2e-4, msg=name)
     assert b.backbone.bridge.memory_projection.weight.grad.abs().sum() > 0
     assert b.write_slots.grad.abs().sum() > 0
+
+    if retrieval == 'learned':
+        assert ref.routing_loss > 0
+        assert ref.selected == test.selected
+        for parameter in (b.key_head.weight, b.query_head.weight, b.address_maps[0].weight):
+            assert parameter.grad is not None and parameter.grad.abs().sum() > 0
 
 
 def test_frozen_base_can_train_live_bridge_and_memory(loop_config):
