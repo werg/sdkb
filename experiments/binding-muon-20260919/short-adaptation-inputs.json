@@ -1,0 +1,11 @@
+{
+  "episodes_path": "/home/werg/sdkb-runs/binding-pilot-20260919/data/validation.jsonl",
+  "episodes_sha256": "f0d912abad3532b84349c6ba94c062196fd49e30355441210959c1e9caac3b38",
+  "worlds": 32,
+  "queries": 320,
+  "baseline": "original selected-support AdamW latent warmup",
+  "candidate": "100 further Muon joint updates with fresh optimizer state",
+  "evaluation_source_commit": "837f592c3c72eaa0d89ce64fabb4601b77036ef9",
+  "comparison_source_commit": "3b03e61",
+  "scope": "same validation questions; not a held-out confirmation or optimizer ablation"
+}

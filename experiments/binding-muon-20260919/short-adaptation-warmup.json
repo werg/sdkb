@@ -1,0 +1,267 @@
+{
+  "schema_version": 2,
+  "protocol": "write-once, serialize/reload, global stored-only bank",
+  "choice_scoring": "sum of target token NLL including EOS",
+  "notice": "Synthetic transfer diagnostics, not capacity-substitution evidence.",
+  "payload_intervention_routing": "Captured original plans; payload changes never reroute later reads.",
+  "summary": {
+    "all": {
+      "n": 320,
+      "choice_accuracy": 0.584375,
+      "mean_target_nll": 0.725489255273735,
+      "complete_support_recall": 1.0
+    },
+    "none": {
+      "n": 320,
+      "choice_accuracy": 0.425,
+      "mean_target_nll": 2.4042731425015496,
+      "complete_support_recall": 0.0
+    },
+    "zero_values": {
+      "n": 320,
+      "choice_accuracy": 0.484375,
+      "mean_target_nll": 0.8649421509416101,
+      "complete_support_recall": 1.0
+    },
+    "drop_0": {
+      "n": 320,
+      "choice_accuracy": 0.471875,
+      "mean_target_nll": 0.8446358090627288,
+      "complete_support_recall": 0.2
+    },
+    "drop_1": {
+      "n": 128,
+      "choice_accuracy": 0.5078125,
+      "mean_target_nll": 0.20644470909333212,
+      "complete_support_recall": 0.0
+    }
+  },
+  "by_family": {
+    "multiuse/action": {
+      "all": {
+        "n": 128,
+        "choice_accuracy": 0.5078125,
+        "mean_target_nll": 0.206580961228437,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 128,
+        "choice_accuracy": 0.3984375,
+        "mean_target_nll": 0.6669236630966354,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 128,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.37983404702390544,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 128,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.36027713094067404,
+        "complete_support_recall": 0.5
+      },
+      "drop_1": {
+        "n": 128,
+        "choice_accuracy": 0.5078125,
+        "mean_target_nll": 0.20644470909333212,
+        "complete_support_recall": 0.0
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.40625,
+        "mean_target_nll": 2.8730693487184387,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.3125,
+        "mean_target_nll": 5.517634717966356,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.390625,
+        "mean_target_nll": 2.8756585919194753,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 64,
+        "choice_accuracy": 0.359375,
+        "mean_target_nll": 2.8915061920999534,
+        "complete_support_recall": 0.0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 0.5,
+        "mean_target_nll": 0.34026453853584826,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.5625,
+        "mean_target_nll": 4.429078076034784,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.453125,
+        "mean_target_nll": 0.3588404110632837,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 64,
+        "choice_accuracy": 0.46875,
+        "mean_target_nll": 0.3578428002074361,
+        "complete_support_recall": 0.0
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 64,
+        "choice_accuracy": 1.0,
+        "mean_target_nll": 0.0009504666575139709,
+        "complete_support_recall": 1.0
+      },
+      "none": {
+        "n": 64,
+        "choice_accuracy": 0.453125,
+        "mean_target_nll": 0.7408055923133361,
+        "complete_support_recall": 0.0
+      },
+      "zero_values": {
+        "n": 64,
+        "choice_accuracy": 0.578125,
+        "mean_target_nll": 0.33054365767748095,
+        "complete_support_recall": 1.0
+      },
+      "drop_0": {
+        "n": 64,
+        "choice_accuracy": 0.53125,
+        "mean_target_nll": 0.2532757911249064,
+        "complete_support_recall": 0.0
+      }
+    }
+  },
+  "paired_memory_benefit": {
+    "n_worlds": 32,
+    "n_queries": 320,
+    "mean_gain": 0.159375,
+    "ci95": [
+      0.078125,
+      0.240625
+    ],
+    "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+  },
+  "resources": {
+    "process_peak_rss_bytes": 3414396928,
+    "rss_scope": "process lifetime; not phase-isolated",
+    "cuda_peak_allocated_bytes": 2035708928,
+    "cuda_peak_reserved_bytes": 2048917504,
+    "system_mem_available_bytes": 91950141440
+  },
+  "counterfactuals": {
+    "cf_restoration": {
+      "change_pairs": 128,
+      "both_correct_on_change": 0.5,
+      "appropriate_prediction_change": 0.5078125,
+      "unchanged_pairs": 192,
+      "false_change_rate": 0.0
+    },
+    "cf_permission": {
+      "change_pairs": 192,
+      "both_correct_on_change": 0.026041666666666668,
+      "appropriate_prediction_change": 0.026041666666666668,
+      "unchanged_pairs": 128,
+      "false_change_rate": 0.0390625
+    }
+  },
+  "counterfactuals_by_family": {
+    "multiuse/action": {
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.0,
+        "appropriate_prediction_change": 0.015625,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_permission": {
+        "change_pairs": 128,
+        "both_correct_on_change": 0.0,
+        "appropriate_prediction_change": 0.0,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    },
+    "multiuse/identifier": {
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.078125
+      }
+    },
+    "multiuse/permission": {
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_permission": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.078125,
+        "appropriate_prediction_change": 0.078125,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    },
+    "multiuse/restoration": {
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 1.0,
+        "appropriate_prediction_change": 1.0,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      }
+    }
+  },
+  "counterfactual_write_note": "Separate offline variant banks; IDs/query/time fixed. Writer disabled during reads.",
+  "write_phase": {
+    "unique_sources": 128,
+    "writer_calls": 128,
+    "queries": 320,
+    "worlds": 32
+  },
+  "store": {
+    "records": 384,
+    "serialized_payload_bytes": 1603584,
+    "key_bytes": 98304,
+    "physical_sqlite_bytes": 1855488,
+    "sqlite_cache_budget_bytes_per_connection": 33554432
+  },
+  "directory": "/archive/diagnostics/binding-short-muon-20260919/warmup/transfer-v2-1789820529756720560",
+  "checkpoint_manifest_sha256": "e95bfabdd05adac39060d5dec3b39e2226fcc0f36b628a431d07134a19b6b7e6",
+  "source_checkpoint": "/runs/binding-pilot-20260919/latent_warmup/checkpoints/step-000000400-77e2a94f8a44"
+}

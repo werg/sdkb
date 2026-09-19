@@ -29,3 +29,45 @@ restoration, exact identifiers and their procedural combination in unseen worlds
 Teacher NLL, probe decodability and numerical stability are not substitutes for
 correct answers and appropriate counterfactual changes. One-seed synthetic results
 will not establish agent success or parameter substitution.
+
+## Short adaptation diagnostic (completed)
+
+A separate diagnostic compared the original AdamW selected-support warmup with
+100 further joint Muon updates. Both evaluations use the corrected reader and
+the same 32 validation worlds (320 queries); each checkpoint writes its own frozen
+bank. This is an adaptation diagnostic, not a Muon-versus-AdamW comparison.
+
+| Task | Warmup | +100 Muon updates | Adapted zero-payload control |
+|---|---:|---:|---:|
+| Action | 50.8% | 55.5% | 47.7% |
+| Identifier | 40.6% | 42.2% | 40.6% |
+| Permission | 50.0% | 100% | 54.7% |
+| Restoration | 100% | 100% | 45.3% |
+
+Both rule questions now pass every answer-changing counterfactual pair. Action
+composition does not: permission flips produce both correct answers in only 1/128
+pairs, and restoration flips in 0/64. Dropping the permission support leaves action
+accuracy unchanged. Restoration changes also spuriously alter action predictions
+on 33/64 branches whose correct answer should remain fixed. The reported
+`appropriate_prediction_change` field counts prediction changes, so it must be
+read alongside **both-correct** and false-change metrics, not treated as success.
+
+Aggregate summaries and world-paired diagnostic intervals are the
+`short-adaptation-*.json` files here. Raw rows and immutable checkpoints remain
+external. These validation results motivate a reader control; they are not a final
+held-out confirmation and do not justify selecting a winning training seed.
+
+## Attention reader control (planned launch)
+
+`recipes/looped_binding_muon_attention.yaml` changes only the selected-support
+recipe's reader from pooled MLP to the existing fixed-slot attention comparator.
+It retains Muon, data seed, training budgets, payload width, read slots, reader
+width/rounds and recurrence. It trains its own text/bridge/latent stages from the
+pinned pretrained model. Reader parameter counts and random initialization draws
+differ; this is equal source access and interface capacity, not equal FLOPs or an
+identical-initialization claim. Neither arm currently uses compaction. Both reader
+implementations retain contribution-compaction support for later experiments.
+
+Primary question: can the attention system combine permission and restoration
+to choose actions while responding correctly to changing and unchanged
+counterfactual branches? Permission fact accuracy alone is insufficient.
