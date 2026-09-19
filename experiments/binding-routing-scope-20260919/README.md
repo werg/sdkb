@@ -1,4 +1,4 @@
-# Projection-only routing scope (prepared)
+# Projection-only routing scope (running)
 
 The joint routing intervention failed action selection even on a small training
 subset and regressed oracle-support composition. Isolate address learning from
@@ -38,3 +38,11 @@ frozen paths and exact Muon resume. At the endpoint, `verify_frozen.py` checks e
 non-address tensor and compares all serialized payloads plus oracle/no-memory rows
 against the source on the same new worlds. Passing this check is distinct from
 learning successful routing.
+
+
+Launched from frozen `a60da7e`, with its common-world comparison queued from the
+same checkout. Native ownership reports exactly 73,728 trainable parameters in the
+three address projections; initial model bytes equal the shared source. All weights
+remain on the external disk. `launch.json` and `initialization-check.json` record
+the process, environment, optimizer and first update. Capability and endpoint
+invariance results remain pending.

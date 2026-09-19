@@ -1,0 +1,9 @@
+{
+  "pid": 32376,
+  "comparison_pid": 32377,
+  "source_commit": "a60da7e",
+  "study": "/archive/runs/binding-muon-routing-scope-20260919",
+  "console": "/archive/runs/.sdkb-control/f6c3729b9f7d5ceeaca34497/console.log",
+  "comparison_console": "/archive/runs/binding-muon-routing-scope-20260919/comparison-console.log",
+  "status": "launched"
+}
