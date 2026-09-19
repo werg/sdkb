@@ -1,0 +1,25 @@
+{
+  "model": "LiquidAI/LFM2.5-230M",
+  "revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+  "precision": "bf16",
+  "records": 8,
+  "queries": 20,
+  "serialized_rows_identical": true,
+  "all_evaluation_rows_identical": true,
+  "evaluation_rows": 88,
+  "writer_disabled_during_reads": true,
+  "write_seconds": {
+    "individual": 53.22860698499426,
+    "bulk": 6.645801670994842
+  },
+  "resources": {
+    "process_peak_rss_bytes": 2768625664,
+    "rss_scope": "process lifetime; not phase-isolated",
+    "cuda_peak_allocated_bytes": 1506932736,
+    "cuda_peak_reserved_bytes": 1547698176,
+    "system_mem_available_bytes": 86229979136
+  },
+  "notice": "Small native-GPU correctness check under shared-device/disk contention; no cold-I/O throughput claim.",
+  "implementation_commit": "a962739",
+  "timing_note": "Individual writes ran first. Small shared-device/disk check; not randomized, cold-I/O or a general speedup measurement."
+}

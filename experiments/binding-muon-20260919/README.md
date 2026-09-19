@@ -98,3 +98,19 @@ the MLP runs exactly (`attention-inputs.json`). A separate queued driver,
 `compare_attention.py`, waits for both selected-support systems to finish before
 creating 32 new common worlds. It evaluates their text-bootstrap and final latent
 stages with source removal and counterfactual controls. All artifacts are external.
+
+### Queued evaluation source update
+
+Before either queued comparison generated its confirmation dataset, its waiting
+process was replaced with an isolated `a962739` checkout. Training and active
+launcher evaluations were left on their original source. The new evaluation code
+batches offline SQLite writes and reserves write transactions before deletion and
+lineage checks. Actual LFM2.5 BF16 validation found identical stored record bytes
+and all 88 evaluation rows versus individual writes, with no writer calls during
+reads (`../operations-20260919/bank-batch-parity.json`).
+
+The frozen comparison drivers themselves are unchanged. New logs are
+`/archive/runs/muon-binding-stage-comparison-batched.log` and
+`/archive/runs/muon-reader-confirmation-batched.log`. This operational change
+addresses per-record external-disk commits; it does not alter evidence, model
+weights, scoring, budgets or the predeclared comparison questions.
