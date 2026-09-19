@@ -3,7 +3,17 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 image="${SDKB_IMAGE:-sdkb-spark:0.4}"
 cache="${SDKB_CACHE_DIR:-$HOME/.cache/sdkb}"
-runs="${SDKB_RUNS_DIR:-$root/runs}"
+configured_runs="${SDKB_RUNS_DIR:-}"
+if [[ -z "$configured_runs" && -f "$root/.sdkb/runs-dir" ]]; then
+  IFS= read -r configured_runs < "$root/.sdkb/runs-dir" || true
+  [[ -n "$configured_runs" ]] || { echo 'Empty .sdkb/runs-dir storage setting.' >&2; exit 1; }
+fi
+runs="${configured_runs:-$root/runs}"
+archive="${SDKB_ARCHIVE_DIR:-}"
+if [[ -z "$archive" && -f "$root/.sdkb/archive-dir" ]]; then
+  IFS= read -r archive < "$root/.sdkb/archive-dir" || true
+  [[ -n "$archive" ]] || { echo 'Empty .sdkb/archive-dir storage setting.' >&2; exit 1; }
+fi
 container="${SDKB_CONTAINER:-sdkb-training}"
 command="${1:-shell}"
 shift || true
@@ -24,7 +34,27 @@ case "$command" in
       --build-arg "BASE_IMAGE=$pinned" -t "$image" "$root"
     ;;
   shell|run|start)
-    mkdir -p "$cache" "$runs"
+    # An explicit storage location must already exist; a missing mount must not
+    # quietly turn into a directory on the internal filesystem.
+    if [[ -n "$configured_runs" ]]; then
+      [[ -d "$runs" ]] || { echo 'Configured run storage is unavailable; check the mounted disk.' >&2; exit 1; }
+    else
+      mkdir -p "$runs"
+    fi
+    mkdir -p "$cache"
+    if [[ "$command" == start || ( "${1:-}" == sdkb && ( "${2:-}" == launch || "${2:-}" == train || ( "${2:-}" == runs && "${3:-}" == start ) ) ) ]]; then
+      previous=""
+      for argument in "$@"; do
+        if [[ "$previous" == --output || "$argument" == --output=* ]]; then
+          output="${argument#--output=}"
+          if [[ "$output" != /* ]]; then
+            echo 'Use an absolute container output path, normally /runs/NAME for configured storage.' >&2
+            exit 2
+          fi
+        fi
+        previous="$argument"
+      done
+    fi
     flags=(--init --gpus all --shm-size=8g --stop-timeout=600 \
       --ulimit memlock=-1 --ulimit stack=67108864 \
       --user "$(id -u):$(id -g)" --env HOME=/tmp \
@@ -32,12 +62,12 @@ case "$command" in
       --mount "type=bind,src=$root,dst=/workspace/sdkb" \
       --mount "type=bind,src=$cache,dst=/cache" \
       --mount "type=bind,src=$runs,dst=/runs" --workdir /workspace/sdkb)
-    if [[ -n "${SDKB_ARCHIVE_DIR:-}" ]]; then
-      [[ -d "$SDKB_ARCHIVE_DIR" ]] || { echo 'Archive directory must exist on the mounted disk.' >&2; exit 1; }
-      flags+=(--mount "type=bind,src=$SDKB_ARCHIVE_DIR,dst=/archive")
+    if [[ -n "$archive" ]]; then
+      [[ -d "$archive" ]] || { echo 'Archive directory must exist on the mounted disk.' >&2; exit 1; }
+      flags+=(--mount "type=bind,src=$archive,dst=/archive")
       # Relocated checkpoint links use a host-absolute path. Expose that same
       # path so existing run directories remain readable inside/outside Docker.
-      archive_absolute="$(cd "$SDKB_ARCHIVE_DIR" && pwd -P)"
+      archive_absolute="$(cd "$archive" && pwd -P)"
       [[ "$archive_absolute" == /archive ]] || flags+=(--mount "type=bind,src=$archive_absolute,dst=$archive_absolute")
     fi
     [[ -z "${HF_TOKEN:-}" ]] || flags+=(--env HF_TOKEN)

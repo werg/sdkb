@@ -25,7 +25,7 @@ Clone the upstream repository using your existing access:
 ```bash
 git clone git@github.com:werg/sdkb.git sdkb
 cd sdkb
-./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output runs/looped-smoke
+./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output /runs/looped-smoke
 ```
 
 This **real-model integration run** builds the native ARM64 image when absent,
@@ -34,7 +34,7 @@ checks memory gradients and runs two updates in each of four stages. It is not
 a capability experiment. After inspecting its outputs, start the main curriculum:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output runs/looped-starter
+./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/looped-starter
 ```
 
 | Stage | Optimizer updates | Training behavior |
@@ -52,7 +52,7 @@ experiment-tracking account or paid inference endpoint is required.
 Resume the identical recipe/output:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output runs/looped-starter --resume
+./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/looped-starter --resume
 ```
 
 The job runs synchronously in the foreground. A graceful interruption checkpoints
@@ -63,9 +63,9 @@ input/config changes are rejected on resume. Run only one launcher per output di
 To download, pin and inspect data without loading the training model:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output runs/prepared --prepare-only
+./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/prepared --prepare-only
 # Inspect data/manifest.json and launch.json; then continue:
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output runs/prepared --resume
+./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/prepared --resume
 ```
 
 ## Training recipes

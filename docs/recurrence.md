@@ -258,14 +258,14 @@ no old SDKB checkpoint is required.
 On the Spark, start with a short real-model integration run:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output runs/looped-smoke
+./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output /runs/looped-smoke
 ```
 
 Then run the teacher-trajectory curriculum or controlled causal curriculum:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output runs/looped-starter
-./scripts/start_spark.sh --recipe recipes/looped_causal.yaml --output runs/looped-causal
+./scripts/start_spark.sh --recipe recipes/looped_starter.yaml --output /runs/looped-starter
+./scripts/start_spark.sh --recipe recipes/looped_causal.yaml --output /runs/looped-causal
 ```
 
 These are independent foreground runs, not intended to launch simultaneously by
@@ -276,7 +276,7 @@ pinning are unchanged. The local image tag is now `sdkb-spark:0.4`.
 Use an independent attention-only comparison with:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/smollm2_looped_causal.yaml --output runs/smol-looped
+./scripts/start_spark.sh --recipe recipes/smollm2_looped_causal.yaml --output /runs/smol-looped
 ```
 
 The preflight checks the actual loaded checkpoint's parent identity, finite recurrent

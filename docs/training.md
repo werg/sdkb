@@ -99,7 +99,7 @@ launch plan and then expect the launcher to reinterpret it as unchanged.
 ## Real-student causal transfer
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/causal.yaml --output runs/causal
+./scripts/start_spark.sh --recipe recipes/causal.yaml --output /runs/causal
 ```
 
 This uses LFM, not the tiny backend. It learns on controlled Boolean support worlds

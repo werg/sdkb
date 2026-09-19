@@ -59,10 +59,29 @@ backbone, not merely that torch can import.
 ## Start and resume
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/spark_smoke.yaml --output runs/spark-smoke
-./scripts/start_spark.sh --recipe recipes/starter.yaml --output runs/starter
-./scripts/start_spark.sh --recipe recipes/starter.yaml --output runs/starter --resume
+./scripts/start_spark.sh --recipe recipes/spark_smoke.yaml --output /runs/spark-smoke
+./scripts/start_spark.sh --recipe recipes/starter.yaml --output /runs/starter
+./scripts/start_spark.sh --recipe recipes/starter.yaml --output /runs/starter --resume
 ```
+
+Container output paths should use `/runs/NAME`, which maps to the chosen host
+storage. Relative training output paths are rejected to prevent bypassing that
+mount and writing into the repository.
+
+Choose an existing run directory with `SDKB_RUNS_DIR`, or persist it locally:
+
+```bash
+mkdir -p .sdkb
+printf '%s\n' /path/to/existing/external/sdkb-runs > .sdkb/runs-dir
+printf '%s\n' /path/to/existing/external/archive > .sdkb/archive-dir # optional mount
+```
+
+These ignored files contain paths only; they are not shell scripts. Environment
+variables override them. Configured directories must exist, so a missing disk does
+not silently cause a new internal directory to be created. On the current machine,
+`.sdkb/runs-dir` selects `/mnt/external/sdkb-archive/runs`. Other machines choose
+their own storage. Mounting an archive does not itself enable asynchronous copies;
+that remains an explicit training checkpoint policy.
 
 `start_spark.sh` builds only when the local image is absent, checks the device, then
 executes `sdkb launch` in the foreground. Rebuild explicitly after changing pinned
@@ -75,7 +94,7 @@ finite BF16 device matmul; it records package versions and memory counters. It d
 not prove the learned model solves tasks. The separate controlled curriculum is:
 
 ```bash
-./scripts/start_spark.sh --recipe recipes/causal.yaml --output runs/causal
+./scripts/start_spark.sh --recipe recipes/causal.yaml --output /runs/causal
 ```
 
 ## Resource and access details
@@ -105,7 +124,7 @@ upstream access; no mirrors or access-control workarounds are selected automatic
 ```bash
 SDKB_BASE_IMAGE=nvcr.io/nvidia/pytorch:25.11-py3 ./scripts/spark.sh build
 SDKB_CACHE_DIR=/path/to/ssd/cache ./scripts/start_spark.sh \
-  --recipe recipes/coding.yaml --output runs/coding
+  --recipe recipes/coding.yaml --output /runs/coding
 ```
 
 `SDKB_IMAGE` changes the local tag. Another NVIDIA runtime must pass the same checks.
