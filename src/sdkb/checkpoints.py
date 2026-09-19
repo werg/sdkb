@@ -55,6 +55,21 @@ def _atomic_text(path: Path, text: str) -> None:
     _fsync_dir(path.parent)
 
 
+def reconcile_metrics(run: Path, step: int) -> None:
+    """Keep only complete metric rows covered by the authoritative saved state."""
+    log = Path(run) / 'metrics.jsonl'
+    if log.exists():
+        rows = []
+        for line in log.read_text().splitlines():
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                break
+            if row['step'] <= step:
+                rows.append(json.dumps(row))
+        _atomic_text(log, ''.join(row + '\n' for row in rows))
+
+
 def _checkpoint_event(event):
     # A disconnected console must not prevent an emergency recovery save.
     try:
@@ -207,17 +222,7 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
         shutil.copyfile(path / "training_cache.sqlite", temp)
         os.replace(temp, destination)
     # A crash may leave later rows or an incomplete JSON line in the log.
-    log = run / "metrics.jsonl"
-    if log.exists():
-        rows = []
-        for line in log.read_text().splitlines():
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError:
-                break
-            if row["step"] <= state["step"]:
-                rows.append(json.dumps(row))
-        _atomic_text(log, "".join(row + "\n" for row in rows))
+    reconcile_metrics(run, state['step'])
     return int(state["step"])
 
 

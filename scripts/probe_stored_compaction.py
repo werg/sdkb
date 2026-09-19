@@ -14,7 +14,7 @@ from safetensors.torch import load_file, save_file
 import torch
 
 from sdkb.archiving import ensure_free
-from sdkb.checkpoints import resolve_checkpoint, _fsync, _fsync_dir
+from sdkb.checkpoints import resolve_checkpoint, reconcile_metrics, _fsync, _fsync_dir
 from sdkb.cluster_store import ClusterBank, state_fingerprint
 from sdkb.compaction import SyntheticCompactor, contribution_loss, mean_and_mass
 from sdkb.data import load_episodes, make_multiuse_world, save_episodes
@@ -205,6 +205,7 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=N
             if state['cuda_rng']:
                 torch.cuda.set_rng_state_all([v.cpu() for v in state['cuda_rng']])
             completed = state['step']
+        reconcile_metrics(output, completed)
         def save():
             ensure_free(output, sum(p.numel() * p.element_size() for p in compactor.parameters()) * 4,
                         config.train.min_free_disk_bytes)
@@ -253,6 +254,7 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=N
                 if completed % 20 == 0:
                     row = {'step': completed, 'loss': loss.item() + task_weight * task_total,
                            'contribution_loss': loss.item(), 'task_nll': task_total if task_weight else None,
+                           'resume_attempt': tracking.attempt,
                            **memory_metrics(config.train.device)}
                     with (output / 'metrics.jsonl').open('a') as handle:
                         handle.write(json.dumps(row) + '\n')
