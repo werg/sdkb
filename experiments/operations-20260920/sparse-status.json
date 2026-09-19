@@ -1,0 +1,21 @@
+{
+  "status": "not_managed",
+  "running": true,
+  "stop_requested": false,
+  "log": "/archive/runs/binding-detail-breadth-20260920/.sdkb-control/313c9cc7ecbd45824eac96e9/console.log",
+  "checkpoints": [
+    {
+      "stage": "/archive/runs/binding-detail-breadth-20260920/worlds-128",
+      "step": 0,
+      "checkpoint": "/archive/runs/binding-detail-breadth-20260920/worlds-128/checkpoints/step-000000000-2e91cd2d595d",
+      "checkpoint_step": 0,
+      "latest_logged_step": 1031,
+      "externalized": false,
+      "checkpoint_directory_is_symlink": false,
+      "filesystem_device_id": 2049,
+      "same_filesystem_as_code": false,
+      "filesystem_free_bytes": 246432010240,
+      "checkpoint_every": 10000
+    }
+  ]
+}

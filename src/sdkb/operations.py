@@ -146,6 +146,29 @@ def run_status(run):
                     'log': str(directory / 'console.log'), 'checkpoints': checkpoint_status(run)}
 
 
+def latest_logged_step(path):
+    """Read a bounded tail, tolerating a concurrent incomplete JSONL write."""
+    try:
+        with Path(path).open('rb') as handle:
+            size = handle.seek(0, os.SEEK_END)
+            start = max(0, size - 65536)
+            handle.seek(start)
+            tail = handle.read(size - start)
+    except FileNotFoundError:
+        return None
+    if start:
+        tail = tail.partition(b'\n')[2]
+    for line in reversed(tail.splitlines()):
+        try:
+            row = json.loads(line)
+        except (ValueError, UnicodeDecodeError):
+            continue
+        step = row.get('step') if isinstance(row, dict) else None
+        if isinstance(step, int) and not isinstance(step, bool) and step >= 0:
+            return step
+    return None
+
+
 def checkpoint_status(run):
     import shutil
     root = Path(run)
@@ -157,7 +180,11 @@ def checkpoint_status(run):
         manifest = json.loads((checkpoint / 'manifest.json').read_text())
         config = json.loads((checkpoint / 'config.json').read_text())
         report = dict(stage=str(stage), step=manifest['step'], checkpoint=str(checkpoint.resolve()),
+                      checkpoint_step=manifest['step'], latest_logged_step=latest_logged_step(stage / 'metrics.jsonl'),
                       externalized=(stage / 'checkpoints').is_symlink(),
+                      checkpoint_directory_is_symlink=(stage / 'checkpoints').is_symlink(),
+                      filesystem_device_id=checkpoint.stat().st_dev,
+                      same_filesystem_as_code=checkpoint.stat().st_dev == Path(__file__).stat().st_dev,
                       filesystem_free_bytes=shutil.disk_usage(checkpoint).free,
                       checkpoint_every=config['train']['checkpoint_every'])
         identity = checkpoint / 'run-identity.json'

@@ -8,6 +8,25 @@ from sdkb.checkpoints import resolve_checkpoint
 from sdkb.training import train
 
 
+def test_checkpoint_status_distinguishes_logged_progress_and_durable_step(tmp_path):
+    from sdkb.operations import checkpoint_status
+    stage = tmp_path/'stage'
+    checkpoint = stage/'checkpoints'/'step-000000004-test'
+    checkpoint.mkdir(parents=True)
+    (stage/'CURRENT').write_text(checkpoint.name+'\n')
+    (checkpoint/'manifest.json').write_text(json.dumps({'format': 1, 'step': 4, 'sha256': {}}))
+    (checkpoint/'config.json').write_text(json.dumps({'train': {'checkpoint_every': 10000}}))
+    metrics = stage/'metrics.jsonl'
+    metrics.write_bytes(b'x'*70000 + b'\n{"step":9}\n{"step":10')
+    row = checkpoint_status(stage)[0]
+    assert row['step'] == row['checkpoint_step'] == 4
+    assert row['latest_logged_step'] == 9
+    assert row['checkpoint_directory_is_symlink'] is False
+    assert row['filesystem_device_id'] == checkpoint.stat().st_dev
+    metrics.unlink()
+    assert checkpoint_status(stage)[0]['latest_logged_step'] is None
+
+
 def test_run_lock_and_cooperative_stop(tmp_path, tiny_config):
     from sdkb.operations import run_lock, request_stop, stop_requested
     run = tmp_path / 'run'

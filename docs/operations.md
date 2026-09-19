@@ -25,6 +25,17 @@ sdkb runs start --recipe recipes/looped_causal.yaml --output /fast/sdkb-runs/cau
 ```
 
 Status gives a persistent console-log path, resolved checkpoint locations and free space.
+`checkpoint_step` is the committed recovery position; `latest_logged_step` reports
+the newest complete training metric in a bounded log tail. With sparse saves these
+can differ substantially. A logged update is not a durable checkpoint. Interrupted
+last log lines are ignored; missing recent metrics report null. `step` remains an
+alias for the checkpoint position for existing callers.
+
+Storage status includes the resolved path, filesystem device ID and whether it
+shares the code filesystem. `checkpoint_directory_is_symlink` describes relocation;
+the older `externalized` alias has the same meaning. Direct output on an external
+disk can have a regular checkpoint directory, so the symlink flag alone does not
+identify its physical storage medium. Device IDs are local operating-system values.
 Optional archives expose active/pending copies, last completion and errors in
 `archive-status.json`. A stop request is a control file,
 not a signal sent to a potentially recycled PID. Training finishes the current microbatch and its complete producer replay, then
