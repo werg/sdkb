@@ -1,0 +1,211 @@
+{
+  "candidates": [
+    {
+      "path": "/home/werg/sdkb/.sdkb/bank-scale",
+      "commit": "6ab56108211b23a8929ca6cd63cf5de37ed2096f",
+      "allocated_file_bytes": 6565888
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/choice-batching",
+      "commit": "1af20cedd945e7b172227cb2b348c3b7104246b2",
+      "allocated_file_bytes": 5742592
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compact-confirmation",
+      "commit": "e69de727a743dc0bb0dc9d46f997722396cbbe54",
+      "allocated_file_bytes": 5627904
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compact-free-cf",
+      "commit": "d7c0acfbdafe60ccfefb524d6279d566515ea164",
+      "allocated_file_bytes": 5853184
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compact-fresh",
+      "commit": "a88183a969b6b7c431037aca38925ebd17975d2a",
+      "allocated_file_bytes": 5844992
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compact-resume",
+      "commit": "897d65783f402519c8f8ca2cbea767359ba802a1",
+      "allocated_file_bytes": 5865472
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compaction-task",
+      "commit": "13aeb050be314423f43abe1b00048fc421c269b9",
+      "allocated_file_bytes": 5689344
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/count-policy",
+      "commit": "3eb4e49912a057b750b03ea84ab3ca27c4c2852f",
+      "allocated_file_bytes": 5402624
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/count-stored",
+      "commit": "44927b8f969d4acae0314d6e780c1c751cb70c73",
+      "allocated_file_bytes": 5423104
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/detail-evaluation",
+      "commit": "09c2b4f08fabc07f7232c08ccfc71a97cdbd0aaf",
+      "allocated_file_bytes": 7090176
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/exact-detail",
+      "commit": "09c09c0ac9bf2ef682ee2ec5a4d52e08ffe11ac8",
+      "allocated_file_bytes": 7028736
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/fact-budgets",
+      "commit": "0c6c875d6b342c935451525ccc15f6ee33ba3b12",
+      "allocated_file_bytes": 5193728
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/frozen-scoring",
+      "commit": "f5c7f8c1baa5c639f3c445c672f0bfd4acf1476b",
+      "allocated_file_bytes": 5779456
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/global-cf",
+      "commit": "8d22b682744c0185dd1eb52b33652e131058f9e0",
+      "allocated_file_bytes": 6303744
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/global-generation",
+      "commit": "98bb619d7dd999b92a63ea7724f5ce928ef6d130",
+      "allocated_file_bytes": 6311936
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/global-negatives",
+      "commit": "e6c13b9cb638d7aff4249049756a12a3e696fe6c",
+      "allocated_file_bytes": 6238208
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/global-routing",
+      "commit": "3dd08944e01fb0f23c4a48667542179dd15a33eb",
+      "allocated_file_bytes": 6119424
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/global-stored",
+      "commit": "5677fddde5f47a08aa956dd54eda8d47c8dbb186",
+      "allocated_file_bytes": 6246400
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/global-stored-long",
+      "commit": "ad790891a3420114c0fad051819d49d212c43449",
+      "allocated_file_bytes": 6324224
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/identifier-fit",
+      "commit": "0454c3a7c22fbc8d8f3bdad850fdd83002af800a",
+      "allocated_file_bytes": 4648960
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/independent-routing",
+      "commit": "38a2634370a44ce18196528138da9ac3f468b047",
+      "allocated_file_bytes": 5148672
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/mlp-context",
+      "commit": "27dfbacd9d6ec3faeab19b44f04a6a7c972b9189",
+      "allocated_file_bytes": 4550656
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/muon-routing",
+      "commit": "304fb17994ddb1ba8fb91587d13c848c93858f81",
+      "allocated_file_bytes": 4575232
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/payload-readout",
+      "commit": "ea4d3e4124c3880e55d3d3492de608e21fb35cd3",
+      "allocated_file_bytes": 7114752
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/posthoc-compaction",
+      "commit": "868a1b3703aee66f7a8dbf8ea69da88c24f3b5e6",
+      "allocated_file_bytes": 5586944
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/probe-recovery",
+      "commit": "dbb34359927e24c25abb0912342a7b1ebdd1cb93",
+      "allocated_file_bytes": 6135808
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/read-count",
+      "commit": "6840bb06af58fa45ceb041e00120e43dbf44292a",
+      "allocated_file_bytes": 5365760
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/read-count-views",
+      "commit": "cdd06febdb1909a0d54b9f7de271a074df242ab3",
+      "allocated_file_bytes": 5373952
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-breadth",
+      "commit": "2c05b939e93e80a8766b24fa48be86fa7f4efeb5",
+      "allocated_file_bytes": 5087232
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-features",
+      "commit": "19a23a218176293c44a07f749db51cfbccbc4251",
+      "allocated_file_bytes": 5066752
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-features-batched",
+      "commit": "8e1fe5942351fdf851e81db3cee81d1f520f8a06",
+      "allocated_file_bytes": 5070848
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-generation",
+      "commit": "baba9efd0770082dfe237fd9c19805c6069e27f8",
+      "allocated_file_bytes": 4644864
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-precision",
+      "commit": "148933e4b0943c1e7c390ff920f27f63fbace12d",
+      "allocated_file_bytes": 6574080
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-probe-eval",
+      "commit": "ac15b2c1b9fa706d9c65ca525ec197bdb3979a7a",
+      "allocated_file_bytes": 5099520
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-scope",
+      "commit": "a60da7e5c445e125a83d824c230670bfcad8f2cb",
+      "allocated_file_bytes": 4902912
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-scope-eval",
+      "commit": "46bcedbc2444020d2533eb67dca803141c5cb98e",
+      "allocated_file_bytes": 4919296
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-stop",
+      "commit": "4b8dfedd285fc435edebb4b97f2b78514c9713c1",
+      "allocated_file_bytes": 5337088
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-stored",
+      "commit": "23d54fcc4b9669b811720bc5d09320f1bc233975",
+      "allocated_file_bytes": 5177344
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/routing-width",
+      "commit": "5cb9cfb5631d103387b3972d9b9b33cce749808d",
+      "allocated_file_bytes": 6922240
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/targeted-cf",
+      "commit": "0b291953e3e36cbcc270e50937a56aca482e6d51",
+      "allocated_file_bytes": 6561792
+    }
+  ],
+  "skipped": [],
+  "kept_active": [
+    "detail-breadth",
+    "detail-evaluation-v2"
+  ],
+  "allocated_file_bytes": 228515840,
+  "completed": true
+}
