@@ -39,3 +39,14 @@ pairs reach 973/4096, so the hard objective is not solved even on training world
 The paired control attributes this feature improvement to candidate scope rather
 than only additional updates. It does not establish useful stored inference.
 Both endpoints are frozen for the separate fresh-world stored confirmation.
+
+### Precision audit
+
+Historical `e6c13b9` feature scoring used a matrix product inside BF16 autocast and
+omitted the writer's final BF16 key normalization before FP32 storage. Its scores
+were therefore a lower-precision training proxy for the actual stored FP32 cosine
+search, beyond ordinary batch-shape rounding. The matched comparison and all real
+stored evaluations remain recorded as executed. Current source restores the writer
+normalization and explicitly computes cosine products in FP32 with highest float32
+matmul precision; a BF16 regression first reproduced the mismatch. New fitting must
+use a new identity/output rather than resume these old optimizer states silently.

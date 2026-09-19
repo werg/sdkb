@@ -27,3 +27,9 @@ under that same global competition, despite fitting all its local training pairs
 Under supplied world scope the long development results are 98/128 global-trained
 versus 100/128 world-trained. Additional optimization helps the global objective;
 these frozen endpoints now go to the separate fresh stored confirmation.
+
+These endpoints share the historical `e6c13b9` BF16 feature-score proxy described in
+the shorter study's precision audit. Actual stored evaluations use their serialized
+keys and the real FP32 exact scan, so those measured outcomes remain valid. Current
+feature-training source corrects the normalization/cosine precision mismatch and
+requires a new run identity; it does not rewrite these endpoint records.

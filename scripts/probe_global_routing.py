@@ -56,9 +56,13 @@ def global_features(features, episodes):
 def address_scores(model, data, indices, scope):
     if scope not in {'world', 'global'}:
         raise ValueError('Unknown training candidate scope')
-    keys = F.normalize(model.address(F.normalize(model.key(data['key']), dim=-1)).float(), dim=-1)
+    # The frozen writer normalizes in its autocast dtype before FP32 key storage.
+    encoded_keys = F.normalize(model.address(F.normalize(model.key(data['key']), dim=-1)), dim=-1)
+    keys = F.normalize(encoded_keys.float(), dim=-1)
     query = F.normalize(model.query_map(F.normalize(model.query_head(data['raw_query'][indices]), dim=-1)).float(), dim=-1)
-    scores = (query @ keys.T) / .1
+    # Search consumes serialized keys and normalizes/scores in FP32.
+    with torch.autocast(query.device.type, enabled=False):
+        scores = (query @ keys.T) / .1
     eligible = data['created_at'][None] < data['query_time'][indices, None]
     if scope == 'world':
         local = torch.zeros_like(eligible).scatter(1, data['support_indices'][indices], True)
@@ -117,6 +121,7 @@ def run(source, features_root, output, steps=800, batch_size=128):
         config.model.freeze_backbone = True
         configure_memory(config.train)
         torch.set_num_threads(config.train.threads)
+        torch.set_float32_matmul_precision('highest')
         episodes, data, ids, hashes = {}, {}, {}, {}
         for split in ('train', 'heldout'):
             episode_path = features_root / f'{split}.jsonl'
@@ -134,6 +139,7 @@ def run(source, features_root, output, steps=800, batch_size=128):
                     'features_sha256': hashes, 'config': asdict(config), 'steps': steps, 'batch_size': batch_size,
                     'seed': 67, 'script_sha256': file_sha256(__file__),
                     'objective': 'unordered required-set PL likelihood, temperature 0.1',
+                    'cosine_precision': 'FP32/highest after writer-autocast key normalization and FP32 storage',
                     'candidate_counts': {s: len(i) for s, i in ids.items()},
                     'notice': 'Frozen-feature routing diagnostic, not stored-reader capability evidence.'}
         if (output / 'inputs.json').exists() and json.loads((output / 'inputs.json').read_text()) != identity:

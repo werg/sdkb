@@ -76,3 +76,23 @@ def test_world_mask_preserves_pair_loss_gradients_and_global_scope_adds_competit
     # Even a whole-bank feature comparison excludes sources at or after query time.
     data['created_at'][0] = data['query_time'].max()
     assert torch.isneginf(module.address_scores(model,data,indices,'global')[:,0]).all()
+
+
+def test_bf16_proxy_uses_serialized_key_normalization_and_float32_search_scores():
+    from types import SimpleNamespace
+    from torch import nn
+    from torch.nn import functional as F
+    features, episodes = fixture()
+    data, _ = module.global_features(features, episodes)
+    agent = SimpleNamespace(key_head=nn.Linear(6,3,bias=False), address_maps=[nn.Linear(3,3,bias=False)],
+                            query_maps=[nn.Linear(3,3,bias=False)], query_head=nn.Linear(6,3,bias=False))
+    model = module.StopProbe(AddressProbe(agent, True).state_dict(), False)
+    indices = torch.arange(len(episodes))
+    with torch.autocast('cpu', dtype=torch.bfloat16):
+        # Match produce -> stored_channel: final normalized key is BF16 before FP32 storage.
+        serialized = F.normalize(model.address(F.normalize(model.key(data['key']),dim=-1)),dim=-1).float()
+        query = model.query_map(F.normalize(model.query_head(data['raw_query']),dim=-1)).float()
+        actual = module.address_scores(model,data,indices,'global')
+    expected = F.normalize(query,dim=-1) @ F.normalize(serialized,dim=-1).T / .1
+    assert actual.dtype == torch.float32
+    torch.testing.assert_close(actual,expected,rtol=1e-6,atol=1e-6)
