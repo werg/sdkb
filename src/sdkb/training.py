@@ -216,6 +216,13 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             parameter.requires_grad_(name.startswith("compactor."))
         agent.eval()
         agent.compactor.train()
+    if config.train.optimization_scope == 'routing':
+        for name, parameter in agent.named_parameters():
+            parameter.requires_grad_(name.startswith(('key_head.', 'address_maps.', 'query_maps.')))
+        # Keep frozen feature/payload/reader paths deterministic. The top-level
+        # training flag still honors the configured routing warmup.
+        for module in agent.children():
+            module.eval()
     from .optimizers import make_optimizer, optimizer_report
     optimizer = make_optimizer(agent)
     start = 0

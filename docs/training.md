@@ -214,3 +214,15 @@ python -m pytest -q
 This exercises the same preparation, three stages, stored-only likelihood and resume
 using authored fixtures and a tiny byte-token model. It verifies execution, not learned
 real-student capability. [Validation](validation-v0.3.md) records the tested scope.
+
+
+## Isolated address training
+
+`train.optimization_scope: routing` is an optional memory-stage scope for learned
+routing with positive routing weight and raw records. Only `key_head`,
+`address_maps` and `query_maps` train; payload generation, the query feature
+extractor, reader and backbone remain frozen. Frozen child modules run in evaluation
+mode while the top-level training flag preserves the configured routing warmup.
+This preserves oracle-supported behavior and payload content while changing stored
+keys and their ranking. The same replay, Muon ownership, checkpoint and exact-resume
+contracts apply. Use a new warm-start fork when changing this scientific setting.

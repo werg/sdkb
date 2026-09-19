@@ -372,3 +372,59 @@ def test_random_native_llama_split_matches_parent():
     torch.testing.assert_close(base.core(x, mask), model.hidden(x, mask, loops=1), atol=1e-6, rtol=1e-6)
     model.hidden(x, mask)[..., 0].sum().backward()
     assert model.bridge.reentry.weight.grad.abs().sum() > 0
+
+
+def test_routing_only_training_preserves_payloads_and_oracle_outputs(tmp_path, loop_config):
+    from safetensors.torch import load_model
+    from sdkb.checkpoints import resolve_checkpoint
+    loop_config.train.optimization_scope = 'routing'
+    loop_config.train.retrieval = 'learned'
+    loop_config.train.optimizer = 'muon'
+    loop_config.train.routing_warmup = 1
+    loop_config.memory.read_steps = 1
+    loop_config.train.steps = 2
+    run = tmp_path / 'routing'
+    train(loop_config, run)
+    partial = copy.deepcopy(loop_config)
+    partial.train.steps = 1
+    resumed_run = tmp_path / 'resumed-routing'
+    train(partial, resumed_run)
+    train(loop_config, resumed_run, resume=True)
+    resumed = SDKBAgent(copy.deepcopy(loop_config)).eval()
+    load_model(resumed, str(resolve_checkpoint(resumed_run, verify=True) / 'model.safetensors'))
+    initial = next((run / 'checkpoints').glob('step-000000000-*'))
+    a, b = SDKBAgent(copy.deepcopy(loop_config)).eval(), SDKBAgent(copy.deepcopy(loop_config)).eval()
+    load_model(a, str(initial / 'model.safetensors'))
+    load_model(b, str(resolve_checkpoint(run, verify=True) / 'model.safetensors'))
+    for name, value in b.state_dict().items():
+        torch.testing.assert_close(value, resumed.state_dict()[name], rtol=0, atol=0, msg=name)
+    prefixes = ('key_head.', 'address_maps.', 'query_maps.')
+    changed = []
+    for name, value in a.state_dict().items():
+        other = b.state_dict()[name]
+        if name.startswith(prefixes):
+            if not torch.equal(value, other):
+                changed.append(name)
+        else:
+            torch.testing.assert_close(value, other, rtol=0, atol=0, msg=name)
+    assert {'key_head.weight', 'address_maps.0.weight', 'query_maps.0.weight'} <= set(changed)
+    e = make_episode(5, distractors=2)
+    records = []
+    for agent in (a, b):
+        records.append([stored_channel(agent, agent.produce(agent.text_ids(s.text, source=True)))
+                        for s in e.supports])
+        agent.config.train.retrieval = 'oracle'  # Explicit diagnostic override, no training.
+    for old, new in zip(*records, strict=True):
+        torch.testing.assert_close(old[1], new[1], rtol=0, atol=0)
+    prompt, target = a.prompt_ids(e.query), a.target_ids(e.answer)
+    torch.testing.assert_close(a(prompt, target, records[0], [0, 1]).nll,
+                               b(prompt, target, records[1], [0, 1]).nll, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize('setting,value', [('retrieval', 'oracle'), ('routing_weight', 0.0)])
+def test_routing_only_scope_requires_a_live_routing_objective(tiny_config, setting, value):
+    tiny_config.train.optimization_scope = 'routing'
+    tiny_config.train.retrieval = 'learned'
+    setattr(tiny_config.train, setting, value)
+    with pytest.raises(ValueError, match='Routing-only'):
+        tiny_config.validate()

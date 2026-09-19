@@ -91,7 +91,7 @@ class TrainConfig:
     cuda_memory_fraction: float | None = None
     min_system_available_bytes: int = 0
     stall_timeout_seconds: float = 0
-    optimization_scope: str = "all"  # compactor freezes writer, reader and controller
+    optimization_scope: str = "all"  # all, compactor, or routing address projections only
     checkpoint_every: int = 1000
     keep_checkpoints: int = 2
     max_target_tokens: int = 512
@@ -203,8 +203,11 @@ class Config:
             raise ValueError("Streaming currently supports one-space latent-memory inference")
         if r.read_steps > 1 and (r.compaction != "none" or t.arm != "memory"):
             raise ValueError("Scheduled multi-read is initially a raw-memory comparison")
-        if t.optimization_scope not in {"all", "compactor"}:
+        if t.optimization_scope not in {"all", "compactor", "routing"}:
             raise ValueError("Invalid optimization scope")
+        if t.optimization_scope == 'routing' and (t.arm != 'memory' or t.retrieval != 'learned'
+                                                  or t.routing_weight <= 0 or r.compaction != 'none'):
+            raise ValueError('Routing-only runs require learned memory routing, positive routing weight and raw records')
         if t.optimization_scope == "compactor" and (r.compaction != "synthetic" or r.compaction_probability != 1.0 or r.compaction_warmup != 0):
             raise ValueError("Compactor-only runs require synthetic compaction on every step without warmup")
         if t.oracle_anchor_weight < 0 or t.parent_kl_weight < 0:
