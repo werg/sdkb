@@ -1,0 +1,59 @@
+{
+  "128": {
+    "completed_updates": 1600,
+    "verified_observed_depth_steps": 1600,
+    "sampled_depths": {
+      "2": 785,
+      "3": 815
+    },
+    "family_exposures": {
+      "multiuse/restoration": 1272,
+      "multiuse/identifier": 1244,
+      "multiuse/action": 2593,
+      "multiuse/permission": 1291
+    },
+    "unique_identifier_questions_sampled": 253,
+    "identifier_repeat_histogram": {
+      "5": 50,
+      "8": 14,
+      "6": 37,
+      "7": 22,
+      "3": 40,
+      "4": 38,
+      "9": 10,
+      "11": 1,
+      "10": 6,
+      "2": 26,
+      "13": 1,
+      "1": 8
+    },
+    "heldout_endpoint_string_overlap": 0,
+    "metrics_sha256": "b374580526b1f3618a4c7adbd28c39326c6b7f879bc25d63356bfc8a3eb7ac47"
+  },
+  "1024": {
+    "completed_updates": 1600,
+    "verified_observed_depth_steps": 1600,
+    "sampled_depths": {
+      "2": 785,
+      "3": 815
+    },
+    "family_exposures": {
+      "multiuse/action": 2595,
+      "multiuse/restoration": 1214,
+      "multiuse/permission": 1306,
+      "multiuse/identifier": 1285
+    },
+    "unique_identifier_questions_sampled": 941,
+    "identifier_repeat_histogram": {
+      "3": 57,
+      "2": 205,
+      "1": 671,
+      "5": 1,
+      "4": 7
+    },
+    "heldout_endpoint_string_overlap": 0,
+    "metrics_sha256": "01c76a930f7c6aa0c6ef5ffcf54e48d7f001b4fe79eda6b56ac73e001015d1ed"
+  },
+  "source_training_endpoint_overlap": 0,
+  "sampled_depth_schedule_exact": true
+}

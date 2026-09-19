@@ -1,0 +1,34 @@
+{
+  "128": {
+    "path": "/archive/runs/binding-detail-breadth-20260920/worlds-128/checkpoints/step-000001600-59d7963b78c0",
+    "manifest": {
+      "format": 1,
+      "step": 1600,
+      "dataset_sha256": "bb88fafbd72bb7a9df67d4eef7064957509fb590379fea95f3b8f62f3d34599d",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "sha256": {
+        "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+        "config.json": "aee0a63e39a68bb24f1ba7cef756ea43caf4087ee6f499ef281af13214e722f6",
+        "run-identity.json": "4aaabc9aa4ecf0746954af0117488f9c03800447ed20e8617f92ba8672d150b7",
+        "model.safetensors": "0cb99d42b811fb1b87730d3e3e2fc07b97e3951bc5021c85f991d0c54ebcb836",
+        "training_state.pt": "09f08130194dbcf9214f1a46a50529289abab3308b1776c7aa6b6552139b576e"
+      }
+    }
+  },
+  "1024": {
+    "path": "/archive/runs/binding-detail-breadth-20260920/worlds-1024/checkpoints/step-000001600-a58bdbae83ac",
+    "manifest": {
+      "format": 1,
+      "step": 1600,
+      "dataset_sha256": "8cf08e7184085ef131d262dff7c1fa75b6392f351efd79e52e10bd02ead3edbe",
+      "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "sha256": {
+        "training_cache.sqlite": "074c06a37327c828abb70b86bd74cf63e126fde3eb00e7090f3e382316393f89",
+        "config.json": "c9df63b0bcff1740e54e1ff10cb5f8df9efd724e703354d82b879f0c2d11c2bf",
+        "run-identity.json": "f82ddc3029eda06abfe0b80b505679596ce1f103158c6e2edb7695d6c9986dad",
+        "model.safetensors": "eccd55c8bbedf51d6e14d730f5bba69878b808993cbc6d9ad424e600212826e6",
+        "training_state.pt": "7d950436883e071acce032908f21338fba782572a035fd7564ee12421716a3c2"
+      }
+    }
+  }
+}
