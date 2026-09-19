@@ -1,0 +1,20 @@
+{
+  "source_checkpoint": "/archive/runs/binding-muon-selected-20260919/recurrent_joint/checkpoints/step-000000400-916c424054bb",
+  "source_manifest_sha256": "aa5952eea7e7ffdf3b034b5a7a448db2d53da74cb76daf99a65e2fc269d8e33f",
+  "episodes_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+  "optimizer_reset": true,
+  "configs": {
+    "recurrent_core": {
+      "config": "/archive/runs/binding-muon-continuation-20260919/recurrent_core.yaml",
+      "sha256": "904c69390ca2c145d8fbe2fc8bbbf8c3218f1c1650033a6056e9d5498ad834e0",
+      "run": "/archive/runs/binding-muon-continuation-20260919/recurrent_core"
+    },
+    "all": {
+      "config": "/archive/runs/binding-muon-continuation-20260919/all.yaml",
+      "sha256": "f3596a13732621ca86e0723bfe7cbc861c03514730c183e58c90c7dec936e64b",
+      "run": "/archive/runs/binding-muon-continuation-20260919/all"
+    }
+  },
+  "status": "prepared; not launched",
+  "validation": "Configs are identical except model.backbone_train_scope; both passed Config.validate(). Source checksum verification passed."
+}
