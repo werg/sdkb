@@ -8,5 +8,11 @@
     "recurrent_core",
     "all"
   ],
-  "status": "launched; results pending"
+  "status": "launched; results pending",
+  "queued_evaluation": {
+    "source_commit": "b82d7a0",
+    "isolated_checkout": ".sdkb/continuation-evaluation",
+    "console": "/archive/runs/binding-muon-continuation-20260919/comparison-console.log",
+    "status": "waiting for both training arms to complete"
+  }
 }

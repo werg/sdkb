@@ -3,7 +3,7 @@
 Status: both native-GPU MLP curricula have completed training from the pinned
 pretrained model. Both post-freeze evaluations are complete; common-world stage
 comparisons are complete. Attention training and its launcher evaluation are also
-complete; the paired reader confirmation is in progress.
+complete, including the paired reader confirmation.
 Their frozen training source checkout is `837f592`; they do not inherit AdamW optimizer
 state or claim that the interrupted AdamW curricula completed.
 
@@ -104,7 +104,7 @@ bottleneck despite successful text interpretation and single-fact retrieval.
 `selected-common-joint-gain.json` records paired gains and false-change deltas,
 including raw-report hashes. Positive false-change deltas mean worse behavior.
 Intervals resample worlds, not training seeds, and are not multiplicity-corrected.
-The all-context comparison is complete; matched attention confirmation remains in progress.
+The all-context comparison is complete; matched attention confirmation is also complete.
 
 ## Short adaptation diagnostic (completed)
 
@@ -146,7 +146,7 @@ scoring and exact reproduction. It remains a synthetic output check, not execute
 agent behavior. `short-adaptation-generation.json` retains matching-subset choice
 scores, script/input hashes and output summaries; raw predictions stay external.
 
-## Attention reader control (trained; paired confirmation running)
+## Attention reader control (completed)
 
 `recipes/looped_binding_muon_attention.yaml` changes only the selected-support
 recipe's reader from pooled MLP to the existing fixed-slot attention comparator.
@@ -237,8 +237,7 @@ Restoration changes cause **zero** spurious action changes on 64 unchanged branc
 No-memory and zero-payload action scores are 40.6% and 35.2%. Removing permission
 reduces action accuracy to 43.8%; removing restoration reduces it to 75.0%.
 
-This is positive evidence of narrow stored-memory action composition, subject to
-confirmation on the same worlds as MLP. Identifier choice remains weak at 28.1%
+This is positive evidence of narrow stored-memory action composition, confirmed below on the same worlds as MLP. Identifier choice remains weak at 28.1%
 (zeroed 32.8%, no-memory 35.9%). `attention-final.json` records the complete
 aggregate results and source/checkpoint/input identities. Candidate-free generation
 also reproduced all 32 action answers and all 32 direct rule facts in the first eight
@@ -246,3 +245,32 @@ worlds (24-token greedy budget, stored bank, writer disabled). It reproduced zer
 of sixteen identifiers. `attention-generation.json` records input and raw-result
 hashes. These checks do not establish executable agent skill,
 multi-entity retrieval or capacity substitution.
+
+## Completed common-world reader confirmation
+
+The two independently trained readers were evaluated on 32 new common worlds
+created after both curricula completed, with the same question and intervention
+grid. Both text-bootstrap controls solve every family and action counterfactual.
+
+| Final latent measure | MLP | Attention |
+|---|---:|---:|
+| Action choice | 53.1% | 100.0% |
+| Permission / restoration facts | 100.0% / 100.0% | 100.0% / 100.0% |
+| Identifier choice | 31.3% | 26.6% |
+| Permission action pairs, both correct | 9/128 | 128/128 |
+| Restoration action pairs, both correct | 49/64 | 64/64 |
+| Spurious action changes on unchanged restoration branches | 64/64 | 0/64 |
+
+Attention's paired action gain is 46.9 percentage points, with a world-bootstrap
+95% interval of 40.6–53.9 points. Memory advantage improves over both no-memory and
+zero-payload controls, rather than arising only from a weaker baseline. This is
+positive narrow composition evidence for the attention control and a failure of
+the pooled-MLP system at this training budget. It is one training seed, with equal
+source access/interface budgets but different reader parameters and compute.
+
+`reader-confirmation-stages.json` records all four systems and checkpoint/episode
+identities. `reader-confirmation-paired.json` retains raw-report checksums and
+paired intervals. Literal identifiers remain unresolved. The ongoing MLP
+continuation separates extra training from broader backbone adaptation; a separate
+frozen attention test exposes all entity records to check its dependence on oracle
+selection. Neither follow-up has a result yet.

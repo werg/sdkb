@@ -75,7 +75,9 @@ of permission, restoration, exact identifiers and their combination:
   every action counterfactual pair correct and no spurious action changes on
   unchanged restoration branches. Candidate-free generation also emits all
   action and rule-fact answers on eight worlds, but zero of sixteen identifiers.
-  Common-world reader confirmation is in progress; identifier choice remains weak.
+  The common-world reader confirmation also gives attention 100% action accuracy
+  versus MLP 53.1% (paired gain 46.9 points, world-bootstrap interval 40.6–53.9).
+  Both text controls solve every task; identifier choice remains weak.
 
 The all-context model's lower NLL versus no memory did not translate into a benefit
 over zeroed payloads. Tests, falling losses, linear probes and successful execution
@@ -83,13 +85,13 @@ must not be substituted for the causal behavior measurements.
 
 ## What remains unproven
 
-Useful multi-entity latent binding; reliable procedural composition beyond the
-narrow Boolean family; literal identifier reproduction; learned retrieval at scale;
+Useful multi-entity latent binding; reliable procedural composition outside the
+synthetic Boolean/binding families; useful pooled-MLP composition; literal identifier reproduction; learned retrieval at scale;
 behavior-preserving compaction of a useful real-student memory system; additional
 capability from recurrent depth; agent execution success; and a quality/memory/latency
 frontier showing substitution for resident model parameters.
 
 These are research outcomes to establish, not implemented-module checkboxes. The
-current priority is the matched reader and stage comparisons, followed by a
-controlled intervention addressing the demonstrated bottleneck. No paid teacher
+current work is a paired MLP continuation (extra training versus broader backbone
+adaptation) and a frozen attention check with all entity records visible. No paid teacher
 collection, license change or public-visibility change has been initiated.
