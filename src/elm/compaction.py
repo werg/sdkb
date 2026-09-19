@@ -131,3 +131,83 @@ class FullClusterCode:
             raise PermissionError("Compacted payload crosses an authorization boundary")
         if set(selected) != set(self.children) or len(selected) != len(self.children):
             raise ValueError("Full-cluster code cannot answer an arbitrary partial selection")
+
+
+@dataclass
+class CompactView:
+    values: Tensor
+    weights: Tensor
+    groups: list[list[int]]
+    input_records: int
+    output_records: int
+
+
+def compact_view(x: Tensor, weights: Tensor, *, method: str = "mean",
+                 compactor: SyntheticCompactor | None = None, grouping: str = "whole",
+                 group_size: int = 4, memberships: int = 2,
+                 generator: torch.Generator | None = None) -> CompactView:
+    """Temporary local replacement, including exact partition-of-unity field shares.
+
+    A training read has batch size one; grouping is discrete and detached. Every
+    field share participates, so this is not an approximate field retrieval plan.
+    A small group stays raw rather than being expanded into more synthetic records.
+    Overlap can still increase the total record count: report it, do not hide it.
+    """
+    if x.ndim != 3 or x.shape[0] != 1 or weights.shape != x.shape[:2]:
+        raise ValueError("compact_view expects [1,N,D] values and [1,N] weights")
+    if group_size < 1 or memberships < 1 or grouping not in {"whole", "random", "local", "overlap"}:
+        raise ValueError("Invalid grouping")
+    if method not in {"mean", "synthetic"} or (method == "synthetic" and compactor is None):
+        raise ValueError("Invalid compaction method")
+    if not torch.isfinite(weights).all() or (weights < 0).any():
+        raise ValueError("Nonnegative finite weights required")
+    n = x.shape[1]
+    if n == 0:
+        return CompactView(x, weights, [], 0, 0)
+    # CPU permutations work identically with a CPU generator for CPU/CUDA payloads.
+    order = torch.randperm(n, generator=generator).tolist() if grouping != "whole" else list(range(n))
+    groups, shares = [], []
+    if grouping == "whole":
+        groups = [order]
+        shares = [weights]
+    elif grouping == "random":
+        groups = [order[i:i + group_size] for i in range(0, n, group_size)]
+        shares = [weights[:, g] for g in groups]
+    elif grouping == "local":
+        remaining = set(order)
+        points = x[0].detach().float()
+        for seed in order:
+            if seed not in remaining:
+                continue
+            candidates = sorted(remaining)
+            distances = (points[candidates] - points[seed]).square().sum(-1)
+            nearest = distances.argsort(stable=True)[:group_size].tolist()
+            group = [candidates[i] for i in nearest]
+            groups.append(group)
+            shares.append(weights[:, group])
+            remaining.difference_update(group)
+    else:
+        count = max(1, (n + group_size - 1) // group_size)
+        points = x[0].detach().float()
+        coefficients = field_responsibilities(points, points[order[:count]],
+                                             min(memberships, count)).detach()
+        for field in range(count):
+            ids = (coefficients[:, field] > 0).nonzero().flatten().tolist()
+            if ids:
+                groups.append(ids)
+                shares.append(weights[:, ids] * coefficients[ids, field][None].to(weights.dtype))
+    values_out, weights_out = [], []
+    size = 1 if method == "mean" else compactor.records
+    for ids, share in zip(groups, shares, strict=True):
+        value = x[:, ids]
+        if len(ids) <= size:
+            compact, mass = value, share
+        elif method == "mean":
+            compact, mass = mean_and_mass(value, share)
+        else:
+            compact, mass = compactor(value, share)
+        values_out.append(compact)
+        weights_out.append(mass)
+    values = torch.cat(values_out, 1)
+    masses = torch.cat(weights_out, 1)
+    return CompactView(values, masses, groups, n, values.shape[1])

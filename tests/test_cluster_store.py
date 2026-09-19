@@ -1,0 +1,82 @@
+import pytest
+import torch
+
+from elm.cluster_store import ClusterBank, state_fingerprint
+from elm.readers import SetReader
+from elm.store import DiskStore, StoredRecord, ReadPlan, Selection
+
+
+def setup_bank(tmp_path, domain='research'):
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    for i in range(4):
+        store.put(StoredRecord(str(i), torch.ones(4), torch.full((8,), float(i), dtype=torch.bfloat16),
+                               domain=domain, created_at=i+1))
+    bank = ClusterBank(store, view='c1', reader_hash='reader1')
+    plan = ReadPlan('default', 's0', 'v0', domain, 10, (Selection('0',0.),Selection('1',0.)))
+    parent = bank.put(plan, torch.full((1,8), .5, dtype=torch.bfloat16), torch.tensor([2.]))
+    return store, bank, plan, parent
+
+
+def test_persistent_roundtrip_and_exact_partial_fallback(tmp_path):
+    store, bank, plan, parent = setup_bank(tmp_path)
+    reread = ClusterBank(DiskStore(store.path), view='c1', reader_hash='reader1')
+    full = reread.fetch(plan)
+    assert full.used_clusters == [parent] and full.raw_fallback_ids == []
+    assert full.values.shape == (1,1,8) and full.weights.item() == 2
+    partial = ReadPlan('default','s0','v0','research',10,(Selection('0',0.),Selection('3',0.)))
+    result = reread.fetch(partial)
+    assert result.used_clusters == [] and result.raw_fallback_ids == ['0','3']
+    torch.testing.assert_close(result.values[0,1], torch.full((8,),3.,dtype=torch.bfloat16))
+
+
+def test_cluster_deletion_identity_and_authorization(tmp_path):
+    store, bank, plan, parent = setup_bank(tmp_path)
+    with pytest.raises(ValueError, match='Stale'):
+        ClusterBank(store, view='c1', reader_hash='different').fetch(plan)
+    denied = ReadPlan('default','s0','v0','other',10,plan.selections)
+    with pytest.raises(PermissionError):
+        bank.fetch(denied)
+    assert parent in store.delete('default','0')
+    with pytest.raises(KeyError):
+        bank.fetch(plan)
+    # A surviving partial child remains readable from the raw path.
+    assert bank.fetch(ReadPlan('default','s0','v0','research',10,(Selection('1',0.),))).raw_fallback_ids == ['1']
+
+
+def test_disjoint_view_and_multiplicity_checks(tmp_path):
+    _, bank, plan, _ = setup_bank(tmp_path)
+    with pytest.raises(ValueError, match='multiplicity'):
+        bank.put(plan, torch.ones(1,8), torch.ones(1))
+    with pytest.raises(ValueError, match='disjoint'):
+        bank.put(plan, torch.ones(1,8), torch.tensor([2.]))
+
+
+def test_state_fingerprint_detects_reader_change():
+    reader = SetReader(8,4,8,width=8,slots=2,rounds=2)
+    first = state_fingerprint(reader)
+    with torch.no_grad():
+        reader.initial_slots.add_(.01)
+    assert first != state_fingerprint(reader)
+
+
+def test_stored_codes_need_neither_writer_nor_compactor_at_read(tmp_path, tiny_config, monkeypatch):
+    from elm.agent import MemoryAgent
+    from elm.data import make_boolean_world
+    from elm.evaluation import build_shared_bank, build_persistent_codes, stored_transfer_evaluation
+    tiny_config.memory.compaction = 'synthetic'
+    tiny_config.memory.compact_records = 1
+    agent = MemoryAgent(tiny_config).eval()
+    episodes = make_boolean_world(0, operations=('a','b','xor'))
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    build_shared_bank(agent, store, episodes)
+    codes, manifest = build_persistent_codes(agent, store, episodes)
+    assert manifest['codes'] == 1
+    def forbidden(*_args, **_kwargs):
+        raise AssertionError('Inference regenerated stored representations')
+    monkeypatch.setattr(agent, 'produce', forbidden)
+    monkeypatch.setattr(agent.compactor, 'forward', forbidden)
+    result = stored_transfer_evaluation(agent, DiskStore(store.path), episodes, cluster_bank=codes)
+    persistent = [r for r in result['rows'] if r['condition'] == 'persistent']
+    assert len(persistent) == 3
+    assert persistent[0]['payload_accounting'][0]['raw_fallback_ids']
+    assert persistent[2]['payload_accounting'][0]['clusters']

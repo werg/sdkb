@@ -36,6 +36,16 @@ class MemoryConfig:
     compaction_probability: float = 0.25
     compaction_loss_weight: float = 0.1
     compaction_warmup: int = 100
+    compaction_objective: str = "interleaved"  # paired adds raw-task anchoring
+    compaction_grouping: str = "whole"
+    compaction_group_size: int = 4
+    field_memberships: int = 2
+    compact_task_weight: float = 1.0
+    behavior_kl_weight: float = 0.0
+    merge_loss_weight: float = 0.0
+    read_steps: int = 1  # scheduled causal reads, not a replay memory limit
+    stream_reads: bool = False  # single-space stored-only bounded staging
+    read_top_k: int = 1
     noise_std: float = 0.0
     quantization_step: float = 0.0
 
@@ -64,6 +74,9 @@ class TrainConfig:
     routing_weight: float = 0.1
     routing_warmup: int = 100
     threads: int = 4
+    optimization_scope: str = "all"  # compactor freezes writer, reader and controller
+    checkpoint_every: int = 50
+    keep_checkpoints: int = 2
     episodes_file: str | None = None  # optional general support/query JSONL
 
 
@@ -93,14 +106,32 @@ class Config:
         if not 0 <= t.live_fraction <= 1 or not 0 <= r.compaction_probability <= 1:
             raise ValueError("Probabilities must be between zero and one")
         if min(t.steps, t.train_worlds, t.eval_worlds, t.gradient_accumulation, t.log_every,
-               t.max_source_tokens, t.max_prompt_tokens, t.threads) < 1:
+               t.max_source_tokens, t.max_prompt_tokens, t.threads, t.checkpoint_every, t.keep_checkpoints) < 1:
             raise ValueError("Training counts must be positive")
-        if t.arm not in {"memory", "no_memory", "oracle_text", "direct_latent"}:
+        if t.arm not in {"memory", "no_memory", "oracle_text", "direct_latent", "shared_compute"}:
             raise ValueError("Unknown comparison arm")
         if t.retrieval not in {"oracle", "learned"}:
             raise ValueError("Unknown retrieval mode")
         if r.noise_std < 0 or r.quantization_step < 0 or r.compact_records < 1:
             raise ValueError("Invalid noise or compaction settings")
+        if r.compaction_objective not in {"interleaved", "paired"}:
+            raise ValueError("Invalid compaction objective")
+        if r.compaction_grouping not in {"whole", "random", "local", "overlap"}:
+            raise ValueError("Invalid compaction grouping")
+        if min(r.compaction_group_size, r.field_memberships, r.read_steps, r.read_top_k) < 1:
+            raise ValueError("Positive grouping/read counts required")
+        if min(r.compact_task_weight, r.behavior_kl_weight, r.merge_loss_weight) < 0:
+            raise ValueError("Loss weights cannot be negative")
+        if len(r.payload_dims) > 1 and r.merge_loss_weight:
+            raise ValueError("Merge objective currently supports one memory space")
+        if r.stream_reads and (len(r.payload_dims) != 1 or t.arm != "memory"):
+            raise ValueError("Streaming currently supports one-space latent-memory inference")
+        if r.read_steps > 1 and (r.compaction != "none" or t.arm != "memory"):
+            raise ValueError("Scheduled multi-read is initially a raw-memory comparison")
+        if t.optimization_scope not in {"all", "compactor"}:
+            raise ValueError("Invalid optimization scope")
+        if t.optimization_scope == "compactor" and (r.compaction != "synthetic" or r.compaction_probability != 1.0 or r.compaction_warmup != 0):
+            raise ValueError("Compactor-only runs require synthetic compaction on every step without warmup")
         if t.distractors < 0 or min(t.learning_rate, t.backbone_learning_rate) <= 0:
             raise ValueError("Invalid distractor count or learning rate")
 

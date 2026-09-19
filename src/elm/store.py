@@ -116,7 +116,8 @@ class DiskStore:
 
     def search(self, query: Tensor, *, top_k: int = 16, namespace: str = "default",
                space: str = "s0", generation: str = "v0", domain: str = "research",
-               query_time: int = 2**62, key_chunk_size: int = 1024) -> ReadPlan:
+               query_time: int = 2**62, key_chunk_size: int = 1024,
+               exclude_ids: frozenset[str] = frozenset()) -> ReadPlan:
         if query.ndim != 1 or not torch.isfinite(query).all() or top_k < 0 or key_chunk_size < 1:
             raise ValueError("Invalid search parameters")
         if top_k == 0:
@@ -135,7 +136,8 @@ class DiskStore:
                 keys = np.stack([np.frombuffer(b, dtype="<f4") for _, b, _ in rows])
                 keys /= np.maximum(np.linalg.norm(keys, axis=1, keepdims=True), 1e-12)
                 scores = keys @ q
-                best.extend((float(score), row[0]) for row, score in zip(rows, scores, strict=True))
+                best.extend((float(score), row[0]) for row, score in zip(rows, scores, strict=True)
+                            if row[0] not in exclude_ids)
                 best = sorted(best, key=lambda pair: (-pair[0], pair[1]))[:top_k]
         return ReadPlan(namespace, space, generation, domain, query_time,
                         tuple(Selection(record_id, score) for score, record_id in best))
@@ -153,6 +155,16 @@ class DiskStore:
                     raise KeyError(f"Unavailable, stale or unauthorized record: {selection.record_id}")
                 values.append(load(row[0])["payload"])
         return values
+
+    def iter_fetch(self, plan: ReadPlan, chunk_size: int = 32):
+        """Reload and revalidate at most one selected chunk at a time on the host."""
+        if chunk_size < 1:
+            raise ValueError("chunk_size must be positive")
+        for start in range(0, len(plan.selections), chunk_size):
+            part = ReadPlan(plan.namespace, plan.space, plan.generation, plan.domain,
+                            plan.query_time, plan.selections[start:start + chunk_size])
+            values = self.fetch(part)
+            yield torch.stack(values)[None], torch.ones(1, len(values))
 
     def delete(self, namespace: str, record_id: str) -> set[str]:
         """Tombstone a source and invalidate all transitive compacted derivatives."""

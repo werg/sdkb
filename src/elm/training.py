@@ -6,7 +6,6 @@ from dataclasses import asdict
 from pathlib import Path
 import json
 import hashlib
-import os
 import platform
 import random
 import resource
@@ -14,9 +13,10 @@ import subprocess
 import time
 
 import torch
-from safetensors.torch import load_model, save_model
+from safetensors.torch import load_model
 
 from .agent import MemoryAgent
+from .checkpoints import save_checkpoint, restore_checkpoint, resolve_checkpoint, stop_on_signal
 from .config import Config
 from .data import Episode, Source, counterfactual, make_episode, save_episodes, load_episodes
 from .replay import ReplayTape
@@ -43,6 +43,11 @@ def environment_report() -> dict:
             ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True).strip()
     except (OSError, subprocess.CalledProcessError):
         report["git_commit"] = None
+    try:
+        report["git_dirty"] = bool(subprocess.check_output(
+            ["git", "status", "--porcelain"], stderr=subprocess.DEVNULL, text=True).strip())
+    except (OSError, subprocess.CalledProcessError):
+        report["git_dirty"] = None
     try:
         import transformers
         report["transformers"] = transformers.__version__
@@ -89,34 +94,49 @@ def read_cached(store: DiskStore, agent: MemoryAgent, source: Source,
     return tuple(outputs)
 
 
-def _save_checkpoint(agent: MemoryAgent, optimizer: torch.optim.Optimizer, output: Path,
-                     step: int, rng: random.Random) -> None:
-    temporary = output / "model.tmp.safetensors"
-    save_model(agent, str(temporary))
-    os.replace(temporary, output / "model.safetensors")
-    state = {"optimizer": optimizer.state_dict(), "step": step,
-             "python_rng": rng.getstate(), "torch_rng": torch.get_rng_state(),
-             "cuda_rng": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else []}
-    # This is a locally generated state file. Load only with weights_only=True.
-    torch.save(state, output / "training_state.tmp.pt")
-    os.replace(output / "training_state.tmp.pt", output / "training_state.pt")
-
-
-def train(config: Config, output: str | Path, *, resume: bool = False) -> dict:
+def train(config: Config, output: str | Path, *, resume: bool = False,
+          stop_after: int | None = None, init_from: str | Path | None = None) -> dict:
     config.validate()
+    if resume and init_from is not None:
+        raise ValueError("Choose resume or warm-start, not both")
+    if stop_after is not None and stop_after < 1:
+        raise ValueError("stop_after must be positive")
     output = Path(output)
     if config.train.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA requested but unavailable. Use configs/tiny_cpu.yaml for offline tests.")
     if not resume:
         output.mkdir(parents=True, exist_ok=False)
-    elif not (output / "training_state.pt").exists():
-        raise FileNotFoundError("Resume requires an existing local training_state.pt")
+    else:
+        resolve_checkpoint(output)
     torch.set_num_threads(config.train.threads)
     random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
     rng = random.Random(config.train.seed)
     agent = MemoryAgent(config).to(config.train.device)
     agent.train()
+    if init_from is not None:
+        source_checkpoint = resolve_checkpoint(init_from, verify=True)
+        old = config_from_run(Path(init_from))
+        structural = ("key_dim", "write_slots", "read_slots", "payload_dims", "reader_width", "reader_rounds", "reader")
+        if any(getattr(old.memory, name) != getattr(config.memory, name) for name in structural):
+            raise ValueError("Warm-start changes the stored interface or reader architecture")
+        if old.model.backend != config.model.backend or old.model.model_id != config.model.model_id:
+            raise ValueError("Warm-start changes the student backbone")
+        manifest_path = source_checkpoint / "manifest.json"
+        if manifest_path.exists() and json.loads(manifest_path.read_text())["resolved_model_revision"] != agent.resolved_revision:
+            raise ValueError("Warm-start base revision differs")
+        missing, unexpected = load_model(agent, str(source_checkpoint / "model.safetensors"),
+                                        strict=False, device=config.train.device)
+        if any(not name.startswith("compactor.") for name in set(missing) | set(unexpected)):
+            raise ValueError(f"Incompatible warm-start state: missing={missing}, unexpected={unexpected}")
+        provenance = {"checkpoint": str(source_checkpoint), "optimizer_reset": True,
+                      "missing_initialized": sorted(missing), "unused": sorted(unexpected)}
+        (output / "initialization.json").write_text(json.dumps(provenance, indent=2) + "\n")
+    if config.train.optimization_scope == "compactor":
+        for name, parameter in agent.named_parameters():
+            parameter.requires_grad_(name.startswith("compactor."))
+        agent.eval()
+        agent.compactor.train()
     base_ids = {id(p) for p in agent.backbone.base.parameters()}
     groups = [
         {"params": [p for p in agent.parameters() if p.requires_grad and id(p) in base_ids],
@@ -127,20 +147,11 @@ def train(config: Config, output: str | Path, *, resume: bool = False) -> dict:
     optimizer = torch.optim.AdamW(groups)
     start = 0
     if resume:
-        old_config = json.loads((output / "config.json").read_text())
+        old_config = asdict(config_from_run(output))
         current = asdict(config)
-        # Only the desired total step count may change in a resumed scientific run.
         old_config["train"]["steps"] = current["train"]["steps"]
         if old_config != current:
             raise ValueError("Resume config differs beyond total step count")
-        load_model(agent, str(output / "model.safetensors"), device=config.train.device)
-        state = torch.load(output / "training_state.pt", map_location="cpu", weights_only=True)
-        optimizer.load_state_dict(state["optimizer"])
-        start = state["step"]
-        rng.setstate(state["python_rng"])
-        torch.set_rng_state(state["torch_rng"])
-        if state["cuda_rng"]:
-            torch.cuda.set_rng_state_all(state["cuda_rng"])
     (output / "config.json").write_text(json.dumps(asdict(config), indent=2) + "\n")
     manifest = environment_report() | {"resolved_model_revision": agent.resolved_revision,
         "total_parameters": sum(p.numel() for p in agent.parameters()),
@@ -156,14 +167,23 @@ def train(config: Config, output: str | Path, *, resume: bool = False) -> dict:
         raise ValueError("Episode contents changed since checkpoint; refusing stale-cache reuse")
     data_manifest.write_text(json.dumps({"sha256": fingerprint, "episodes": len(episodes)}, indent=2) + "\n")
     save_episodes(output / "train.jsonl", episodes)
+    if resume:
+        start = restore_checkpoint(agent, optimizer, output, rng, fingerprint)
+        if config.train.steps < start:
+            raise ValueError("Requested total steps precede the saved checkpoint")
     cache = DiskStore(output / "training_cache.sqlite")
+    if not resume:
+        save_checkpoint(agent, optimizer, output, 0, rng, cache, fingerprint,
+                        keep=config.train.keep_checkpoints)
+    completed = start
     generation = "mixed-training-v0"  # intentional stale/live training distribution, never evaluation
     history = []
     start_time = time.perf_counter()
-    with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
+    with stop_on_signal() as stop, (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
         for step in range(start, config.train.steps):
             optimizer.zero_grad(set_to_none=True)
-            totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0}
+            totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
+                      "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0}
             for _ in range(config.train.gradient_accumulation):
                 episode = rng.choice(episodes)
                 tape = ReplayTape(verify_outputs=config.train.verify_replay)
@@ -197,12 +217,15 @@ def train(config: Config, output: str | Path, *, resume: bool = False) -> dict:
                     loss = result.loss / config.train.gradient_accumulation
                 if not torch.isfinite(loss):
                     raise FloatingPointError(f"Nonfinite loss at step {step}")
-                loss.backward()
+                if loss.requires_grad:
+                    loss.backward()
                 # Full source gradient accumulation happens BEFORE any optimizer update.
                 if config.train.replay:
                     tape.backward()
                 for name in totals:
-                    totals[name] += float(getattr(result, name).detach()) / config.train.gradient_accumulation
+                    value = getattr(result, name)
+                    totals[name] += (float(value.detach()) if isinstance(value, torch.Tensor) else
+                                     float(value or 0)) / config.train.gradient_accumulation
             grad_norm = torch.nn.utils.clip_grad_norm_(agent.parameters(), config.train.clip_grad_norm,
                                                        error_if_nonfinite=True)
             optimizer.step()
@@ -213,8 +236,15 @@ def train(config: Config, output: str | Path, *, resume: bool = False) -> dict:
             history.append(row)
             if (step + 1) % config.train.log_every == 0 or step == start:
                 print(json.dumps(row), flush=True)
-    _save_checkpoint(agent, optimizer, output, config.train.steps, rng)
-    summary = {"steps": config.train.steps, "last": history[-1] if history else None,
+            completed = step + 1
+            stopping = stop["signal"] is not None or (stop_after is not None and completed - start >= stop_after)
+            if completed % config.train.checkpoint_every == 0 or stopping or completed == config.train.steps:
+                save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
+                                keep=config.train.keep_checkpoints)
+            if stopping:
+                break
+    summary = {"steps": completed, "requested_steps": config.train.steps,
+               "stopped_early": completed < config.train.steps, "last": history[-1] if history else None,
                "environment": manifest, "resources": resource_report(), "store": cache.sizes()}
     (output / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return summary
@@ -222,7 +252,8 @@ def train(config: Config, output: str | Path, *, resume: bool = False) -> dict:
 
 def config_from_run(path: Path) -> Config:
     from .config import ModelConfig, MemoryConfig, TrainConfig
-    raw = json.loads((path / "config.json").read_text())
+    checkpoint = resolve_checkpoint(path)
+    raw = json.loads((checkpoint / "config.json").read_text())
     return Config(ModelConfig(**raw["model"]), MemoryConfig(**raw["memory"]), TrainConfig(**raw["train"]))
 
 
@@ -231,6 +262,8 @@ def build_evaluation_store(agent: MemoryAgent, store: DiskStore,
                            episodes: list[Episode], generation: str) -> None:
     if agent.training:
         raise ValueError("Freeze the writer in eval mode before building an evaluation bank")
+    if agent.config.train.arm not in {"memory", "direct_latent"}:
+        return
     with autocast_context(agent.config):
         for episode in episodes:
             for name, variant in (("original", episode),
@@ -244,11 +277,16 @@ def build_evaluation_store(agent: MemoryAgent, store: DiskStore,
 @torch.no_grad()
 def stored_evaluation(agent: MemoryAgent, store: DiskStore, episodes: list[Episode],
                       generation: str, *, generate: bool = False) -> dict:
-    """No writer call here. Tests explicitly replace produce() with an exception."""
+    """Stored-only causal interventions. Full-sequence scoring; no writer calls."""
+    from .evaluation import score_answers
+    from .sessions import read_session
+    from .metrics import summarize_rows, paired_world_bootstrap, counterfactual_metrics
+    from .routing import complete_support_recall
     agent.eval()
     rows = []
-    actions = ["STOP", "RETRY", "RESTORE_RETRY"]
     conditions = ["all", "none", "A", "B", "irrelevant", "zero_values", "cf_restoration", "cf_permission"]
+    if generate and (agent.config.memory.read_steps > 1 or agent.config.train.arm not in {"memory", "no_memory"}):
+        raise ValueError("Use likelihood evaluation for multi-read/control arms")
     for episode in episodes:
         for condition in conditions:
             cf = condition.startswith("cf_")
@@ -268,61 +306,36 @@ def stored_evaluation(agent: MemoryAgent, store: DiskStore, episodes: list[Episo
                 arm = agent.config.train.arm
                 text = "\n".join(s.text for s in variant.supports if s.record_id in selected_ids)
                 prompt = agent.prompt_ids(episode.query, text if arm == "oracle_text" else "")
-                q = agent.query(prompt)
-                payloads, selected_spaces = [], []
-                for space, dim in enumerate(agent.config.memory.payload_dims):
-                    # Main learned-access arm uses an actual stored-key search; intervention
-                    # arms use fixed IDs so they isolate evidence, not new routing choices.
-                    if agent.config.train.retrieval == "learned" and condition in {"all", "zero_values"}:
-                        query_key = agent.query_maps[space](q)[0]
-                        plan = store.search(query_key, namespace=namespace, space=f"s{space}",
-                                            generation=generation, query_time=episode.query_time,
-                                            top_k=agent.config.memory.neighbors[space])
-                    else:
-                        plan = ReadPlan(namespace, f"s{space}", generation, "research", episode.query_time,
-                                        tuple(Selection(rid, 0.0) for rid in selected_ids))
-                    values = store.fetch(plan)
-                    x = torch.stack(values).float().to(agent.device) if values else q.new_empty(0, dim)
-                    payloads.append(x)
-                    selected_spaces.append([s.record_id for s in plan.selections])
-                present = any(p.shape[0] for p in payloads)
-                memory = None
-                if arm == "memory" and present:
-                    memory, _ = agent.read_tokens(payloads, q, ablate_values=condition == "zero_values")
-                elif arm == "direct_latent" and present:
-                    memory = payloads[0].reshape(1, -1, agent.width)
-                    if condition == "zero_values":
-                        memory = torch.zeros_like(memory)
-                losses = [float(agent.conditioned_nll(prompt, agent.target_ids(a), memory)) for a in actions]
-                predicted = actions[min(range(len(actions)), key=lambda i: losses[i])]
-                prediction = None
-                if generate:
-                    if arm in {"direct_latent", "oracle_text"}:
-                        raise ValueError("Greedy generation helper currently supports memory/no_memory arms")
-                    supplied = payloads if arm == "memory" else None
-                    if condition == "zero_values" and supplied:
-                        supplied = [torch.zeros_like(p) for p in supplied]
-                    prediction = agent.generate_with_payloads(prompt, supplied)
-            selected_set = set().union(*(set(s) for s in selected_spaces))
-            rows.append({"episode": episode.episode_id, "condition": condition,
-                         "answer": variant.answer, "predicted_action": predicted,
-                         "choice_correct": predicted == variant.answer,
-                         "target_mean_nll": losses[actions.index(variant.answer)],
-                         "selected_ids": selected_spaces,
-                         "complete_support": set(episode.required_ids) <= selected_set,
+                memory, selected_spaces, read_count = None, [[] for _ in agent.config.memory.payload_dims], 0
+                if arm in {"memory", "direct_latent"} and condition != "none":
+                    learned = agent.config.train.retrieval == "learned" and condition in {"all", "zero_values"}
+                    session = read_session(agent, store, prompt, namespace=namespace, generation=generation,
+                                           query_time=episode.query_time,
+                                           oracle_ids=None if learned else tuple(selected_ids),
+                                           ablate_values=condition == "zero_values")
+                    memory, selected_spaces = session.memory, session.selected_ids
+                    read_count = len(session.plans)
+                elif arm == "shared_compute":
+                    memory = agent.shared_compute_tokens(prompt)
+                elif arm == "oracle_text":
+                    selected_spaces = [selected_ids]
+                score = score_answers(agent, prompt, memory, variant.answer,
+                                      episode.choices or ("STOP", "RETRY", "RESTORE_RETRY"))
+                prediction = agent.generate_from_memory(prompt, memory) if generate else None
+            selected_set = set().union(*(set(ids) for ids in selected_spaces))
+            groups = [set(g) for g in variant.sufficient_groups or (variant.required_ids,)]
+            rows.append({"episode": episode.episode_id, "environment": episode.environment,
+                         "condition": condition, "answer": variant.answer, **score,
+                         "selected_ids": selected_spaces, "read_count": read_count,
+                         "complete_support": complete_support_recall(selected_set, groups),
                          "counterfactual_should_change": variant.answer != episode.answer,
                          "generated_text": prediction,
                          "generation_exact_match": prediction == variant.answer if generate else None})
-    summary = {}
-    for condition in conditions:
-        subset = [r for r in rows if r["condition"] == condition]
-        summary[condition] = {"n": len(subset),
-            "choice_accuracy": sum(r["choice_correct"] for r in subset) / len(subset),
-            "mean_target_nll": sum(r["target_mean_nll"] for r in subset) / len(subset),
-            "complete_support_recall": sum(r["complete_support"] for r in subset) / len(subset)}
-    return {"protocol": "stored-only frozen weights; action chosen by minimum per-token NLL",
-            "notice": "Small synthetic evaluation; not general coding or capacity-substitution evidence.",
-            "summary": summary, "rows": rows, "resources": resource_report()}
+    return {"schema_version": 2, "protocol": "stored-only frozen weights; full-sequence choice NLL with EOS",
+            "notice": "Synthetic diagnostics; not coding or capacity-substitution evidence.",
+            "summary": summarize_rows(rows), "rows": rows,
+            "counterfactuals": counterfactual_metrics(rows),
+            "paired_memory_benefit": paired_world_bootstrap(rows), "resources": resource_report()}
 
 
 def evaluate_run(run: str | Path, *, count: int | None = None, generate: bool = False) -> dict:
@@ -330,7 +343,7 @@ def evaluate_run(run: str | Path, *, count: int | None = None, generate: bool = 
     config = config_from_run(run)
     torch.set_num_threads(config.train.threads)
     agent = MemoryAgent(config).to(config.train.device)
-    load_model(agent, str(run / "model.safetensors"), device=config.train.device)
+    load_model(agent, str(resolve_checkpoint(run) / "model.safetensors"), device=config.train.device)
     agent.eval()
     episodes = [make_episode(i, split=f"heldout-{config.train.seed}", distractors=config.train.distractors)
                 for i in range(count or config.train.eval_worlds)]
@@ -361,7 +374,7 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
     episodes = load_episodes(path)
     torch.set_num_threads(config.train.threads)
     agent = MemoryAgent(config).to(config.train.device)
-    load_model(agent, str(run / "model.safetensors"), device=config.train.device)
+    load_model(agent, str(resolve_checkpoint(run) / "model.safetensors"), device=config.train.device)
     agent.eval()
     output = run / ("transfer-" + str(time.time_ns()))
     output.mkdir()

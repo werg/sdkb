@@ -13,11 +13,16 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("doctor", help="Inspect runtime and test BF16 CUDA when available")
     p.add_argument("--require-spark", action="store_true")
+    p = sub.add_parser("model-probe", help="Execute backbone causality, zero-gate recurrence and memory gradients")
+    p.add_argument("--config", required=True)
+    p.add_argument("--output")
     p = sub.add_parser("train", help="Train support/query episodes")
     p.add_argument("--config", required=True)
     p.add_argument("--output", required=True)
     p.add_argument("--steps", type=int)
     p.add_argument("--resume", action="store_true")
+    p.add_argument("--init-from", help="Warm-start compatible weights with fresh optimizer/cache")
+    p.add_argument("--stop-after", type=int, help="Checkpoint after this many new complete steps")
     p = sub.add_parser("evaluate", help="Freeze weights; serialize new memories and read stored-only")
     p.add_argument("--run", required=True)
     p.add_argument("--count", type=int)
@@ -25,6 +30,23 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("evaluate-episodes", help="Stored-only answer NLL on general support/query JSONL")
     p.add_argument("--run", required=True)
     p.add_argument("--episodes", required=True)
+    p = sub.add_parser("make-boolean", help="Balanced two-fact CPU composition diagnostic")
+    p.add_argument("--output", required=True)
+    p.add_argument("--worlds", type=int, default=128)
+    p.add_argument("--split", default="boolean-train")
+    p.add_argument("--operations", nargs="+", default=["xor"])
+    p = sub.add_parser("make-multiuse", help="One write, many uses and variable-binding tasks")
+    p.add_argument("--output", required=True)
+    p.add_argument("--worlds", type=int, default=32)
+    p.add_argument("--bindings", type=int, default=3)
+    p.add_argument("--split", default="multiuse-train")
+    p = sub.add_parser("evaluate-transfer", help="Write-once globally heterogeneous stored bank")
+    p.add_argument("--run", required=True)
+    p.add_argument("--episodes", required=True)
+    p.add_argument("--compact", action="store_true")
+    p.add_argument("--drop-supports", action="store_true")
+    p.add_argument("--boolean-counterfactuals", action="store_true")
+    p.add_argument("--persistent-compact", action="store_true")
     p = sub.add_parser("make-data", help="Create causally separated synthetic episodes")
     p.add_argument("--output", required=True)
     p.add_argument("--count", type=int, default=128)
@@ -49,12 +71,15 @@ def main(argv: list[str] | None = None) -> None:
     if args.command == "doctor":
         from .diagnostics import doctor
         result = doctor(args.require_spark)
+    elif args.command == "model-probe":
+        from .probes import model_probe
+        result = model_probe(load_config(args.config))
     elif args.command == "train":
         from .training import train
         config = load_config(args.config)
         if args.steps is not None:
             config.train.steps = args.steps
-        result = train(config, args.output, resume=args.resume)
+        result = train(config, args.output, resume=args.resume, stop_after=args.stop_after, init_from=args.init_from)
     elif args.command == "evaluate":
         from .training import evaluate_run
         if args.count is not None and args.count < 1:
@@ -63,6 +88,30 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "evaluate-episodes":
         from .training import evaluate_episode_file
         result = evaluate_episode_file(args.run, args.episodes)
+    elif args.command == "evaluate-transfer":
+        from .evaluation import evaluate_transfer_run
+        full = evaluate_transfer_run(args.run, args.episodes, compact=args.compact,
+                                     drop_supports=args.drop_supports, boolean_counterfactuals=args.boolean_counterfactuals,
+                                     persistent_compact=args.persistent_compact)
+        result = {key: value for key, value in full.items() if key != "rows"}
+    elif args.command == "make-boolean":
+        from .data import make_boolean_world, save_episodes
+        path = Path(args.output)
+        if args.worlds < 1 or path.exists():
+            raise ValueError("Positive count and new output path required")
+        episodes = [e for i in range(args.worlds) for e in make_boolean_world(i, split=args.split, operations=tuple(args.operations))]
+        save_episodes(path, episodes)
+        result = {"output": str(path), "worlds": args.worlds, "queries": len(episodes)}
+    elif args.command == "make-multiuse":
+        from .data import make_multiuse_world, save_episodes
+        if args.worlds < 1 or args.bindings < 1:
+            parser.error("Positive world/binding counts required")
+        path = Path(args.output)
+        if path.exists():
+            raise FileExistsError(path)
+        episodes = [e for i in range(args.worlds) for e in make_multiuse_world(i, split=args.split, bindings=args.bindings)]
+        save_episodes(path, episodes)
+        result = {"output": str(path), "worlds": args.worlds, "queries": len(episodes)}
     elif args.command == "make-data":
         from .data import make_episode, save_episodes
         if args.count < 1 or args.distractors < 0:
@@ -84,7 +133,7 @@ def main(argv: list[str] | None = None) -> None:
         result = compact_probe(steps=args.steps, seed=args.seed, reader_kind=args.reader)
     if result is not None:
         text = json.dumps(result, indent=2) + "\n"
-        if getattr(args, "output", None) and args.command in {"io-bench", "compact-probe"}:
+        if getattr(args, "output", None) and args.command in {"io-bench", "compact-probe", "model-probe"}:
             path = Path(args.output)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text)

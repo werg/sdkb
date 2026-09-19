@@ -32,6 +32,9 @@ class Episode:
     allowed_capability: int
     capability: int
     query_time: int = 10
+    task_family: str = "retry"
+    choices: tuple[str, ...] = ()
+    sufficient_groups: tuple[tuple[str, ...], ...] = ()
 
 
 def _opaque(text: str) -> str:
@@ -65,7 +68,9 @@ def make_episode(seed: int, *, split: str = "train", distractors: int = 2,
     query = (f"In {environment}, an attempt failed and capability={cap}. "
              "Using the environment's rules, choose exactly one action: STOP, RETRY, RESTORE_RETRY.")
     return Episode(_opaque(f"{split}:{seed}:query"), environment, tuple(supports), query, answer,
-                   (rid_a, rid_b), restore, allowed, cap, 4 + distractors)
+                   (rid_a, rid_b), restore, allowed, cap, 4 + distractors,
+                   choices=("STOP", "RETRY", "RESTORE_RETRY"),
+                   sufficient_groups=((rid_b,),) if cap != allowed else ((rid_a, rid_b),))
 
 
 def counterfactual(episode: Episode, which: str) -> Episode:
@@ -86,7 +91,9 @@ def counterfactual(episode: Episode, which: str) -> Episode:
                     f"capability={allowed}; otherwise stop.")
         sources.append(replace(s, text=text))
     answer = "STOP" if episode.capability != allowed else ("RESTORE_RETRY" if restore else "RETRY")
-    return replace(episode, supports=tuple(sources), answer=answer, restore=restore, allowed_capability=allowed)
+    groups = ((episode.required_ids[1],),) if episode.capability != allowed else (episode.required_ids,)
+    return replace(episode, supports=tuple(sources), answer=answer, restore=restore,
+                   allowed_capability=allowed, sufficient_groups=groups)
 
 
 def save_episodes(path: str | Path, episodes: list[Episode]) -> None:
@@ -103,11 +110,14 @@ def load_episodes(path: str | Path) -> list[Episode]:
         for line in handle:
             row = json.loads(line)
             row.setdefault("environment", row["episode_id"])
+            row.setdefault("task_family", "custom")
             row.setdefault("restore", False)
             row.setdefault("allowed_capability", 0)
             row.setdefault("capability", 0)
             row["supports"] = tuple(Source(**({"kind": "experience"} | source)) for source in row["supports"])
             row["required_ids"] = tuple(row["required_ids"])
+            row["choices"] = tuple(row.get("choices", ()))
+            row["sufficient_groups"] = tuple(tuple(g) for g in row.get("sufficient_groups", ()))
             episode = Episode(**row)
             if any(s.created_at >= episode.query_time for s in episode.supports):
                 raise ValueError("Source is not causally prior to the query")
@@ -116,6 +126,10 @@ def load_episodes(path: str | Path) -> list[Episode]:
             ids = [s.record_id for s in episode.supports]
             if len(ids) != len(set(ids)) or not set(episode.required_ids) <= set(ids):
                 raise ValueError("Support IDs must be unique and include required_ids")
+            if episode.choices and (episode.answer not in episode.choices or len(set(episode.choices)) != len(episode.choices)):
+                raise ValueError("Distinct choices must contain the correct answer")
+            if any(not g or not set(g) <= set(ids) for g in episode.sufficient_groups):
+                raise ValueError("Invalid sufficient support group")
             if not episode.answer or not episode.query:
                 raise ValueError("Query and answer cannot be empty")
             episodes.append(episode)
@@ -132,3 +146,97 @@ def load_episodes(path: str | Path) -> list[Episode]:
     if not episodes:
         raise ValueError("Episode file is empty")
     return episodes
+
+
+def make_multiuse_world(seed: int, *, split: str = "multiuse", bindings: int = 3) -> list[Episode]:
+    """Write a world's sources once, then test five future uses per entity.
+
+    Every entity has independently randomized permission/restoration rules. Exact
+    endpoint names are random and cannot be inferred from entity IDs. The two
+    action queries require binding facts to an entity and using the right branch.
+    Oracle selection always delivers both rule records on action queries, even on
+    STOP branches: labels never leak through answer-dependent retrieval cardinality.
+    """
+    if bindings < 1:
+        raise ValueError("bindings must be positive")
+    rng = random.Random(f"{split}:{seed}:multiuse")
+    environment = "world_" + _opaque(f"{split}:{seed}")[:8]
+    entities = ["svc_" + _opaque(f"{split}:{seed}:entity:{i}")[:6] for i in range(bindings)]
+    endpoints = ["api_" + _opaque(f"{split}:{seed}:endpoint:{i}")[:6] for i in range(bindings)]
+    facts, sources = [], []
+    for i, entity in enumerate(entities):
+        restore, allowed = bool(rng.randrange(2)), rng.randrange(2)
+        a = Source(_opaque(f"{split}:{seed}:{i}:restore"),
+                   f"In {environment}, {entity}: restoring the snapshot before retry is "
+                   + ("required." if restore else "forbidden."), 2 * i + 1, "restoration")
+        b = Source(_opaque(f"{split}:{seed}:{i}:permission"),
+                   f"In {environment}, {entity}: retry is permitted exactly when capability={allowed}; "
+                   f"otherwise stop. Its endpoint is {endpoints[i]}.", 2 * i + 2, "permission")
+        sources.extend((a, b))
+        facts.append((restore, allowed, a.record_id, b.record_id))
+    rng.shuffle(sources)
+    support = tuple(sources)
+    episodes = []
+    for i, entity in enumerate(entities):
+        restore, allowed, a, b = facts[i]
+        prefix = f"In {environment}, for {entity}, "
+        tasks = [
+            ("permission", prefix + "which capability permits retry? Answer 0 or 1.",
+             str(allowed), (b,), ("0", "1"), 0, ((b,),)),
+            ("restoration", prefix + "is restoring the snapshot required or forbidden before retry?",
+             "required" if restore else "forbidden", (a,), ("required", "forbidden"), 0, ((a,),)),
+            ("identifier", prefix + "give the exact endpoint identifier.", endpoints[i], (b,),
+             tuple(endpoints + ["api_" + _opaque(f"{split}:{seed}:unused")[:6]]), 0, ((b,),)),
+        ]
+        for cap in (0, 1):
+            answer = "STOP" if cap != allowed else ("RESTORE_RETRY" if restore else "RETRY")
+            tasks.append((f"action-{cap}", prefix + f"an attempt failed and capability={cap}. "
+                          "Choose STOP, RETRY, or RESTORE_RETRY.", answer, (a, b),
+                          ("STOP", "RETRY", "RESTORE_RETRY"), cap,
+                          ((b,),) if cap != allowed else ((a, b),)))
+        for kind, query, answer, required, choices, cap, groups in tasks:
+            episodes.append(Episode(_opaque(f"{split}:{seed}:{i}:query:{kind}"), environment,
+                                    support, query, answer, required, restore, allowed, cap,
+                                    2 * bindings + 10, f"multiuse/{kind.split('-')[0]}", choices, groups))
+    return episodes
+
+
+def make_boolean_world(seed: int, *, split: str = "boolean", operations: tuple[str, ...] = ("xor",)) -> list[Episode]:
+    """Balanced independent bit facts for a small end-to-end composition diagnostic."""
+    if not operations or any(op not in {'xor', 'and', 'or', 'a', 'b'} for op in operations):
+        raise ValueError('Unknown boolean operation')
+    world = 'w' + _opaque(f'{split}:{seed}:world')[:6]
+    a, b = (seed // 2) % 2, seed % 2
+    sources = [Source(_opaque(f'{split}:{seed}:source:{name}'), f'{world} {name}={value}.', i + 1, name)
+               for i, (name, value) in enumerate((('a', a), ('b', b)))]
+    random.Random(f'{split}:{seed}:order').shuffle(sources)
+    by_kind = {s.kind: s.record_id for s in sources}
+    results = {'xor': a ^ b, 'and': a & b, 'or': a | b, 'a': a, 'b': b}
+    episodes = []
+    for op in operations:
+        required = (by_kind[op],) if op in {'a', 'b'} else (by_kind['a'], by_kind['b'])
+        episodes.append(Episode(_opaque(f'{split}:{seed}:query:{op}'), world, tuple(sources),
+                        f'{world}: {op}? Answer 0 or 1.', str(results[op]), required,
+                        False, 0, 0, 10, f'boolean/{op}', ('0', '1'), (required,)))
+    return episodes
+
+
+def counterfactual_boolean(episode: Episode, which: str) -> Episode:
+    """Flip one stored bit, preserving query, source IDs, timestamps and record order."""
+    import re
+    if not episode.task_family.startswith('boolean/') or which not in {'a', 'b'}:
+        raise ValueError('Boolean episode and a/b intervention required')
+    bits, sources = {}, []
+    for source in episode.supports:
+        match = re.search(r'\b([ab])=([01])\.', source.text)
+        if match is None:
+            raise ValueError('Malformed boolean source')
+        name, value = match.group(1), int(match.group(2))
+        if name == which:
+            value = 1 - value
+            source = replace(source, text=source.text[:match.start(2)] + str(value) + source.text[match.end(2):])
+        bits[name] = value
+        sources.append(source)
+    a, b = bits['a'], bits['b']
+    result = {'a': a, 'b': b, 'xor': a ^ b, 'and': a & b, 'or': a | b}[episode.task_family.split('/')[1]]
+    return replace(episode, supports=tuple(sources), answer=str(result))
