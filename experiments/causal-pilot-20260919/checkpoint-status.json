@@ -1,0 +1,30 @@
+{
+  "latent_warmup": {
+    "run_id": "65b7bf783eb04dcc91f686e5e34e918c",
+    "local_current": "step-000000400-377861d0945e",
+    "archive_current": "step-000000400-377861d0945e",
+    "retained_local_sets": 2,
+    "retained_archive_sets": 2
+  },
+  "recurrent_joint": {
+    "run_id": "bc03c0b3b7144eed8268632d6b5f974c",
+    "local_current": "step-000000400-c3071861a295",
+    "archive_current": "step-000000400-c3071861a295",
+    "retained_local_sets": 2,
+    "retained_archive_sets": 2
+  },
+  "recurrence_bridge": {
+    "run_id": "da786fa5a9434cbcba9b2610a5327eb1",
+    "local_current": "step-000000200-4523b88a1010",
+    "archive_current": "step-000000200-4523b88a1010",
+    "retained_local_sets": 2,
+    "retained_archive_sets": 2
+  },
+  "text_bootstrap": {
+    "run_id": "951351498b14457ba486e5c4977b7ada",
+    "local_current": "step-000000200-5a99cfdb629c",
+    "archive_current": "step-000000200-5a99cfdb629c",
+    "retained_local_sets": 2,
+    "retained_archive_sets": 2
+  }
+}

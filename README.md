@@ -3,6 +3,8 @@
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
 See [local GPU revalidation](docs/validation-local.md) for tested behavior and remaining limits.
+The [pretrained causal pilot](experiments/causal-pilot-20260919/README.md) records
+successful two-bit stored-memory composition and its broader-transfer limits.
 
 **Spatially Superposed Differentiable Knowledge Base**
 
@@ -18,12 +20,10 @@ use SDKB (`sdkb`, `SDKBAgent`). Historical experiment logs remain immutable evid
 
 ## Start on the Spark
 
-The handoff includes a complete Git-history bundle. The intended remote is
-`werg/sdkb`, but the previous publication attempt was rejected by the integration with HTTP 403.
-Use the bundle until those commits are published:
+Clone the upstream repository using your existing access:
 
 ```bash
-git clone sdkb-v0.4.bundle sdkb
+git clone git@github.com:werg/sdkb.git sdkb
 cd sdkb
 ./scripts/start_spark.sh --recipe recipes/looped_smoke.yaml --output runs/looped-smoke
 ```

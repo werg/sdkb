@@ -1,0 +1,160 @@
+{
+  "recipe_path": ".sdkb/causal-pilot/recipe.yaml",
+  "recipe": {
+    "base_config": ".sdkb/causal-pilot/base.yaml",
+    "protocol": "causal",
+    "seed": 17,
+    "validation_fraction": 0.1,
+    "sources": [],
+    "preparation": {
+      "max_supports": 4,
+      "max_targets_per_trajectory": 3,
+      "recent_messages": 1,
+      "recent_tokens": 512,
+      "task_tokens": 160
+    },
+    "stages": [
+      {
+        "name": "text_bootstrap",
+        "arm": "oracle_text",
+        "steps": 200,
+        "loops": 1,
+        "freeze_backbone": false
+      },
+      {
+        "name": "recurrence_bridge",
+        "arm": "oracle_text",
+        "steps": 200,
+        "loops": 2,
+        "freeze_backbone": true,
+        "init_from": "text_bootstrap",
+        "parent_kl_weight": 0.1
+      },
+      {
+        "name": "latent_warmup",
+        "arm": "memory",
+        "steps": 400,
+        "loops": 2,
+        "freeze_backbone": true,
+        "init_from": "recurrence_bridge"
+      },
+      {
+        "name": "recurrent_joint",
+        "arm": "memory",
+        "steps": 400,
+        "loops": 3,
+        "loop_counts": [
+          2,
+          3
+        ],
+        "freeze_backbone": false,
+        "backbone_train_scope": "recurrent_core",
+        "init_from": "latent_warmup",
+        "oracle_anchor_weight": 0.1,
+        "oracle_anchor_loops": 1
+      }
+    ],
+    "evaluation": {
+      "max_episodes": 64,
+      "causal_worlds": 32
+    },
+    "causal_train_worlds": 128
+  },
+  "base_config": {
+    "model": {
+      "backend": "hf",
+      "model_id": "LiquidAI/LFM2.5-230M",
+      "revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+      "loops": 2,
+      "tiny_width": 64,
+      "tiny_layers": 2,
+      "tiny_heads": 4,
+      "gradient_checkpointing": true,
+      "freeze_backbone": false,
+      "recurrence_mode": "middle_block",
+      "recurrent_start": 4,
+      "recurrent_end": 10,
+      "recurrent_input_mix": 0.1,
+      "recurrent_update_mix": 0.1,
+      "writer_loops": 1,
+      "backbone_train_scope": "all"
+    },
+    "memory": {
+      "key_dim": 64,
+      "write_slots": 8,
+      "read_slots": 8,
+      "payload_dims": [
+        2048
+      ],
+      "neighbors": [
+        4
+      ],
+      "reader_width": 256,
+      "reader_rounds": 3,
+      "reader": "mlp",
+      "chunk_size": 4,
+      "checkpoint_chunks": true,
+      "storage_dtype": "bfloat16",
+      "compaction": "none",
+      "compact_records": 2,
+      "compaction_probability": 0.25,
+      "compaction_loss_weight": 0.1,
+      "compaction_warmup": 100,
+      "noise_std": 0.0,
+      "quantization_step": 0.0,
+      "read_timing": "loop_boundary",
+      "read_steps": 1
+    },
+    "train": {
+      "seed": 17,
+      "steps": 200,
+      "learning_rate": 0.0001,
+      "backbone_learning_rate": 5e-06,
+      "gradient_accumulation": 4,
+      "clip_grad_norm": 1.0,
+      "precision": "bf16",
+      "device": "cuda",
+      "replay": true,
+      "verify_replay": false,
+      "live_fraction": 1.0,
+      "train_worlds": 128,
+      "distractors": 2,
+      "eval_worlds": 16,
+      "log_every": 1,
+      "max_source_tokens": 512,
+      "max_prompt_tokens": 4096,
+      "arm": "memory",
+      "retrieval": "oracle",
+      "routing_weight": 0.1,
+      "routing_warmup": 100,
+      "threads": 8,
+      "max_target_tokens": 512,
+      "checkpoint_every": 50,
+      "oracle_anchor_weight": 0.0,
+      "oracle_anchor_loops": 1,
+      "archive_dir": "/archive",
+      "archive_keep_checkpoints": 2,
+      "keep_checkpoints": 2,
+      "min_free_disk_bytes": 10737418240,
+      "wandb_mode": "offline",
+      "wandb_group": "looped-causal-pilot-20260919"
+    }
+  },
+  "input_identity": "ab7d13aa32af8ab53e33f9c4a0b493b684b47e4c298dbcfa3bd2b1ba056ec995",
+  "prepared_checksums": {
+    "input-lock.json": "a55a8e0596ca0db497181fd9f2b1425a928b3163f2955a4a0f0a104252ea0229",
+    "model-lock.json": "d6a01502e2ec658a809debae02951f71f2be57680d0bc5dae7b884c67a8ab34d",
+    "data/train.jsonl": "93b24f533292e761febb86aa1be74b4e5db20f696368a528cad08b65ca6add33",
+    "data/validation.jsonl": "a6435b0b6a68702f94dde5c5083da74ba23d6837be0021c01467efae8e357999",
+    "data/manifest.json": "ce0def0b64e05cbdb3bbb389b6842cf4c39402e8f01dfbe83a3273d7791881a1",
+    "text_bootstrap.yaml": "4b1c56d4e68148cc4cec5b832cb109033fd546aeff074d9d69cb93f158df16bf",
+    "recurrence_bridge.yaml": "81f29d1e8785f4d23f5e84d11c4e8a96144aeb0dcee785893c6d0265e91c4c2c",
+    "latent_warmup.yaml": "521b2d67bb31a0e19958471f0ca24637f0ba33d207127a87166b5f782a65de80",
+    "recurrent_joint.yaml": "169be7e82c5934bd760ead0fcdafbe079d3a77a093146825779c6c037db9ed86"
+  },
+  "model_lock": {
+    "model_id": "LiquidAI/LFM2.5-230M",
+    "revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "backend": "hf"
+  }
+}

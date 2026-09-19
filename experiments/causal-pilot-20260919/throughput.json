@@ -1,0 +1,306 @@
+{
+  "scope": "Two optimizer updates per stage; operational throughput only, no learning claim. Existing GPU workload ran concurrently.",
+  "stages": {
+    "latent_warmup": {
+      "steps": 2,
+      "elapsed_training_seconds": 1.5901211119999061,
+      "steady_second_update_seconds": 0.7416605780017562,
+      "resources": {
+        "process_peak_rss_bytes": 5683867648,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2055629824,
+        "cuda_peak_reserved_bytes": 5018484736,
+        "system_mem_available_bytes": 95626313728
+      },
+      "environment": {
+        "python": "3.12.3",
+        "machine": "aarch64",
+        "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+        "cuda_runtime": "13.2",
+        "cuda_available": true,
+        "gpu": "NVIDIA GB10",
+        "compute_capability": [
+          12,
+          1
+        ],
+        "bf16_supported": true,
+        "cuda_total_bytes": 130594091008,
+        "git_commit": "91f2442d56b22fabbfef0e8182ab0b93bea43b58",
+        "git_dirty": true,
+        "transformers": "5.17.0",
+        "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+        "total_parameters": 254331335,
+        "trainable_parameters": 24638151,
+        "notice": "Prototype measurements; not evidence of capacity substitution.",
+        "recurrence": {
+          "mode": "middle_block",
+          "prelude": [
+            0,
+            4
+          ],
+          "core": [
+            4,
+            10
+          ],
+          "coda": [
+            10,
+            14
+          ],
+          "loops": 2,
+          "layer_visits": 20,
+          "layer_types": [
+            "conv",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv"
+          ],
+          "new_bridge_parameters": 3148803,
+          "input_mix": 0.1000034511089325,
+          "update_mix": 0.10000365972518921,
+          "memory_mix": 0.10000000149011612,
+          "cache": "disabled; no KV or convolution state crosses a depth boundary",
+          "training_depths": [
+            2
+          ],
+          "writer_loops": 1
+        }
+      }
+    },
+    "recurrent_joint": {
+      "steps": 2,
+      "elapsed_training_seconds": 2.183666078999522,
+      "steady_second_update_seconds": 1.0207550319973961,
+      "resources": {
+        "process_peak_rss_bytes": 5737250816,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2641614336,
+        "cuda_peak_reserved_bytes": 5031067648,
+        "system_mem_available_bytes": 87205249024
+      },
+      "environment": {
+        "python": "3.12.3",
+        "machine": "aarch64",
+        "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+        "cuda_runtime": "13.2",
+        "cuda_available": true,
+        "gpu": "NVIDIA GB10",
+        "compute_capability": [
+          12,
+          1
+        ],
+        "bf16_supported": true,
+        "cuda_total_bytes": 130594091008,
+        "git_commit": "91f2442d56b22fabbfef0e8182ab0b93bea43b58",
+        "git_dirty": true,
+        "transformers": "5.17.0",
+        "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+        "total_parameters": 254331335,
+        "trainable_parameters": 93866055,
+        "notice": "Prototype measurements; not evidence of capacity substitution.",
+        "recurrence": {
+          "mode": "middle_block",
+          "prelude": [
+            0,
+            4
+          ],
+          "core": [
+            4,
+            10
+          ],
+          "coda": [
+            10,
+            14
+          ],
+          "loops": 3,
+          "layer_visits": 26,
+          "layer_types": [
+            "conv",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv"
+          ],
+          "new_bridge_parameters": 3148803,
+          "input_mix": 0.09999830275774002,
+          "update_mix": 0.10000111907720566,
+          "memory_mix": 0.09999776631593704,
+          "cache": "disabled; no KV or convolution state crosses a depth boundary",
+          "training_depths": [
+            2,
+            3
+          ],
+          "writer_loops": 1
+        }
+      }
+    },
+    "recurrence_bridge": {
+      "steps": 2,
+      "elapsed_training_seconds": 0.7388474780018441,
+      "steady_second_update_seconds": 0.35068287500325823,
+      "resources": {
+        "process_peak_rss_bytes": 5649354752,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 2055629824,
+        "cuda_peak_reserved_bytes": 5016387584,
+        "system_mem_available_bytes": 86699749376
+      },
+      "environment": {
+        "python": "3.12.3",
+        "machine": "aarch64",
+        "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+        "cuda_runtime": "13.2",
+        "cuda_available": true,
+        "gpu": "NVIDIA GB10",
+        "compute_capability": [
+          12,
+          1
+        ],
+        "bf16_supported": true,
+        "cuda_total_bytes": 130594091008,
+        "git_commit": "91f2442d56b22fabbfef0e8182ab0b93bea43b58",
+        "git_dirty": true,
+        "transformers": "5.17.0",
+        "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+        "total_parameters": 254331335,
+        "trainable_parameters": 24638151,
+        "notice": "Prototype measurements; not evidence of capacity substitution.",
+        "recurrence": {
+          "mode": "middle_block",
+          "prelude": [
+            0,
+            4
+          ],
+          "core": [
+            4,
+            10
+          ],
+          "coda": [
+            10,
+            14
+          ],
+          "loops": 2,
+          "layer_visits": 20,
+          "layer_types": [
+            "conv",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv"
+          ],
+          "new_bridge_parameters": 3148803,
+          "input_mix": 0.10000000149011612,
+          "update_mix": 0.10000000149011612,
+          "memory_mix": 0.10000000149011612,
+          "cache": "disabled; no KV or convolution state crosses a depth boundary",
+          "training_depths": [
+            2
+          ],
+          "writer_loops": 1
+        }
+      }
+    },
+    "text_bootstrap": {
+      "steps": 2,
+      "elapsed_training_seconds": 1.2058566350024194,
+      "steady_second_update_seconds": 0.5410528130014427,
+      "resources": {
+        "process_peak_rss_bytes": 4091965440,
+        "rss_scope": "process lifetime; not phase-isolated",
+        "cuda_peak_allocated_bytes": 4716554752,
+        "cuda_peak_reserved_bytes": 5016387584,
+        "system_mem_available_bytes": 88756215808
+      },
+      "environment": {
+        "python": "3.12.3",
+        "machine": "aarch64",
+        "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+        "cuda_runtime": "13.2",
+        "cuda_available": true,
+        "gpu": "NVIDIA GB10",
+        "compute_capability": [
+          12,
+          1
+        ],
+        "bf16_supported": true,
+        "cuda_total_bytes": 130594091008,
+        "git_commit": "91f2442d56b22fabbfef0e8182ab0b93bea43b58",
+        "git_dirty": true,
+        "transformers": "5.17.0",
+        "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+        "total_parameters": 254331335,
+        "trainable_parameters": 254331335,
+        "notice": "Prototype measurements; not evidence of capacity substitution.",
+        "recurrence": {
+          "mode": "middle_block",
+          "prelude": [
+            0,
+            4
+          ],
+          "core": [
+            4,
+            10
+          ],
+          "coda": [
+            10,
+            14
+          ],
+          "loops": 1,
+          "layer_visits": 14,
+          "layer_types": [
+            "conv",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv"
+          ],
+          "new_bridge_parameters": 3148803,
+          "input_mix": 0.10000000149011612,
+          "update_mix": 0.10000000149011612,
+          "memory_mix": 0.10000000149011612,
+          "cache": "disabled; no KV or convolution state crosses a depth boundary",
+          "training_depths": [
+            1
+          ],
+          "writer_loops": 1
+        }
+      }
+    }
+  }
+}
