@@ -209,6 +209,13 @@ state is implied. W&B identity and random episode-sampling position also survive
 
 ## Runtime rails and profiling
 
+Logged training updates include host `MemAvailable` where supported and CUDA
+allocated/reserved bytes plus the current attempt's allocation peak. These appear
+under `memory/` in W&B and `memory` in JSONL. Host and CUDA readings must not be
+added on unified-memory machines. CUDA allocator counters do not measure every
+driver or library allocation. Exact resume restores training state, not historical
+allocator peaks; the peak starts over for each attempt.
+
 Optional `cuda_memory_fraction` limits this process's CUDA allocator;
 `min_system_available_bytes` checks host `MemAvailable` before allocation and
 between updates, requesting a checkpointed stop under pressure. Neither adds host

@@ -165,7 +165,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     torch.set_num_threads(config.train.threads)
     random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
-    from .runtime import configure_memory, compute_watchdog, available_host_memory
+    from .runtime import configure_memory, compute_watchdog, available_host_memory, memory_metrics
     runtime_limits = configure_memory(config.train)
     reset_resource_peaks()
     rng = random.Random(config.train.seed)
@@ -371,6 +371,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                    "elapsed_seconds": time.perf_counter() - start_time}
             if hasattr(agent.backbone, "manifest"):
                 row["recurrence"] = agent.backbone.manifest()
+            if (step + 1) % config.train.log_every == 0 or step == start:
+                row['memory'] = memory_metrics(config.train.device)
             log.write(json.dumps(row) + "\n")
             log.flush()
             tracker.log(row)

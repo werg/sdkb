@@ -26,6 +26,7 @@ not appropriate for these short pilots.
 | W&B is telemetry, not recovery authority | Stable run ID, scalar/config logging, explicit offline segments, checkpoint-consistent JSONL. Online wiring exists; current pilots remain offline. |
 | Stalls need diagnostic evidence | Compute-only stack watchdog, disarmed for slow saves; no automatic destructive restart loop. |
 | Spark RAM and VRAM share physical memory | Optional allocator fraction plus host `MemAvailable` reserve and checkpointed pressure stop; no summing capacities. |
+| Slow memory growth needs a recorded trend | Logged updates include host available bytes, current CUDA allocation/reservation and attempt peak allocation in JSONL and W&B. Allocator readings do not synchronize the device. Earlier frozen runs retain their original telemetry. |
 | Source/config drift invalidates run interpretation | Immutable launch/data checksums, isolated checkouts for live experiments, per-attempt environment history. Operational checkpoint policy is recorded separately. |
 | Profile before changing checkpointing/batching | Two 100-update native Muon profiles: checkpointing off cut median update time 18%, raised peak CUDA allocation 2.14→2.53 GiB, and preserved every training metric and final weight-file hash. Applied only to this short binding distribution. |
 | Runtime compatibility must be verified on the actual machine | Native ARM64 NVIDIA Torch preserved; actual pretrained preflight and GPU training exercised. No x86 emulation or Torch replacement. |

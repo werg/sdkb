@@ -39,7 +39,9 @@ def test_interrupted_resume_matches_uninterrupted_with_cache_and_noise(tmp_path,
     for name in a:
         torch.testing.assert_close(a[name], b[name], rtol=0, atol=0)
     def rows(path):
-        return [{k: v for k, v in json.loads(s).items() if k != 'elapsed_seconds'}
+        # Wall time and allocator/host pressure are attempt telemetry, not
+        # restored scientific state. Every training metric must still match.
+        return [{k: v for k, v in json.loads(s).items() if k not in {'elapsed_seconds', 'memory'}}
                 for s in (path / 'metrics.jsonl').read_text().splitlines()]
     assert rows(full) == rows(resumed)
     with DiskStore(resumed / 'training_cache.sqlite').connect() as db:

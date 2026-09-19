@@ -27,6 +27,19 @@ def configure_memory(config):
                 min_system_available_bytes=config.min_system_available_bytes)
 
 
+def memory_metrics(device):
+    """Allocator counters without device synchronization; never sum host and CUDA RAM."""
+    result = {}
+    available = available_host_memory()
+    if available is not None:
+        result['host_available_bytes'] = available
+    if torch.device(device).type == 'cuda':
+        result.update(cuda_allocated_bytes=torch.cuda.memory_allocated(device),
+                      cuda_reserved_bytes=torch.cuda.memory_reserved(device),
+                      cuda_attempt_peak_allocated_bytes=torch.cuda.max_memory_allocated(device))
+    return result
+
+
 @contextmanager
 def compute_watchdog(seconds):
     """Dump stacks on a stall; never hard-kill a process with unsaved work.
