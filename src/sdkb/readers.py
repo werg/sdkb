@@ -24,10 +24,12 @@ class Statistics:
     """Actual numerator/mass equal stored tensors multiplied by exp(log_scale)."""
     numerator: Tensor  # [batch, slots, width]
     mass: Tensor  # [batch, slots, 1]
-    log_scale: Tensor  # [batch, slots, 1]; zero for the MLP reader
+    log_scale: Tensor  # [batch, slots, 1]; also stabilizes very small learned MLP gates
 
     def mean(self) -> Tensor:
-        return self.numerator / self.mass.clamp_min(torch.finfo(self.mass.dtype).tiny)
+        present = self.mass > 0
+        denominator = torch.where(present, self.mass, torch.ones_like(self.mass))
+        return torch.where(present, self.numerator / denominator, torch.zeros_like(self.numerator))
 
     def log_mass(self) -> Tensor:
         return torch.where(
@@ -77,14 +79,28 @@ class MLPRound(nn.Module):
             + self.query(query)[:, None, None, :]
             + self.slot[None, None, :, :]
         )
-        g = torch.sigmoid(self.gate(h)) if self.gate is not None else torch.ones_like(h[..., :1])
-        g = g * weights[:, :, None, None]
         dtype = accumulation_dtype(x)
-        pooled = (g.to(dtype) * h.to(dtype)).sum(1)
-        mass = g.to(dtype).sum(1)
+        if self.gate is not None:
+            logits = self.gate(h)
+            log_gate = F.logsigmoid(logits.to(dtype))
+            largest = log_gate.amax(1).detach()
+            # Preserve the ordinary serialized-precision path. When every gate
+            # in a slot becomes tiny, factor out a common scale BEFORE pooling
+            # and division: the mathematically cancelling 1/mass gradients must
+            # not overflow in BF16/FP32. Keep the scale for absolute mass and
+            # cross-chunk/compaction merging, just as the attention reader does.
+            scale = torch.where(largest < -40, largest, torch.zeros_like(largest))
+            g = torch.where((scale < 0)[:, None], (log_gate - scale[:, None]).exp(),
+                            logits.sigmoid().to(dtype))
+        else:
+            g = torch.ones_like(h[..., :1], dtype=dtype)
+            scale = torch.zeros_like(g[:, 0])
+        g = g * weights[:, :, None, None].to(dtype)
+        pooled = (g * h.to(dtype)).sum(1)
+        mass = g.sum(1)
         # Project once per output slot. Accumulation remains FP32 in BF16 runs.
         numerator = self.output(pooled.to(self.output.weight.dtype)).to(dtype)
-        return numerator, mass, torch.zeros_like(mass)
+        return numerator, mass, scale
 
 
 class AttentionRound(nn.Module):

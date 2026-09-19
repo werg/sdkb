@@ -122,3 +122,83 @@ def test_attention_zero_multiplicity_gradient_matches_explicit_formula():
     expected_value = torch.einsum('bmn,bnd->bmd', coeff, block.value(x)) / coeff.sum(-1, keepdim=True)
     expected = torch.autograd.grad(expected_value.sum(), weights)[0]
     torch.testing.assert_close(actual, expected)
+
+
+def test_zero_mass_statistics_backward_is_finite():
+    from sdkb.readers import Statistics
+    numerator = torch.zeros(1, 2, 8, requires_grad=True)
+    mass = torch.zeros(1, 2, 1, requires_grad=True)
+    stats = Statistics(numerator, mass, torch.zeros_like(mass))
+    (8 * stats.mean().sum()).backward()
+    assert torch.isfinite(numerator.grad).all()
+    assert torch.isfinite(mass.grad).all()
+
+
+@pytest.mark.parametrize('autocast', [False, True])
+def test_saturated_mlp_gate_has_finite_backward(autocast):
+    from contextlib import nullcontext
+    r = SetReader(8, 4, 8, width=16, slots=2, rounds=2, checkpoint_chunks=True)
+    for block in r.blocks:
+        with torch.no_grad():
+            block.gate.weight.zero_()
+            block.gate.bias.fill_(-1000)
+    x = torch.randn(1, 2, 8, requires_grad=True)
+    q = torch.randn(1, 4, requires_grad=True)
+    with torch.autocast('cpu', dtype=torch.bfloat16) if autocast else nullcontext():
+        out = r(x, q).tokens
+        loss = out.float().square().sum() * 100
+    loss.backward()
+    assert torch.isfinite(out).all()
+    for name, p in [('x', x), ('q', q), *r.named_parameters()]:
+        if p.grad is not None:
+            assert torch.isfinite(p.grad).all(), name
+
+
+def test_tiny_positive_gate_preserves_conditional_mean_mass_and_gradients():
+    from sdkb.readers import MLPRound, Statistics
+    torch.manual_seed(3)
+    block = MLPRound(4, 3, 8, 2)
+    with torch.no_grad():
+        block.gate.weight.zero_()
+        block.gate.bias.fill_(-90)
+    reference = copy.deepcopy(block).double()
+    x, q, state = torch.randn(1, 3, 4), torch.randn(1, 3), torch.randn(1, 2, 8)
+    weight = torch.tensor([[1., 0., 2.]])
+    stats = Statistics(*block(x, q, state, weight))
+    # Independent unscaled FP64 formula: no low-precision/log-scale helper.
+    h = torch.nn.functional.silu(reference.input(x.double())[:, :, None] +
+        reference.state(state.double())[:, None] + reference.query(q.double())[:, None, None] +
+        reference.slot[None, None])
+    g = reference.gate(h).sigmoid() * weight.double()[:, :, None, None]
+    numerator = reference.output((g * h).sum(1))
+    mass = g.sum(1)
+    torch.testing.assert_close(stats.mean().double(), numerator / mass, atol=2e-6, rtol=2e-5)
+    torch.testing.assert_close(stats.log_mass().double(), mass.log(), atol=1e-5, rtol=1e-6)
+    stats.mean().square().sum().backward()
+    (numerator / mass).square().sum().backward()
+    for name, parameter in block.named_parameters():
+        expected = dict(reference.named_parameters())[name].grad
+        assert torch.isfinite(parameter.grad).all(), name
+        torch.testing.assert_close(parameter.grad.double(), expected, atol=2e-6, rtol=2e-4)
+
+
+def test_extreme_gates_merge_before_normalization_with_full_gradients():
+    raw = reader(chunk_size=99)
+    for block in raw.blocks:
+        with torch.no_grad():
+            block.gate.bias.fill_(-90)
+    chunked = copy.deepcopy(raw)
+    chunked.chunk_size = 2
+    chunked.checkpoint_chunks = True
+    inputs = [torch.randn(1, 7, 7, dtype=torch.double, requires_grad=True),
+              torch.randn(1, 5, dtype=torch.double, requires_grad=True),
+              torch.rand(1, 7, dtype=torch.double, requires_grad=True)]
+    copies = [t.detach().clone().requires_grad_() for t in inputs]
+    a, b = raw(*inputs).tokens, chunked(*copies).tokens
+    torch.testing.assert_close(a, b, atol=1e-10, rtol=1e-10)
+    a.square().sum().backward()
+    b.square().sum().backward()
+    for x, y in zip(inputs + list(raw.parameters()), copies + list(chunked.parameters()), strict=True):
+        if x.grad is not None:
+            assert torch.isfinite(x.grad).all()
+            torch.testing.assert_close(x.grad, y.grad, atol=1e-9, rtol=1e-9)
