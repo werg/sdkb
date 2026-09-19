@@ -26,3 +26,10 @@ trainer stop/resume preserves complete microbatch/replay state. Both arms keep t
 10 GiB disk and 8 GiB host-memory reserves. No model architecture changes, downloads
 or paid collection are required. Finish the declared budgets before inspecting
 held-out results; do not select intermediate checkpoints by test performance.
+
+Before any held-out evaluation, also fix an endpoint-only intervention: complement
+each hex digit in the generated endpoint name, preserving source IDs, query/time,
+permission/restoration rules and all non-identifier answers. Read the offline
+alternate payloads under original oracle plans. Report both-correct identifier
+pairs and false changes in unrelated answers. This is a generated-data diagnostic,
+not a transformation of external/private source content.

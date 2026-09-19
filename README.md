@@ -15,6 +15,11 @@ exposed the dependence on supplied world membership. Later
 reaches 101/128 generated actions on a fresh 128-record bank, but
 [adding distractors](experiments/binding-bank-scale-20260919/README.md) reduces this
 to 76/128 at 4,096 records, with uncertain benefit over no memory.
+[Corrected scoring precision](experiments/binding-routing-precision-20260919/README.md)
+preserves this pattern (102/128 and 78/128). An
+[exact-detail control](experiments/binding-exact-detail-20260920/README.md)
+copies 64/64 unseen identifiers from selected text but 0/64 from latent payloads;
+perfect retrieval alone does not solve this representation/training failure.
 [Persistent compaction](experiments/binding-compaction-20260919/README.md) preserves
 sampled attention-system actions, while the MLP still loses conditional behavior.
 The [bgkit audit](docs/bgkit-audit.md) records storage, recovery and runtime adoption.

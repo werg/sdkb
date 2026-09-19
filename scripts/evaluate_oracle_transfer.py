@@ -3,6 +3,7 @@ import argparse
 from dataclasses import replace
 import json
 from pathlib import Path
+import re
 
 import torch
 
@@ -17,6 +18,29 @@ from sdkb.sessions import read_session
 from sdkb.store import DiskStore
 from sdkb.training import config_from_run, autocast_context
 from sdkb.trajectories import file_sha256
+
+
+def identifier_counterfactual(episode):
+    """Synthetic endpoint-only intervention, preserving IDs, rules and causal time."""
+    if not episode.task_family.startswith('multiuse/'):
+        raise ValueError('Generated multiuse episode required')
+    def invert(value):
+        if re.fullmatch(r'api_[0-9a-f]{6}', value) is None:
+            raise ValueError('Expected generated six-hex endpoint')
+        return 'api_'+''.join(format(int(c, 16) ^ 15, 'x') for c in value[4:])
+    sources = []
+    for source in episode.supports:
+        text = source.text
+        if source.kind == 'permission':
+            text, count = re.subn(r'(?<=Its endpoint is )api_[0-9a-f]{6}(?=\.)',
+                                 lambda match: invert(match[0]), text)
+            if count != 1:
+                raise ValueError('Malformed generated endpoint source')
+        sources.append(replace(source, text=text))
+    identifier = episode.task_family == 'multiuse/identifier'
+    return replace(episode, supports=tuple(sources),
+                   answer=invert(episode.answer) if identifier else episode.answer,
+                   choices=tuple(map(invert, episode.choices)) if identifier else episode.choices)
 
 
 @torch.no_grad()
@@ -45,6 +69,7 @@ def run(source, episodes_path, output):
         agent.requires_grad_(False)
         episodes = load_episodes(episodes_path)
         variants = {k: [counterfactual_multiuse(e, k) for e in episodes] for k in ('permission', 'restoration')}
+        variants['identifier'] = [identifier_counterfactual(e) for e in episodes]
         store = DiskStore(output/'bank.sqlite')
         writes = {}
         for name, group in [('global', episodes), *variants.items()]:
@@ -99,11 +124,12 @@ def run(source, episodes_path, output):
                       for c in sorted({r['condition'] for r in rows})
                       if (group := [r for r in rows if r['task_family'] == f and r['condition'] == c])}
                    for f in families}
+        cf_names = tuple('cf_'+name for name in variants)
         scores['counterfactuals_by_family'] = {f: counterfactual_metrics(
-            [r for r in scores['rows'] if r['task_family'] == f], ('cf_permission', 'cf_restoration')) for f in families}
+            [r for r in scores['rows'] if r['task_family'] == f], cf_names) for f in families}
         generation_cf = {f: counterfactual_metrics(
             [dict(r, choice_correct=r['exact_match'], predicted_action=r['prediction'])
-             for r in rows if r['task_family'] == f], ('cf_permission', 'cf_restoration')) for f in families}
+             for r in rows if r['task_family'] == f], cf_names) for f in families}
         atomic_json(output/'results.json', {'inputs': identity, 'writes': writes, 'scores': scores,
             'generation_rows': rows, 'generation_summary': summary, 'generation_counterfactuals': generation_cf,
             'bank_sha256': file_sha256(store.path),

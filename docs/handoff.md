@@ -1,5 +1,11 @@
 # SDKB 0.4 handoff and publication
 
+> Historical container handoff. The project is now running on the Spark and
+> commits have been pushed through authenticated local Git. Use the current
+> [README](../README.md), [operations guide](operations.md) and
+> [native validation](validation-spark.md) for the present state. The original
+> publication-access account below describes the earlier container environment.
+
 The rewritten repository is delivered as `sdkb-v0.4.bundle` with complete Git history,
 plus source ZIP/tarball and a patch from the previous version.
 

@@ -1,7 +1,27 @@
 # Development and research backlog
 
-Checkboxes mean implemented tasks, not validated scientific hypotheses. The
-reference tests and CPU runs are recorded in `validation-v0.2.md`.
+Checkboxes mean completed engineering or explicitly scoped experiments, not general
+scientific validation. Current native results are in `validation-spark.md`; earlier
+CPU reference evidence remains in `validation-v0.2.md`.
+
+## Current priorities — 20 September 2026
+
+1. **Latent exact-detail learning.** The same frozen decoder copies 64/64 unseen
+   endpoint strings from selected text and 0/64 from selected latent payloads.
+   Matched 128/1,024-fresh-world Muon continuations are running; preserve oracle
+   composition and measure payload dependence, not just training fit.
+2. **Global address generalization.** Corrected training gets 102/128 free actions
+   at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
+   training fit but reduce held-out pair retrieval. No robust large-bank claim.
+3. **MLP conditional compaction.** Preserve numerator/mass and source-change
+   behavior before claiming useful persistent compression. Raw subset fallbacks
+   remain necessary and count toward the disk budget.
+4. **Real task success and capacity substitution.** Synthetic composition and
+   teacher NLL do not establish these. Compare information-matched systems with
+   actual task verifiers and resident-weight/storage/latency accounting.
+
+The external-disk, emergency recovery, complete optimizer state, W&B and Spark
+runtime work is tracked in `bgkit-audit.md`; it is part of the running experiments.
 
 ## A. Numerical reference and runnable development
 
@@ -14,7 +34,7 @@ reference tests and CPU runs are recorded in `validation-v0.2.md`.
 - [x] Support/query trainer, mixed cached/live writes, gradient accumulation, checkpoint/resume.
 - [x] General support/query JSONL input and stored-only likelihood evaluation.
 - [x] CPU CLI, environment doctor, native Spark Docker/devcontainer configuration.
-- [ ] Run the provided image and real LFM checkpoint on DGX Spark.
+- [x] Run the native image and real LFM checkpoint on DGX Spark.
 - [x] Add periodic checkpoints, coordinated multi-file/cache recovery and an interrupted-run test.
 
 ## B. Oracle transfer and composition — first scientific milestone
@@ -23,6 +43,8 @@ reference tests and CPU runs are recorded in `validation-v0.2.md`.
 - [x] Main/wide-payload/direct-latent/attention configuration controls.
 - [x] Establish a partial tiny-model stored-memory/joint-use signal with interventions.
 - [ ] Establish reliable counterfactual composition on the actual pretrained student.
+  Narrow oracle-selected binding composition now succeeds; global retrieval and
+  targeted counterfactual reliability remain incomplete.
 - [x] Add multiple uses of one write, variable bindings and separate held-out worlds (new real task families remain open).
 - [x] Add a source-independent shared-compute control to isolate extra decoder positions.
 - [ ] Train and compare LFM and SmolLM oracle-text ability before attributing reader failures.
@@ -66,6 +88,6 @@ reference tests and CPU runs are recorded in `validation-v0.2.md`.
 
 - [x] Local Git repository and commits supplied in the handoff bundle.
 - [x] Private create/push helper, CPU CI, manual Spark workflow and issue templates.
-- [ ] Create the remote repo and push using an authenticated write-capable environment.
+- [x] Publish commits to the existing remote using authenticated local Git.
 - [ ] Choose code license and repository visibility policy.
 - [ ] Register a trusted self-hosted Spark runner only when needed.
