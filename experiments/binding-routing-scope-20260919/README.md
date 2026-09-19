@@ -29,3 +29,12 @@ and counterfactual controls. Report sufficient-support recall separately from th
 full required pair and from source-kind selection. Run candidate-free generation
 on the first eight worlds, 24 tokens. One seed, synthetic tasks and world-scoped
 eligibility do not establish global retrieval or agent success.
+
+
+The native model-interface preflight passed from `67933bf`: zero one-pass identity
+and causal-prefix error, finite memory/bridge gradients. It checks the model's
+interface before optimizer scope is applied; the separate scope regression checks
+frozen paths and exact Muon resume. At the endpoint, `verify_frozen.py` checks every
+non-address tensor and compares all serialized payloads plus oracle/no-memory rows
+against the source on the same new worlds. Passing this check is distinct from
+learning successful routing.
