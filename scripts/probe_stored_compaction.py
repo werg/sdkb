@@ -34,6 +34,13 @@ def plan_for(episode):
                     tuple(Selection(rid, 0.) for rid in sorted(episode.required_ids)))
 
 
+def progress(event):
+    try:
+        print(json.dumps(event), flush=True)
+    except OSError:
+        pass
+
+
 def serialized_codes(compactor, raw):
     """Differentiable cast reproduces the persisted BF16-value/FP32-mass forward."""
     values, weights = compactor(raw, raw.new_ones(raw.shape[:2]))
@@ -246,7 +253,8 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59):
             if (output / f'{method}-stored.json').exists():
                 continue
             report = stored_transfer_evaluation(agent, stores['heldout'], episodes['heldout'],
-                                                cluster_bank=bank, drop_supports=True)
+                                                cluster_bank=bank, drop_supports=True,
+                                                progress=lambda event: progress({'method': method, **event}))
             report['code_storage'] = bank.sizes()
             atomic_json(output / f'{method}-stored.json', report)
 

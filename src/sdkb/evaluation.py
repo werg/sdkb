@@ -74,13 +74,13 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                                namespace: str = 'global', generation: str = 'frozen-v1',
                                compact: bool = False, drop_supports: bool = False, cluster_bank=None,
                                fixed_plans_by_episode=None, capture_plans=None,
-                               full_evidence_only: bool = False) -> dict:
+                               full_evidence_only: bool = False, progress=None) -> dict:
     """Never calls the writer. Retrieval competes across worlds in a shared bank."""
     if agent.training:
         raise ValueError('Evaluation requires frozen weights')
     rows = []
     with autocast_context(agent.config):
-        for episode in episodes:
+        for index, episode in enumerate(episodes, 1):
             original_plans = (None if fixed_plans_by_episode is None else
                               [[replace(p, namespace=namespace) for p in step]
                                for step in fixed_plans_by_episode[episode.episode_id]])
@@ -128,6 +128,8 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                              'read_count': len(plans),
                              'payload_accounting': session.payload_accounting if arm in {'memory', 'direct_latent'} and condition != 'none' else [],
                              'complete_support': complete_support_recall(selected_set, groups)})
+            if progress is not None and (index % 32 == 0 or index == len(episodes)):
+                progress({'completed_queries': index, 'total_queries': len(episodes), 'scored_rows': len(rows)})
     families = {family: summarize_rows([r for r in rows if r['task_family'] == family])
                 for family in sorted({r['task_family'] for r in rows})}
     return {'schema_version': 2, 'protocol': 'write-once, serialize/reload, global stored-only bank',

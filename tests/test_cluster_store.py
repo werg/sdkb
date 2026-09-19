@@ -98,7 +98,10 @@ def test_stored_codes_need_neither_writer_nor_compactor_at_read(tmp_path, tiny_c
         raise AssertionError('Inference regenerated stored representations')
     monkeypatch.setattr(agent, 'produce', forbidden)
     monkeypatch.setattr(agent.compactor if timing == 'prefix' else compactor, 'forward', forbidden)
-    result = stored_transfer_evaluation(agent, DiskStore(store.path), episodes, cluster_bank=codes)
+    updates = []
+    result = stored_transfer_evaluation(agent, DiskStore(store.path), episodes, cluster_bank=codes,
+                                        progress=updates.append)
+    assert updates == [{'completed_queries': 3, 'total_queries': 3, 'scored_rows': 12}]
     persistent = [r for r in result['rows'] if r['condition'] == 'persistent']
     assert len(persistent) == 3
     assert persistent[0]['payload_accounting'][0]['raw_fallback_ids']
