@@ -1,0 +1,15 @@
+{
+  "controller_commit": "b915bf8",
+  "model_commit": "c58028c",
+  "maximum_concurrent_children": 2,
+  "scripts": {
+    "experiments/binding-endpoint-freshness-20260920/run_supplemental.py": "b7d2ba6d86ae46c06d2a8a778f1dccfaa59da3adb0bad5c29b8a59d9b8ab20b8",
+    "experiments/binding-compact-aware-20260920/run_confirmation.py": "b945d65edab1174d19596ad1374a140570cec9fcea865eb741091e555b5482df"
+  },
+  "launch_training_steps": {
+    "256": 3137,
+    "8192": 3137
+  },
+  "phase_at_launch": "waiting for primary confirmation queue",
+  "controls": "Shared study-root and confirmation-queue cooperative stop; existing frozen children retain resumable progress."
+}
