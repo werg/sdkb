@@ -1,0 +1,14 @@
+{
+  "issue": "Reader null_tokens are learned fallback embeddings but were assigned to Muon as ordinary 2D transforms.",
+  "failed_regressions_before_fix": 2,
+  "full_suite_passed": 434,
+  "ruff": "passed",
+  "validation": [
+    "MLP and attention fallback tables owned by AdamW; linear transforms retain Muon",
+    "Empty-neighborhood backward reaches every fallback-table entry",
+    "Old Muon table ownership rejected before loading model weights",
+    "Exact complete and partial-accumulation Muon resume remains covered"
+  ],
+  "test_log": "/archive/profiles/muon-fallback-full-tests.log",
+  "compatibility": "Older Muon runs require their original frozen checkout for exact resume. Explicit warm-starts adopt the corrected policy; no momentum remapping. Active endpoint-freshness runs remain frozen at c58028c."
+}

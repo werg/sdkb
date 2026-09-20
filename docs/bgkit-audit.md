@@ -145,3 +145,13 @@ files unchanged. Five new regression cases failed before the fix; current comple
 AdamW/Muon and partial-accumulation resume tests still pass. The full suite is now
 421 tests. Older incomplete states require their original checkout/mutable run or
 an explicit warm-start; this does not change current checkpoint contents.
+
+
+A final parameter-level Muon audit found that reader `null_tokens` fallback tables
+were missed by the slot-table exclusion. Both MLP and attention regressions fail
+under the old factory; the corrected factory assigns these tables to AdamW while
+retaining Muon for reader transforms. A legacy-topology regression confirms refusal
+before model mutation, and complete/partial-accumulation resume still matches exactly.
+All 434 tests pass. Existing frozen studies retain their original policy and must
+resume with that checkout; future warm-starts adopt corrected ownership. Evidence:
+`experiments/operations-20260920/muon-fallback-ownership.json`.

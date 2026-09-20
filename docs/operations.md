@@ -232,6 +232,13 @@ Use `sdkb restore` to recover an archive into a new mutable run directory. Direc
 checkpoint paths remain valid for evaluation, warm-starts and read-only state loading;
 the latter still verifies the dataset and base-model revision.
 
+A 20 September ownership correction moves reader `null_tokens` fallback tables
+from Muon to AdamW, consistent with the embedding/slot rule. This changes named
+group membership for future runs. Older Muon checkpoints still resume exactly
+from their original frozen checkout; current code rejects their former group
+ordering. Use an explicit weight warm-start for the corrected policy. Do not
+reinterpret old momentum as AdamW state or alter an active run's optimizer.
+
 Current resume requires a manifest, explicit optimizer type and named ownership,
 global Python RNG, episode-sampler RNG and Torch/CUDA RNG state. Older states
 missing these fields are rejected instead of substituting another RNG or guessing

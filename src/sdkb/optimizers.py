@@ -67,9 +67,10 @@ def make_optimizer(agent):
             head = lm.get_output_embeddings()
             if head is not None:
                 excluded.update(id(p) for p in head.parameters())
-        # Learned slot tables are embeddings even when represented by Parameters.
+        # Learned slot/fallback-token tables are embeddings, not linear transforms.
         excluded.update(id(p) for name, p in named.items()
-                        if name.endswith(('.slot', '_slots', 'workspace')) or 'lora_' in name.lower())
+                        if name.endswith(('.slot', '_slots', 'workspace', '.null_tokens'))
+                        or 'lora_' in name.lower())
         muon, adam = [], []
         for group in groups:
             matrices = [p for p in group['params'] if p.ndim == 2 and id(p) not in excluded]

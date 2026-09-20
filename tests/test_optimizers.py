@@ -10,6 +10,63 @@ from sdkb.optimizers import make_optimizer
 from sdkb.training import train
 
 
+@pytest.mark.skipif(not hasattr(torch.optim, 'Muon'), reason='Native Muon unavailable in this Torch')
+@pytest.mark.parametrize('kind', ['mlp', 'attention'])
+def test_muon_excludes_reader_fallback_token_tables(tiny_config, kind):
+    config = copy.deepcopy(tiny_config)
+    config.train.optimizer = 'muon'
+    config.memory.reader = kind
+    agent = SDKBAgent(config)
+    optimizer = make_optimizer(agent)
+    muon_ids = {id(p) for g in optimizer.optimizers['muon'].param_groups for p in g['params']}
+    adam_ids = {id(p) for g in optimizer.optimizers['adamw'].param_groups for p in g['params']}
+    from sdkb.readers import SetReader
+    readers = [m for m in agent.modules() if isinstance(m, SetReader)]
+    assert readers
+    for reader in readers:
+        assert id(reader.null_tokens) not in muon_ids
+        assert id(reader.null_tokens) in adam_ids
+        assert id(reader.initial_slots) in adam_ids
+        assert id(reader.output[-1].weight) in muon_ids
+        query = torch.randn(1, reader.query_dim)
+        empty = torch.empty(1, 0, reader.input_dim)
+        reader(empty, query).tokens.sum().backward()
+        assert torch.count_nonzero(reader.null_tokens.grad) == reader.null_tokens.numel()
+
+
+@pytest.mark.skipif(not hasattr(torch.optim, 'Muon'), reason='Native Muon unavailable in this Torch')
+def test_legacy_muon_slot_ownership_is_rejected_before_loading_weights(tmp_path, tiny_config, monkeypatch):
+    import random
+    from sdkb import checkpoints
+    from sdkb.optimizers import MuonAdamW
+    from sdkb.store import DiskStore
+    config = copy.deepcopy(tiny_config)
+    config.train.optimizer = 'muon'
+    agent = SDKBAgent(config)
+    optimizer = make_optimizer(agent)
+    # Construct the previous ownership topology: fallback tables in memory Muon.
+    groups = {name: [dict(params=list(g['params']), lr=g['lr']) for g in opt.param_groups]
+              for name, opt in optimizer.optimizers.items()}
+    tables = {id(p) for name, p in agent.named_parameters() if name.endswith('.null_tokens')}
+    moved = [p for g in groups['adamw'] for p in g['params'] if id(p) in tables]
+    assert moved
+    for group in groups['adamw']:
+        group['params'] = [p for p in group['params'] if id(p) not in tables]
+    groups['muon'][-1]['params'].extend(moved)
+    order = {id(p): i for i, p in enumerate(agent.parameters())}
+    groups['muon'][-1]['params'].sort(key=lambda p: order[id(p)])
+    legacy = MuonAdamW(groups['muon'], groups['adamw'], config.train)
+    names = {id(p): name for name, p in agent.named_parameters()}
+    legacy._sdkb_parameter_names = [[names[id(p)] for p in g['params']] for g in legacy.param_groups]
+    cache = DiskStore(tmp_path/'cache.sqlite')
+    saved = checkpoints.save_checkpoint(agent, legacy, tmp_path, 0, random.Random(1), cache, 'fixture')
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Ownership mismatch must fail before model mutation')
+    monkeypatch.setattr(checkpoints, 'load_model', forbidden)
+    with pytest.raises(ValueError, match='names/order changed'):
+        checkpoints.restore_checkpoint(agent, optimizer, saved, random.Random(1), 'fixture')
+
+
 def assert_state_equal(a, b):
     if isinstance(a, torch.Tensor):
         torch.testing.assert_close(a, b, rtol=0, atol=0)
