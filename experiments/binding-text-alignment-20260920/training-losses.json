@@ -1,0 +1,25 @@
+{
+  "common_updates": 800,
+  "smoothing_window": 100,
+  "arms": {
+    "control": {
+      "metrics_prefix_sha256": "31144cb7c53b152b837824336bc6d6a2b406ca82a6a4cf7bbfb5f5b79fcdd920",
+      "nll": {
+        "first_100": 1.0776865941745233,
+        "last_100": 0.9574212606692056
+      }
+    },
+    "alignment": {
+      "metrics_prefix_sha256": "9fc85c3aa644a4b28510e2c467e89992d9473d5c7dd2864d1296f2f18840bb9f",
+      "nll": {
+        "first_100": 1.0778882654202013,
+        "last_100": 0.9322503640893904
+      },
+      "oracle_alignment_loss": {
+        "first_100": 0.41061942213214936,
+        "last_100": 0.28965699386317284
+      }
+    }
+  },
+  "notice": "Training diagnostics only. Alignment loss is not measured in the control; its logged zero is not a comparison value. Same update count is not equal compute."
+}

@@ -2,7 +2,12 @@
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 image="${SDKB_IMAGE:-sdkb-spark:0.4}"
-cache="${SDKB_CACHE_DIR:-$HOME/.cache/sdkb}"
+configured_cache="${SDKB_CACHE_DIR:-}"
+if [[ -z "$configured_cache" && -f "$root/.sdkb/cache-dir" ]]; then
+  IFS= read -r configured_cache < "$root/.sdkb/cache-dir" || true
+  [[ -n "$configured_cache" ]] || { echo 'Empty .sdkb/cache-dir storage setting.' >&2; exit 1; }
+fi
+cache="${configured_cache:-$HOME/.cache/sdkb}"
 configured_runs="${SDKB_RUNS_DIR:-}"
 if [[ -z "$configured_runs" && -f "$root/.sdkb/runs-dir" ]]; then
   IFS= read -r configured_runs < "$root/.sdkb/runs-dir" || true
@@ -41,7 +46,11 @@ case "$command" in
     else
       mkdir -p "$runs"
     fi
-    mkdir -p "$cache"
+    if [[ -n "$configured_cache" ]]; then
+      [[ -d "$cache" ]] || { echo 'Configured cache storage is unavailable; check the mounted disk.' >&2; exit 1; }
+    else
+      mkdir -p "$cache"
+    fi
     if [[ "$command" == start || ( "${1:-}" == sdkb && ( "${2:-}" == launch || "${2:-}" == train || ( "${2:-}" == runs && "${3:-}" == start ) ) ) ]]; then
       previous=""
       for argument in "$@"; do

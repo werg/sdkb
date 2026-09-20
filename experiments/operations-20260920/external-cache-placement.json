@@ -1,0 +1,74 @@
+{
+  "source": "/home/werg/.cache/sdkb/huggingface/hub/models--LiquidAI--LFM2.5-230M",
+  "destination": "/mnt/external/sdkb-archive/cache/huggingface/hub/models--LiquidAI--LFM2.5-230M",
+  "copied_file_bytes": 464141663,
+  "entries": {
+    "refs/main": {
+      "sha256": "18ad3c304ae09b7516f78ccaee6194dc2597916c3be3bb45951ad0d965dc6936",
+      "bytes": 40
+    },
+    "blobs/7f1fcf6bdf7270b515346a77df526191098b1bae": {
+      "sha256": "c5b67247c9f736f6c40eaa91ae1ef27dc67f5b041eedaadb97a1bea5030fb0ff",
+      "bytes": 4762
+    },
+    "blobs/7889b3e0cc33c91ded72d818112705b075b73ae8": {
+      "sha256": "f7d0bcc454b7a30fa471b1e7b9e359e11fb25b56f5b4ffd59bb18248e3c2ea3d",
+      "bytes": 1568
+    },
+    "blobs/f630da86651136c9aee893b04b7542007e90fdd718355358e57e7ecc31517cfd": {
+      "sha256": "f630da86651136c9aee893b04b7542007e90fdd718355358e57e7ecc31517cfd",
+      "bytes": 459401112
+    },
+    "blobs/2e27bba0b0505b2b2124fa9225c9b5dda7531474": {
+      "sha256": "df1d8d5ec5d091b460562ffd545e4a5e91d17d4a0db7ebe733be34ed374377bd",
+      "bytes": 4733389
+    },
+    "blobs/323dd874121de0ec6ada96a3282404cfd537b70e": {
+      "sha256": "4f88574c47c3215f7f952e1f520d1df7387422dde0345655228fb7b3fde6858c",
+      "bytes": 303
+    },
+    "blobs/a693291ba42b073cf2d964ef702355004707e92a": {
+      "sha256": "75c287923e252b08b0a0f1c367bbe557ab23a681d0b71c5a34e0932ddbe2f5ee",
+      "bytes": 489
+    },
+    "snapshots/40cb2ad3b3044d5a41eee083a6103c8b523afa45/tokenizer_config.json": {
+      "symlink": "../../blobs/a693291ba42b073cf2d964ef702355004707e92a"
+    },
+    "snapshots/40cb2ad3b3044d5a41eee083a6103c8b523afa45/chat_template.jinja": {
+      "symlink": "../../blobs/7f1fcf6bdf7270b515346a77df526191098b1bae"
+    },
+    "snapshots/40cb2ad3b3044d5a41eee083a6103c8b523afa45/generation_config.json": {
+      "symlink": "../../blobs/323dd874121de0ec6ada96a3282404cfd537b70e"
+    },
+    "snapshots/40cb2ad3b3044d5a41eee083a6103c8b523afa45/config.json": {
+      "symlink": "../../blobs/7889b3e0cc33c91ded72d818112705b075b73ae8"
+    },
+    "snapshots/40cb2ad3b3044d5a41eee083a6103c8b523afa45/model.safetensors": {
+      "symlink": "../../blobs/f630da86651136c9aee893b04b7542007e90fdd718355358e57e7ecc31517cfd"
+    },
+    "snapshots/40cb2ad3b3044d5a41eee083a6103c8b523afa45/tokenizer.json": {
+      "symlink": "../../blobs/2e27bba0b0505b2b2124fa9225c9b5dda7531474"
+    },
+    ".no_exist/40cb2ad3b3044d5a41eee083a6103c8b523afa45/special_tokens_map.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".no_exist/40cb2ad3b3044d5a41eee083a6103c8b523afa45/adapter_config.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".no_exist/40cb2ad3b3044d5a41eee083a6103c8b523afa45/added_tokens.json": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".no_exist/40cb2ad3b3044d5a41eee083a6103c8b523afa45/tokenizer.model": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "all_files_and_links_verified": true,
+  "source_retired": false,
+  "reason": "Existing frozen container mounts the old cache; retain until its primary and selected-text evaluators finish. Future wrapper launches use external cache.",
+  "wrapper_tests": "17 passed; 3 new cache-placement regressions failed before fix",
+  "full_suite": "499 passed, 4 warnings, 41.66 seconds"
+}

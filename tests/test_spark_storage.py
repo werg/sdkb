@@ -25,9 +25,40 @@ def wrapper(tmp_path, monkeypatch):
     monkeypatch.setenv('CAPTURE', str(capture))
     monkeypatch.setenv('PATH', str(bin_dir) + ':/usr/bin:/bin')
     monkeypatch.setenv('SDKB_CACHE_DIR', str(tmp_path / 'cache'))
+    (tmp_path / 'cache').mkdir()
     monkeypatch.delenv('SDKB_RUNS_DIR', raising=False)
     monkeypatch.delenv('SDKB_ARCHIVE_DIR', raising=False)
     return root, script, capture
+
+
+def test_machine_cache_default_and_environment_override(wrapper, tmp_path, monkeypatch):
+    root, script, capture = wrapper
+    external = tmp_path/'external cache'
+    external.mkdir()
+    (root/'.sdkb/cache-dir').write_text(str(external)+'\n')
+    monkeypatch.delenv('SDKB_CACHE_DIR')
+    args = ['bash', str(script), 'run', 'sdkb', 'doctor']
+    subprocess.run(args, check=True, capture_output=True)
+    assert f'type=bind,src={external},dst=/cache' in capture.read_text().splitlines()
+    override = tmp_path/'override-cache'
+    override.mkdir()
+    monkeypatch.setenv('SDKB_CACHE_DIR', str(override))
+    subprocess.run(args, check=True, capture_output=True)
+    assert f'type=bind,src={override},dst=/cache' in capture.read_text().splitlines()
+
+
+@pytest.mark.parametrize('environment', [False, True])
+def test_missing_configured_cache_is_not_created(wrapper, tmp_path, monkeypatch, environment):
+    root, script, capture = wrapper
+    absent = tmp_path/'unmounted'/'cache'
+    if environment:
+        monkeypatch.setenv('SDKB_CACHE_DIR', str(absent))
+    else:
+        monkeypatch.delenv('SDKB_CACHE_DIR')
+        (root/'.sdkb/cache-dir').write_text(str(absent)+'\n')
+    result = subprocess.run(['bash', str(script), 'run', 'sdkb', 'doctor'], capture_output=True)
+    assert result.returncode != 0
+    assert not absent.exists() and not capture.exists()
 
 
 def test_machine_storage_default_and_environment_override(wrapper, tmp_path, monkeypatch):

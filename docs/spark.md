@@ -105,8 +105,14 @@ The container uses the caller's UID/GID, a mounted checkout at `/workspace/sdkb`
 from the last committed checkpoint, not a partially written optimizer state.
 Only one launcher should use a given output directory.
 
-`SDKB_CACHE_DIR` defaults to `~/.cache/sdkb`, mounted at `/cache`, with HF cache at
-`/cache/huggingface`. Downloads require network and adequate SSD capacity. Streaming
+`SDKB_CACHE_DIR` overrides the ignored, checkout-local `.sdkb/cache-dir` setting.
+With neither configured, cache storage defaults to `~/.cache/sdkb`. It is mounted
+at `/cache`, with Hugging Face model/dataset caches under `/cache/huggingface`.
+An explicitly configured cache directory must already exist; an unavailable path
+fails before Docker launch rather than being created on an unintended disk.
+On this machine `.sdkb/cache-dir` now selects `/mnt/external/sdkb-archive/cache`.
+Other machines choose their own path; no external-disk location is hardcoded.
+Downloads require network and adequate storage capacity. Streaming
 bounds selected rows/buffering, not necessarily remote Parquet bytes transferred.
 Check actual cache/checkpoint disk usage before scaling sources. Every saved optimizer
 checkpoint can be significantly larger than model weights alone.
