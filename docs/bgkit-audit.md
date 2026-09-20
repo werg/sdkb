@@ -250,3 +250,16 @@ before correction; all 470 tests and eight focused runner cases pass. This does
 not preempt a running kernel or continuously monitor every evaluation entry point.
 Active frozen capacity training/confirmation retains `b38564a`. Evidence:
 `experiments/operations-20260920/evaluation-pressure-resume.json`.
+
+
+Following the profile-before-optimization lesson, an explicit fully-live/oracle
+producer policy was tested against the full candidate reference. It avoids encoding
+unread sources while preserving all Python sampler draws and actual scheduled
+reads. Mixed caches and learned addressing are rejected. Full-graph/replay CPU
+comparisons include noise, cumulative reads and exact partial-microbatch Muon
+recovery. Two 50-update native BF16 Muon profiles reproduce every final weight,
+optimizer/RNG value and training metric bitwise. Their sequential timings have
+unequal contention and are not a causal throughput estimate. The option stays
+recorded and opt-in; current capacity jobs are unchanged. One complete final set
+per profile remains external, with another 1,017,349,676 duplicate weight bytes
+removed. See `experiments/selected-producer-profile-20260920/README.md`.
