@@ -1,0 +1,94 @@
+{
+  "control-fixed": {
+    "inputs": {
+      "checkpoint_manifest_sha256": "fd3114b7e7440c5e6275a6acc76eff8707a3a4ae61187f0263974df64b538703",
+      "episodes_sha256": "9009d9f784335830270b0271c0a384c73b2df7e6fd1b470a0480f6e22b5a6b82",
+      "reference_sha256": "5de570b45172a9fd6d07286efe2d3d352cedbbef0455b8e7cddb2a92b05364ae",
+      "script_sha256": "51973063f0d55d0954d4294f9b2c15de653db2021dacf932716bc4f0f7c18f25",
+      "max_new_tokens": 24,
+      "selected_text_helper_sha256": "a6c4d64b0e73450b1a39959f7375dc2e32a1074ece8e915263f55c25597bd231"
+    },
+    "summary": {
+      "text_required": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      }
+    },
+    "notice": "Post-hoc diagnostic on the declared confirmation corpus. Same selected source information; unequal text/latent token budgets. Source text is an inert control input, not a production latent inference fallback. No candidate answers passed to generation.",
+    "results_sha256": "d321c292975357bb07b3ee4e061c7a80fd2c66a81fdc595d4942bf193efef139",
+    "execution_commit": "2d07c58"
+  },
+  "fixed-fixed": {
+    "inputs": {
+      "checkpoint_manifest_sha256": "907bb9fd5a7b69462274243161b05d6c2d1f23812b6ebe616e60a05fad6928d4",
+      "episodes_sha256": "9009d9f784335830270b0271c0a384c73b2df7e6fd1b470a0480f6e22b5a6b82",
+      "reference_sha256": "99bdb8544aca50ed3802f6d32550665e5e6627e28f5a81caf1f899b3d98468fc",
+      "script_sha256": "51973063f0d55d0954d4294f9b2c15de653db2021dacf932716bc4f0f7c18f25",
+      "max_new_tokens": 24,
+      "selected_text_helper_sha256": "a6c4d64b0e73450b1a39959f7375dc2e32a1074ece8e915263f55c25597bd231"
+    },
+    "summary": {
+      "text_required": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      }
+    },
+    "notice": "Post-hoc diagnostic on the declared confirmation corpus. Same selected source information; unequal text/latent token budgets. Source text is an inert control input, not a production latent inference fallback. No candidate answers passed to generation.",
+    "results_sha256": "7f9cac3feb98e03500116ac924450e35dd14e646c7dbf8b2bc6e6232b3f84aba",
+    "execution_commit": "2d07c58"
+  },
+  "control-original": {
+    "inputs": {
+      "checkpoint_manifest_sha256": "fd3114b7e7440c5e6275a6acc76eff8707a3a4ae61187f0263974df64b538703",
+      "episodes_sha256": "c69f65175a51bfe89e3fcede53e23c09059553cddef04600678485860a818a37",
+      "reference_sha256": "f5f38f8a4fb2e88d0528fafd88751a4a00679a41e292cae7376748d7569ee396",
+      "script_sha256": "51973063f0d55d0954d4294f9b2c15de653db2021dacf932716bc4f0f7c18f25",
+      "max_new_tokens": 24,
+      "selected_text_helper_sha256": "a6c4d64b0e73450b1a39959f7375dc2e32a1074ece8e915263f55c25597bd231"
+    },
+    "summary": {
+      "text_required": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      }
+    },
+    "notice": "Post-hoc diagnostic on the declared confirmation corpus. Same selected source information; unequal text/latent token budgets. Source text is an inert control input, not a production latent inference fallback. No candidate answers passed to generation.",
+    "results_sha256": "f4838a852314d09cab5f11d1f813d30dd62dd08ed211a49203acc6459ad79848",
+    "execution_commit": "23a27ec"
+  },
+  "fixed-original": {
+    "inputs": {
+      "checkpoint_manifest_sha256": "907bb9fd5a7b69462274243161b05d6c2d1f23812b6ebe616e60a05fad6928d4",
+      "episodes_sha256": "c69f65175a51bfe89e3fcede53e23c09059553cddef04600678485860a818a37",
+      "reference_sha256": "8b690fc83f9b256d5cab574fa305f6544e36267e55f83ab721d416becde7d70a",
+      "script_sha256": "51973063f0d55d0954d4294f9b2c15de653db2021dacf932716bc4f0f7c18f25",
+      "max_new_tokens": 24,
+      "selected_text_helper_sha256": "a6c4d64b0e73450b1a39959f7375dc2e32a1074ece8e915263f55c25597bd231"
+    },
+    "summary": {
+      "text_required": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      }
+    },
+    "notice": "Post-hoc diagnostic on the declared confirmation corpus. Same selected source information; unequal text/latent token budgets. Source text is an inert control input, not a production latent inference fallback. No candidate answers passed to generation.",
+    "results_sha256": "a441997dc322a0a683671466ad6930d001f08f6cb195457f11c89a1d11278be6",
+    "execution_commit": "23a27ec"
+  }
+}

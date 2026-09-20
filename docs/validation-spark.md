@@ -28,8 +28,9 @@ counterfactual conditions. Exact identifiers remain 0/64. More independent world
 alternate endpoint histories and one fixed identifier question have not established
 exact latent recall at the tested budgets. Both models in the fixed-question
 comparison copy 64/64 identifiers from the same selected text. The fixed-query
-continuation also regresses direct permission answers to 59/64; the original-query
-confirmation and training-fit diagnostic are still running. See the
+continuation also regresses direct permission answers to 59/64 in both question
+forms and still gets 0/64 on its most exposed training questions. A deliberate
+small-corpus copy-fit diagnostic is now running. See the
 [fixed-query study](../experiments/binding-fixed-query-detail-20260920/README.md).
 
 Learned global retrieval remains weaker: corrected training reaches 102/128 free

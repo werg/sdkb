@@ -1,0 +1,418 @@
+{
+  "control-fixed": {
+    "results_sha256": "5de570b45172a9fd6d07286efe2d3d352cedbbef0455b8e7cddb2a92b05364ae",
+    "conditions": {
+      "all": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 5
+      },
+      "zero_values": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 1
+      },
+      "none": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 1
+      },
+      "cf_permission": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 6
+      },
+      "cf_restoration": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 5
+      },
+      "cf_identifier": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 4
+      }
+    },
+    "all_minus_zero_character_accuracy": 0.0,
+    "world_bootstrap_95_percentile_interval": [
+      0.0,
+      0.0
+    ],
+    "bootstrap_worlds": 32,
+    "bootstrap_samples": 5000,
+    "bootstrap_seed": 107,
+    "notice": "Post-hoc, one training seed; intervals do not account for multiple comparisons or seed variance. Missing/malformed positions count as wrong. No alignment or edit-distance credit."
+  },
+  "fixed-fixed": {
+    "results_sha256": "99bdb8544aca50ed3802f6d32550665e5e6627e28f5a81caf1f899b3d98468fc",
+    "conditions": {
+      "all": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 25,
+        "correct_by_position": [
+          11,
+          5,
+          1,
+          3,
+          5,
+          0
+        ],
+        "well_formed": 64,
+        "unique_predictions": 19
+      },
+      "zero_values": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 19,
+        "correct_by_position": [
+          0,
+          4,
+          3,
+          6,
+          1,
+          5
+        ],
+        "well_formed": 64,
+        "unique_predictions": 1
+      },
+      "none": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 1
+      },
+      "cf_permission": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 34,
+        "correct_by_position": [
+          11,
+          5,
+          5,
+          6,
+          5,
+          2
+        ],
+        "well_formed": 64,
+        "unique_predictions": 18
+      },
+      "cf_restoration": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 25,
+        "correct_by_position": [
+          11,
+          5,
+          1,
+          3,
+          5,
+          0
+        ],
+        "well_formed": 64,
+        "unique_predictions": 19
+      },
+      "cf_identifier": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 35,
+        "correct_by_position": [
+          18,
+          1,
+          5,
+          3,
+          8,
+          0
+        ],
+        "well_formed": 64,
+        "unique_predictions": 19
+      }
+    },
+    "all_minus_zero_character_accuracy": 0.015625,
+    "world_bootstrap_95_percentile_interval": [
+      -0.015625,
+      0.046875
+    ],
+    "bootstrap_worlds": 32,
+    "bootstrap_samples": 5000,
+    "bootstrap_seed": 107,
+    "notice": "Post-hoc, one training seed; intervals do not account for multiple comparisons or seed variance. Missing/malformed positions count as wrong. No alignment or edit-distance credit."
+  },
+  "control-original": {
+    "results_sha256": "f5f38f8a4fb2e88d0528fafd88751a4a00679a41e292cae7376748d7569ee396",
+    "conditions": {
+      "all": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 26,
+        "correct_by_position": [
+          9,
+          4,
+          4,
+          4,
+          4,
+          1
+        ],
+        "well_formed": 59,
+        "unique_predictions": 56
+      },
+      "zero_values": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 20,
+        "correct_by_position": [
+          2,
+          3,
+          5,
+          3,
+          6,
+          1
+        ],
+        "well_formed": 60,
+        "unique_predictions": 58
+      },
+      "none": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 53
+      },
+      "cf_permission": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 30,
+        "correct_by_position": [
+          8,
+          4,
+          4,
+          6,
+          5,
+          3
+        ],
+        "well_formed": 60,
+        "unique_predictions": 56
+      },
+      "cf_restoration": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 26,
+        "correct_by_position": [
+          9,
+          4,
+          4,
+          4,
+          4,
+          1
+        ],
+        "well_formed": 59,
+        "unique_predictions": 56
+      },
+      "cf_identifier": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 22,
+        "correct_by_position": [
+          4,
+          4,
+          2,
+          4,
+          3,
+          5
+        ],
+        "well_formed": 59,
+        "unique_predictions": 58
+      }
+    },
+    "all_minus_zero_character_accuracy": 0.015625,
+    "world_bootstrap_95_percentile_interval": [
+      0.0,
+      0.033854166666666664
+    ],
+    "bootstrap_worlds": 32,
+    "bootstrap_samples": 5000,
+    "bootstrap_seed": 107,
+    "notice": "Post-hoc, one training seed; intervals do not account for multiple comparisons or seed variance. Missing/malformed positions count as wrong. No alignment or edit-distance credit."
+  },
+  "fixed-original": {
+    "results_sha256": "8b690fc83f9b256d5cab574fa305f6544e36267e55f83ab721d416becde7d70a",
+    "conditions": {
+      "all": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 21,
+        "correct_by_position": [
+          8,
+          2,
+          4,
+          4,
+          0,
+          3
+        ],
+        "well_formed": 57,
+        "unique_predictions": 46
+      },
+      "zero_values": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 27,
+        "correct_by_position": [
+          6,
+          5,
+          3,
+          5,
+          4,
+          4
+        ],
+        "well_formed": 56,
+        "unique_predictions": 41
+      },
+      "none": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 37
+      },
+      "cf_permission": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 21,
+        "correct_by_position": [
+          10,
+          3,
+          2,
+          3,
+          1,
+          2
+        ],
+        "well_formed": 52,
+        "unique_predictions": 43
+      },
+      "cf_restoration": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 21,
+        "correct_by_position": [
+          8,
+          2,
+          4,
+          4,
+          0,
+          3
+        ],
+        "well_formed": 57,
+        "unique_predictions": 46
+      },
+      "cf_identifier": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 27,
+        "correct_by_position": [
+          8,
+          2,
+          2,
+          7,
+          4,
+          4
+        ],
+        "well_formed": 54,
+        "unique_predictions": 45
+      }
+    },
+    "all_minus_zero_character_accuracy": -0.015625,
+    "world_bootstrap_95_percentile_interval": [
+      -0.041666666666666664,
+      0.0078125
+    ],
+    "bootstrap_worlds": 32,
+    "bootstrap_samples": 5000,
+    "bootstrap_seed": 107,
+    "notice": "Post-hoc, one training seed; intervals do not account for multiple comparisons or seed variance. Missing/malformed positions count as wrong. No alignment or edit-distance credit."
+  }
+}

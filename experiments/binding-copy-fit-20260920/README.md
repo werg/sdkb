@@ -36,3 +36,8 @@ resume state, offline W&B, a 10 GiB disk reserve, 8 GiB host reserve, 0.35 alloc
 fraction and 300-second compute watchdog. No model downloads, teacher calls or
 NVIDIA stack changes. The pre-run full suite passes 412 tests and native preflight
 passes. Training has not yet launched when this protocol is committed.
+
+Training and its bounded confirmation controller launched from frozen commit
+`a75b4e8`. The external initial checkpoint committed successfully; offline W&B and
+all four named Muon/AdamW parameter groups are recorded. The source held-out
+evaluation runs alongside training; final training/held-out checks are queued.

@@ -62,7 +62,7 @@ control reproduction. The probe writes fingerprints instead of model checkpoints
 
 After training ownership released, verified hard-link deduplication reclaimed
 1,017,349,676 bytes from the identical initial weights. Complete recovery state and
-all paths remain intact. Fresh confirmation is running in both question forms.
+all paths remain intact. Both question-form confirmations have now completed.
 
 ## Fixed-form confirmation
 
@@ -82,7 +82,7 @@ and 49/128 for the fixed-query model; zero-value accuracy is 54/128 for both.
 hashes; `fixed-form-generation.json` gives paired world-level comparisons.
 `counterfactual-target-overlap.json` additionally confirms that both original and
 inverted held-out endpoint targets have zero overlap with either training corpus.
-The original-query pair is still running.
+The original-query pair has also completed; its result is summarized below.
 
 A post-hoc `text_control.py` diagnostic will test each frozen endpoint on both
 question forms using exactly the selected earlier source as text. It also repeats
@@ -114,3 +114,36 @@ are emitted; 47/384 hex positions match (25/64 first positions). Target NLL is
 changes alter 47/64. Thus the failure is not confined to unseen inputs. The small
 number of exposures still prevents an exhaustive-training conclusion. Results and
 hashes are in `train-fit-confirmation.json`.
+
+## Complete two-form confirmation
+
+All four stored-only confirmations are complete (1,920 generations each).
+`confirmation.json` pins their complete aggregates and result hashes; paired model
+comparisons stay within each question form in `fixed-form-generation.json` and
+`original-form-generation.json`.
+
+| Question form | Model | Exact identifiers | Actions | Direct permission | Identifier target NLL |
+|---|---|---:|---:|---:|---:|
+| Fixed | Independent-world control | 0/64 | 128/128 | 64/64 | 3.98782 |
+| Fixed | Fixed-query continuation | 0/64 | 128/128 | 59/64 | 2.61166 |
+| Original | Independent-world control | 0/64 | 128/128 | 64/64 | 2.69915 |
+| Original | Fixed-query continuation | 0/64 | 128/128 | 59/64 | 3.02024 |
+
+Both models retain all tested action counterfactual pairs and have no false action
+changes on invariant branches. Direct restoration remains 64/64. The new model's
+NLL improvement is specific to the trained fixed question; original-form NLL worsens.
+The post-hoc positional audit (`character-accuracy.json`) shows a large formatting
+change on fixed questions: the control emits no well-formed endpoints, while the
+new model emits 64/64. Yet its hex accuracy is only 25/384 positions versus 19/384
+with zero values. On original questions it has 21/384 correct positions versus
+27/384 with zero values. Formatting and sensitivity do not demonstrate exact recall.
+
+The follow-up copy-fit protocol increases exposure on a deliberately small training
+subset. That study is a fit diagnostic, not promotion of this checkpoint as a better
+model: direct permission regression and missing exact recall remain unresolved.
+
+All four selected-text controls are complete: each model copies **64/64** endpoints
+in both question forms, versus 0/64 with no memory. All repeated no-memory
+predictions match the corresponding latent reference. `text-control.json` pins
+these results and execution revisions. The original-form controls used the newer
+startup memory guard; model weights and decoding settings were unchanged.
