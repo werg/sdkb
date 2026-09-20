@@ -1,0 +1,17 @@
+{
+  "declared_before_endpoint_results": true,
+  "frozen_model_commit": "b38564a",
+  "script": "experiments/binding-fixed-query-detail-20260920/text_control.py",
+  "script_sha256": "51973063f0d55d0954d4294f9b2c15de653db2021dacf932716bc4f0f7c18f25",
+  "episodes": "/archive/runs/binding-endpoint-freshness-20260920/heldout.jsonl",
+  "episodes_sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+  "arms": [
+    "width-256",
+    "width-1024"
+  ],
+  "conditions": [
+    "selected_text",
+    "none"
+  ],
+  "scope": "The same 64 identifier questions, after the two primary confirmations. Verify each repeated no-memory prediction against its latent reference. This checks the post-training text path and supplies no training targets or model updates."
+}
