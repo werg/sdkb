@@ -1,0 +1,11 @@
+{
+  "config_sha256": "be21523ac32ba1f0597ceb5478f30de7cdd85c088d2faadff142143f6a20010a",
+  "train": "/archive/probes/trajectory-readiness-20260920/data/train.jsonl",
+  "train_sha256": "baecad1d365ce6c0b4930b9ab878329473bfb4f999495179d0939afa52c29818",
+  "validation": "/archive/probes/trajectory-readiness-20260920/data/validation.jsonl",
+  "validation_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+  "revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+  "steps": 400,
+  "bridge_manifest_sha256": "5481f3de9b87f7edf87bec0f0875ca81a04738408d199f1bebb7d51ed742b4d2",
+  "bridge_model_sha256": "8e54f37d7b55dabe55a0aea6a0a10471d04ef31278cf27bf6844ed52f55885ad"
+}

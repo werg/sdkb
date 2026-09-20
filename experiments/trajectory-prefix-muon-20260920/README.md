@@ -43,3 +43,23 @@ recurrent bridge for the next latent stage, not latent-memory transfer, source
 sufficiency, composition, or agent success. The selected-text benefit is a context
 control with a different token and compute budget. No model weights or raw
 trajectory text are committed to Git.
+
+## Latent warmup
+
+`latent_warmup.yaml` declares the next 400-update, two-pass memory stage. It
+warm-starts all compatible model weights from the verified bridge step 200,
+resets optimizer state as a new scientific stage, keeps the pretrained backbone
+frozen, and trains the writer, codecs, reader, query path, workspace and bridge
+through a real in-loop stored-value read. The writer remains at depth one. Oracle
+selection uses only the prepared source supports visible at each query time; the
+target continuation never enters a query. `selected_producers_only` records the
+fully live oracle compute policy, and native Muon remains the matrix optimizer.
+Complete checkpoints, caches, data and offline W&B files stay on the external
+drive. This is a teacher-likelihood and memory-intervention experiment; its
+outcome has not yet been measured.
+
+`latent-inputs.json` pins the config, prepared train and validation files, base
+revision, and exact bridge checkpoint model and manifest. `run_latent.py` verifies
+these before the native preflight and before any training state is created. A
+graceful stop writes complete optimizer, RNG and partial-gradient state; `--resume`
+uses the same locked inputs and committed checkpoint.
