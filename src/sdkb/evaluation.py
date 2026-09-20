@@ -173,6 +173,8 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
         raise ValueError('Run was not configured with a compactor')
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
+    from .runtime import configure_memory
+    configure_memory(config.train)
     agent = SDKBAgent(config).to(config.train.device).eval()
     load_model(agent, str(resolve_checkpoint(run) / 'model.safetensors'), device=config.train.device)
     episodes = load_episodes(episodes_path)

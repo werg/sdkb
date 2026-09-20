@@ -1,0 +1,171 @@
+{
+  "inputs": {
+    "checkpoint_manifest_sha256": "907bb9fd5a7b69462274243161b05d6c2d1f23812b6ebe616e60a05fad6928d4",
+    "episodes_sha256": "ed586aabb57d1a78f7e9314906c78050a5dcc24e23e6574849a3d96669656330",
+    "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+    "max_new_tokens": 24,
+    "routing": "oracle required sources",
+    "compact_method": "raw"
+  },
+  "generation_summary": {
+    "multiuse/identifier": {
+      "all": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 0
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 0
+      }
+    }
+  },
+  "generation_counterfactuals": {
+    "multiuse/identifier": {
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.734375
+      },
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.0,
+        "appropriate_prediction_change": 0.9375,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    }
+  },
+  "bank_sha256": "cba13d23da0b2f8941767a6c465d08d9f8a5d978ba38025bb89c563fdd2d6121",
+  "results_sha256": "7beec6121d4b9750d724ffc6b92f7ce8aabe2e0051e21c2a9b6bacf0addc6567",
+  "identifier_target_mean_nll": 2.205118180172784,
+  "notice": "Post-hoc training-set fit check on 64 most frequently sampled identifier queries, not held-out evaluation.",
+  "characters": {
+    "results_sha256": "7beec6121d4b9750d724ffc6b92f7ce8aabe2e0051e21c2a9b6bacf0addc6567",
+    "conditions": {
+      "all": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 47,
+        "correct_by_position": [
+          25,
+          8,
+          3,
+          2,
+          3,
+          6
+        ],
+        "well_formed": 64,
+        "unique_predictions": 16
+      },
+      "zero_values": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 29,
+        "correct_by_position": [
+          8,
+          5,
+          3,
+          2,
+          5,
+          6
+        ],
+        "well_formed": 64,
+        "unique_predictions": 1
+      },
+      "none": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 0,
+        "correct_by_position": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "well_formed": 0,
+        "unique_predictions": 1
+      },
+      "cf_permission": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 45,
+        "correct_by_position": [
+          25,
+          4,
+          5,
+          3,
+          3,
+          5
+        ],
+        "well_formed": 64,
+        "unique_predictions": 17
+      },
+      "cf_restoration": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 47,
+        "correct_by_position": [
+          25,
+          8,
+          3,
+          2,
+          3,
+          6
+        ],
+        "well_formed": 64,
+        "unique_predictions": 16
+      },
+      "cf_identifier": {
+        "queries": 64,
+        "positions": 384,
+        "correct_positions": 34,
+        "correct_by_position": [
+          14,
+          8,
+          3,
+          2,
+          4,
+          3
+        ],
+        "well_formed": 64,
+        "unique_predictions": 19
+      }
+    },
+    "all_minus_zero_character_accuracy": 0.046875,
+    "world_bootstrap_95_percentile_interval": [
+      0.016129032258064516,
+      0.08064516129032258
+    ],
+    "bootstrap_worlds": 61,
+    "bootstrap_samples": 5000,
+    "bootstrap_seed": 107,
+    "notice": "Post-hoc, one training seed; intervals do not account for multiple comparisons or seed variance. Missing/malformed positions count as wrong. No alignment or edit-distance credit."
+  }
+}

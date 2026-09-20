@@ -38,6 +38,8 @@ def evaluate_depths(run: str | Path, episodes_file: str | Path, output: str | Pa
         raise ValueError('A depth would truncate the scheduled read plan; use deeper passes')
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
+    from .runtime import configure_memory
+    configure_memory(config.train)
     agent = SDKBAgent(config).to(config.train.device).eval()
     checkpoint = resolve_checkpoint(run, verify=True)
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)

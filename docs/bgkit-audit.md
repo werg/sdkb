@@ -127,3 +127,12 @@ not optimizer state. Regression coverage interrupts both by control file and
 SIGTERM, reproduces uninterrupted score/prediction outputs, and rejects changed
 banks or mismatched generation prefixes. Existing running frozen evaluators retain
 their original behavior.
+
+A further allocation audit found that frozen diagnostics and standard evaluation/
+preflight entry points did not consistently apply the configured startup host-memory
+reserve and CUDA allocator fraction. Seven regression cases reproduced model
+allocation before the reserve check. All seven entry points now call the shared
+portable resource helper before allocating the model. The full suite passes 412
+tests; a native pretrained model preflight also passes. This closes a startup gap,
+not continuous inference-time pressure monitoring. Active frozen checkouts retain
+their original code. See `experiments/operations-20260920/evaluation-reserves.json`.

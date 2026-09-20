@@ -1,0 +1,8 @@
+{
+  "native_preflight_path": "/archive/probes/evaluation-reserve-model-probe-20260920.json",
+  "native_preflight_sha256": "d1f97dad464f51035a3076a15f75e82b44bf8becac4697b6b50229c2a1e4f33f",
+  "tests": 412,
+  "ruff": "passed",
+  "red_test_count": 7,
+  "scope": "Startup configured host reserve and CUDA allocator fraction, before model allocation. Existing active frozen evaluators retain their original code. This is not continuous inference-time memory monitoring."
+}

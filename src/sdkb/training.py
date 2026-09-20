@@ -510,6 +510,8 @@ def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode
 def evaluate_run(run: str | Path, *, count: int | None = None, generate: bool = False) -> dict:
     run = Path(run)
     config = config_from_run(run)
+    from .runtime import configure_memory
+    configure_memory(config.train)
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device)
     load_model(agent, str(resolve_checkpoint(run) / "model.safetensors"), device=config.train.device)
@@ -540,6 +542,8 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
     """
     run = Path(run)
     config = config_from_run(run)
+    from .runtime import configure_memory
+    configure_memory(config.train)
     if config.memory.read_timing == "loop_boundary":
         raise ValueError("Use evaluate-transfer, evaluate-teachers or evaluate-depths for native in-loop reads")
     episodes = load_episodes(path)

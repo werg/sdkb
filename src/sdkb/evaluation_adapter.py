@@ -9,10 +9,12 @@ from safetensors.torch import load_model
 import torch
 
 from .agent import SDKBAgent
+from .runtime import configure_memory
 from .trajectories import file_sha256
 
 
 def load_frozen_agent(config, checkpoint, *, routing_probe=None, independent_routing_query=False):
+    configure_memory(config.train)
     checkpoint = Path(checkpoint)
     state = None
     if routing_probe is not None:

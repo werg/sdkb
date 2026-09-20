@@ -11,6 +11,8 @@ def model_probe(config) -> dict:
     config.validate()
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
+    from .runtime import configure_memory
+    configure_memory(config.train)
     agent = SDKBAgent(config).to(config.train.device)
     agent.eval()
     ids = agent.text_ids('An earlier experience has a retry rule.', source=True)

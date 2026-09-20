@@ -137,6 +137,8 @@ def evaluate_teacher_run(run, episodes_file, *, max_episodes=64, generate_tokens
     config = config_from_run(Path(run))
     reset_resource_peaks()
     torch.set_num_threads(config.train.threads)
+    from .runtime import configure_memory
+    configure_memory(config.train)
     agent = SDKBAgent(config).to(config.train.device).eval()
     load_model(agent, str(resolve_checkpoint(run, verify=True) / 'model.safetensors'), device=config.train.device)
     index = EpisodeIndex(episodes_file)

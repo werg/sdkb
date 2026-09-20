@@ -106,3 +106,11 @@ times as identifier targets. Source records also appear with other task families
 `train-fit-inputs.json` pins the subset. The fixed endpoint is being evaluated using
 the same stored-only oracle/counterfactual evaluator; this subset is explicitly
 training data and cannot provide held-out evidence.
+
+The training-fit check completed with **0/64 exact identifiers in every condition**.
+All 64 original predictions have the correct format, but only 16 unique strings
+are emitted; 47/384 hex positions match (25/64 first positions). Target NLL is
+2.20512. Endpoint changes alter 60/64 still-wrong answers; irrelevant permission
+changes alter 47/64. Thus the failure is not confined to unseen inputs. The small
+number of exposures still prevents an exhaustive-training conclusion. Results and
+hashes are in `train-fit-confirmation.json`.
