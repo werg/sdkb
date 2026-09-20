@@ -64,6 +64,72 @@ def test_endpoint_counterfactual_changes_only_endpoint_information():
             assert shared_sources.setdefault(new.record_id, new) == new
 
 
+@pytest.mark.parametrize('stop_mode', ['control', 'signal'])
+def test_oracle_runner_resumes_scoring_and_generation_without_repeating_work(tmp_path, tiny_config, monkeypatch, stop_mode):
+    import signal
+    from sdkb.agent import SDKBAgent
+    from sdkb.operations import control_dir, request_stop
+    path = tmp_path/'episodes.jsonl'
+    episodes = make_multiuse_world(11, bindings=1)
+    save_episodes(path, episodes)
+    tiny_config.train.steps = 1
+    tiny_config.train.episodes_file = str(path)
+    tiny_config.train.evidence_scope = 'required'
+    source, full, partial = tmp_path/'source', tmp_path/'full', tmp_path/'partial'
+    train(tiny_config, source)
+    run(source, path, full)
+    generate = evaluator.FrozenScorer.generate
+    calls = 0
+    def interrupted(self, *args, **kwargs):
+        nonlocal calls
+        prediction = generate(self, *args, **kwargs)
+        calls += 1
+        if calls == 5:
+            if stop_mode == 'control':
+                request_stop(partial)
+            else:
+                signal.raise_signal(signal.SIGTERM)
+        return prediction
+    monkeypatch.setattr(evaluator.FrozenScorer, 'generate', interrupted)
+    with pytest.raises(RuntimeError, match='Stopped'):
+        run(source, path, partial)
+    assert calls == 5
+    progress = json.loads((partial/'generation-progress.json').read_text())
+    assert len(progress['rows']) == 5
+    (control_dir(partial)/'STOP').unlink(missing_ok=True)
+    calls = 0
+    def count(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return generate(self, *args, **kwargs)
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Resume repeated committed writer/scoring work')
+    monkeypatch.setattr(evaluator.FrozenScorer, 'generate', count)
+    monkeypatch.setattr(evaluator, 'stored_transfer_evaluation', forbidden)
+    monkeypatch.setattr(SDKBAgent, 'produce', forbidden)
+    run(source, path, partial)
+    assert calls == len(episodes)*6 - 5
+    expected = json.loads((full/'results.json').read_text())
+    actual = json.loads((partial/'results.json').read_text())
+    assert actual['generation_rows'] == expected['generation_rows']
+    assert {k: v for k, v in actual['scores'].items() if k != 'resources'} == {
+        k: v for k, v in expected['scores'].items() if k != 'resources'}
+    # A changed committed bank must invalidate partial progress too.
+    (partial/'results.json').unlink()
+    progress_path = partial/'generation-progress.json'
+    committed = progress_path.read_text()
+    changed = json.loads(committed)
+    changed['rows'][0]['episode'] = 'wrong-query'
+    progress_path.write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match='prefix changed'):
+        run(source, path, partial)
+    progress_path.write_text(committed)
+    with (partial/'bank.sqlite').open('ab') as handle:
+        handle.write(b'changed')
+    with pytest.raises(ValueError, match='bank changed'):
+        run(source, path, partial)
+
+
 @pytest.mark.parametrize('method', ['mean', 'trained'])
 def test_oracle_runner_reads_native_compact_codes_and_raw_subsets(tmp_path, tiny_config, method, monkeypatch):
     path = tmp_path/'episodes.jsonl'

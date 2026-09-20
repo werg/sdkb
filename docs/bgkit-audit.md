@@ -117,3 +117,13 @@ No model-specific kernel patches, automatic destructive restart loop or live
 hyperparameter mutation were imported. Those are not prerequisites for the current
 fixed-schedule LFM experiments; the implemented recovery contract covers their
 actual state rather than claiming nonexistent scheduler/controller support.
+
+
+Long oracle confirmations now also preserve completed scoring variants/read plans
+and incremental free-generation results. Cooperative stops flush the current
+completed string; a normal restart reuses those results without rerunning writers,
+scoring or finished generations. This is deterministic frozen-inference progress,
+not optimizer state. Regression coverage interrupts both by control file and
+SIGTERM, reproduces uninterrupted score/prediction outputs, and rejects changed
+banks or mismatched generation prefixes. Existing running frozen evaluators retain
+their original behavior.

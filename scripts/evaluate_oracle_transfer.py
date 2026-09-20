@@ -1,13 +1,14 @@
 """Resumable offline banks followed by frozen oracle transfer and free generation."""
 import argparse
-from dataclasses import replace
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import re
 
 import torch
 
-from sdkb.checkpoints import resolve_checkpoint
+from sdkb.archiving import ensure_free
+from sdkb.checkpoints import _atomic_text, resolve_checkpoint, stop_on_signal
 from sdkb.data import load_episodes, counterfactual_multiuse, evidence_ids
 from sdkb.evaluation import build_shared_bank, build_persistent_codes, stored_transfer_evaluation
 from sdkb.evaluation_adapter import load_frozen_agent
@@ -15,7 +16,7 @@ from sdkb.frozen_scoring import FrozenScorer
 from sdkb.metrics import counterfactual_metrics
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.sessions import read_session
-from sdkb.store import DiskStore
+from sdkb.store import DiskStore, ReadPlan, Selection
 from sdkb.training import config_from_run, autocast_context
 from sdkb.trajectories import file_sha256
 
@@ -48,7 +49,7 @@ def run(source, episodes_path, output, *, compact_method='raw'):
     if compact_method not in {'raw', 'mean', 'trained'}:
         raise ValueError('Choose raw, mean or trained code reads')
     output.mkdir(parents=True, exist_ok=True)
-    with run_lock(output, clear_stop=False):
+    with run_lock(output, clear_stop=False), stop_on_signal() as stop:
         checkpoint = resolve_checkpoint(source, verify=True)
         identity = {'checkpoint_manifest_sha256': file_sha256(checkpoint/'manifest.json'),
                     'episodes_sha256': file_sha256(episodes_path), 'script_sha256': file_sha256(__file__),
@@ -63,6 +64,20 @@ def run(source, episodes_path, output, *, compact_method='raw'):
             if not (output/'bank.sqlite').is_file() or file_sha256(output/'bank.sqlite') != completed['bank_sha256']:
                 raise ValueError('Completed oracle evaluation bank changed')
             return
+        saved = {}
+        paths = [*output.glob('scoring-*.json'), output/'generation-progress.json']
+        for path in paths:
+            if path.exists():
+                value = json.loads(path.read_text())
+                if value.get('format') != 1 or value['inputs'] != identity:
+                    raise ValueError('Partial oracle evaluation identity changed')
+                saved[path.name] = value
+        if saved:
+            if not (output/'bank.sqlite').is_file():
+                raise ValueError('Partial oracle evaluation bank changed')
+            bank_hash = file_sha256(output/'bank.sqlite')
+            if any(value['bank_sha256'] != bank_hash for value in saved.values()):
+                raise ValueError('Partial oracle evaluation bank changed')
         config = config_from_run(checkpoint)
         if config.train.arm != 'memory' or config.train.retrieval != 'oracle' or config.train.evidence_scope != 'required':
             raise ValueError('This diagnostic requires oracle required-source memory')
@@ -86,8 +101,15 @@ def run(source, episodes_path, output, *, compact_method='raw'):
             if compact_method != 'raw':
                 banks[name], code_storage[name] = build_persistent_codes(agent, store, group, namespace=name,
                                                                              view_name='oracle-'+name+'-'+compact_method)
-            if stop_requested(output):
+            if stop['signal'] is not None or stop_requested(output):
                 raise RuntimeError('Stopped after atomic bank publication')
+        bank_hash = file_sha256(store.path)
+        if any(value['bank_sha256'] != bank_hash for value in saved.values()):
+            raise ValueError('Partial oracle evaluation bank changed during setup')
+        def publish(name, **value):
+            encoded = json.dumps(dict(format=1, inputs=identity, bank_sha256=bank_hash, **value)) + '\n'
+            ensure_free(output, len(encoded.encode()) * 2, config.train.min_free_disk_bytes)
+            _atomic_text(output/name, encoded)
         def forbidden(*_args, **_kwargs):
             raise AssertionError('Oracle inference called writer or compactor')
         agent.produce = forbidden
@@ -96,30 +118,58 @@ def run(source, episodes_path, output, *, compact_method='raw'):
         store = DiskStore(store.path)
         plans = {}
         def progress(event, *, phase='scoring', variant='global'):
-            if stop_requested(output):
+            if stop['signal'] is not None or stop_requested(output):
                 raise RuntimeError('Stopped during reproducible stored evaluation')
-            print(json.dumps({'phase': phase, 'variant': variant, **event}), flush=True)
-        scores = stored_transfer_evaluation(agent, store, episodes, drop_supports=True,
-                                            capture_plans=plans, progress=progress, cluster_bank=banks.get('global'),
-                                            use_codes_for_all_conditions=compact_method != 'raw')
+            try:
+                print(json.dumps({'phase': phase, 'variant': variant, **event}), flush=True)
+            except OSError:
+                pass
+        if 'scoring-global.json' in saved:
+            entry = saved['scoring-global.json']
+            scores = entry['scores']
+            plans = {episode: [[ReadPlan(**(p | {'selections': tuple(Selection(**s) for s in p['selections'])}))
+                                for p in step] for step in steps] for episode, steps in entry['plans'].items()}
+        else:
+            scores = stored_transfer_evaluation(agent, store, episodes, drop_supports=True,
+                capture_plans=plans, progress=progress, cluster_bank=banks.get('global'),
+                use_codes_for_all_conditions=compact_method != 'raw')
+            publish('scoring-global.json', scores=scores,
+                    plans={e: [[asdict(p) for p in step] for step in steps] for e, steps in plans.items()})
         originals = {e.episode_id: e for e in episodes}
         for name, group in variants.items():
-            changed = stored_transfer_evaluation(agent, store, group, namespace=name,
-                full_evidence_only=True, fixed_plans_by_episode=plans,
-                progress=lambda event, variant=name: progress(event, variant=variant), cluster_bank=banks.get(name),
-                use_codes_for_all_conditions=compact_method != 'raw')
-            for row in changed['rows']:
-                row['condition'] = 'cf_'+name
-                row['counterfactual_should_change'] = row['answer'] != originals[row['episode']].answer
+            path = 'scoring-'+name+'.json'
+            if path in saved:
+                changed = saved[path]['scores']
+            else:
+                changed = stored_transfer_evaluation(agent, store, group, namespace=name,
+                    full_evidence_only=True, fixed_plans_by_episode=plans,
+                    progress=lambda event, variant=name: progress(event, variant=variant), cluster_bank=banks.get(name),
+                    use_codes_for_all_conditions=compact_method != 'raw')
+                for row in changed['rows']:
+                    row['condition'] = 'cf_'+name
+                    row['counterfactual_should_change'] = row['answer'] != originals[row['episode']].answer
+                publish(path, scores=changed)
             scores['rows'].extend(changed['rows'])
-        scorer, rows = FrozenScorer(agent), []
+        scorer = FrozenScorer(agent)
+        rows = saved.get('generation-progress.json', {}).get('rows', [])
+        cursor = 0
         with autocast_context(config):
             for name, group in [('global', episodes), *variants.items()]:
                 for index, e in enumerate(group, 1):
-                    if stop_requested(output):
-                        raise RuntimeError('Stopped during reproducible free generation')
                     prompt = agent.prompt_ids(e.query)
                     for condition in (('all', 'zero_values', 'none') if name == 'global' else ('cf_'+name,)):
+                        metadata = dict(episode=e.episode_id, environment=e.environment, task_family=e.task_family,
+                                        condition=condition, answer=e.answer)
+                        if cursor < len(rows):
+                            row = rows[cursor]
+                            if (any(row[k] != v for k, v in metadata.items())
+                                    or row['exact_match'] != (row['prediction'] == e.answer)):
+                                raise ValueError('Partial generation prefix changed')
+                            cursor += 1
+                            continue
+                        if stop['signal'] is not None or stop_requested(output):
+                            publish('generation-progress.json', rows=rows)
+                            raise RuntimeError('Stopped during reproducible free generation')
                         memory, accounting = None, []
                         if condition != 'none':
                             fixed = [[replace(p, namespace=name) for p in step] for step in plans[e.episode_id]]
@@ -134,10 +184,16 @@ def run(source, episodes_path, output, *, compact_method='raw'):
                         if name != 'global':
                             row['counterfactual_should_change'] = e.answer != originals[e.episode_id].answer
                         rows.append(row)
+                        cursor += 1
+                        if cursor % 32 == 0 or stop['signal'] is not None or stop_requested(output):
+                            publish('generation-progress.json', rows=rows)
                     if index % 32 == 0 or index == len(group):
                         progress({'completed_queries': index, 'total_queries': len(group),
                                   'completed_generations': len(rows), 'total_generations': 6*len(episodes)},
                                  phase='generation', variant=name)
+        if cursor != len(rows):
+            raise ValueError('Partial generation contains extra rows')
+        publish('generation-progress.json', rows=rows)
         families = sorted({e.task_family for e in episodes})
         summary = {f: {c: {'n': len(group), 'correct': sum(r['exact_match'] for r in group)}
                       for c in sorted({r['condition'] for r in rows})

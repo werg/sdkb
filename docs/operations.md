@@ -271,3 +271,21 @@ files in place. Hard-link support is required; unsupported filesystems fail with
 silently copying or deleting payloads. Reported bytes are deduplicated logical file
 lengths; open readers can delay physical release. This is explicit maintenance,
 not an automatic background mutation of running training checkpoints.
+
+
+### Long oracle confirmations
+
+`scripts/evaluate_oracle_transfer.py` commits each completed scoring variant and
+its captured causal read plans, then saves generation progress every 32 strings.
+SIGINT/SIGTERM or a control-file stop preserves all completed strings at the next
+generation boundary. Resume with the same command after clearing the stop request.
+It verifies checkpoint, corpus, evaluator and bank identities before reusing work;
+changed inputs require a new output directory. A hard kill may repeat at most the
+uncommitted generation block or the currently incomplete scoring variant.
+
+Progress is small JSON containing scores/plans/predictions, never model weights.
+It uses atomic fsynced publication and the configured free-disk reserve. Banks are
+still written offline and inference still forbids writers/compactors. The progress
+files retain their original phase resource observations; they are not fresh whole-
+run timing measurements. Historical frozen evaluators retain their earlier restart
+behavior and must be resumed using their own checkout.
