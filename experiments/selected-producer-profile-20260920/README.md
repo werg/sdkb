@@ -39,8 +39,9 @@ Observed median update time after the first five updates was 1.9674 seconds for
 the reference and 1.4999 seconds for selected producers. These are **not an
 isolated causal speedup estimate**: arms ran sequentially alongside capacity
 training, and the reference also overlapped core tests and the native preflight.
-The supported result is native numerical equivalence with fewer unused producer
-calls; hardware throughput should be profiled under matched contention separately.
+The verified sampler/corpus imply 800 source forwards in the reference and 232
+with selection (568 unread-source forwards avoided; excludes replay and decoder
+work). The supported result is native numerical equivalence with less unused work; hardware throughput should be profiled under matched contention separately.
 The option remains opt-in and the active capacity experiment is unchanged.
 
 All 479 core tests pass, including complete partial-microbatch Muon recovery under

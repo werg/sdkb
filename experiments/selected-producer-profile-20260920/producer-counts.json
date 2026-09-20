@@ -1,0 +1,11 @@
+{
+  "scope": "Forward source encodings derived from the verified actual sampler and pinned corpus; excludes producer replays and decoder/reader work.",
+  "reference_source_forwards": 800,
+  "selected_source_forwards": 232,
+  "omitted_unread_source_forwards": 568,
+  "sampler_matches_native_endpoint": true,
+  "steps": 50,
+  "microbatches": 200,
+  "script_sha256": "b180e07cc70f7ee5c5dd0102fbb41c32bf18e11f1747a4ca40647240fa1c78d4",
+  "episodes_sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d"
+}
