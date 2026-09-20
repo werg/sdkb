@@ -1,0 +1,20 @@
+{
+  "applied": true,
+  "potential_bytes": 2034699352,
+  "released_bytes": 2034699352,
+  "replacements": [
+    {
+      "source": "/mnt/external/sdkb-archive/runs/trajectory-prefix-muon-20260920/latent_warmup/checkpoints/step-000000000-48faeefef78a/model.safetensors",
+      "target": "/mnt/external/sdkb-archive/runs/trajectory-prefix-muon-20260920/recurrence_bridge/checkpoints/step-000000200-b9031492bf70/model.safetensors",
+      "sha256": "8e54f37d7b55dabe55a0aea6a0a10471d04ef31278cf27bf6844ed52f55885ad",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/mnt/external/sdkb-archive/runs/trajectory-prefix-muon-20260920/latent_warmup/checkpoints/step-000000400-b19a85e72f67/model.safetensors",
+      "target": "/mnt/external/sdkb-archive/runs/trajectory-prefix-muon-20260920/recurrent_joint/checkpoints/step-000000000-c0968a481f5d/model.safetensors",
+      "sha256": "d8d9f7ff3db630ed292254bfe93dd79a4b8698a48458d400c7c92d70c36bd6f5",
+      "bytes": 1017349676
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+}

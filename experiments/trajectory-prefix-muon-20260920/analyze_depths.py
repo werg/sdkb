@@ -61,10 +61,12 @@ def run(sweep, first_text, later_text, output):
             real_over_wrong=paired(report['rows'], 'all', 'wrong_values'),
             fixed_selection_episodes=len(pairs),
             beyond_final_training_depth=report['depth_exceeds_final_training_max'])
-    output_report = dict(protocol='119 repository-held-out teacher episodes; same frozen latent step-400 model and bank',
-        sweep_sha256=sha256(summary_path), text_sha256=[sha256(first_text), sha256(later_text)],
+    output_report = dict(protocol='119 repository-held-out teacher episodes; one frozen checkpoint and stored bank',
+        sweep_sha256=sha256(summary_path),
+        text_sha256=([sha256(first_text)] if first_text == later_text
+                     else [sha256(first_text), sha256(later_text)]),
         writer_calls=summary['write_phase']['writer_calls'], stored_records=summary['bank_sizes']['records'],
-        depths=reports, limitations='Teacher NLL and descriptive trajectory bootstrap only. R=4 exceeds the latent stage training depth. Selected text, no memory and stored memory use different layouts/computation. OS cache state is uncontrolled; this is not cold-NVMe or serving latency. No agent success or parameter-substitution claim.')
+        depths=reports, limitations='Teacher NLL and descriptive trajectory bootstrap only. Per-depth flags identify extrapolation beyond the final training depths. Selected text, no memory and stored memory use different layouts/computation. OS cache state is uncontrolled; this is not cold-NVMe or serving latency. No agent success or parameter-substitution claim.')
     output.write_text(json.dumps(output_report, indent=2)+'\n')
     return output_report
 
@@ -73,7 +75,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sweep', type=Path, required=True)
     parser.add_argument('--first-text', type=Path, required=True)
-    parser.add_argument('--later-text', type=Path, required=True)
+    parser.add_argument('--later-text', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(run(args.sweep, args.first_text, args.later_text, args.output), indent=2))
+    print(json.dumps(run(args.sweep, args.first_text, args.later_text or args.first_text, args.output), indent=2))

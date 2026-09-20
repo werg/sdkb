@@ -130,5 +130,37 @@ revision or latent initialization before native model preflight and training.
 `joint_text_control.yaml` is the corresponding read-only text-scoring config for
 the same eventual checkpoint; it switches the inference arm and disables the
 training-only selected-producer and anchor settings.
-The joint outcome is pending; a tiny positive payload effect in latent warmup
-does not establish that extra recurrence will improve transfer.
+The joint stage tests whether the small latent-warmup payload effect survives
+training the shared recurrent core.
+
+The native joint stage passed its actual LFM preflight and completed all 400
+updates in about 1,017 seconds. Depths two and three were both sampled, with one
+actual read per logged example. The final full optimizer/RNG checkpoint is on
+the external drive. `joint-depth-results.json` pins the complete fixed-bank
+held-out reports and text controls, scored by frozen evaluator `8f703a9`.
+
+| Joint checkpoint depth | Real values | Zero values | Wrong values | No memory | Selected text |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1.107569 | 1.107569 | 1.107569 | 1.107569 | 0.866650 |
+| 2 | 0.978818 | 0.984149 | 0.985777 | 1.092322 | 0.865496 |
+| 3 | 0.980331 | 0.988139 | 0.994084 | 1.086108 | 0.867777 |
+| 4 | 0.985889 | 0.995611 | 1.006509 | 1.084728 | 0.872847 |
+
+These are token-weighted teacher NLLs on the same 119 episodes and one bank.
+The joint checkpoint improves absolute teacher NLL over latent warmup at every
+condition, including R=1/no-memory. Its lowest real-value NLL is at R=2;
+additional passes do not improve that score. Real values beat zero and wrong
+payloads at R=2–4, with unchanged original selections, but selected source text
+remains substantially better than the latent path. R=4 exceeds the joint
+training depths. Training changed both the core and writer, so cross-stage NLL
+improvements cannot be attributed to depth or memory alone. This is neither
+agent success nor parameter substitution.
+The paired mean episode real-over-zero benefit is 0.01186 at R=2, 0.01739 at
+R=3 and 0.02077 at R=4; the 42-trajectory descriptive intervals and positive
+episode counts are in the pinned report.
+
+After all evaluators released the checkpoint files, verified hard-link
+deduplication reclaimed 2,034,699,352 duplicate external weight bytes from
+bridge-to-latent and latent-to-joint warm starts. All six complete checkpoint
+sets still pass manifest and SHA256 verification. The exact replacements are in
+`experiments/operations-20260920/trajectory-stage-dedup.json`.

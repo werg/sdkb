@@ -1,0 +1,132 @@
+{
+  "protocol": "119 repository-held-out teacher episodes; one frozen checkpoint and stored bank",
+  "sweep_sha256": "3f9fbcc5761ec62b42e41a2f237f0465b32b4a957cd86908cdaee878c113442a",
+  "text_sha256": [
+    "cd5b4936e934cb43e97ee8cae64dbdddfe0651cf0d6cefd1db335d18a2f27a42"
+  ],
+  "writer_calls": 686,
+  "stored_records": 750,
+  "depths": {
+    "1": {
+      "report_sha256": "56c52151f1227862ad45454d1e5900cb4e7a234a8c02ee1bd78ad8097f289033",
+      "token_weighted_nll": {
+        "all": 1.1075686214685552,
+        "none": 1.1075686214685552,
+        "zero_values": 1.1075686214685552,
+        "wrong_values": 1.1075686214685552,
+        "selected_text": 0.8666495475614205
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.0,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.0,
+          0.0
+        ],
+        "positive_episodes": 0
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.0,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.0,
+          0.0
+        ],
+        "positive_episodes": 0
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": false
+    },
+    "2": {
+      "report_sha256": "7dc1a8236741de8bd5049b9678fa7e6c85857d62a4056dbbd95bff9cbfdeaeef",
+      "token_weighted_nll": {
+        "all": 0.978817861802154,
+        "none": 1.0923221258153661,
+        "zero_values": 0.9841489943952819,
+        "wrong_values": 0.9857771177917399,
+        "selected_text": 0.8654955548899131
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.01186481833063258,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.009158786451163126,
+          0.015041325645939628
+        ],
+        "positive_episodes": 103
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.019636338580289257,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.01311980716089819,
+          0.02707645014865058
+        ],
+        "positive_episodes": 97
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": false
+    },
+    "3": {
+      "report_sha256": "d95d13b4b64f800a815ae8b1ea30c20fb41b0108d20c9e130ac2a687dc8a2f6e",
+      "token_weighted_nll": {
+        "all": 0.9803305455713973,
+        "none": 1.0861083792572093,
+        "zero_values": 0.9881388637209582,
+        "wrong_values": 0.9940836962007089,
+        "selected_text": 0.8677768921094973
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.017387761454167257,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.013022062816027297,
+          0.02267841577192949
+        ],
+        "positive_episodes": 93
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.04539059094371059,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.029503407182071346,
+          0.06325912667983716
+        ],
+        "positive_episodes": 94
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": false
+    },
+    "4": {
+      "report_sha256": "453e833823201351e46c161745ef0981af54cccfd5d59473313329d1be2a4b43",
+      "token_weighted_nll": {
+        "all": 0.9858894023003002,
+        "none": 1.084728321403863,
+        "zero_values": 0.9956105288589218,
+        "wrong_values": 1.0065094466947122,
+        "selected_text": 0.8728474857981178
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.020774720857927278,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.013967245596209802,
+          0.02827919483979529
+        ],
+        "positive_episodes": 94
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.06751416508077948,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.044782260501360124,
+          0.09312527090955494
+        ],
+        "positive_episodes": 92
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": true
+    }
+  },
+  "limitations": "Teacher NLL and descriptive trajectory bootstrap only. Per-depth flags identify extrapolation beyond the final training depths. Selected text, no memory and stored memory use different layouts/computation. OS cache state is uncontrolled; this is not cold-NVMe or serving latency. No agent success or parameter-substitution claim."
+}
