@@ -64,3 +64,12 @@ verified sharing of the identical initial weight files reclaimed 1.90 GiB withou
 removing recovery state. The next hypothesis is to present identical training
 queries with multiple explicitly versioned endpoint memories, making query-only
 memorization insufficient at the same update budget.
+
+A post-hoc format check (`identifier-format.json`) distinguishes likelihood/format
+improvements from recall: source/narrow/broad models produce valid `api_` plus six
+hex characters on 41/45/56 of 64 questions, yet all retain zero exact answers.
+Among those well-formed predictions, respectively 17/246, 17/270 and 29/336 hex
+positions are correct. The source repeats an explicit fine-tuning endpoint on
+13 questions; the narrow model does so on 3 and the broad model on none (including
+the original source corpus). These descriptive counts do not prove a query-only
+shortcut or attribute the NLL improvement to a particular token group.

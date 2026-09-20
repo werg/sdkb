@@ -1,0 +1,42 @@
+{
+  "notice": "Descriptive post-hoc analysis of previously completed generation. Valid-only character accuracy conditions on correct output format; report the denominator. Training-membership counts concern these explicit fine-tuning corpora, not unknown pretraining data. No causal shortcut proof.",
+  "prior_training_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+  "arms": {
+    "source": {
+      "results_sha256": "bf4a4edb85faed2cdeb77ceb3858faaaaddc53bb1dd9bbe7ba280aadb5caa3f2",
+      "training_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "queries": 64,
+      "exact_matches": 0,
+      "well_formed_predictions": 41,
+      "predictions_in_current_training_targets": 13,
+      "predictions_in_prior_or_current_training_targets": 13,
+      "correct_hex_characters_in_well_formed_outputs": 17,
+      "well_formed_character_denominator": 246,
+      "all_query_character_denominator": 384
+    },
+    "worlds-128": {
+      "results_sha256": "1561646a6ac28cf08d3bb81cd4ca0d084ea0db2523c56b26a01cff90de65a0dd",
+      "training_sha256": "bb88fafbd72bb7a9df67d4eef7064957509fb590379fea95f3b8f62f3d34599d",
+      "queries": 64,
+      "exact_matches": 0,
+      "well_formed_predictions": 45,
+      "predictions_in_current_training_targets": 3,
+      "predictions_in_prior_or_current_training_targets": 3,
+      "correct_hex_characters_in_well_formed_outputs": 17,
+      "well_formed_character_denominator": 270,
+      "all_query_character_denominator": 384
+    },
+    "worlds-1024": {
+      "results_sha256": "40195841155a779821ff18ec61ea7032158a29e4f6022aa94388f93cf29ff505",
+      "training_sha256": "8cf08e7184085ef131d262dff7c1fa75b6392f351efd79e52e10bd02ead3edbe",
+      "queries": 64,
+      "exact_matches": 0,
+      "well_formed_predictions": 56,
+      "predictions_in_current_training_targets": 0,
+      "predictions_in_prior_or_current_training_targets": 0,
+      "correct_hex_characters_in_well_formed_outputs": 29,
+      "well_formed_character_denominator": 336,
+      "all_query_character_denominator": 384
+    }
+  }
+}
