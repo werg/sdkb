@@ -15,7 +15,7 @@ import time
 import torch
 from safetensors.torch import load_model
 
-from .agent import SDKBAgent, answer_state_alignment
+from .agent import SDKBAgent, answer_distribution_kl, answer_state_alignment
 from .checkpoints import save_checkpoint, restore_checkpoint, resolve_checkpoint, stop_on_signal
 from .config import Config
 from .data import Episode, Source, counterfactual, make_episode, save_episodes, load_episodes, evidence_ids
@@ -337,6 +337,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                     agent.backbone.loops = progress['loops']
                     totals, anchor_total = progress['totals'], progress['anchor_total']
                     alignment_total = (progress['alignment_total'] if config.train.oracle_alignment_weight else 0.)
+                    distillation_total = (progress['distillation_total']
+                                          if config.train.oracle_distillation_weight else 0.)
                     micro_start = progress['microbatches']
                     if not 0 < micro_start < config.train.gradient_accumulation:
                         raise ValueError('Invalid saved accumulation position')
@@ -349,6 +351,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                               "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
                     anchor_total, micro_start = 0.0, 0
                     alignment_total = 0.0
+                    distillation_total = 0.0
                 for micro in range(micro_start, config.train.gradient_accumulation):
                     episode = rng.choice(episodes)
                     tape = ReplayTape(verify_outputs=config.train.verify_replay)
@@ -409,6 +412,17 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                                                loops=config.train.oracle_anchor_loops)
                             loss = loss + config.train.oracle_anchor_weight * anchor
                             anchor_total += float(anchor.detach()) / config.train.gradient_accumulation
+                        if config.train.oracle_distillation_weight:
+                            if any(set(indices) != set(read_indices) for indices in result.selected):
+                                raise ValueError('Oracle distillation requires the same evidence in completed latent reads and text')
+                            target = agent.target_ids(episode.answer)
+                            oracle_prompt = agent.prompt_ids(episode.query, support_text)
+                            with torch.no_grad():
+                                teacher_logits = agent.conditioned_logits(oracle_prompt, target, None, loops=1)
+                            student_logits = agent.backbone.logits(result.answer_states).float()
+                            distillation = answer_distribution_kl(student_logits, teacher_logits)
+                            loss = loss + config.train.oracle_distillation_weight * distillation
+                            distillation_total += float(distillation.detach()) / config.train.gradient_accumulation
                         loss = loss / config.train.gradient_accumulation
                     if not torch.isfinite(loss):
                         raise FloatingPointError(f"Nonfinite loss at step {step}")
@@ -426,7 +440,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                         # cotangents, RNG, sampled depth and cache instead of discarding
                         # partial work or stepping an under-accumulated optimizer.
                         progress = dict(microbatches=micro + 1, loops=agent.backbone.loops,
-                                        totals=totals, anchor_total=anchor_total, alignment_total=alignment_total)
+                                        totals=totals, anchor_total=anchor_total,
+                                        alignment_total=alignment_total, distillation_total=distillation_total)
                         compute.close()
                         save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
                                         keep=config.train.keep_checkpoints, archiver=archiver,
@@ -439,8 +454,10 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                 optimizer.step()
             row = {"step": step + 1, **totals, "oracle_anchor_nll": anchor_total,
                    "oracle_alignment_loss": alignment_total,
+                   "oracle_distillation_kl": distillation_total,
                    "optimization_loss": (totals["loss"] + config.train.oracle_anchor_weight * anchor_total
-                                         + config.train.oracle_alignment_weight * alignment_total),
+                                         + config.train.oracle_alignment_weight * alignment_total
+                                         + config.train.oracle_distillation_weight * distillation_total),
                    "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
                    "elapsed_seconds": time.perf_counter() - start_time}
             if hasattr(agent.backbone, "manifest"):

@@ -59,6 +59,22 @@ partial-update emergency recovery. Changing its weight requires a warm-start for
 This is a learning intervention, not evidence of improved generation or an
 inference-time text bypass.
 
+`oracle_distillation_weight` is a separate, default-zero experiment for the
+native R=2 memory path. It minimizes next-token KL from the selected-text R=1
+distribution to the latent path's answer distribution, alongside latent target
+NLL. The one-pass teacher has a frozen parent backbone and is evaluated under
+`no_grad`; its answer-position outputs use only the same query, selected source
+text and preceding answer tokens. Teacher states and logits never enter a query,
+writer or stored read. Both paths use the same selected source IDs, and training
+rejects a missed read. The supported configuration is one in-loop oracle read,
+writer R=1, fully live payloads, no compaction or other text objective, and no
+sampled depth. The loss adds gradients to the consumer, reader and replayed
+writer, while the teacher remains detached. `oracle_distillation_kl` and the
+weighted `optimization_loss` are logged separately. Emergency checkpoints retain
+the partial KL total, optimizer, gradients and RNG; changing its weight starts a
+new warm-start fork. A lower KL or NLL alone does not establish payload use or
+agent success; compare frozen stored-only real, zero, wrong and text conditions.
+
 Default budgets: four source chunks, 512 source tokens each, 4096 outer-prompt tokens,
 512 complete target tokens, a 2048-dimensional per-source storage payload, eight
 returned slots. Canonical write, storage-code and returned-read capacities are separate

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import torch
 
-from .agent import SDKBAgent
+from .agent import SDKBAgent, answer_distribution_kl
 from .training import autocast_context, environment_report, resource_report
 
 
@@ -44,9 +44,20 @@ def model_probe(config) -> dict:
                    ['Prior experience: restore state before retry.', 'Prior experience: retry is permitted.']]
         if config.memory.independent_routing_query and config.train.retrieval == 'learned':
             records.append(agent.produce(agent.text_ids('Unrelated prior experience: a different task.', source=True)))
-        result = agent(agent.prompt_ids('What should happen next?'), agent.target_ids('Restore and retry.'),
+        target = agent.target_ids('Restore and retry.')
+        result = agent(agent.prompt_ids('What should happen next?'), target,
                        records, [0, 1], arm='memory')
-    result.loss.backward()
+        objective = result.loss
+        if config.train.oracle_distillation_weight:
+            with torch.no_grad():
+                teacher_logits = agent.conditioned_logits(
+                    agent.prompt_ids('What should happen next?',
+                                     'Prior experience: restore state before retry.\n'
+                                     'Prior experience: retry is permitted.'),
+                    target, None, loops=1)
+            objective = objective + config.train.oracle_distillation_weight * answer_distribution_kl(
+                agent.backbone.logits(result.answer_states), teacher_logits)
+    objective.backward()
     gradients = {}
     gradient_parameters = [('write_slots', agent.write_slots), ('value_head', agent.value_head[-1].weight),
                             ('reader_output', (agent.reader.local[0] if hasattr(agent.reader, 'local') else agent.reader).output[-1].weight), ('memory_gate', agent.memory_gate)]

@@ -105,6 +105,7 @@ class TrainConfig:
     parent_kl_weight: float = 0.0  # fixed one-pass parent, only while native base is frozen
     oracle_anchor_weight: float = 0.0
     oracle_alignment_weight: float = 0.0  # detached selected-text answer-state cosine loss
+    oracle_distillation_weight: float = 0.0  # fixed one-pass selected-text output KL
     episodes_file: str | None = None  # optional general support/query JSONL
     evidence_scope: str = 'required'  # oracle-selected supports or all causally available candidates
     archive_dir: str | None = None  # existing external storage root; never auto-mount
@@ -135,6 +136,15 @@ class Config:
                 or r.read_timing != 'loop_boundary' or r.compaction != 'none'
                 or not math.isfinite(t.oracle_anchor_weight) or t.oracle_anchor_weight <= 0):
             raise ValueError('Oracle alignment requires anchored oracle memory with native reads and no compaction')
+        if not math.isfinite(t.oracle_distillation_weight) or t.oracle_distillation_weight < 0:
+            raise ValueError('Invalid oracle distillation weight')
+        if t.oracle_distillation_weight and (
+                t.arm != 'memory' or t.retrieval != 'oracle' or t.live_fraction != 1.
+                or r.read_timing != 'loop_boundary' or r.read_steps != 1 or r.compaction != 'none'
+                or m.recurrence_mode != 'middle_block' or m.loops != 2 or m.writer_loops != 1
+                or not m.freeze_backbone or t.oracle_anchor_weight or t.oracle_alignment_weight
+                or t.loop_counts):
+            raise ValueError('Oracle distillation requires fully live, fixed-parent R=2 oracle memory without another text objective')
         if t.selected_producers_only and (t.arm != 'memory' or t.retrieval != 'oracle' or t.live_fraction != 1.):
             raise ValueError('Selected-only producers require fully live oracle memory training')
         if (t.weight_decay < 0 or t.adam_eps <= 0 or len(t.adam_betas) != 2

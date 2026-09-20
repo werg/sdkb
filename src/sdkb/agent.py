@@ -23,6 +23,14 @@ def answer_state_alignment(student: Tensor, teacher: Tensor) -> Tensor:
     return (1 - F.cosine_similarity(student.float(), teacher.detach().float(), dim=-1)).mean()
 
 
+def answer_distribution_kl(student: Tensor, teacher: Tensor) -> Tensor:
+    """Match next-token distributions; the selected-text teacher is fixed and detached."""
+    if student.shape != teacher.shape or student.ndim != 3:
+        raise ValueError('Distillation requires the same answer positions and vocabulary')
+    return F.kl_div(student.float().log_softmax(-1), teacher.detach().float().softmax(-1),
+                    reduction='none').sum(-1).mean()
+
+
 @dataclass
 class ForwardResult:
     loss: Tensor
@@ -393,7 +401,8 @@ class SDKBAgent(nn.Module):
         return ForwardResult(nll + t.routing_weight * routing + weight * auxiliary,
                              nll, routing, auxiliary, selected, raw_nll=None if compact else nll,
                              compact_nll=nll if compact else None, read_count=read_count,
-                             answer_states=hidden[:, context.shape[1] - 1:] if t.oracle_alignment_weight else None)
+                             answer_states=(hidden[:, context.shape[1] - 1:]
+                                            if t.oracle_alignment_weight or t.oracle_distillation_weight else None))
 
     def target_ids(self, answer: str) -> Tensor:
         ids = self.tokenizer.encode(answer, add_special_tokens=False)

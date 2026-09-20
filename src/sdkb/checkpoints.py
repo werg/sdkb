@@ -209,6 +209,8 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
         accumulation_keys = {'microbatches', 'loops', 'totals', 'anchor_total'}
         if agent.config.train.oracle_alignment_weight:
             accumulation_keys.add('alignment_total')
+        if agent.config.train.oracle_distillation_weight:
+            accumulation_keys.add('distillation_total')
         if accumulation_keys - state['accumulation'].keys():
             raise ValueError('Checkpoint lacks complete accumulation state; use an explicit warm-start')
         if progress is None:
