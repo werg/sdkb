@@ -1,0 +1,660 @@
+{
+  "direction": "candidate minus baseline",
+  "false_change_direction": "Positive false-change rate delta means more spurious changes (worse).",
+  "overall": {
+    "accuracy_gain": {
+      "all": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.015625,
+        "ci95": [
+          -0.028125,
+          -0.003125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_identifier": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.00625,
+        "ci95": [
+          -0.015625,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_permission": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.003125,
+        "ci95": [
+          -0.009375,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_restoration": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.015625,
+        "ci95": [
+          -0.028125,
+          -0.003125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.025,
+        "ci95": [
+          -0.05,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "memory_advantage_gain": {
+      "none": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": 0.009375,
+        "ci95": [
+          -0.01875,
+          0.034375
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "zero_values": {
+        "n_worlds": 32,
+        "n_queries": 320,
+        "mean_gain": -0.015625,
+        "ci95": [
+          -0.028125,
+          -0.003125
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "counterfactual_both_correct_gain": {
+      "cf_identifier": {
+        "n_worlds": 32,
+        "n_queries": 64,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_permission": {
+        "n_worlds": 32,
+        "n_queries": 192,
+        "mean_gain": -0.03125,
+        "ci95": [
+          -0.057291666666666664,
+          -0.010416666666666666
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_restoration": {
+        "n_worlds": 32,
+        "n_queries": 128,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    },
+    "counterfactual_false_change_rate_delta": {
+      "cf_identifier": {
+        "n_worlds": 32,
+        "n_queries": 256,
+        "mean_gain": 0.02734375,
+        "ci95": [
+          0.01171875,
+          0.046875
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_permission": {
+        "n_worlds": 32,
+        "n_queries": 128,
+        "mean_gain": 0.1796875,
+        "ci95": [
+          0.0859375,
+          0.265625
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      },
+      "cf_restoration": {
+        "n_worlds": 32,
+        "n_queries": 192,
+        "mean_gain": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+      }
+    }
+  },
+  "by_family": {
+    "multiuse/action": {
+      "accuracy_gain": {
+        "all": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": -0.1171875,
+          "ci95": [
+            -0.234375,
+            0.0234375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "memory_advantage_gain": {
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.1171875,
+          "ci95": [
+            -0.015625,
+            0.2421875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_both_correct_gain": {
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_false_change_rate_delta": {
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 128,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    },
+    "multiuse/identifier": {
+      "accuracy_gain": {
+        "all": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "memory_advantage_gain": {
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_both_correct_gain": {
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_false_change_rate_delta": {
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.359375,
+          "ci95": [
+            0.203125,
+            0.53125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    },
+    "multiuse/permission": {
+      "accuracy_gain": {
+        "all": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.078125,
+          "ci95": [
+            -0.140625,
+            -0.015625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.03125,
+          "ci95": [
+            -0.078125,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.015625,
+          "ci95": [
+            -0.046875,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.078125,
+          "ci95": [
+            -0.140625,
+            -0.015625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.09375,
+          "ci95": [
+            -0.1875,
+            0.359375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "memory_advantage_gain": {
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.171875,
+          "ci95": [
+            -0.4375,
+            0.109375
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.078125,
+          "ci95": [
+            -0.140625,
+            -0.015625
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_both_correct_gain": {
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.09375,
+          "ci95": [
+            -0.15625,
+            -0.03125
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_false_change_rate_delta": {
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.109375,
+          "ci95": [
+            0.03125,
+            0.1875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    },
+    "multiuse/restoration": {
+      "accuracy_gain": {
+        "all": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.015625,
+          "ci95": [
+            0.0,
+            0.046875
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "memory_advantage_gain": {
+        "none": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": -0.015625,
+          "ci95": [
+            -0.046875,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "zero_values": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_both_correct_gain": {
+        "cf_restoration": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      },
+      "counterfactual_false_change_rate_delta": {
+        "cf_identifier": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        },
+        "cf_permission": {
+          "n_worlds": 32,
+          "n_queries": 64,
+          "mean_gain": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "warning": "Intervals resample worlds, not training seeds; small world counts remain unreliable."
+        }
+      }
+    }
+  },
+  "notice": "Paired diagnostic intervals resample worlds, not training seeds. Row identities must be accompanied by common episode-file provenance. Intervals are not corrected for multiple comparisons.",
+  "metric": "free_generation_exact_match",
+  "episodes_sha256": "9009d9f784335830270b0271c0a384c73b2df7e6fd1b470a0480f6e22b5a6b82",
+  "max_new_tokens": 24,
+  "inputs": {
+    "baseline": {
+      "path": "/mnt/external/sdkb-archive/runs/binding-fixed-query-detail-20260920/confirmation/control-fixed/results.json",
+      "sha256": "5de570b45172a9fd6d07286efe2d3d352cedbbef0455b8e7cddb2a92b05364ae"
+    },
+    "candidate": {
+      "path": "/mnt/external/sdkb-archive/runs/binding-fixed-query-detail-20260920/confirmation/fixed-fixed/results.json",
+      "sha256": "99bdb8544aca50ed3802f6d32550665e5e6627e28f5a81caf1f899b3d98468fc"
+    }
+  }
+}

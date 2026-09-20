@@ -63,3 +63,31 @@ control reproduction. The probe writes fingerprints instead of model checkpoints
 After training ownership released, verified hard-link deduplication reclaimed
 1,017,349,676 bytes from the identical initial weights. Complete recovery state and
 all paths remain intact. Fresh confirmation is running in both question forms.
+
+## Fixed-form confirmation
+
+The first completed pair uses the same fixed question at evaluation. Both models
+produce **0/64 exact identifiers**, including endpoint counterfactuals. The fixed-query
+continuation reduces identifier target NLL from 3.98782 to 2.61166, but this does not
+establish exact recall. Its wrong identifier prediction changes on 57/64 endpoint
+interventions versus 44/64 for the control; irrelevant permission changes alter it
+on 56/64 versus 33/64. These are sensitivity and invariance failures, not successful
+counterfactual recall.
+
+Both retain 128/128 action answers in the original and all three counterfactual
+conditions. Direct permission answers regress from 64/64 to 59/64, while direct
+restoration answers remain 64/64. No-memory action accuracy is 64/128 for the control
+and 49/128 for the fixed-query model; zero-value accuracy is 54/128 for both.
+`fixed-form-confirmation.json` pins the complete aggregate and external result
+hashes; `fixed-form-generation.json` gives paired world-level comparisons.
+`counterfactual-target-overlap.json` additionally confirms that both original and
+inverted held-out endpoint targets have zero overlap with either training corpus.
+The original-query pair is still running.
+
+A post-hoc `text_control.py` diagnostic will test each frozen endpoint on both
+question forms using exactly the selected earlier source as text. It also repeats
+no-memory generation and requires equality with the completed latent reference.
+The text and latent token budgets differ. This tests decoding and interface effects;
+it does not enable a source-text fallback in stored-latent inference. Completed
+strings are atomically recorded on external storage and resumed after cooperative
+stops; it writes no model checkpoints.

@@ -1,0 +1,15 @@
+{
+  "heldout_sha256": "c69f65175a51bfe89e3fcede53e23c09059553cddef04600678485860a818a37",
+  "original_endpoints": 64,
+  "counterfactual_endpoints": 64,
+  "overlap": {
+    "source_finetuning": {
+      "original": 0,
+      "counterfactual": 0
+    },
+    "continuation_training": {
+      "original": 0,
+      "counterfactual": 0
+    }
+  }
+}
