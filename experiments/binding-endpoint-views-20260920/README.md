@@ -68,3 +68,13 @@ comparison is one seed on 32 fresh worlds; it establishes neither agent success
 nor parameter substitution. `confirmation.json` pins input/result/bank hashes and
 all condition counts; `independent-vs-views-generation.json` records the paired
 world bootstrap comparison. Raw records and predictions remain on external disk.
+
+
+A post-hoc positional character diagnostic further limits the NLL interpretation.
+With missing/malformed positions counted wrong, source / independent-world / view
+arms recover 24 / 23 / 34 of 384 hex positions; zero-valued memories recover
+26 / 20 / 25. The view arm's paired gain is 2.34 percentage points, with a 32-world
+bootstrap percentile interval of [0.00, 4.69] points. This uncorrected, single-seed
+interval is descriptive. All-memory well-formed strings number 46 / 59 / 57 of 64;
+better formatting and target NLL do not establish exact content recovery.
+`analyze_characters.py` reproduces `character-accuracy.json` from the frozen results.

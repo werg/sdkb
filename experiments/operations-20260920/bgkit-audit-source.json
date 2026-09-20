@@ -1,0 +1,14 @@
+{
+  "repository": "bgkit",
+  "commit": "2015354d9093ce8c9509eba28ac54dfff0ba68bf",
+  "worktree_clean": true,
+  "files": {
+    "docs/runbook.md": "da2d61d9b559ce0cc9be5d4e149b6b273c53f2992503b528166f0acad5656326",
+    "docs/dgx_spark_perf_playbook.md": "191e717a3bcc91f48bb6090a0106bed7cc220a7e30f2ab3f112a6c5b6020384f",
+    "src/bgkit/training/base_trainer.py": "0704d6cbcee5a060ae75d00df50afd264210fce2c6addec75b4a61b1f36b5126",
+    "src/bgkit/training/checkpoint_archiver.py": "83e5cee49419bf301e83657d2ef23d793915d5fc004078e464cc349aa1cab63c",
+    "src/bgkit/training/checkpointing.py": "7089fc8d83b58ab5ccd859e5117cf7fd31a775c7684bc7db8fc2904aa520bee8",
+    "scripts/restart-train.sh": "857a73a11bda3e9a6f27f25e181af9b0b5a38774164d006d59c881eca3b7da7d"
+  },
+  "scope": "Operational reference audit; no bgkit code, configuration, credentials or model data imported."
+}

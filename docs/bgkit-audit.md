@@ -98,3 +98,22 @@ uninterrupted final model, optimizer, named groups and all RNG state. The shared
 failed-save regression preserves the previous checkpoint and removes the partial
 file. Existing compactor endpoints remain valid explicit warm-start sources;
 resuming an older run requires its original checkout and format.
+
+
+The 20 September follow-up rechecked the local reference at commit `2015354`
+(clean worktree); exact operational source hashes are recorded in
+`experiments/operations-20260920/bgkit-audit-source.json`. SDKB already arms stop
+handling before model setup, disarms its compute watchdog around saves, and avoids
+a blocking archive drain on emergency exit. The direct-external mode used here
+still needs time to fsync the checkpoint itself; the Spark launcher gives a
+600-second stop grace period. An abrupt kill cannot promise a new checkpoint.
+The generic optional archive mode remains available for a faster staging disk.
+
+The reference's newer data lesson is also applicable: targets must refer only to
+source content actually encoded. SDKB source/prompt token limits raise explicitly;
+they do not silently truncate decisive identifiers or rules. Repeated/query-view
+experiments preserve immutable source versions and report their oracle scope.
+No model-specific kernel patches, automatic destructive restart loop or live
+hyperparameter mutation were imported. Those are not prerequisites for the current
+fixed-schedule LFM experiments; the implemented recovery contract covers their
+actual state rather than claiming nonexistent scheduler/controller support.
