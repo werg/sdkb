@@ -541,12 +541,17 @@ def test_learned_read_count_matches_stored_and_full_replay(tmp_path, loop_config
 @pytest.mark.parametrize('kind', ['mlp', 'attention'])
 @pytest.mark.parametrize('method', ['mean', 'synthetic'])
 @pytest.mark.parametrize('checkpoint', [False, True])
-def test_inloop_temporary_compaction_replay_and_causal_queries(loop_config, kind, method, checkpoint):
+@pytest.mark.parametrize('objective', ['interleaved', 'paired'])
+@pytest.mark.parametrize('retrieval', ['oracle', 'learned'])
+def test_inloop_temporary_compaction_replay_and_causal_queries(loop_config, kind, method, checkpoint, objective, retrieval):
     c = loop_config
     c.memory.read_steps = 1
     c.memory.reader, c.memory.compaction = kind, method
     c.memory.compact_records = 1
+    c.train.retrieval, c.train.routing_warmup = retrieval, 0
     c.memory.compaction_loss_weight = .3
+    c.memory.compaction_objective = objective
+    c.memory.behavior_kl_weight = .2
     c.memory.noise_std = .01
     c.memory.compaction_grouping = 'random'
     c.model.gradient_checkpointing = checkpoint
@@ -554,7 +559,7 @@ def test_inloop_temporary_compaction_replay_and_causal_queries(loop_config, kind
     c.validate()
     a = SDKBAgent(c).train()
     b = copy.deepcopy(a)
-    e = make_episode(2, distractors=0)
+    e = make_episode(2, distractors=2 if retrieval == 'learned' else 0)
     prompt, target = a.prompt_ids(e.query), a.target_ids(e.answer)
     sources = [a.text_ids(s.text, source=True) for s in e.supports]
     rng = torch.get_rng_state()
@@ -567,9 +572,17 @@ def test_inloop_temporary_compaction_replay_and_causal_queries(loop_config, kind
     replayed = b(prompt, target, records, [0, 1], compact=True)
     replayed.loss.backward()
     tape.backward()
-    assert reference.selected == replayed.selected == [[0, 1]]
+    assert reference.selected == replayed.selected
+    if retrieval == 'oracle':
+        assert reference.selected == [[0, 1]]
+    else:
+        assert reference.routing_loss > 0 and b.key_head.weight.grad.abs().sum() > 0
     assert reference.read_count == 1 and reference.compaction_loss > 0
-    assert reference.raw_nll is None and reference.compact_nll is reference.nll
+    if objective == 'interleaved':
+        assert reference.raw_nll is None and reference.compact_nll is reference.nll
+    else:
+        assert reference.raw_nll is reference.nll and reference.compact_nll is not None
+        assert reference.behavior_kl is not None and reference.behavior_kl >= -1e-6
     torch.testing.assert_close(reference.loss, replayed.loss)
     assert torch.equal(torch.get_rng_state(), end_rng)
     for (name, x), (_, y) in zip(a.named_parameters(), b.named_parameters(), strict=True):
@@ -628,9 +641,58 @@ def test_inloop_compaction_matches_persisted_codes(loop_config, tmp_path, monkey
                                atol=1e-6, rtol=1e-6)
 
 
-def test_inloop_compaction_rejects_unimplemented_paired_objective(loop_config):
-    loop_config.memory.read_steps = 1
-    loop_config.memory.compaction = 'mean'
-    loop_config.memory.compaction_objective = 'paired'
-    with pytest.raises(ValueError, match='interleaved'):
-        loop_config.validate()
+@pytest.mark.parametrize('kind', ['mlp', 'attention'])
+def test_inloop_paired_objective_matches_separate_raw_compact_graphs(loop_config, kind):
+    c = loop_config
+    c.memory.read_steps = 1
+    c.memory.reader = kind
+    c.memory.compaction = 'synthetic'
+    c.memory.compact_records = 1
+    c.memory.compaction_objective = 'paired'
+    c.memory.compact_task_weight = .7
+    c.memory.compaction_loss_weight = .2
+    c.memory.behavior_kl_weight = 0.
+    c.validate()
+    paired = SDKBAgent(c).train()
+    reference = copy.deepcopy(paired)
+    reference.config.memory.compaction_objective = 'interleaved'
+    e = make_episode(0, distractors=0)
+    sources = [paired.text_ids(s.text, source=True) for s in e.supports]
+    prompt, target = paired.prompt_ids(e.query), paired.target_ids(e.answer)
+    records = [stored_channel(paired, paired.produce(s)) for s in sources]
+    actual = paired(prompt, target, records, [0, 1], compact=True)
+    actual.loss.backward()
+    other = [stored_channel(reference, reference.produce(s)) for s in sources]
+    raw = reference(prompt, target, other, [0, 1], compact=False)
+    compact = reference(prompt, target, other, [0, 1], compact=True)
+    expected = raw.nll + .7 * compact.nll + .2 * compact.compaction_loss
+    expected.backward()
+    torch.testing.assert_close(actual.loss, expected, atol=1e-6, rtol=1e-6)
+    torch.testing.assert_close(actual.raw_nll, raw.nll, atol=1e-6, rtol=1e-6)
+    torch.testing.assert_close(actual.compact_nll, compact.nll, atol=1e-6, rtol=1e-6)
+    assert actual.selected == raw.selected == compact.selected
+    for (name, a), (_, b) in zip(paired.named_parameters(), reference.named_parameters(), strict=True):
+        if a.grad is None:
+            assert b.grad is None, name
+        else:
+            torch.testing.assert_close(a.grad, b.grad, atol=2e-5, rtol=2e-4, msg=name)
+
+
+@pytest.mark.parametrize('timing', ['prefix', 'loop_boundary'])
+def test_paired_value_ablation_removes_source_values_from_both_paths(loop_config, timing):
+    c = loop_config
+    c.memory.read_steps, c.memory.read_timing = 1, timing
+    c.memory.compaction, c.memory.compact_records = 'synthetic', 1
+    c.memory.compaction_objective = 'paired'
+    c.validate()
+    agent = SDKBAgent(c).eval()
+    e = make_episode(0, distractors=0)
+    prompt, target = agent.prompt_ids(e.query), agent.target_ids(e.answer)
+    with torch.no_grad():
+        records = [stored_channel(agent, agent.produce(agent.text_ids(s.text, source=True))) for s in e.supports]
+        changed = [tuple(v if i % 2 == 0 else torch.full_like(v, 123.) for i, v in enumerate(record))
+                   for record in records]
+        a = agent(prompt, target, records, [0, 1], compact=True, ablate_values=True)
+        b = agent(prompt, target, changed, [0, 1], compact=True, ablate_values=True)
+    for field in ['loss', 'raw_nll', 'compact_nll', 'behavior_kl']:
+        torch.testing.assert_close(getattr(a, field), getattr(b, field), rtol=0, atol=0)

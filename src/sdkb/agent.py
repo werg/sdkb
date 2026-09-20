@@ -196,11 +196,11 @@ class SDKBAgent(nn.Module):
             auxiliary = contribution_loss(self.reader, values[0], weights[0], view.values, view.weights, query)
         return self.reader(values[0], query, weights[0]).tokens, auxiliary
 
-    def read_pair(self, payloads: list[Tensor], query: Tensor):
+    def read_pair(self, payloads: list[Tensor], query: Tensor, *, ablate_values: bool = False):
         """Raw and compact paths see exactly the same noisy values and selection."""
         if isinstance(self.reader, MultiSpaceReader):
             raise ValueError("Paired compaction currently requires one space")
-        values, weights = self._prepare_values(payloads)
+        values, weights = self._prepare_values(payloads, ablate_values)
         raw = self.reader(values[0], query, weights[0]).tokens
         view = self._compact_values(values[0], weights[0])
         compact = self.reader(view.values, query, view.weights).tokens
@@ -315,6 +315,8 @@ class SDKBAgent(nn.Module):
         if count < 2:
             raise ValueError("In-loop memory training needs at least two core passes")
         selected = [[] for _ in r.payload_dims]
+        paired = compact and r.compaction_objective == 'paired'
+        compact_memory, compact_events = None, []
         routing, memory, read_count = self.memory_gate * 0, None, 0
         auxiliary = self.memory_gate * 0
         oracle = t.retrieval == "oracle" or (self.training and step < t.routing_warmup)
@@ -322,7 +324,7 @@ class SDKBAgent(nn.Module):
         context = self._context(prompt, blank)
         embeddings = torch.cat((context, self.backbone.embed(target[:, :-1])), 1)
         def boundary(completed, state, _anchor):
-            nonlocal memory, routing, read_count, auxiliary
+            nonlocal memory, compact_memory, routing, read_count, auxiliary
             if completed <= r.read_steps:
                 query, routing_query = self.loop_query_pair(state, length)
                 payloads, progressed = [], False
@@ -345,9 +347,16 @@ class SDKBAgent(nn.Module):
                     values = [records[i][2 * space + 1] for i in selected[space]]
                     payloads.append(torch.cat(values, 0) if values else query.new_empty(0, dim))
                 if progressed:
-                    memory, local_auxiliary = self.read_tokens(payloads, query, compact=compact, ablate_values=ablate_values)
+                    if paired:
+                        memory, compact_memory, local_auxiliary = self.read_pair(payloads, query,
+                                                                               ablate_values=ablate_values)
+                    else:
+                        memory, local_auxiliary = self.read_tokens(payloads, query, compact=compact,
+                                                                  ablate_values=ablate_values)
                     auxiliary = auxiliary + local_auxiliary
                     read_count += 1
+            if paired:
+                compact_events.append(compact_memory)
             return None if memory is None else LoopWrite(length, memory)
         hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long),
                                       boundary=boundary)
@@ -355,6 +364,19 @@ class SDKBAgent(nn.Module):
         nll = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1))
         routing = routing / max(1, read_count)
         auxiliary = auxiliary / max(1, read_count)
+        if paired and read_count:
+            # A single first-boundary query/selection and noisy value set feed
+            # both paths. Sharing this causal prefix expression accumulates both
+            # cotangents through the common query/backbone graph before replay.
+            compact_plan = LoopMemory(length, r.read_slots, count, tuple(compact_events))
+            compact_logits = self.conditioned_logits(prompt, target, compact_plan)
+            compact_nll = F.cross_entropy(compact_logits.reshape(-1, compact_logits.shape[-1]), target.reshape(-1))
+            behavior = F.kl_div(compact_logits.log_softmax(-1), logits.detach().softmax(-1),
+                                reduction='none').sum(-1).mean()
+            loss = (nll + r.compact_task_weight * compact_nll + r.compaction_loss_weight * auxiliary
+                    + r.behavior_kl_weight * behavior + t.routing_weight * routing)
+            return ForwardResult(loss, nll, routing, auxiliary, selected, raw_nll=nll,
+                                 compact_nll=compact_nll, behavior_kl=behavior, read_count=read_count)
         weight = r.compaction_loss_weight if compact else r.merge_loss_weight
         return ForwardResult(nll + t.routing_weight * routing + weight * auxiliary,
                              nll, routing, auxiliary, selected, raw_nll=None if compact else nll,
@@ -412,7 +434,7 @@ class SDKBAgent(nn.Module):
             payloads.append(values[indices])
         present = any(p.shape[0] for p in payloads)
         if compact and present and r.compaction_objective == "paired":
-            raw, compact_memory, auxiliary = self.read_pair(payloads, q)
+            raw, compact_memory, auxiliary = self.read_pair(payloads, q, ablate_values=ablate_values)
             raw_logits = self.conditioned_logits(prompt, target, raw)
             compact_logits = self.conditioned_logits(prompt, target, compact_memory)
             raw_nll = F.cross_entropy(raw_logits.reshape(-1, raw_logits.shape[-1]), target.reshape(-1))

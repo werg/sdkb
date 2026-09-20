@@ -186,8 +186,8 @@ Compaction stages receive an additional teacher evaluation using persisted codes
 with raw fallback and payload accounting. Final causal/binding evaluations also
 include persistent codes. Reports state when no profitable clusters were built.
 Set `compact_records: 1` on a compaction stage for two-record groups; compactor-only
-training rejects an oracle dataset where no group can be reduced. Native in-loop
-compaction remains explicitly unsupported; use the prefix-mode comparison recipes.
+training rejects an oracle dataset where no group can be reduced. Native single-read in-loop compaction supports interleaved and paired objectives;
+see the recurrent training section below.
 
 Copy a recipe and add a stage with `compaction: true` and `init_from: latent_joint`
 to initialize synthetic compaction with all existing writer/reader/controller weights
@@ -240,7 +240,14 @@ compactor parameters initialize separately; the source writer/reader state is re
 The compact read consumes all selected records before its shared-state update and
 matches the configured serialized value precision plus FP32 multiplicities. Its
 auxiliary loss preserves conditional pre-normalization numerator and mass. Native
-paired objectives and scheduled multi-read compaction remain unsupported and fail
-validation. Both MLP and attention readers support this same intervention. This
+scheduled multi-read compaction remains unsupported and fails validation. Both MLP and attention readers support this same intervention. This
 implementation and its gradient/storage checks do not establish useful compression;
 compare held-out raw/compact counterfactual behavior at a declared update budget.
+
+Set `compaction_objective: paired` to retain raw task loss on each compact-selected
+example and add `compact_task_weight * compact_nll`, plus the contribution loss
+and optional `behavior_kl_weight * KL(raw.detach() || compact)`. Both paths use the
+same causal first-boundary query, selected sources and noisy values. This computes
+two decoder paths and changes the loss scale; declare both when comparing budgets.
+Groups too small to reduce still receive the paired objective, as in prefix mode.
+Use a fresh warm-start fork; an exact resume must keep its saved objective.

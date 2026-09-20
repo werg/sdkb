@@ -133,7 +133,7 @@ def test_compactor_only_does_not_move_raw_system(tmp_path, tiny_config):
     assert any(not torch.equal(initial[k], after[k]) for k in after if k.startswith('compactor.'))
 
 
-@pytest.mark.parametrize('native_compaction', [False, True])
+@pytest.mark.parametrize('native_compaction', [False, 'interleaved', 'paired'])
 def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monkeypatch, native_compaction):
     from sdkb.operations import request_stop
     from sdkb.replay import ReplayTape
@@ -151,6 +151,8 @@ def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monke
         config.train.loop_counts = [2, 3]
         config.memory.read_timing, config.memory.read_steps = 'loop_boundary', 1
         config.memory.compaction, config.memory.compact_records = 'synthetic', 1
+        config.memory.compaction_objective = native_compaction
+        config.memory.behavior_kl_weight = .2
         config.memory.compaction_warmup = 0
         config.memory.compaction_probability = .5
         config.memory.compaction_grouping = 'random'

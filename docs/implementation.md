@@ -166,8 +166,10 @@ mean or synthetic compaction: the complete selected group is replaced before the
 shared reader update, with a differentiable storage-precision value cast and FP32
 multiplicity. Uncompacted examples retain their task objective; compact examples
 add conditional numerator/mass and rollout matching. Logs distinguish raw and
-compact NLL. Native paired raw/compact objectives and multi-read compaction remain
-rejected. Offline creation of persistent codes is still separate from inference;
+compact NLL. The paired objective uses one causal first-boundary query, selection
+and noisy value set for separate raw/compact decoder paths, with optional detached
+raw-teacher KL. Both cotangents reach the shared query graph before producer replay.
+Multi-read compaction remains rejected. Offline creation of persistent codes is still separate from inference;
 partial cluster selections retain exact raw fallback.
 
 ## Persistence and concurrency

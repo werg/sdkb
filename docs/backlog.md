@@ -15,7 +15,7 @@ CPU reference evidence remains in `validation-v0.2.md`.
 2. **Global address generalization.** Corrected training gets 102/128 free actions
    at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
    training fit but reduce held-out pair retrieval. No robust large-bank claim.
-3. **MLP conditional compaction.** Native single-read interleaved training now
+3. **MLP conditional compaction.** Native single-read interleaved and paired training now
    passes replay, causal, stored-code and emergency-resume checks. A matched
    raw/temporary-code learning comparison is running; preserve numerator/mass
    and source-change behavior before claiming useful persistent compression. Raw subset fallbacks

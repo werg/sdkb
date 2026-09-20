@@ -28,3 +28,17 @@ changes policy before replay; both prior-failing CPU regressions pass exactly.
 These are execution checks, not evidence of useful learned compression or storage
 savings. Frozen source data, banks and native diagnostic reports live under
 `/archive/probes/inloop-compaction-preflight-20260920`; `preflight.json` records hashes.
+
+## Paired objective follow-up
+
+Native single-read paired training is now implemented. Raw and compact losses share
+the causal query/selection and noisy values; optional detached raw-teacher KL
+encourages behavior preservation. Tests compare an independent two-path reference,
+all shared replay gradients with oracle/learned routing, ablations and interrupted
+partial-accumulation resume. Full suite: 398 passed; Ruff clean.
+
+The paired native BF16 preflight reproduces RNG exactly and persisted compact NLL
+with zero discrepancy. Maximum absolute shared-gradient discrepancy is 0.00036621,
+consistent with the cached accumulation effect above. The actual model preflight
+passes causal-prefix and one-loop identity checks exactly. These are numerical
+checks; no paired learning outcome has been established.

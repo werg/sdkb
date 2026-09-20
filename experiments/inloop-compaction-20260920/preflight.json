@@ -34,5 +34,14 @@
     "rng_exact": true,
     "integrated_nll": 9.139371286437381e-07,
     "stored_nll": 9.139371286437381e-07
+  },
+  "paired_cached": {
+    "external_report": "/archive/probes/inloop-compaction-preflight-20260920/native-paired/results.json",
+    "report_sha256": "0434993224e10b4e33081c2aa5c72b0bc19fcce130839dff1daa8c8dfd953372",
+    "script_sha256": "2ac6df127a173e5e5554715141b2913ef3cb1aeb4a52d34f7a0c9c8b6ab3ab87",
+    "max_absolute_gradient_error": 0.0003662109375,
+    "rng_exact": true,
+    "integrated_nll": 9.139371286437381e-07,
+    "stored_nll": 9.139371286437381e-07
   }
 }

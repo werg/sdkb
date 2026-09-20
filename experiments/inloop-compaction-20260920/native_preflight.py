@@ -20,11 +20,13 @@ from sdkb.training import config_from_run, autocast_context, stored_channel, env
 from sdkb.trajectories import file_sha256
 
 
-def main(source, output, *, raw=False, no_autocast_cache=False):
+def main(source, output, *, raw=False, no_autocast_cache=False, objective='interleaved'):
     output.mkdir(parents=True, exist_ok=False)
     checkpoint = resolve_checkpoint(source, verify=True)
     config = config_from_run(checkpoint)
     config.memory.compaction, config.memory.compact_records = 'synthetic', 1
+    config.memory.compaction_objective = objective
+    config.memory.behavior_kl_weight = .2 if objective == 'paired' else 0.
     config.memory.compaction_warmup = 0
     config.memory.compaction_probability = .5
     config.validate()
@@ -88,17 +90,18 @@ def main(source, output, *, raw=False, no_autocast_cache=False):
         session = read_session(a, store, prompt, namespace='global', generation='frozen-v1',
                                query_time=e.query_time, oracle_ids=e.required_ids, cluster_bank=codes)
         stored = a.conditioned_nll(prompt, target, session.memory)
-    torch.testing.assert_close(integrated.nll, stored, atol=.03, rtol=0)
+    integrated_nll = integrated.compact_nll
+    torch.testing.assert_close(integrated_nll, stored, atol=.03, rtol=0)
     atomic_json(output/'results.json', {'source_manifest_sha256': file_sha256(checkpoint/'manifest.json'),
         'script_sha256': file_sha256(__file__), 'environment': environment_report(),
-        'gradient_compact': not raw, 'autocast_cache_enabled': not no_autocast_cache,
+        'objective': objective, 'gradient_compact': not raw, 'autocast_cache_enabled': not no_autocast_cache,
         'gradient_relative_l2_tolerance': relative_tolerance,
         'gradient_errors_by_parameter': errors, 'gradient_notice': 'BF16 shared-parameter accumulation order is diagnosed explicitly.',
         'loss': float(reference.loss.detach()), 'rng_exact': True,
-        'integrated_nll': float(integrated.nll), 'stored_nll': float(stored), 'stored_nll_atol': .03,
+        'integrated_nll': float(integrated_nll), 'stored_nll': float(stored), 'stored_nll_atol': .03,
         'reader_hash': state_fingerprint(a.reader), 'code_storage': sizes,
         'notice': 'Native BF16 execution check only. Random new compactor; no training or capability result.'})
-    print(json.dumps({'max_gradient_error': max(e['max_abs'] for e in errors.values()), 'stored_nll_error': float((integrated.nll-stored).abs())}))
+    print(json.dumps({'max_gradient_error': max(e['max_abs'] for e in errors.values()), 'stored_nll_error': float((integrated_nll-stored).abs())}))
 
 
 if __name__ == '__main__':
@@ -107,5 +110,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--raw', action='store_true')
     parser.add_argument('--no-autocast-cache', action='store_true')
+    parser.add_argument('--objective', choices=['interleaved', 'paired'], default='interleaved')
     args = parser.parse_args()
-    main(args.source, args.output, raw=args.raw, no_autocast_cache=args.no_autocast_cache)
+    main(args.source, args.output, raw=args.raw, no_autocast_cache=args.no_autocast_cache, objective=args.objective)
