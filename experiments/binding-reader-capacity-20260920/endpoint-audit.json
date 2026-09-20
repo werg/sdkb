@@ -1,0 +1,52 @@
+{
+  "training_commit": "b38564a128f789acd327f47209dc09aa94a6bb4c",
+  "arms": {
+    "width-256": {
+      "checkpoint": "/archive/runs/binding-reader-capacity-20260920/width-256/checkpoints/step-000002000-23595d6194f6",
+      "manifest_sha256": "6b78eabd7bfc3984886dfe6f5ed33d734b772dfbc600b324fd86316a7ee47945",
+      "model_sha256": "b3d317548d56875ccf028c1dc9d4a6a386e6fe0f13d6ca8b74980fdd9107bed3",
+      "steps": 2000,
+      "all_depths_and_sampler_verified": true,
+      "elapsed_training_seconds": 3086.8402157469827,
+      "peak_logged_cuda_allocated_bytes": 2709534720,
+      "minimum_logged_host_available_bytes": 53430456320,
+      "checkpoint_directories": [
+        "step-000000000-7266c87e3b4b",
+        "step-000002000-23595d6194f6"
+      ]
+    },
+    "width-1024": {
+      "checkpoint": "/archive/runs/binding-reader-capacity-20260920/width-1024/checkpoints/step-000002000-2adc9853c0f5",
+      "manifest_sha256": "611e6a14804039c7a446b1ad068719f13e5379017bfc188b60ec948716851519",
+      "model_sha256": "a48f5cb08a31f39af742ca6473dbac53fe882175f7e2e79b251f5d474170c8ec",
+      "steps": 2000,
+      "all_depths_and_sampler_verified": true,
+      "elapsed_training_seconds": 3210.530780229019,
+      "peak_logged_cuda_allocated_bytes": 3116572672,
+      "minimum_logged_host_available_bytes": 53951832064,
+      "checkpoint_directories": [
+        "step-000000000-db737651bb1c",
+        "step-000002000-2adc9853c0f5"
+      ]
+    }
+  },
+  "common_sampling_plan": {
+    "schedule_sha256": "201ea713140d45c14542be2fcdcfc83ec0b9ad96022ffff5ac0e3b0834445b2a",
+    "families": {
+      "multiuse/identifier": 5092,
+      "multiuse/permission": 763,
+      "multiuse/action": 1455,
+      "multiuse/restoration": 690
+    },
+    "distinct_identifier_targets_sampled": 4367,
+    "identifier_target_exposure_histogram": {
+      "1": 3716,
+      "3": 66,
+      "2": 581,
+      "4": 4
+    }
+  },
+  "sampler_helper_sha256": "4f94834b8683a3b17177e74a9ad38b6f8dee56b758d5d1e02a1c5197fd905f29",
+  "audit_script_sha256": "797759f05905ef8584bc125961b7d5cafe57109d4830550391e71c49434de257",
+  "notice": "Training provenance and contended resource telemetry; held-out behavior is separate."
+}

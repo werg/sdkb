@@ -60,3 +60,16 @@ complete endpoint/reference identity before starting. Launch it with frozen
 separately. To resume an interrupted study, resume the primary controller first,
 then use `run_text_controls.py --resume` to acknowledge only inactive text-child
 stop controls after primary ownership is released.
+
+## Training endpoints committed
+
+Both arms completed all 2000 updates from frozen `b38564a`. The endpoint audit
+verifies every sampled recurrent depth and the complete final sampler state, full
+Muon recovery state, dataset and clean implementation identity. Each arm retains
+exactly its initial and final checkpoints on external storage. Training took about
+51/54 minutes under shared-machine contention; this is not a throughput comparison.
+
+The complete 100-update-window loss curves are exported under the external run's
+`analysis/training-nll.{png,svg}`; `training-nll.json` records both complete log
+prefixes. Training fit improved in both arms. Held-out behavior and text controls
+are still running; no reader-capacity benefit is asserted from these losses.

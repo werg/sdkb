@@ -1,0 +1,18 @@
+{
+  "window_updates": 100,
+  "arms": {
+    "width-256": {
+      "complete_updates": 2000,
+      "metrics_prefix_sha256": "d2f326bc00e629ee69cc6596f5f803ff399353fa8e1cb3ae8c88e0b13f046501",
+      "first_100_update_mean_nll": 1.929314275295053,
+      "last_100_update_mean_nll": 0.8375518575825146
+    },
+    "width-1024": {
+      "complete_updates": 2000,
+      "metrics_prefix_sha256": "952fedb583c120f4da119c8bb348cfcb52f887a2fd4ca895661feea94fb3cb30",
+      "first_100_update_mean_nll": 1.9256655700469492,
+      "last_100_update_mean_nll": 0.7591678508930997
+    }
+  },
+  "notice": "Training fit only; ongoing logs may have unequal prefixes. No held-out or throughput claim."
+}
