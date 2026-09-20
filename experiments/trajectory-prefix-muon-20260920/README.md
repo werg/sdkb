@@ -55,11 +55,54 @@ selection uses only the prepared source supports visible at each query time; the
 target continuation never enters a query. `selected_producers_only` records the
 fully live oracle compute policy, and native Muon remains the matrix optimizer.
 Complete checkpoints, caches, data and offline W&B files stay on the external
-drive. This is a teacher-likelihood and memory-intervention experiment; its
-outcome has not yet been measured.
+drive. This is a teacher-likelihood and memory-intervention experiment.
 
 `latent-inputs.json` pins the config, prepared train and validation files, base
 revision, and exact bridge checkpoint model and manifest. `run_latent.py` verifies
 these before the native preflight and before any training state is created. A
 graceful stop writes complete optimizer, RNG and partial-gradient state; `--resume`
 uses the same locked inputs and committed checkpoint.
+
+The native stage completed all 400 updates in about 240 seconds, with one actual
+in-loop read per logged example. Its initial and final complete checkpoints are
+on the external drive. The frozen training code is `c421408`; the frozen
+evaluation code is `5e34e49`. The evaluation was stopped after 177 scored rows
+and resumed to 476/476 without re-encoding a completed frozen bank scope.
+
+On all 119 repository-held-out episodes, the frozen stage-400 checkpoint gave:
+
+| Condition | Token-weighted teacher NLL |
+|---|---:|
+| Real stored values | 1.324823 |
+| Zeroed values, same read selection | 1.333195 |
+| Wrong values, same read selection | 1.335170 |
+| No memory | 1.829600 |
+| Selected source text at R=2 | 1.397014 |
+
+`latent_text_control.yaml` changes only the inference arm and its incompatible
+training-only selected-producer flag before loading the identical latent checkpoint
+for the selected-text control; it does not warm-start or retrain a model.
+
+`latent-results.json` pins the external result digests and reports paired
+trajectory-bootstrap diagnostics. Real values improved mean episode NLL over
+zero values by 0.01173 (42-trajectory descriptive interval 0.01000–0.01350),
+and over wrong values by 0.01359 (0.01011–0.01685). The original selected IDs
+were identical in all 119 intervention pairs. This is a consistent but small
+payload-specific effect. The much larger real-memory versus no-memory gap
+includes the effect of the memory path, working slots and extra computation;
+it cannot be credited to stored content. The selected-text condition changes
+token and compute budgets. These are teacher-forced likelihood measurements,
+not agent success, composition or a capacity-substitution result.
+
+## Recurrent joint stage
+
+`recurrent_joint.yaml` declares a new 400-update Muon warm-start from the exact
+latent step-400 checkpoint. It samples consumer depths two and three per complete
+optimizer update, keeps writer depth one, trains the shared native core and SDKB
+modules, and uses a 0.1 selected-text one-pass NLL anchor. Prelude, coda and
+embeddings follow the `recurrent_core` freeze policy. The same prepared sources,
+validation split, oracle access and external checkpoint policy remain pinned.
+`joint-inputs.json` and `run_joint.py` reject changes to the config, data, base
+revision or latent initialization before native model preflight and training.
+The joint outcome is pending; a tiny positive payload effect in latent warmup
+does not establish that extra recurrence will improve transfer.

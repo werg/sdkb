@@ -1,0 +1,49 @@
+{
+  "protocol": "119 prepared repository-held-out public trajectory episodes; frozen stage-400 checkpoint",
+  "teacher_results_sha256": "ec25e20d2b225759de36661267d3aad863b91d0e1670ab18f9fd56aed1738b5f",
+  "text_results_sha256": "d2152d3be0fa8bcd99162a4461d8fccfff99953f1d60fc777aee26bce02c7e15",
+  "token_weighted_nll": {
+    "all": 1.3248227695679662,
+    "none": 1.8296000306649682,
+    "zero_values": 1.3331949768837401,
+    "wrong_values": 1.3351701035768808,
+    "r2_selected_text": 1.3970142137505512
+  },
+  "paired_mean_episode_nll_reduction": {
+    "real_values_over_zero_values": {
+      "mean_episode_nll_reduction": 0.011733210293050942,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.010000418617015122,
+        0.013496869073832685
+      ],
+      "positive_episodes": 116,
+      "episodes": 119
+    },
+    "real_values_over_wrong_values": {
+      "mean_episode_nll_reduction": 0.01359048754910193,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.0101082630549,
+        0.01684686160641386
+      ],
+      "positive_episodes": 104,
+      "episodes": 119
+    },
+    "real_values_over_no_memory": {
+      "mean_episode_nll_reduction": 1.074113600524167,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.984164209376783,
+        1.1593489761891023
+      ],
+      "positive_episodes": 119,
+      "episodes": 119
+    }
+  },
+  "fixed_original_selection_episodes": 119,
+  "resumed_writer_calls": 0,
+  "stored_records": 750,
+  "serialized_payload_bytes": 3132000,
+  "limits": "Teacher-forced NLL only. Context length and compute differ across selected text, stored memory, and no-memory controls. Wrong-value permutation does not guarantee semantic disagreement; no agent success or capacity substitution claim."
+}
