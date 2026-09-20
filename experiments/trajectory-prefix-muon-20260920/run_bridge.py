@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from sdkb.checkpoints import stop_on_signal
+from sdkb.checkpoints import stop_on_signal, resolve_checkpoint
 from sdkb.config import load_config
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.probes import model_probe
@@ -19,7 +19,8 @@ def run(root, *, resume=False):
         if file_sha256(path) != expected:
             raise ValueError('Declared bridge input changed')
     config = load_config(root/'recurrence_bridge.yaml')
-    if config.model.revision != inputs['revision'] or config.train.steps != inputs['steps']:
+    if (config.model.revision != inputs['revision'] or config.train.steps != inputs['steps']
+            or config.train.episodes_file != inputs['train']):
         raise ValueError('Bridge revision/budget differs')
     with run_lock(root, clear_stop=resume), stop_on_signal() as signals:
         if signals['signal'] or stop_requested(root):
@@ -29,7 +30,21 @@ def run(root, *, resume=False):
             atomic_json(probe, model_probe(config))
         if signals['signal'] or stop_requested(root):
             return
-        result = train(config, root/'recurrence_bridge', resume=resume, stop_output=root)
+        stage = root/'recurrence_bridge'
+        existing = stage.exists()
+        if existing:
+            if not resume:
+                raise ValueError('Existing bridge stage requires --resume')
+            with run_lock(stage, clear_stop=False):
+                checkpoint = resolve_checkpoint(stage, verify=True)
+                manifest = json.loads((checkpoint/'manifest.json').read_text())
+                if manifest['dataset_sha256'] != inputs['train_sha256']:
+                    raise ValueError('Bridge checkpoint dataset differs')
+                if manifest['step'] > inputs['steps']:
+                    raise ValueError('Bridge checkpoint exceeds declared budget')
+                if manifest['step'] == inputs['steps']:
+                    return
+        result = train(config, stage, resume=existing, stop_output=root)
         atomic_json(root/'training-result.json', result)
         print(json.dumps(result), flush=True)
 

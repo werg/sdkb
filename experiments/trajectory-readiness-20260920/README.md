@@ -54,4 +54,3 @@ with a descriptive repository-bootstrap interval [.50746, .65872] over 12 groups
 This supports attempting a bounded latent-memory curriculum; it does not establish
 that learned payloads retain the context benefit or that an agent solves tasks.
 The next declared stage is a frozen-backbone recurrent text bridge, using Muon.
-
