@@ -226,6 +226,19 @@ new run. `sdkb train --output RUN --resume` loads the saved config automatically
 There is no LR scheduler or early-stopping controller in SDKB yet; no scheduler
 state is implied. W&B identity and random episode-sampling position also survive.
 
+Resume into the mutable run directory, never a `checkpoints/step-*` directory.
+Training rejects an immutable checkpoint as its output before creating run state.
+Use `sdkb restore` to recover an archive into a new mutable run directory. Direct
+checkpoint paths remain valid for evaluation, warm-starts and read-only state loading;
+the latter still verifies the dataset and base-model revision.
+
+Current resume requires a manifest, explicit optimizer type and named ownership,
+global Python RNG, episode-sampler RNG and Torch/CUDA RNG state. Older states
+missing these fields are rejected instead of substituting another RNG or guessing
+momentum ownership. Resume those with their original checkout and mutable run
+directory, or use an explicit warm-start with fresh optimizer state. Current
+complete checkpoints and partial-accumulation recovery retain their exact semantics.
+
 ## Runtime rails and profiling
 
 Logged training updates include host `MemAvailable` where supported and CUDA

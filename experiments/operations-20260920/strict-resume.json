@@ -1,0 +1,15 @@
+{
+  "failed_regressions_before_fix": 5,
+  "full_suite_passed": 421,
+  "ruff": "passed",
+  "checks": [
+    "Immutable checkpoint rejected as training output before run allocation",
+    "Direct state loads verify data/revision and preserve checkpoint files",
+    "Missing global Python RNG rejected",
+    "Missing named optimizer ownership rejected",
+    "Missing optimizer type rejected",
+    "Current AdamW/Muon complete and partial-accumulation recovery retains exact test parity"
+  ],
+  "test_log": "/archive/profiles/strict-resume-final-tests.log",
+  "compatibility": "Incomplete older states require original code/mutable run or an explicit warm-start; current complete checkpoints remain supported."
+}

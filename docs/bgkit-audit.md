@@ -136,3 +136,12 @@ portable resource helper before allocating the model. The full suite passes 412
 tests; a native pretrained model preflight also passes. This closes a startup gap,
 not continuous inference-time pressure monitoring. Active frozen checkouts retain
 their original code. See `experiments/operations-20260920/evaluation-reserves.json`.
+
+The final resume-path audit closes two compatibility gaps: an immutable checkpoint
+can no longer be used as the training output directory, and missing legacy RNG or
+optimizer ownership/type fields no longer trigger approximate fallbacks. Direct
+read-only state loading verifies dataset/base-model identity and leaves all checkpoint
+files unchanged. Five new regression cases failed before the fix; current complete
+AdamW/Muon and partial-accumulation resume tests still pass. The full suite is now
+421 tests. Older incomplete states require their original checkout/mutable run or
+an explicit warm-start; this does not change current checkpoint contents.

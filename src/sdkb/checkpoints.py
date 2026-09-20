@@ -183,20 +183,29 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
 
 def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
                        fingerprint: str, *, progress: dict | None = None) -> int:
+    run = Path(run)
     path = resolve_checkpoint(run, verify=True)
-    if path != run:
-        manifest = json.loads((path / "manifest.json").read_text())
-        if manifest["dataset_sha256"] != fingerprint:
-            raise ValueError("Episode contents changed since checkpoint")
-        if manifest["resolved_model_revision"] != agent.resolved_revision:
-            raise ValueError("Base model revision changed; use the pinned original revision")
-    load_model(agent, str(path / "model.safetensors"), device=agent.config.train.device)
+    if not (path / 'manifest.json').is_file():
+        raise ValueError('Checkpoint lacks complete resume state and manifest; '
+                         'use its original checkout or an explicit warm-start')
+    manifest = json.loads((path / "manifest.json").read_text())
+    if manifest["dataset_sha256"] != fingerprint:
+        raise ValueError("Episode contents changed since checkpoint")
+    if manifest["resolved_model_revision"] != agent.resolved_revision:
+        raise ValueError("Base model revision changed; use the pinned original revision")
     state = torch.load(path / "training_state.pt", map_location="cpu", weights_only=True)
-    if state.get('optimizer_type', 'adamw') != agent.config.train.optimizer:
+    required = {'optimizer', 'step', 'optimizer_type', 'optimizer_parameter_names',
+                'python_rng', 'global_python_rng', 'torch_rng', 'cuda_rng'}
+    if state.get('accumulation'):
+        required.add('gradients')
+    if required - state.keys() or state.get('optimizer_parameter_names') is None:
+        raise ValueError('Checkpoint lacks complete resume state; '
+                         'use its original checkout or an explicit warm-start')
+    if state['optimizer_type'] != agent.config.train.optimizer:
         raise ValueError('Optimizer changed; use an explicit warm-start with a new run identity')
-    if (state.get('optimizer_parameter_names') is not None and
-            state['optimizer_parameter_names'] != getattr(optimizer, '_sdkb_parameter_names', None)):
+    if state['optimizer_parameter_names'] != getattr(optimizer, '_sdkb_parameter_names', None):
         raise ValueError('Optimizer parameter names/order changed; refusing mismatched momentum')
+    load_model(agent, str(path / "model.safetensors"), device=agent.config.train.device)
     optimizer.load_state_dict(state["optimizer"])
     if state.get('accumulation'):
         if progress is None:
@@ -209,7 +218,7 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
             parameter = parameters[name]
             parameter.grad = gradient.to(device=parameter.device, dtype=parameter.dtype)
     rng.setstate(state["python_rng"])
-    random.setstate(state.get("global_python_rng", state["python_rng"]))
+    random.setstate(state["global_python_rng"])
     torch.set_rng_state(state["torch_rng"])
     if state["cuda_rng"]:
         torch.cuda.set_rng_state_all(state["cuda_rng"])
@@ -221,8 +230,8 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
         temp = run / "cache-restore.tmp"
         shutil.copyfile(path / "training_cache.sqlite", temp)
         os.replace(temp, destination)
-    # A crash may leave later rows or an incomplete JSON line in the log.
-    reconcile_metrics(run, state['step'])
+        # Reconcile mutable run logs, never write into a directly loaded immutable set.
+        reconcile_metrics(run, state['step'])
     return int(state["step"])
 
 

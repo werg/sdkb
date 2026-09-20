@@ -188,3 +188,58 @@ def test_mid_accumulation_emergency_resume_is_exact(tmp_path, tiny_config, monke
             torch.testing.assert_close(value, b_state['optimizer']['state'][index][name], rtol=0, atol=0)
     assert a_state['python_rng'] == b_state['python_rng']
     torch.testing.assert_close(a_state['torch_rng'], b_state['torch_rng'], rtol=0, atol=0)
+
+
+def test_immutable_checkpoint_is_not_a_training_output(tmp_path, tiny_config):
+    import hashlib
+    run = tmp_path/'run'
+    train(tiny_config, run)
+    checkpoint = resolve_checkpoint(run)
+    before = {p.relative_to(checkpoint): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in checkpoint.rglob('*') if p.is_file()}
+    with pytest.raises(ValueError, match='Immutable checkpoint.*training output'):
+        train(tiny_config, checkpoint, resume=True)
+    after = {p.relative_to(checkpoint): hashlib.sha256(p.read_bytes()).hexdigest()
+             for p in checkpoint.rglob('*') if p.is_file()}
+    assert after == before
+
+
+def test_direct_restore_checks_dataset_identity(tmp_path, tiny_config):
+    import hashlib
+    import random
+    from sdkb.agent import SDKBAgent
+    from sdkb.checkpoints import restore_checkpoint
+    from sdkb.optimizers import make_optimizer
+    run = tmp_path/'run'
+    train(tiny_config, run)
+    agent = SDKBAgent(tiny_config)
+    with pytest.raises(ValueError, match='Episode contents changed'):
+        restore_checkpoint(agent, make_optimizer(agent), resolve_checkpoint(run), random.Random(1), 'changed')
+    checkpoint = resolve_checkpoint(run)
+    # Even an additional immutable diagnostic log must remain byte-identical.
+    (checkpoint/'metrics.jsonl').write_text('{"step": 999, "loss": 0}\n')
+    before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in checkpoint.iterdir() if p.is_file()}
+    manifest = json.loads((checkpoint/'manifest.json').read_text())
+    assert restore_checkpoint(agent, make_optimizer(agent), checkpoint, random.Random(1),
+                              manifest['dataset_sha256']) == tiny_config.train.steps
+    assert before == {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                      for p in checkpoint.iterdir() if p.is_file()}
+
+
+@pytest.mark.parametrize('missing', ['global_python_rng', 'optimizer_parameter_names', 'optimizer_type'])
+def test_incomplete_legacy_state_requires_explicit_warm_start(tmp_path, tiny_config, missing):
+    import hashlib
+    run = tmp_path/'run'
+    train(tiny_config, run)
+    checkpoint = resolve_checkpoint(run)
+    state_path = checkpoint/'training_state.pt'
+    state = torch.load(state_path, weights_only=True)
+    del state[missing]
+    torch.save(state, state_path)
+    # Simulate a valid older checkpoint, not accidental byte corruption.
+    manifest_path = checkpoint/'manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    manifest['sha256']['training_state.pt'] = hashlib.sha256(state_path.read_bytes()).hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match='complete resume state'):
+        train(tiny_config, run, resume=True)

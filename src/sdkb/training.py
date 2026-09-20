@@ -117,6 +117,9 @@ def train(config: Config, output: str | Path, *, resume: bool = False,
           stop_after: int | None = None, init_from: str | Path | None = None,
           stop_output: str | Path | None = None) -> dict:
     from .operations import run_lock
+    if (Path(output) / 'manifest.json').is_file():
+        raise ValueError('Immutable checkpoint cannot be a training output; resume its run directory '
+                         'or restore the archive into a new run directory')
     with run_lock(output), stop_on_signal() as stop, ExitStack() as lifecycle:
         return _train(config, output, resume=resume, stop_after=stop_after, init_from=init_from,
                       stop_output=stop_output, stop=stop, lifecycle=lifecycle)
