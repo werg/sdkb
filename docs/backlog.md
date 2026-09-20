@@ -17,7 +17,9 @@ CPU reference evidence remains in `validation-v0.2.md`.
    representation/readout learning before spending on another identical curriculum.
    Deliberate small-corpus training now fits 64/64 original identifiers but remains
    0/64 on replaced/held-out endpoints and damages action/rule behavior. Test
-   position-level questions with mixed-task retention and source-matched controls.
+   position-level questions only after establishing their text interface: the first
+   preflight gets 0/96 even with selected text. Use the working whole-endpoint
+   question for a matched target-freshness comparison with rule/action retention.
 2. **Global address generalization.** Corrected training gets 102/128 free actions
    at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
    training fit but reduce held-out pair retrieval. A separate lexical index gets

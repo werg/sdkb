@@ -27,3 +27,20 @@ without candidates or supplied answer prefixes at both the one-loop text-anchor
 depth and the three-loop evaluation depth. This tests whether the question
 interface is usable before spending on the proposed comparison. All artifacts and
 resumable progress remain external. Training has not been launched.
+
+## Preflight result: proposed interface is not ready
+
+At both one and three loops, the model copies **16/16 whole endpoints** from the
+selected text, but answers **0/96 character questions** exactly. Outputs are mostly
+`A`, `A1`, `A1F` or `A5`, instead of the requested source character. The accompanying
+case-fold audit does not rescue the interface; its exact counts and format breakdown
+are in `text-preflight.json`. This is not a latent-memory failure: it occurs with
+visible selected text before any latent training.
+
+Do not launch the proposed character-auxiliary comparison from this checkpoint
+without first establishing the question interface. The generator remains an optional,
+validated preparation tool, with no change to default data or inference. The next
+copy-learning comparison should use the already working whole-endpoint question
+and vary training-target freshness while preserving rule/action examples and matched
+source/task schedules. Preflight execution used frozen commit `289a496`; full suite
+passes 426 tests and Ruff is clean.

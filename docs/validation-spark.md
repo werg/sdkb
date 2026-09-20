@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **421 tests**, with four existing dependency/runtime
+The latest full suite passed **426 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -387,3 +387,8 @@ retention/counterfactual behavior regress. Most new identifier predictions belon
 to the old 64-target vocabulary. Teacher-forced suffix prediction is often correct
 without memory once a training answer is identified by its supplied prefix. This
 is evidence of a fitted finite task with poor transfer, not a general copying rule.
+
+A [character-question preflight](../experiments/binding-character-questions-20260920/README.md)
+gets 0/96 single-character answers even with selected text at both one/three loops,
+while retaining 16/16 full-endpoint copying. That proposed auxiliary interface has
+not been trained and is not ready as a clean latent-memory comparison.
