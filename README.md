@@ -20,8 +20,14 @@ preserves this pattern (102/128 and 78/128). An
 [exact-detail control](experiments/binding-exact-detail-20260920/README.md)
 copies 64/64 unseen identifiers from selected text but 0/64 from latent payloads;
 perfect retrieval alone does not solve this representation/training failure.
-[Persistent compaction](experiments/binding-compaction-20260919/README.md) preserves
-sampled attention-system actions, while the MLP still loses conditional behavior.
+The [matched breadth](experiments/binding-detail-breadth-20260920/README.md) and
+[alternate-history](experiments/binding-endpoint-views-20260920/README.md) continuations
+preserve oracle action composition but still give 0/64 exact identifiers.
+[Temporary-compaction training](experiments/binding-compact-aware-20260920/README.md)
+now makes a single mean-plus-mass MLP code preserve 128/128 actions and the tested
+rule-change pairs; its matched raw-trained mean-code control gets 81/128. The raw
+path regresses to 126/128, so a [paired-objective comparison](experiments/binding-paired-compaction-20260920/README.md)
+is running. Raw fallback records remain stored; net disk savings are not established.
 The [bgkit audit](docs/bgkit-audit.md) records storage, recovery and runtime adoption.
 
 **Spatially Superposed Differentiable Knowledge Base**
@@ -157,8 +163,10 @@ loop. The initial gates are small but live, not zeroed across all extra computat
 The recurrent set readers, multiscale transforms, selective producer replay, and
 checkpointing remain. In-loop raw reads and persisted full-cluster codes are
 implemented, with complete cumulative aggregation at each boundary and raw fallback
-for partial clusters. Streaming in-loop reads and temporary in-loop compaction
-training remain deferred. Offline code fitting is separate from stored-only reads.
+for partial clusters. Native single-read training supports temporary mean/synthetic
+compaction with interleaved or paired raw/compact objectives, including replay and
+emergency resume. Streaming in-loop reads and multi-read compaction remain deferred.
+Offline code fitting is separate from stored-only reads.
 
 [The research and conversion note](docs/recurrence.md) explains the choice, equations,
 2025–September 2026 primary evidence, conversion curriculum, limitations, and exact

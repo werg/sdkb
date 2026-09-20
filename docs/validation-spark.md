@@ -318,3 +318,16 @@ but 55/64 wrong predictions changing with the endpoint is sensitivity, not recal
 36/64 also change under irrelevant permission interventions. See
 [the frozen protocol and full result](../experiments/binding-endpoint-views-20260920/README.md).
 No agent-success or capacity-substitution result follows.
+
+
+## Temporary-compaction learning: mean-code result (20 September)
+
+The matched 400-update raw/interleaved Muon comparison has completed raw and mean
+confirmation on 32 fresh worlds. A mean-plus-mass code after temporary training
+preserves all 128 action generations and the tested rule-change pairs, versus
+81/128 actions for the raw-trained mean control. The temporary-trained raw path
+gets 126/128 actions, 122/128 permission pairs and 60/64 restoration pairs, so
+preservation of the original raw behavior is incomplete. Native learned-code
+confirmation is still running; the paired-objective follow-up is separate.
+[Full protocol, counts and paired intervals](../experiments/binding-compact-aware-20260920/README.md).
+Raw subset fallback records remain stored: no net disk-saving claim.

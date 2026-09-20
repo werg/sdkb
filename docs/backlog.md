@@ -17,10 +17,11 @@ CPU reference evidence remains in `validation-v0.2.md`.
    at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
    training fit but reduce held-out pair retrieval. No robust large-bank claim.
 3. **MLP conditional compaction.** Native single-read interleaved and paired training now
-   passes replay, causal, stored-code and emergency-resume checks. A matched
-   raw/temporary-code learning comparison is running; preserve numerator/mass
-   and source-change behavior before claiming useful persistent compression. Raw subset fallbacks
-   remain necessary and count toward the disk budget.
+   passes replay, causal, stored-code and emergency-resume checks. Temporary training
+   now preserves 128/128 actions and tested rule-change pairs through mean codes,
+   versus 81/128 for its raw-trained mean control. Its raw path falls to 126/128;
+   a paired-objective continuation tests this cost. Native learned-code confirmation
+   is still running. Raw fallbacks remain necessary and count toward disk use.
 4. **Real task success and capacity substitution.** Synthetic composition and
    teacher NLL do not establish these. Compare information-matched systems with
    actual task verifiers and resident-weight/storage/latency accounting.
