@@ -47,8 +47,8 @@ Regression coverage verifies explicit opt-in, all unchanged non-reader initial
 weights, rejection of stored-interface changes and bitwise full-state Muon resume
 after a reader reset. Native model preflight is required before launch.
 
-The supplemental `text-controls.json` was declared while both arms were below
-400 updates, before endpoint results. After primary confirmation, each endpoint
+The supplemental `text-controls.json` was declared while both arms were still
+training, before endpoint results. After primary confirmation, each endpoint
 also receives the same 64 selected-text identifier questions and repeated
 no-memory questions, using frozen `b38564a` code. The repeated no-memory strings
 must match the latent reference. These controls verify the updated controller's
