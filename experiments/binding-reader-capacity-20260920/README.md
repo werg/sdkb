@@ -53,3 +53,10 @@ also receives the same 64 selected-text identifier questions and repeated
 no-memory questions, using frozen `b38564a` code. The repeated no-memory strings
 must match the latent reference. These controls verify the updated controller's
 text-copying path; they do not add a training objective or alter either run.
+
+`run_text_controls.py` waits for the primary queue's ownership lock and checks
+complete endpoint/reference identity before starting. Launch it with frozen
+`b38564a` model imports and Git environment; its controller code is pinned
+separately. To resume an interrupted study, resume the primary controller first,
+then use `run_text_controls.py --resume` to acknowledge only inactive text-child
+stop controls after primary ownership is released.

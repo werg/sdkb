@@ -14,7 +14,7 @@ from sdkb.operations import run_lock
 from sdkb.trajectories import file_sha256
 
 
-def run(root, frozen):
+def run(root, frozen, *, resume=False):
     if (Path(sdkb.__file__).resolve().parent != (frozen/'src/sdkb').resolve()
             or Path(os.environ.get('GIT_WORK_TREE', '.')).resolve() != frozen.resolve()):
         raise ValueError('Use the frozen model PYTHONPATH and Git environment')
@@ -40,6 +40,10 @@ def run(root, frozen):
                 if 'already running' not in str(error):
                     raise
             time.sleep(30)
+        if resume:
+            for name in text['arms']:
+                with run_lock(root/'confirmation'/(name+'-text')):
+                    pass
         if file_sha256(declared) != declaration_hash or file_sha256(text['episodes']) != text['episodes_sha256']:
             raise ValueError('Text inputs changed while waiting')
         jobs = []
@@ -64,5 +68,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--frozen-model-code', type=Path, required=True)
+    parser.add_argument('--resume', action='store_true')
     args = parser.parse_args()
-    run(args.root, args.frozen_model_code)
+    run(args.root, args.frozen_model_code, resume=args.resume)
