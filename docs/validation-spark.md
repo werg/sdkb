@@ -338,3 +338,11 @@ compact action/counterfactual counts as mean codes. All 256 codes differ numeric
 across the four banks, but all 1,920 generated strings match the corresponding mean
 arm. This supports compactability induced by training; it does not show a learned-
 compactor advantage over simple mean-plus-mass. The raw-path cost remains.
+
+
+The matched paired-objective follow-up is complete on another fresh 32-world split.
+Both objectives achieve perfect tested action/counterfactual behavior with mean and
+native codes. Raw reads remain mixed: pairing gives 127/128 original actions versus
+128/128 for interleaving, with some better changed-rule pairs and one new false
+restoration change. Pairing adds decoder work without an observed compact benefit.
+[Full result and limits](../experiments/binding-paired-compaction-20260920/README.md).

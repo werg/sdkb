@@ -1,0 +1,1431 @@
+{
+  "status": "complete",
+  "arms": {
+    "interleaved-mean": {
+      "results_sha256": "71a45d511c57039403de10c4c6a60e0e1682876a05b4aacd6967855c8bb0f2c0",
+      "inputs": {
+        "checkpoint_manifest_sha256": "6cdbdecd999ca763a565cbc7c7d90bf1a688a602540661b99f90baa4b983066a",
+        "episodes_sha256": "2fcad6dabb2150bc4e7b4b7660ba42bc947831c96fb17f93d34e9ec3948c1c7d",
+        "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+        "max_new_tokens": 24,
+        "routing": "oracle required sources",
+        "compact_method": "mean"
+      },
+      "generation_summary": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_identifier": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_permission": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_restoration": {
+            "n": 128,
+            "correct": 128
+          },
+          "none": {
+            "n": 128,
+            "correct": 66
+          },
+          "zero_values": {
+            "n": 128,
+            "correct": 41
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 0
+          },
+          "none": {
+            "n": 64,
+            "correct": 0
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 36
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 28
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 27
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 27
+          }
+        }
+      },
+      "generation_counterfactuals": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 128,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.5625
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.1875,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "bank_sha256": "e3906c6784b9e8f89f4025224bd4d7bd81e29a07723456430840bed2f490b4bc",
+      "code_storage": {
+        "global": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "identifier": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        }
+      }
+    },
+    "interleaved-raw": {
+      "results_sha256": "5566a6258b9fbfb10542e0719fd1f2c6f3498c542ea4574f7f78940c81aac735",
+      "inputs": {
+        "checkpoint_manifest_sha256": "6cdbdecd999ca763a565cbc7c7d90bf1a688a602540661b99f90baa4b983066a",
+        "episodes_sha256": "2fcad6dabb2150bc4e7b4b7660ba42bc947831c96fb17f93d34e9ec3948c1c7d",
+        "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+        "max_new_tokens": 24,
+        "routing": "oracle required sources",
+        "compact_method": "raw"
+      },
+      "generation_summary": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_identifier": {
+            "n": 128,
+            "correct": 127
+          },
+          "cf_permission": {
+            "n": 128,
+            "correct": 125
+          },
+          "cf_restoration": {
+            "n": 128,
+            "correct": 126
+          },
+          "none": {
+            "n": 128,
+            "correct": 66
+          },
+          "zero_values": {
+            "n": 128,
+            "correct": 41
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 0
+          },
+          "none": {
+            "n": 64,
+            "correct": 0
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 36
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 28
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 27
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 27
+          }
+        }
+      },
+      "generation_counterfactuals": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.9765625,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.96875,
+            "appropriate_prediction_change": 0.96875,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 128,
+            "false_change_rate": 0.0078125
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.5625
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.1875,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "bank_sha256": "cd8b910d067e646cff3b0868f0d886b59186e247dbdbcd9268b3393f6461957e",
+      "code_storage": {}
+    },
+    "interleaved-trained": {
+      "results_sha256": "1dc9dbcfb1ea984ebbf1d9a8f050e342e23566dd246ace669aae3758cdf47351",
+      "inputs": {
+        "checkpoint_manifest_sha256": "6cdbdecd999ca763a565cbc7c7d90bf1a688a602540661b99f90baa4b983066a",
+        "episodes_sha256": "2fcad6dabb2150bc4e7b4b7660ba42bc947831c96fb17f93d34e9ec3948c1c7d",
+        "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+        "max_new_tokens": 24,
+        "routing": "oracle required sources",
+        "compact_method": "trained"
+      },
+      "generation_summary": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_identifier": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_permission": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_restoration": {
+            "n": 128,
+            "correct": 128
+          },
+          "none": {
+            "n": 128,
+            "correct": 66
+          },
+          "zero_values": {
+            "n": 128,
+            "correct": 41
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 0
+          },
+          "none": {
+            "n": 64,
+            "correct": 0
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 36
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 28
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 27
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 27
+          }
+        }
+      },
+      "generation_counterfactuals": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 128,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.5625
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.1875,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "bank_sha256": "6328833425db53a8c1095e1d8d30faf71838e48731ec2daedefadbc13728f115",
+      "code_storage": {
+        "global": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "identifier": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "6f37fefa528a8be6314f6a5abcdd93a3c289bdd706daf060035156e53833f9a5",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        }
+      }
+    },
+    "paired-mean": {
+      "results_sha256": "1573741feb7da9b407c0fed71eaa33b5aa6f5497c029375ac32d4e5e682c9add",
+      "inputs": {
+        "checkpoint_manifest_sha256": "d53b0dbfa07dff850b63eb52b567b1b1a799536c6a4d9cb36e30d2a543187821",
+        "episodes_sha256": "2fcad6dabb2150bc4e7b4b7660ba42bc947831c96fb17f93d34e9ec3948c1c7d",
+        "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+        "max_new_tokens": 24,
+        "routing": "oracle required sources",
+        "compact_method": "mean"
+      },
+      "generation_summary": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_identifier": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_permission": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_restoration": {
+            "n": 128,
+            "correct": 128
+          },
+          "none": {
+            "n": 128,
+            "correct": 51
+          },
+          "zero_values": {
+            "n": 128,
+            "correct": 41
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 0
+          },
+          "none": {
+            "n": 64,
+            "correct": 0
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 36
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 28
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 27
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 27
+          }
+        }
+      },
+      "generation_counterfactuals": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 128,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.421875
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.125,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "bank_sha256": "fcfc1e297ff53fd0c95741b22d01a6b313917ce55d534609f35e5218d32d1b7e",
+      "code_storage": {
+        "global": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "identifier": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        }
+      }
+    },
+    "paired-raw": {
+      "results_sha256": "a97a914e8718869aa40c68120e511dcd93ced9da774775366cf3ec1043c0f73f",
+      "inputs": {
+        "checkpoint_manifest_sha256": "d53b0dbfa07dff850b63eb52b567b1b1a799536c6a4d9cb36e30d2a543187821",
+        "episodes_sha256": "2fcad6dabb2150bc4e7b4b7660ba42bc947831c96fb17f93d34e9ec3948c1c7d",
+        "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+        "max_new_tokens": 24,
+        "routing": "oracle required sources",
+        "compact_method": "raw"
+      },
+      "generation_summary": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "correct": 127
+          },
+          "cf_identifier": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_permission": {
+            "n": 128,
+            "correct": 127
+          },
+          "cf_restoration": {
+            "n": 128,
+            "correct": 128
+          },
+          "none": {
+            "n": 128,
+            "correct": 51
+          },
+          "zero_values": {
+            "n": 128,
+            "correct": 41
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 0
+          },
+          "none": {
+            "n": 64,
+            "correct": 0
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 36
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 28
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 27
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 27
+          }
+        }
+      },
+      "generation_counterfactuals": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 0.984375,
+            "appropriate_prediction_change": 0.9921875,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.015625
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 128,
+            "false_change_rate": 0.0078125
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.421875
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.125,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "bank_sha256": "62137a5f7052aeaedcb18e2feb85e8a7ce3318dc9b2f2d69980c33cac25a28e3",
+      "code_storage": {}
+    },
+    "paired-trained": {
+      "results_sha256": "f587e5aa26e354554ada395038f7b3acd0b2994f607bad9942459fcfc7b8e120",
+      "inputs": {
+        "checkpoint_manifest_sha256": "d53b0dbfa07dff850b63eb52b567b1b1a799536c6a4d9cb36e30d2a543187821",
+        "episodes_sha256": "2fcad6dabb2150bc4e7b4b7660ba42bc947831c96fb17f93d34e9ec3948c1c7d",
+        "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+        "max_new_tokens": 24,
+        "routing": "oracle required sources",
+        "compact_method": "trained"
+      },
+      "generation_summary": {
+        "multiuse/action": {
+          "all": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_identifier": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_permission": {
+            "n": 128,
+            "correct": 128
+          },
+          "cf_restoration": {
+            "n": 128,
+            "correct": 128
+          },
+          "none": {
+            "n": 128,
+            "correct": 51
+          },
+          "zero_values": {
+            "n": 128,
+            "correct": 41
+          }
+        },
+        "multiuse/identifier": {
+          "all": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 0
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 0
+          },
+          "none": {
+            "n": 64,
+            "correct": 0
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 0
+          }
+        },
+        "multiuse/permission": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 36
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 28
+          }
+        },
+        "multiuse/restoration": {
+          "all": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_identifier": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_permission": {
+            "n": 64,
+            "correct": 64
+          },
+          "cf_restoration": {
+            "n": 64,
+            "correct": 64
+          },
+          "none": {
+            "n": 64,
+            "correct": 27
+          },
+          "zero_values": {
+            "n": 64,
+            "correct": 27
+          }
+        }
+      },
+      "generation_counterfactuals": {
+        "multiuse/action": {
+          "cf_permission": {
+            "change_pairs": 128,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 128,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/identifier": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.421875
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 64,
+            "both_correct_on_change": 0.0,
+            "appropriate_prediction_change": 0.125,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          }
+        },
+        "multiuse/permission": {
+          "cf_permission": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_restoration": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        },
+        "multiuse/restoration": {
+          "cf_permission": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          },
+          "cf_restoration": {
+            "change_pairs": 64,
+            "both_correct_on_change": 1.0,
+            "appropriate_prediction_change": 1.0,
+            "unchanged_pairs": 0,
+            "false_change_rate": null
+          },
+          "cf_identifier": {
+            "change_pairs": 0,
+            "both_correct_on_change": null,
+            "appropriate_prediction_change": null,
+            "unchanged_pairs": 64,
+            "false_change_rate": 0.0
+          }
+        }
+      },
+      "bank_sha256": "c16d55e641fdeca3a19e75e770fceb14d6231c0382113789da5dfbd26b83be83",
+      "code_storage": {
+        "global": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "permission": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "restoration": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        },
+        "identifier": {
+          "codes": 64,
+          "serialized_code_bytes": 271104,
+          "raw_values_retained": true,
+          "notice": "Net disk savings are not claimed; raw subset fallback is retained.",
+          "skipped_overlapping_or_unprofitable_groups": 128,
+          "reader_hash": "c5922c3e71db88f1609ed52a295ca17f0e89350002077af92f5c0578d222129c",
+          "scope": "Full-cluster replacement; raw fallback for partial selections."
+        }
+      }
+    }
+  }
+}

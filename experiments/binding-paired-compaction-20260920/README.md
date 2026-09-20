@@ -70,3 +70,20 @@ invariance. Both arms still generate 0/64 exact identifiers.
 Mean and learned-code confirmation are pending. `raw-confirmation.json` pins the
 completed counts; the one-seed, 32-world sample does not justify promoting the
 paired objective on raw-read results alone.
+
+
+## Completed compact-code confirmation
+
+Both the interleaved and paired endpoints now preserve 128/128 generated actions in
+all four supplied-memory conditions through both mean and native synthetic codes.
+Both preserve all 128 permission-change pairs and 64 affected restoration pairs,
+with zero false changes on the 64 unaffected restoration pairs and 128 endpoint-only
+interventions. Exact identifiers remain 0/64. All six arms are pinned in
+`confirmation.json`; `raw-objective-generation.json` supplies the paired raw-path
+comparison and its world-bootstrap intervals.
+
+This confirms useful compact behavior on a second fresh split. Pairing does not
+improve the observed compact result and has mixed raw behavior despite extra decoder
+work. Do not promote it as a demonstrated improvement over interleaving or claim a
+learned-code advantage over mean-plus-mass. It remains a supported experimental
+objective. Raw fallbacks remain stored; no net disk-saving claim is established.
