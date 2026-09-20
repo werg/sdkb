@@ -102,7 +102,7 @@ fallback-token ownership correction changes future optimizer groups; older runs
 must resume with their frozen checkout or explicitly warm-start a new run. The
 active freshness study stays frozen at `c58028c`.
 
-The latest download-free suite passes 449 tests; native pretrained execution and
+The latest download-free suite passes 457 tests; native pretrained execution and
 a real BF16 Muon emergency-resume comparison have also run. CPU/CUDA configuration
 and portable operating helpers are separate from the Spark wrapper. Tested native
 Spark execution does not imply performance portability to every GPU or backbone.

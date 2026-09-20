@@ -60,8 +60,10 @@ def test_reader_feature_uses_only_causal_stored_memory(tmp_path, tiny_config, mo
     c.validate()
     agent = SDKBAgent(c).eval().requires_grad_(False)
     episode = next(e for e in make_multiuse_world(1, bindings=1) if e.task_family == 'multiuse/identifier')
+    other = replace(next(e for e in make_multiuse_world(2, bindings=1)
+                         if e.task_family == 'multiuse/identifier'), query=episode.query)
     store = DiskStore(tmp_path/'bank.sqlite')
-    build_shared_bank(agent, store, [episode])
+    build_shared_bank(agent, store, [episode, other])
     def forbidden(*args, **kwargs):
         raise AssertionError('Feature extraction used source encoding or target tokens')
     monkeypatch.setattr(agent, 'produce', forbidden)
@@ -72,4 +74,5 @@ def test_reader_feature_uses_only_causal_stored_memory(tmp_path, tiny_config, mo
     assert full.shape == (c.memory.read_slots*agent.width,)
     torch.testing.assert_close(full, changed_target, rtol=0, atol=0)
     assert not torch.equal(full, zero)
+    torch.testing.assert_close(zero, reader_feature(agent, store, other, zero_values=True), rtol=0, atol=0)
     assert not full.requires_grad and full.device.type == 'cpu'

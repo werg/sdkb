@@ -197,3 +197,13 @@ with opaque checkpoint fixtures. The host, which has no Torch installed, also
 inspected both live native-container training stages through the external mount.
 All 448 tests and Ruff pass. This avoids installing another ML stack just to manage
 storage. See `experiments/operations-20260920/lightweight-operations.json`.
+
+
+The next frozen-readout workflow reuses atomic offline-bank manifests without
+requiring a routing overlay. Its source-forward guard honors cooperative stops,
+host/disk reserves and a compute-only watchdog; interrupted records roll back and
+committed banks resume without writer calls. Its bounded queue has explicit resume
+acknowledgement for signal-stopped probe children and refuses to clear active-child
+controls. All 457 tests pass, with 18 focused checks after the final report-metadata
+addition. Native diagnostic outcomes are pending. Evidence:
+`experiments/operations-20260920/frozen-readout-controls.json`.

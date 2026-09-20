@@ -1,0 +1,16 @@
+{
+  "full_suite_passed": 457,
+  "final_targeted_passed": 18,
+  "ruff": "passed",
+  "full_log": "/archive/profiles/freshness-readout-full-tests.log",
+  "targeted_log": "/archive/profiles/freshness-readout-final-targeted-tests.log",
+  "checks": [
+    "Offline bank stop precedes model allocation",
+    "Interrupted source writes and bank manifest roll back together",
+    "Committed banks resume without invoking the writer",
+    "Explicit queue resume clears only released child controls",
+    "Fixed-query zero-value reader features do not depend on source identity",
+    "Readout data preserve sealed held-out records and reject future sources or variable identifier queries"
+  ],
+  "scope": "Correctness tests and a prepared diagnostic protocol. Native banks and readout outcomes are pending."
+}

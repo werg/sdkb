@@ -66,7 +66,8 @@ def assess(model, values, labels, config):
         prediction = model(values).argmax(-1)
         shuffled = model(values.roll(1, dims=0)).argmax(-1)
     return {name: {'n': len(labels), 'exact_six': int((p == labels).all(-1).sum()),
-                   'characters_correct': int((p == labels).sum()), 'characters': labels.numel()}
+                   'characters_correct': int((p == labels).sum()), 'characters': labels.numel(),
+                   'characters_correct_by_position': (p == labels).sum(0).tolist()}
             for name, p in [('payload', prediction), ('shifted_payload', shuffled)]}
 
 
@@ -145,10 +146,15 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32,
             values[split] = torch.stack(payloads).to(config.train.device)
             labels[split] = torch.tensor([[int(c, 16) for c in e.answer[4:]] for e in episodes], device=config.train.device)
         del agent
+        feature_constancy = {split: bool(torch.equal(value, value[:1].expand_as(value)))
+                             for split, value in values.items()}
+        feature_constancy['heldout_first_matches_training_first'] = bool(
+            torch.equal(values['heldout'][0], values['train'][0]))
         identity = {'source_manifest_sha256': manifest_hash, 'episodes_sha256': data_hash,
                     'bank_sha256': file_sha256(bank_path), 'bank_identity': reference, 'config': asdict(config),
                     'steps': steps, 'heldout_worlds': heldout_worlds, 'batch': 128,
                     'representation': representation, 'input_dimension': values['train'].shape[1],
+                    'feature_constancy': feature_constancy,
                     'script_sha256': file_sha256(__file__), 'split_episodes': {k: [e.episode_id for e in v] for k, v in groups.items()},
                     'notice': 'Six supervised hexadecimal classifiers from declared frozen features. Reader features include the causal query. Wider features change readout parameter counts; zero_reader controls query-only information. Negative results do not prove information absent.'}
         if (output/'inputs.json').exists() and json.loads((output/'inputs.json').read_text()) != identity:
