@@ -44,6 +44,21 @@ evidence. Logs distinguish the raw memory `loss`, `oracle_anchor_nll`, and actua
 weighted `optimization_loss`. A stage warm-start uses a new optimizer/cache; exact
 resume restores model, optimizer, RNG and intentionally stale cache instead.
 
+`oracle_alignment_weight` is an experimental, default-zero training objective for
+native in-loop oracle memory without compaction. It adds mean `1 - cosine` between
+the latent decoder's final answer-prediction states and detached selected-text
+states at the corresponding next-token positions. The text path shares current
+model weights and must retain a positive `oracle_anchor_weight`; it is an anchored
+moving teacher, not a separately frozen model. Its depth is `oracle_anchor_loops`.
+Both paths receive the same selected evidence and preceding answer tokens only;
+the text states supervise a loss and never enter a memory query, writer or read.
+Training rejects a schedule that has not actually read the declared evidence.
+The text forward is reused for its NLL anchor. `oracle_alignment_loss` is logged
+separately, included in `optimization_loss`, and its accumulated total survives
+partial-update emergency recovery. Changing its weight requires a warm-start fork.
+This is a learning intervention, not evidence of improved generation or an
+inference-time text bypass.
+
 Default budgets: four source chunks, 512 source tokens each, 4096 outer-prompt tokens,
 512 complete target tokens, a 2048-dimensional per-source storage payload, eight
 returned slots. Canonical write, storage-code and returned-read capacities are separate

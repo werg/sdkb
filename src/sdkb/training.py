@@ -15,7 +15,7 @@ import time
 import torch
 from safetensors.torch import load_model
 
-from .agent import SDKBAgent
+from .agent import SDKBAgent, answer_state_alignment
 from .checkpoints import save_checkpoint, restore_checkpoint, resolve_checkpoint, stop_on_signal
 from .config import Config
 from .data import Episode, Source, counterfactual, make_episode, save_episodes, load_episodes, evidence_ids
@@ -336,6 +336,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                 if progress:
                     agent.backbone.loops = progress['loops']
                     totals, anchor_total = progress['totals'], progress['anchor_total']
+                    alignment_total = (progress['alignment_total'] if config.train.oracle_alignment_weight else 0.)
                     micro_start = progress['microbatches']
                     if not 0 < micro_start < config.train.gradient_accumulation:
                         raise ValueError('Invalid saved accumulation position')
@@ -347,6 +348,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                     totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
                               "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
                     anchor_total, micro_start = 0.0, 0
+                    alignment_total = 0.0
                 for micro in range(micro_start, config.train.gradient_accumulation):
                     episode = rng.choice(episodes)
                     tape = ReplayTape(verify_outputs=config.train.verify_replay)
@@ -390,8 +392,21 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                         loss = result.loss
                         if config.train.oracle_anchor_weight and config.train.arm == "memory":
                             oracle_prompt = agent.prompt_ids(episode.query, support_text)
-                            anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None,
-                                                           loops=config.train.oracle_anchor_loops)
+                            if config.train.oracle_alignment_weight:
+                                if any(set(indices) != set(read_indices) for indices in result.selected):
+                                    raise ValueError('Oracle alignment requires the same evidence in completed latent reads and text')
+                                target = agent.target_ids(episode.answer)
+                                teacher = agent.conditioned_states(oracle_prompt, target, None,
+                                                                   loops=config.train.oracle_anchor_loops)
+                                anchor_logits = agent.backbone.logits(teacher).float()
+                                anchor = torch.nn.functional.cross_entropy(
+                                    anchor_logits.reshape(-1, anchor_logits.shape[-1]), target.reshape(-1))
+                                alignment = answer_state_alignment(result.answer_states, teacher)
+                                loss = loss + config.train.oracle_alignment_weight * alignment
+                                alignment_total += float(alignment.detach()) / config.train.gradient_accumulation
+                            else:
+                                anchor = agent.conditioned_nll(oracle_prompt, agent.target_ids(episode.answer), None,
+                                                               loops=config.train.oracle_anchor_loops)
                             loss = loss + config.train.oracle_anchor_weight * anchor
                             anchor_total += float(anchor.detach()) / config.train.gradient_accumulation
                         loss = loss / config.train.gradient_accumulation
@@ -411,7 +426,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                         # cotangents, RNG, sampled depth and cache instead of discarding
                         # partial work or stepping an under-accumulated optimizer.
                         progress = dict(microbatches=micro + 1, loops=agent.backbone.loops,
-                                        totals=totals, anchor_total=anchor_total)
+                                        totals=totals, anchor_total=anchor_total, alignment_total=alignment_total)
                         compute.close()
                         save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
                                         keep=config.train.keep_checkpoints, archiver=archiver,
@@ -423,7 +438,9 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                                            error_if_nonfinite=True)
                 optimizer.step()
             row = {"step": step + 1, **totals, "oracle_anchor_nll": anchor_total,
-                   "optimization_loss": totals["loss"] + config.train.oracle_anchor_weight * anchor_total,
+                   "oracle_alignment_loss": alignment_total,
+                   "optimization_loss": (totals["loss"] + config.train.oracle_anchor_weight * anchor_total
+                                         + config.train.oracle_alignment_weight * alignment_total),
                    "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
                    "elapsed_seconds": time.perf_counter() - start_time}
             if hasattr(agent.backbone, "manifest"):

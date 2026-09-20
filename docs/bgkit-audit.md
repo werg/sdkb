@@ -1,5 +1,14 @@
 # bgkit operational lessons: SDKB adoption audit
 
+The later representation-distillation lesson is being tested explicitly:
+bgkit2 matches student and frozen-teacher projection states on the same selected
+positions. SDKB's optional `oracle_alignment_weight` instead matches corresponding
+answer-prediction states of its latent and selected-text paths, using cosine loss.
+Its detached text teacher shares current weights and retains the text NLL anchor;
+it is not bgkit's separate frozen encoder, and no capability result is implied.
+Matched evidence, causal positions, full replay and exact Muon emergency recovery
+are regression requirements. The original stored-only inference path is preserved.
+
 Audited against local `~/bgkit/docs/runbook.md`, `docs/dgx_spark_perf_playbook.md`,
 `src/bgkit/training/{base_trainer,checkpoint_archiver,checkpointing}.py`,
 `scripts/restart-train.sh`, and the step watchdog on 2026-09-19.

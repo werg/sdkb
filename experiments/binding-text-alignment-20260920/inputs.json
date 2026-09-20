@@ -1,0 +1,14 @@
+{
+  "source": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000004000-8e2bc39c7837",
+  "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+  "episodes": "/archive/runs/binding-endpoint-freshness-20260920/data/worlds-8192.jsonl",
+  "episodes_sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+  "heldout": "/archive/runs/binding-endpoint-freshness-20260920/heldout.jsonl",
+  "heldout_sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+  "steps": 800,
+  "configs": {
+    "control": "1aa11f0ed01f96ecc0cb48f0236937d10e7644a11dae925a0b24a4a517ff25bc",
+    "alignment": "4a47112fd6df96e39517c5a9b3522c41583c4eff29c4e17758c0e77b72c0f72e"
+  },
+  "notice": "Exploratory one-seed selected-text answer-state alignment versus matched zero-weight control. Same broad 4000-update source, no reader reset, 800 updates, identical all-live oracle evidence and selected-only producer policy. Teacher shares current weights and retains text NLL anchor; it is detached for alignment, not a separate frozen model. Previously inspected heldout questions; teacher-forced loss is not generation or agent success."
+}

@@ -27,12 +27,16 @@ def equal_state(a, b):
         assert a == b
 
 
-def validate(source, output):
+def validate(source, output, *, alignment_weight=0.):
     output.mkdir(parents=True, exist_ok=False)
     config = config_from_run(source)
     config.model.freeze_backbone = False
     config.model.backbone_train_scope = 'recurrent_core'
     config.train.optimizer = 'muon'
+    config.train.oracle_alignment_weight = alignment_weight
+    if alignment_weight:
+        config.train.oracle_anchor_weight = .1
+        config.train.oracle_anchor_loops = 1
     config.train.steps = 2
     config.train.loop_counts = [2, 3]
     config.train.gradient_accumulation = 2
@@ -64,6 +68,7 @@ def validate(source, output):
     equal_state(torch.load(a / 'training_state.pt', weights_only=True),
                 torch.load(b / 'training_state.pt', weights_only=True))
     report = dict(source=str(source), optimizer='muon', device=config.train.device,
+                  oracle_alignment_weight=alignment_weight,
                   precision=config.train.precision, completed_steps=resumed['steps'],
                   interrupted_microbatches=partial['saved_microbatches'],
                   exact_model_and_optimizer_rng_state=True, full_checkpoint=str(a), resumed_checkpoint=str(b),
@@ -76,5 +81,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--alignment-weight', type=float, default=0.)
     args = parser.parse_args()
-    validate(args.source, args.output)
+    validate(args.source, args.output, alignment_weight=args.alignment_weight)

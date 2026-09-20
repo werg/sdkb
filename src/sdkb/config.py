@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from pathlib import Path
 import yaml
 
@@ -103,6 +104,7 @@ class TrainConfig:
     reinitialize_reader: bool = False  # explicit warm-start fork; never applied on resume
     parent_kl_weight: float = 0.0  # fixed one-pass parent, only while native base is frozen
     oracle_anchor_weight: float = 0.0
+    oracle_alignment_weight: float = 0.0  # detached selected-text answer-state cosine loss
     episodes_file: str | None = None  # optional general support/query JSONL
     evidence_scope: str = 'required'  # oracle-selected supports or all causally available candidates
     archive_dir: str | None = None  # existing external storage root; never auto-mount
@@ -127,6 +129,12 @@ class Config:
             raise ValueError('Invalid runtime resource limits')
         if t.optimizer not in {'adamw', 'muon'}:
             raise ValueError('Optimizer must be adamw or muon')
+        if not math.isfinite(t.oracle_alignment_weight) or t.oracle_alignment_weight < 0:
+            raise ValueError('Invalid oracle alignment weight')
+        if t.oracle_alignment_weight and (t.arm != 'memory' or t.retrieval != 'oracle'
+                or r.read_timing != 'loop_boundary' or r.compaction != 'none'
+                or not math.isfinite(t.oracle_anchor_weight) or t.oracle_anchor_weight <= 0):
+            raise ValueError('Oracle alignment requires anchored oracle memory with native reads and no compaction')
         if t.selected_producers_only and (t.arm != 'memory' or t.retrieval != 'oracle' or t.live_fraction != 1.):
             raise ValueError('Selected-only producers require fully live oracle memory training')
         if (t.weight_decay < 0 or t.adam_eps <= 0 or len(t.adam_betas) != 2

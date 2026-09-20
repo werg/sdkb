@@ -16,6 +16,13 @@ from .readers import MultiSpaceReader, SetReader
 from .routing import cosine_scores, group_plan_loss
 
 
+def answer_state_alignment(student: Tensor, teacher: Tensor) -> Tensor:
+    """Match corresponding next-token states; teacher states never receive this gradient."""
+    if student.shape != teacher.shape or student.ndim != 3:
+        raise ValueError('Alignment requires the same answer positions and hidden width')
+    return (1 - F.cosine_similarity(student.float(), teacher.detach().float(), dim=-1)).mean()
+
+
 @dataclass
 class ForwardResult:
     loss: Tensor
@@ -28,6 +35,7 @@ class ForwardResult:
     behavior_kl: Tensor | None = None
     read_count: int = 1
     parent_kl: Tensor | None = None
+    answer_states: Tensor | None = None
 
 
 class SDKBAgent(nn.Module):
@@ -237,7 +245,7 @@ class SDKBAgent(nn.Module):
             context = torch.cat((context, tokens.to(context.dtype)), 1)
         return context
 
-    def conditioned_logits(self, prompt: Tensor, target: Tensor, memory: Tensor | LoopMemory | None,
+    def conditioned_states(self, prompt: Tensor, target: Tensor, memory: Tensor | LoopMemory | None,
                            *, loops: int | None = None) -> Tensor:
         if (isinstance(memory, Tensor) and self.config.memory.read_timing == "loop_boundary"):
             # Explicit fixed-result comparison; normal training/read_session uses
@@ -253,7 +261,11 @@ class SDKBAgent(nn.Module):
                 raise ValueError("Changing depth requires regenerating the prefix-only read plan")
             kwargs = dict(loops=memory.loops, boundary=memory.callback)
         hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long), **kwargs)
-        return self.backbone.logits(hidden[:, context.shape[1] - 1:]).float()
+        return hidden[:, context.shape[1] - 1:]
+
+    def conditioned_logits(self, prompt: Tensor, target: Tensor, memory: Tensor | LoopMemory | None,
+                           *, loops: int | None = None) -> Tensor:
+        return self.backbone.logits(self.conditioned_states(prompt, target, memory, loops=loops)).float()
 
     def conditioned_nll(self, prompt: Tensor, target: Tensor, memory: Tensor | LoopMemory | None,
                         *, reduction: str = "mean", loops: int | None = None) -> Tensor:
@@ -380,7 +392,8 @@ class SDKBAgent(nn.Module):
         weight = r.compaction_loss_weight if compact else r.merge_loss_weight
         return ForwardResult(nll + t.routing_weight * routing + weight * auxiliary,
                              nll, routing, auxiliary, selected, raw_nll=None if compact else nll,
-                             compact_nll=nll if compact else None, read_count=read_count)
+                             compact_nll=nll if compact else None, read_count=read_count,
+                             answer_states=hidden[:, context.shape[1] - 1:] if t.oracle_alignment_weight else None)
 
     def target_ids(self, answer: str) -> Tensor:
         ids = self.tokenizer.encode(answer, add_special_tokens=False)
