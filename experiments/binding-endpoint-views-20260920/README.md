@@ -33,3 +33,11 @@ inspected breadth confirmation for endpoint selection.
 All outputs go to `/archive/runs/binding-endpoint-views-20260920`; initial/final/
 emergency checkpoints only, with full main-trainer resume state and offline W&B.
 No architectural changes, target-derived query inputs, downloads or teacher calls.
+
+The new arm completed all 1,600 updates; `endpoint.json` pins its final manifest
+and model hashes. Its final saved sampler state and every sampled recurrent depth
+match the independent-world control exactly. The new histories therefore change
+the conditional training examples at matched sampling positions and update budget.
+Fresh confirmation is running. After training ownership released, the identical
+initial weights were verified and linked to the original source, reclaiming another
+1,017,349,676 bytes without dropping recovery state or changing checkpoint paths.

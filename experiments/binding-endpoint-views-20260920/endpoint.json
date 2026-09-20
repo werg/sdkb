@@ -1,0 +1,12 @@
+{
+  "checkpoint": "/archive/runs/binding-endpoint-views-20260920/views/checkpoints/step-000001600-4f19e3a9e39e",
+  "manifest_sha256": "f3d0b6986292b1757bf059814261fc0b4e4b5db493207787725d6b1e6a5b8df5",
+  "model_sha256": "1e430ef68c4c2fc695e44326f8791a00fdb726abfac6cf23d7b8bd862656aea8",
+  "steps": 1600,
+  "training_commit": "adf146a",
+  "control": "/archive/runs/binding-detail-breadth-20260920/worlds-1024/checkpoints/step-000001600-a58bdbae83ac",
+  "identical_final_sampler_state": true,
+  "identical_1600_depths": true,
+  "elapsed_training_seconds": 2396.302934952997,
+  "notice": "Matched sampling positions, family order and update budget confirmed. View identities/endpoint histories are the experimental change. Fresh capability confirmation remains separate."
+}
