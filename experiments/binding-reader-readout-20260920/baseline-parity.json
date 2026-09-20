@@ -1,0 +1,70 @@
+{
+  "linear": {
+    "model_and_normalization_exact": true,
+    "results_exact": true,
+    "results": {
+      "train": {
+        "payload": {
+          "n": 1984,
+          "exact_six": 1852,
+          "characters_correct": 11763,
+          "characters": 11904
+        },
+        "shifted_payload": {
+          "n": 1984,
+          "exact_six": 0,
+          "characters_correct": 791,
+          "characters": 11904
+        }
+      },
+      "heldout": {
+        "payload": {
+          "n": 64,
+          "exact_six": 0,
+          "characters_correct": 137,
+          "characters": 384
+        },
+        "shifted_payload": {
+          "n": 64,
+          "exact_six": 0,
+          "characters_correct": 21,
+          "characters": 384
+        }
+      }
+    }
+  },
+  "mlp256": {
+    "model_and_normalization_exact": true,
+    "results_exact": true,
+    "results": {
+      "train": {
+        "payload": {
+          "n": 1984,
+          "exact_six": 1984,
+          "characters_correct": 11904,
+          "characters": 11904
+        },
+        "shifted_payload": {
+          "n": 1984,
+          "exact_six": 0,
+          "characters_correct": 785,
+          "characters": 11904
+        }
+      },
+      "heldout": {
+        "payload": {
+          "n": 64,
+          "exact_six": 0,
+          "characters_correct": 122,
+          "characters": 384
+        },
+        "shifted_payload": {
+          "n": 64,
+          "exact_six": 0,
+          "characters_correct": 16,
+          "characters": 384
+        }
+      }
+    }
+  }
+}

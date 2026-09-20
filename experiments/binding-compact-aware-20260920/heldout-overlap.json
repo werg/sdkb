@@ -1,0 +1,18 @@
+{
+  "heldout_sha256": "001f0acee69795e545460a2d9f870c661c79059b705ee97c618304a957c63739",
+  "train_sha256": "bb88fafbd72bb7a9df67d4eef7064957509fb590379fea95f3b8f62f3d34599d",
+  "heldout": {
+    "sources": 128,
+    "endpoints": 64
+  },
+  "overlap": {
+    "source_finetuning": {
+      "sources": 0,
+      "endpoints": 0
+    },
+    "continuation_training": {
+      "sources": 0,
+      "endpoints": 0
+    }
+  }
+}

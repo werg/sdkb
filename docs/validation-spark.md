@@ -288,3 +288,21 @@ recovers 137/384 held-out characters linearly (21/384 with shifted payloads), ye
 gets 0/64 held-out exact strings. Some character information remains accessible;
 the probes do not establish a general exact-detail solution or prove information
 is absent. Matched fresh-world training continuations are evaluating this failure.
+
+### Frozen reader-output identifier readout — 20 September
+
+The [reader readout diagnostic](../experiments/binding-reader-readout-20260920/README.md)
+reuses the original frozen source, 4,096-record bank and 992/32-world readout split.
+Linear heads recover 137/384 held-out hex characters from payloads, 76/384 from
+first-boundary reader outputs, and 22/384 from zero-payload reader outputs. All have
+0/64 exact endpoints. The reader features have 8,192 dimensions versus 2,048 payload
+dimensions and larger fitted heads, so these are bounded accessibility diagnostics.
+They do not prove information is absent or identify an optimal decoder.
+
+The zero-payload MLP fits 1,929/1,984 training endpoints while retaining 0/64 exact
+held-out endpoints. Query-only memorization is therefore possible in this supervised
+readout; it is not evidence of memory use or proof about the main language model's
+mechanism. The rerun payload baseline reproduces prior weights, normalization and
+all aggregate outcomes exactly. Targets/source text never enter reader extraction;
+source/compactor calls are forbidden and a causal regression changes the target
+without changing features.
