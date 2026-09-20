@@ -76,6 +76,25 @@ def analyze(root: Path, output: Path) -> dict:
                 raise ValueError('Matched episode identity changed')
             if a['selected_ids'] != b['selected_ids']:
                 raise ValueError('Selected IDs changed across matched arms')
+    text_reports = {}
+    for arm in ('control', 'distilled'):
+        path = root / f'{arm}-text-r1' / 'results.json'
+        report = json.loads(path.read_text())
+        if (report['inputs']['episodes_sha256'] != lock['validation_sha256']
+                or report['inputs']['depths'] != [1]
+                or len(report['rows']) != 238):
+            raise ValueError('Incomplete one-pass selected-text control')
+        if report['inputs']['checkpoint_model_sha256'] != reports[arm][4]['checkpoint_model_sha256']:
+            raise ValueError('One-pass text control used another checkpoint')
+        text_reports[arm] = (report, file_sha256(path))
+    control_text = {(r['episode'], r['condition']): r for r in text_reports['control'][0]['rows']}
+    distilled_text = {(r['episode'], r['condition']): r for r in text_reports['distilled'][0]['rows']}
+    if control_text.keys() != distilled_text.keys():
+        raise ValueError('One-pass text episode coverage differs')
+    max_text_delta = max(abs(control_text[key]['sequence_nll'] - distilled_text[key]['sequence_nll'])
+                         for key in control_text)
+    if max_text_delta > 1e-4:
+        raise ValueError('Frozen one-pass text teacher changed between arms')
     comparisons = {}
     for condition in ('all', 'zero_values', 'wrong_values', 'none'):
         comparisons[f'control_to_distilled_{condition}_nll_reduction'] = _cluster_interval([
@@ -100,6 +119,11 @@ def analyze(root: Path, output: Path) -> dict:
                       token_weighted_nll={condition: report['summary'][condition]['token_weighted_nll']
                                           for condition in CONDITIONS})
                       for name, (report, _, report_sha, summary_sha, identity) in reports.items()},
+                  one_pass_text=dict(max_sequence_nll_delta=max_text_delta,
+                      selected_text_token_weighted_nll=text_reports['control'][0]['summary']['r1_selected_text']['token_weighted_nll'],
+                      no_text_token_weighted_nll=text_reports['control'][0]['summary']['r1_none']['token_weighted_nll'],
+                      control_report_sha256=text_reports['control'][1],
+                      distilled_report_sha256=text_reports['distilled'][1]),
                   paired=comparisons,
                   limits='Teacher-forced NLL and descriptive trajectory bootstrap, not agent success. Oracle selection and fixed plans do not establish learned retrieval. Text and latent paths have different token and compute budgets. Separate frozen banks reflect each arm’s trained writer; no cold-NVMe or capacity-substitution claim.')
     output.write_text(json.dumps(result, indent=2) + '\n')
