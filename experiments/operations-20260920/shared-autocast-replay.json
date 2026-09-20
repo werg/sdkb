@@ -1,0 +1,55 @@
+{
+  "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+  "replay_implementation_sha256": "414fbb5c30f1fff3df1195e81041b61fd32139974d1a49cc1fd8af97d33795f3",
+  "rows": [
+    {
+      "device": "cpu",
+      "cache_enabled": false,
+      "loss": 0.3271096348762512,
+      "forward_exact": true,
+      "rng_exact": true,
+      "gradient_max_abs": {
+        "weight": 0.0,
+        "bias": 0.0
+      }
+    },
+    {
+      "device": "cpu",
+      "cache_enabled": true,
+      "loss": 0.3271096348762512,
+      "forward_exact": true,
+      "rng_exact": true,
+      "gradient_max_abs": {
+        "weight": 0.00048828125,
+        "bias": 0.000244140625
+      }
+    },
+    {
+      "device": "cuda",
+      "cache_enabled": false,
+      "loss": 0.5108884572982788,
+      "forward_exact": true,
+      "rng_exact": true,
+      "gradient_max_abs": {
+        "weight": 0.0,
+        "bias": 0.0
+      }
+    },
+    {
+      "device": "cuda",
+      "cache_enabled": true,
+      "loss": 0.5108884572982788,
+      "forward_exact": true,
+      "rng_exact": true,
+      "gradient_max_abs": {
+        "weight": 0.0009765625,
+        "bias": 0.000244140625
+      }
+    }
+  ],
+  "notice": "Shared 16x16 Linear producer and consumer inside the same BF16 autocast context. Gradients checked at rtol=.02, atol=.002; separate cast-node accumulation can round differently. Operator regression, not full LFM gradient parity or capability evidence.",
+  "full_suite_passed": 443,
+  "test_log": "/archive/profiles/shared-autocast-full-tests.log",
+  "ruff": "passed",
+  "behavior_changed": false
+}

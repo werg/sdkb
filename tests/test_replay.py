@@ -101,6 +101,30 @@ def test_cpu_autocast_replayed_under_original_precision():
 
 
 @pytest.mark.parametrize('cache_enabled', [False, True])
+def test_bf16_capture_and_shared_consumer_inside_the_same_autocast_context(cache_enabled):
+    reference = nn.Linear(16, 16)
+    replayed = copy.deepcopy(reference)
+    x = torch.randn(4, 16)
+    with torch.autocast('cpu', dtype=torch.bfloat16, cache_enabled=cache_enabled):
+        values = reference(x).sin()
+        expected = (reference(x*1.7)*values).float().square().mean()
+    expected.backward()
+    tape = ReplayTape(verify_outputs=True)
+    with torch.autocast('cpu', dtype=torch.bfloat16, cache_enabled=cache_enabled):
+        (values,) = tape.capture(replayed, lambda: (replayed(x).sin(),))
+        actual = (replayed(x*1.7)*values).float().square().mean()
+    actual.backward()
+    rng_before = torch.get_rng_state().clone()
+    tape.backward()
+    assert torch.equal(torch.get_rng_state(), rng_before)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    for full, replay in zip(reference.parameters(), replayed.parameters(), strict=True):
+        # Separate BF16 cast-node accumulation can round differently. This bound
+        # detects a missing shared consumer path without claiming bitwise gradients.
+        torch.testing.assert_close(replay.grad, full.grad, rtol=.02, atol=.002)
+
+
+@pytest.mark.parametrize('cache_enabled', [False, True])
 def test_replay_restores_autocast_cache_policy_for_shared_parameter_paths(cache_enabled):
     reference = nn.Linear(16, 16)
     replayed = copy.deepcopy(reference)

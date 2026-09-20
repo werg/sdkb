@@ -99,7 +99,12 @@ compaction diagnostic measured at most 0.24% per-parameter relative L2 differenc
 disabling the autocast weight cache reduced the maximum absolute difference to
 3.7e-9. This is not a claim of bit-identical BF16 accumulation across graph layouts.
 The tape restores each producer's captured cache policy, even if the caller changes
-it before replay. Default training cache policy is unchanged.
+it before replay. Default training cache policy is unchanged. A further shared-linear-layer regression
+places capture and consumer forward inside the same BF16 autocast context. CPU and
+CUDA losses/RNG match exactly; gradients match exactly with the cache disabled and
+show at most 0.0009765625 absolute difference with it enabled in that operator test.
+This is additional coverage of shared consumer paths, not another full-LFM parity
+claim. See `experiments/operations-20260920/shared-autocast-replay.json`.
 
 The first implementation does not replay nested
 historical read dependencies, support higher-order gradients or sharded distributed
