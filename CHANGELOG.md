@@ -13,6 +13,15 @@ Spark wrappers expose run/archive mounts and named detached containers. Operatio
 logic is independent of Spark and Docker. See `docs/operations.md` and the separate
 local validation report; historical results are unchanged.
 
+Native Muon now has explicit matrix/table ownership and complete named-group
+resume, including emergency partial accumulation. Sparse saves, verified external
+relocation/deduplication, tracking failure isolation and lightweight host controls
+are implemented. Frozen evaluation and small probes preserve bounded recovery
+state; compute guards include CUDA completion, and long oracle evaluation handles
+host pressure after startup. Explicit reader-reset warm starts support matched
+capacity controls without changing stored interfaces. Current machine evidence
+and scientific limits are maintained separately in `docs/research-status.md`.
+
 ## 0.4.0 — Pretrained recurrent-core conversion and in-loop memory
 
 Added native prelude/core/coda conversion preserving every parent layer and the

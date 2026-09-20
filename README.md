@@ -1,7 +1,7 @@
 # SDKB
 
 [Research status](docs/research-status.md) summarizes what is established, what
-remains open, and the active exact-copy experiment.
+remains open, and the active reader-capacity experiment.
 
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
@@ -37,8 +37,12 @@ recovers 128/128 stored-memory actions at 4,096 records using an additional sour
 index; this exposes the literal-name fixture and does not improve learned keys.
 A [focused copy diagnostic](experiments/binding-copy-fit-20260920/README.md) fits
 64/64 training identifiers but fails changed and held-out endpoints, with rule/action
-regressions. The active [endpoint freshness study](experiments/binding-endpoint-freshness-20260920/README.md)
-compares repeated versus mostly fresh endpoint targets while retaining rule tasks.
+regressions. The completed [endpoint freshness study](experiments/binding-endpoint-freshness-20260920/README.md)
+reduces old-target reuse with broader training but still generates 0/64 original
+held-out endpoints. [Frozen readouts](experiments/binding-reader-stages-20260920/README.md)
+find weaker character access through the reader than in its input payloads. The
+[reader-capacity study](experiments/binding-reader-capacity-20260920/README.md) is
+now training matched reset readers of two widths; its capability results are pending.
 The [bgkit audit](docs/bgkit-audit.md) records storage, recovery and runtime adoption.
 
 **Spatially Superposed Differentiable Knowledge Base**

@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **459 tests**, with four existing dependency/runtime
+The latest full suite passed **470 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -52,6 +52,15 @@ zero-value features are exactly constant across worlds and both data splits.
 These supervised format-given probes are separate from language-model generation;
 unequal head sizes and one-seed/post-hoc scope remain explicit.
 
+The completed [intermediate readouts](../experiments/binding-reader-stages-20260920/README.md)
+recover 205/384 characters from the concatenated input projections and 165/384
+from the final shared state with linear heads, with zero exact identifiers. Native
+hooks preserve the original returned output bitwise and never use targets or writers.
+The [capacity intervention](../experiments/binding-reader-capacity-20260920/README.md)
+is training 256- and 1024-wide reset readers from the same broad endpoint. Native
+wide-reader causal/gradient preflight passes; initial audits verify every non-reader
+tensor against the common source. Final behavior remains pending.
+
 Learned global retrieval remains weaker: corrected training reaches 102/128 free
 actions at 128 records and 78/128 at 4,096 records on fixed questions. Wider address
 spaces improve training fit without improving held-out retrieval. These exact-scan
@@ -76,7 +85,7 @@ parameter substitution; the scoped studies and earlier results follow below.
 | Checkpoint placement | Twenty-five retained stage/diagnostic checkpoint directories were verified and moved externally. The internal run tree fell from about 49 GiB to 52 MiB; internal free space increased by about 48 GiB. |
 | Future launches | This checkout's ignored storage settings select the external run root. Configured directories must exist; relative container training output paths are rejected. Environment overrides remain available on other machines. |
 | Save cadence | Defaults and real-model recipes use 1,000 updates, plus initial, final and emergency saves. Recent declared 400–4,000-update studies use a 10,000-update cadence and retain only initial/final/emergency sets. |
-| Memory and stalls | Optional host-memory reserve, CUDA allocation fraction and compute stack watchdog are implemented. New source versions log host/CUDA memory trends and checkpoint start/commit duration. |
+| Memory and stalls | Optional host reserve, CUDA fraction and compute stack watchdog; enabled guards cover CUDA completion before disarming. Long oracle evaluations preserve resumable progress on later host pressure. New source versions log host/CUDA trends and checkpoint duration; frozen runs retain their recorded code. |
 | Checkpointing cost | Two 100-update Muon profiles had identical training metrics and final weight-file hash. Disabling activation/reader-chunk checkpointing cut median update time 18% and raised peak CUDA allocation from 2.14 to 2.53 GiB. This applies only to the measured short binding distribution, with existing GPU contention. |
 | Offline bank writes | Native BF16 individual/bulk writes produced byte-identical stored records and identical results for all 88 evaluation rows, with the writer disabled during reads. Atomic batching avoids a durable commit per record. |
 | Concurrent writes/deletions | Regressions reproduced check/insert and lineage/delete races. Explicit SQLite writer reservations now protect those operations; failed bulk writes roll back without exposing partial records. |
