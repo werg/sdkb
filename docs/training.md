@@ -423,7 +423,11 @@ text, and normalized answer strings are rejected if they occur in the query.
 `scripts/evaluate_published_bank.py` verifies the
 published generation, uses exact learned selection at explicit per-space budgets,
 and reports NLL, support recall, zero-payload and removed-support controls. It
-never calls the writer during inference. A first small run is a mechanics check;
+never calls the writer during inference. Both published-bank evaluators reject a
+model whose actual serialized writer parameters differ from the writer snapshot
+that created the selected bank. A bank-trained reader may change its recurrent
+bridge and query/reader weights while retaining the one-pass writer. A first
+small run is a mechanics check;
 source-held-out behavior and later-task transfer require larger controlled runs.
 `scripts/evaluate_bank_ranks.py` measures the complete verified-support rank
 from the same causal native prefix, without fetching payloads. It reports

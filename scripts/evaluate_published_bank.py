@@ -13,7 +13,8 @@ from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes
 from sdkb.evaluation import stored_transfer_evaluation
-from sdkb.offline_bank import canonical_json, publish_offline_generation
+from sdkb.offline_bank import (assert_bank_writer_compatible, canonical_json,
+                               publish_offline_generation)
 from sdkb.operations import atomic_json
 from sdkb.store import DiskStore
 from sdkb.training import config_from_run
@@ -25,6 +26,7 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     if max_episodes < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive evaluation count and a fresh output parent required')
     config = config_from_run(run)
+    training_bank_dir = config.train.bank_dir
     if len(limits) != len(config.memory.payload_dims):
         raise ValueError('One retrieval limit per active space required')
     if any(k < 1 or k > cap for k, cap in zip(limits, config.memory.neighbors, strict=True)):
@@ -52,6 +54,8 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device).eval()
     checkpoint = resolve_checkpoint(run, verify=True)
+    assert_bank_writer_compatible(run, checkpoint, bank_dir, bank_manifest,
+                                  training_bank_dir=training_bank_dir)
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     episodes = load_episodes(episodes_file)[:max_episodes]
     if not episodes:

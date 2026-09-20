@@ -14,7 +14,8 @@ from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes
 from sdkb.key_index import PublishedKeyIndex
-from sdkb.offline_bank import canonical_json, publish_offline_generation
+from sdkb.offline_bank import (assert_bank_writer_compatible, canonical_json,
+                               publish_offline_generation)
 from sdkb.operations import atomic_json
 from sdkb.store import DiskStore
 from sdkb.training import autocast_context, config_from_run
@@ -26,6 +27,7 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     if max_episodes < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive episode count and fresh output path required')
     config = config_from_run(run)
+    training_bank_dir = config.train.bank_dir
     bank_path = bank_dir / 'manifest.json'
     manifest = json.loads(bank_path.read_text())
     store = DiskStore(bank_dir / 'bank.sqlite')
@@ -45,6 +47,8 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device).eval()
     checkpoint = resolve_checkpoint(run, verify=True)
+    assert_bank_writer_compatible(run, checkpoint, bank_dir, manifest,
+                                  training_bank_dir=training_bank_dir)
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     def forbidden_writer(*_args, **_kwargs):
         raise AssertionError('Routing evaluation must not re-encode sources')

@@ -2,8 +2,46 @@
 from collections.abc import Callable, Iterable
 import hashlib
 import json
+from pathlib import Path
 
 from .store import DiskStore, StoredRecord
+
+
+def assert_bank_writer_compatible(run: Path, checkpoint: Path, bank_dir: Path,
+                                  manifest: dict, *, training_bank_dir: str | Path | None) -> None:
+    """Reject stale payloads if an evaluator's writer differs from bank creation.
+
+    A published-bank training stage may change consumer and query weights while
+    its producer is frozen. In that case compare actual serialized producer
+    tensors to the exact checkpoint that created the bank.
+    """
+    from safetensors import safe_open
+    import torch
+
+    from .trajectories import file_sha256
+
+    expected = manifest['identity']['writer_checkpoint_sha256']
+    current = checkpoint / 'model.safetensors'
+    if file_sha256(current) == expected:
+        return
+    if training_bank_dir is None or Path(training_bank_dir).resolve() != bank_dir.resolve():
+        raise ValueError('Evaluator model was not trained against this bank generation')
+    initialization = json.loads((run / 'initialization.json').read_text())
+    source = Path(initialization['checkpoint']) / 'model.safetensors'
+    if file_sha256(source) != expected:
+        raise ValueError('Bank-stage initialization differs from the frozen writer checkpoint')
+    # writer_loops=1 bypasses the recurrent bridge; only the parent decoder
+    # participates in source encoding. The bridge is allowed to learn on reads.
+    prefixes = ('backbone.base.', 'write_slots', 'key_head.', 'value_head.',
+                'address_maps.', 'codecs.')
+    with safe_open(source, framework='pt', device='cpu') as origin, \
+            safe_open(current, framework='pt', device='cpu') as evaluated:
+        keys = {key for key in origin.keys() if key.startswith(prefixes)}
+        if not keys or keys != {key for key in evaluated.keys() if key.startswith(prefixes)}:
+            raise ValueError('Bank-stage writer parameter set changed')
+        for key in sorted(keys):
+            if not torch.equal(origin.get_tensor(key), evaluated.get_tensor(key)):
+                raise ValueError(f'Bank-stage writer parameters changed: {key}')
 
 
 def canonical_json(value):
