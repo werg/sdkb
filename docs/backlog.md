@@ -17,7 +17,10 @@ CPU reference evidence remains in `validation-v0.2.md`.
    representation/readout learning before spending on another identical curriculum.
 2. **Global address generalization.** Corrected training gets 102/128 free actions
    at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
-   training fit but reduce held-out pair retrieval. No robust large-bank claim.
+   training fit but reduce held-out pair retrieval. A separate lexical index gets
+   128/128 action pairs and stored-latent action generations on the same 4,096-record
+   fixture. Its extra source-token features expose an easy literal-name baseline;
+   learned-key generalization remains unresolved.
 3. **MLP conditional compaction.** Native single-read interleaved and paired training now
    passes replay, causal, stored-code and emergency-resume checks. Temporary training
    now preserves 128/128 actions and tested rule-change pairs through mean codes,

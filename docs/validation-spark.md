@@ -368,3 +368,10 @@ or a learned-router improvement. It exposes an easy lexical structure in this
 synthetic retrieval fixture. The accompanying audit corrects prose that called
 sufficient-group counts (73/128 and 37/128) full-pair retrieval; the full-pair
 counts are 71/128 and 35/128. Raw historical records remain unchanged.
+
+The subsequent frozen lexical-selection action check gets **128/128** original
+actions, versus 78/128 for the learned router, with the same two selected records
+per action. Oracle/no-memory predictions reproduce exactly (128/128 and 64/128);
+zeroed payloads give 63/128. The reader consumes stored payloads with writer calls
+forbidden. This is an end-to-end literal-name fixture result using the additional
+lexical index, not a learned-key improvement or fresh counterfactual-policy result.

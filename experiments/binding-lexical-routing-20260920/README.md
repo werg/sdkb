@@ -3,7 +3,8 @@
 The learned address model loses required records as the synthetic bank grows.
 Test an ordinary lexical control on the exact same 4,096-record bank, 320 questions,
 causal times and authorization scope as the corrected large-bank diagnostic.
-This is a known-corpus, retrieval-only comparison; no model is trained or generated.
+The initial comparison is retrieval-only on a known corpus. A subsequent frozen
+action-generation check is recorded below; no model is trained.
 
 Offline, derive lowercased `[a-z0-9_]+` token counts from each source. Store them
 with source hash, opaque ID and the bank's namespace/space/generation/domain/time
@@ -36,8 +37,8 @@ The serialized lexical index is **1,643,978 bytes**, including feature and prove
 metadata. The bank's stored learned key blobs total 1,048,576 bytes, excluding their
 surrounding metadata/index; latent payload blobs total 17,104,896 bytes. These are
 unequal representations and byte accounting scopes. The lexical comparator retains
-source terms and is not the architecture's learned 64-dimensional key. No latent
-inference, generation, capacity substitution, ANN or latency result is asserted.
+source terms and is not the architecture's learned 64-dimensional key. These rankings alone establish no latent generation, capacity substitution, ANN
+or latency result. The subsequent generation check has the narrower scope below.
 
 ## Retrieval metric label correction
 
@@ -67,3 +68,35 @@ python scripts/evaluate_lexical_routing.py \
 
 The complete index, query rows and source data remain external. `summary.json` pins
 hashes and aggregates. A different script/source/bank requires a fresh output path.
+
+## Frozen stored-latent action confirmation
+
+`generate_actions.py` completed all 512 action/control generations from frozen
+checkout `9459c68`. It recomputes selection from the stored lexical index using
+only query text and eligibility; it does not consult required-source labels for
+the lexical condition. It fetches existing bank payloads with writer/compactor
+calls forbidden. Read-plan scores are zero, as in the existing selected-ID action
+diagnostic, so this tests record selection rather than calibrated lexical scores.
+The source model, reader, decoder, payloads and address/count overlay stay frozen.
+
+| Condition | Correct actions |
+|---|---:|
+| Lexical top-two selection | **128/128** |
+| Oracle selected pair | 128/128 |
+| No memory | 64/128 |
+| Zeroed selected payloads | 63/128 |
+| Earlier learned-router selection | 78/128 |
+
+All 256 repeated oracle/no-memory predictions match the preceding reference exactly.
+The paired lexical-minus-learned action gain is 39.06 percentage points, with a
+world-bootstrap 95% interval of 28.91–49.22 points. This resamples 32 known query
+worlds, not training seeds; it is an uncorrected post-hoc diagnostic. Both systems
+select two records for these action queries, but the extra lexical index and its
+literal-name matching remain different representations and information budgets.
+
+`action-generation.json` and `action-generation-comparison.json` pin the result and
+comparison. Full index and generation rows remain external. This demonstrates
+stored-latent action composition with a conventional source-derived selector on
+this fixture. It does not demonstrate improved learned-key retrieval, exact detail
+recall, fresh counterfactual invariance of the lexical selection policy, real agent
+success or parameter substitution.
