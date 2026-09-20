@@ -99,6 +99,38 @@ def test_local_prepare_manifest_split_and_index(tmp_path):
     assert len(m['sources'][0]['spec']['revision']) == 64
 
 
+def test_preparation_skips_pinned_stream_prefix_and_excludes_prior_groups(tmp_path):
+    path = Path(__file__).parent / 'fixtures/trajectories.jsonl'
+    baseline = prepare_trajectories([spec() | {'local_file': str(path), 'max_rows': 60}],
+                                    ByteTokenizer(), budgets(), tmp_path / 'baseline',
+                                    validation_fraction=.25)
+    baseline_lines = (tmp_path / 'baseline/normalized.jsonl').read_text().splitlines()
+    prior = {json.loads(line)['split_group'] for line in baseline_lines[:10] + baseline_lines[20:25]}
+    later = prepare_trajectories([spec() | {'local_file': str(path), 'skip_rows': 10,
+                                          'max_rows': 50, 'excluded_split_groups': sorted(prior)}],
+                                 ByteTokenizer(), budgets(), tmp_path / 'later',
+                                 validation_fraction=.25)
+    rows = [json.loads(line) for line in (tmp_path / 'later/normalized.jsonl').read_text().splitlines()]
+    earlier = [json.loads(line) for line in (tmp_path / 'baseline/normalized.jsonl').read_text().splitlines()]
+    assert rows
+    assert not {r['split_group'] for r in rows} & prior
+    assert {r['trajectory_id'] for r in rows} <= {r['trajectory_id'] for r in earlier[10:]}
+    counts = later['sources'][0]['counts']
+    assert counts['rows_skipped'] == 10
+    assert counts['rows_scanned'] == 50
+    assert counts['excluded_prior_group'] >= 1
+    assert later['sources'][0]['spec']['skip_rows'] == 10
+    assert later['sources'][0]['spec']['excluded_split_groups'] == sorted(prior)
+    assert baseline['sources'][0]['spec']['revision'] == later['sources'][0]['spec']['revision']
+
+
+def test_negative_stream_skip_rejected(tmp_path):
+    path = Path(__file__).parent / 'fixtures/trajectories.jsonl'
+    with pytest.raises(ValueError, match='skip_rows'):
+        prepare_trajectories([spec() | {'local_file': str(path), 'skip_rows': -1}],
+                             ByteTokenizer(), budgets(), tmp_path / 'bad')
+
+
 def test_unknown_nontext_content_rejected():
     with pytest.raises(ValueError, match='Unsupported nontext'):
         normalize_message(dict(role='user', content=[dict(type='image_url', image_url='https://example.invalid')]))

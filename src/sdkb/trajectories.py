@@ -345,7 +345,22 @@ def prepare_trajectories(requests, tokenizer, cfg, output, *, protocol='prefix',
             limit = spec.get('max_rows', 2000)
             if limit < 1:
                 raise ValueError('max_rows must be positive')
+            skip_rows = spec.get('skip_rows', 0)
+            if type(skip_rows) is not int or skip_rows < 0:
+                raise ValueError('skip_rows must be a nonnegative integer')
+            excluded_groups = spec.get('excluded_split_groups', [])
+            if (not isinstance(excluded_groups, list)
+                    or any(not isinstance(group, str) or not group for group in excluded_groups)
+                    or len(excluded_groups) != len(set(excluded_groups))):
+                raise ValueError('excluded_split_groups must be unique nonempty strings')
+            excluded_groups = set(excluded_groups)
             iterator = iter(source_rows(spec))
+            for _ in range(skip_rows):
+                try:
+                    next(iterator)
+                except StopIteration:
+                    break
+                stats['rows_skipped'] += 1
             for _ in range(limit):
                 try:
                     row = next(iterator)
@@ -356,6 +371,9 @@ def prepare_trajectories(requests, tokenizer, cfg, output, *, protocol='prefix',
                     t = normalize_trajectory(row, spec)
                 except (ValueError, KeyError, TypeError) as e:
                     stats['filtered:' + str(e)[:100]] += 1
+                    continue
+                if t.split_group in excluded_groups:
+                    stats['excluded_prior_group'] += 1
                     continue
                 if t.content_hash in hashes:
                     stats['exact_duplicate_trajectories'] += 1
