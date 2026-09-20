@@ -1,6 +1,7 @@
 """Backbone preflight: execute public embeddings, causality and writer/read gradients."""
 from __future__ import annotations
 
+import math
 import torch
 
 from .agent import SDKBAgent, answer_distribution_kl
@@ -14,6 +15,10 @@ def model_probe(config) -> dict:
     from .runtime import configure_memory
     configure_memory(config.train)
     agent = SDKBAgent(config).to(config.train.device)
+    if config.train.warmstart_memory_gate is not None:
+        value = config.train.warmstart_memory_gate
+        with torch.no_grad():
+            agent.backbone.bridge.memory_logit.fill_(math.log(value / (1 - value)))
     agent.eval()
     ids = agent.text_ids('An earlier experience has a retry rule.', source=True)
     with torch.no_grad(), autocast_context(config):

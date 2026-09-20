@@ -1,0 +1,24 @@
+{
+  "inputs": {
+    "source_manifest_sha256": "1dfcec4533e0582c03dd340fd9d0e81c98396ce50f452d41fa90eb5a489246c7",
+    "source_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+    "episodes_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+    "bank_identity_sha256": "89c09d4d4587c79f67acde3f19f958f23c4f6e7dd78179dd8a5d35bd25cf6f4c",
+    "probe_sha256": "99f97e8f40fd289b738aa161fa83c4276377b815558e77c5ac15028676403628"
+  },
+  "episodes": 119,
+  "trajectories": 42,
+  "mean_real_zero_symmetric_kl": 0.024947397005861672,
+  "mean_text_none_symmetric_kl": 0.6398746566377392,
+  "median_real_zero_symmetric_kl": 0.00822199322283268,
+  "median_text_none_symmetric_kl": 0.3616119623184204,
+  "mean_real_answer_state_rms": 3.0814905647470168,
+  "mean_real_zero_answer_state_delta_rms": 0.19114952083645748,
+  "mean_real_zero_answer_state_delta_ratio": 0.06137214184978892,
+  "mean_text_answer_state_rms": 3.052927263644563,
+  "mean_text_none_answer_state_delta_rms": 1.2638182496072865,
+  "mean_text_none_answer_state_delta_ratio": 0.4141718975990329,
+  "token_weighted_real_zero_symmetric_kl": 0.008751331831938878,
+  "token_weighted_text_none_symmetric_kl": 0.3789824137024435,
+  "notice": "Teacher-forced next-token distribution sensitivity; different text and latent prompts/compute. Stored read plans and causal boundaries are fixed. No generation, agent success or information-capacity claim."
+}

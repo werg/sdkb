@@ -7,6 +7,7 @@ from dataclasses import asdict, replace
 from pathlib import Path
 import json
 import hashlib
+import math
 import platform
 import random
 import subprocess
@@ -134,6 +135,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         raise ValueError("Choose resume or warm-start, not both")
     if config.train.reinitialize_reader and not resume and init_from is None:
         raise ValueError('Reader reinitialization requires a warm-start source')
+    if config.train.warmstart_memory_gate is not None and not resume and init_from is None:
+        raise ValueError('Memory gate override requires an explicit warm-start source')
     if stop_after is not None and stop_after < 1:
         raise ValueError("stop_after must be positive")
     from .episode_index import EpisodeIndex
@@ -235,11 +238,19 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             raise ValueError(f"Incompatible warm-start state: missing={missing}, unexpected={unexpected}")
         if routing_conversion:
             agent.routing_query_head.load_state_dict(agent.query_head.state_dict())
+        prior_memory_gate = None
+        if config.train.warmstart_memory_gate is not None:
+            prior_memory_gate = float(agent.backbone.bridge.memory_logit.detach().sigmoid())
+            value = config.train.warmstart_memory_gate
+            with torch.no_grad():
+                agent.backbone.bridge.memory_logit.fill_(math.log(value / (1 - value)))
         provenance = {"routing_query_conversion": routing_conversion, "checkpoint": str(source_checkpoint), "optimizer_reset": True,
                       "reader_reinitialized": config.train.reinitialize_reader,
                       "reinitialized_parameters": sorted(reinitialized),
                       "missing_initialized": sorted(missing), "unused": sorted(unexpected),
-                      "recurrence_conversion": converting}
+                      "recurrence_conversion": converting,
+                      "warmstart_memory_gate": config.train.warmstart_memory_gate,
+                      "prior_memory_gate": prior_memory_gate}
         (output / "initialization.json").write_text(json.dumps(provenance, indent=2) + "\n")
     if config.train.optimization_scope == "compactor":
         for name, parameter in agent.named_parameters():

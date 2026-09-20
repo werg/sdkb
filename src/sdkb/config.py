@@ -106,6 +106,7 @@ class TrainConfig:
     oracle_anchor_weight: float = 0.0
     oracle_alignment_weight: float = 0.0  # detached selected-text answer-state cosine loss
     oracle_distillation_weight: float = 0.0  # fixed one-pass selected-text output KL
+    warmstart_memory_gate: float | None = None  # fresh native warm-start only; exact resume loads checkpoint
     episodes_file: str | None = None  # optional general support/query JSONL
     evidence_scope: str = 'required'  # oracle-selected supports or all causally available candidates
     archive_dir: str | None = None  # existing external storage root; never auto-mount
@@ -145,6 +146,10 @@ class Config:
                 or not m.freeze_backbone or t.oracle_anchor_weight or t.oracle_alignment_weight
                 or t.loop_counts):
             raise ValueError('Oracle distillation requires fully live, fixed-parent R=2 oracle memory without another text objective')
+        if t.warmstart_memory_gate is not None and (
+                not math.isfinite(t.warmstart_memory_gate) or not 0 < t.warmstart_memory_gate < 1
+                or m.recurrence_mode != 'middle_block'):
+            raise ValueError('Warm-start memory gate must be a probability for native recurrence')
         if t.selected_producers_only and (t.arm != 'memory' or t.retrieval != 'oracle' or t.live_fraction != 1.):
             raise ValueError('Selected-only producers require fully live oracle memory training')
         if (t.weight_decay < 0 or t.adam_eps <= 0 or len(t.adam_betas) != 2

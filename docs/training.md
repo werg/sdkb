@@ -75,6 +75,17 @@ the partial KL total, optimizer, gradients and RNG; changing its weight starts a
 new warm-start fork. A lower KL or NLL alone does not establish payload use or
 agent success; compare frozen stored-only real, zero, wrong and text conditions.
 
+`warmstart_memory_gate` explicitly replaces only the native bridge's memory
+injection gate after loading a parent model into a **new** run. It requires a
+middle-block warm-start checkpoint and a probability strictly between zero and
+one. The old and requested gate values are recorded in `initialization.json`;
+the initial checkpoint contains the changed value and a fresh optimizer. Exact
+resume loads the checkpointed gate and optimizer without reapplying the override,
+and rejects a changed gate setting as a hyperparameter mismatch. The one-pass
+parent path still bypasses the bridge. This option is an experimental starting
+condition, not an automatic inference-time adjustment or evidence of better
+memory use.
+
 Default budgets: four source chunks, 512 source tokens each, 4096 outer-prompt tokens,
 512 complete target tokens, a 2048-dimensional per-source storage payload, eight
 returned slots. Canonical write, storage-code and returned-read capacities are separate

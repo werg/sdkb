@@ -1,0 +1,107 @@
+{
+  "inputs": {
+    "source_manifest_sha256": "1dfcec4533e0582c03dd340fd9d0e81c98396ce50f452d41fa90eb5a489246c7",
+    "source_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+    "episodes_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+    "bank_identity_sha256": "89c09d4d4587c79f67acde3f19f958f23c4f6e7dd78179dd8a5d35bd25cf6f4c",
+    "baseline_report_sha256": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+    "probe_sha256": "154dcb9576a70dde128ef933584c32df36c6f3b079a5080a2b152a65e3fa567f",
+    "policies": [
+      "trained",
+      "memory_0.30",
+      "update_0.30",
+      "both_0.30",
+      "both_0.50"
+    ]
+  },
+  "episodes": 119,
+  "same_serialized_bank_and_read_plans": true,
+  "policies": {
+    "trained": {
+      "memory_gate": 0.11043579876422882,
+      "update_gate": 0.11156400293111801,
+      "token_weighted_nll": {
+        "real": 0.9710236656315335,
+        "zero_values": 0.9807144478299529,
+        "none": 1.0895570608742187
+      },
+      "real_over_zero": {
+        "mean_episode_nll_benefit": 0.01722099724386068,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.005954427115554562,
+          0.02638655999192049
+        ]
+      }
+    },
+    "memory_0.30": {
+      "memory_gate": 0.30000001192092896,
+      "update_gate": 0.11156400293111801,
+      "token_weighted_nll": {
+        "real": 0.9696684692070632,
+        "zero_values": 0.9795968974353061,
+        "none": 1.0895570608742187
+      },
+      "real_over_zero": {
+        "mean_episode_nll_benefit": 0.021559908326487454,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.010246234752489161,
+          0.03199386930704373
+        ]
+      }
+    },
+    "update_0.30": {
+      "memory_gate": 0.11043579876422882,
+      "update_gate": 0.30000001192092896,
+      "token_weighted_nll": {
+        "real": 0.9868191156895165,
+        "zero_values": 1.0016250354833964,
+        "none": 1.081805400036972
+      },
+      "real_over_zero": {
+        "mean_episode_nll_benefit": 0.011937394419976044,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          -0.020562415979560038,
+          0.03741620689190899
+        ]
+      }
+    },
+    "both_0.30": {
+      "memory_gate": 0.30000001192092896,
+      "update_gate": 0.30000001192092896,
+      "token_weighted_nll": {
+        "real": 0.9828929789310377,
+        "zero_values": 1.0020772183960343,
+        "none": 1.081805400036972
+      },
+      "real_over_zero": {
+        "mean_episode_nll_benefit": 0.03259193395716738,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          -0.0012782773453331431,
+          0.0636072996266043
+        ]
+      }
+    },
+    "both_0.50": {
+      "memory_gate": 0.5,
+      "update_gate": 0.5,
+      "token_weighted_nll": {
+        "real": 1.0315259848286014,
+        "zero_values": 1.0848857510581713,
+        "none": 1.1047654325659084
+      },
+      "real_over_zero": {
+        "mean_episode_nll_benefit": 0.10773495009702197,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.05263177932180973,
+          0.15472113816234867
+        ]
+      }
+    }
+  },
+  "notice": "Read-only parameter overlays on one frozen checkpoint; no retraining or saved model mutation. Gate values were inspected on this validation set, so policy comparisons are exploratory. Text and latent paths differ in context/compute. No agent success or capacity-substitution claim."
+}

@@ -1,0 +1,34 @@
+{
+  "inputs": {
+    "source_manifest_sha256": "1dfcec4533e0582c03dd340fd9d0e81c98396ce50f452d41fa90eb5a489246c7",
+    "source_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+    "episodes_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+    "bank_identity_sha256": "89c09d4d4587c79f67acde3f19f958f23c4f6e7dd78179dd8a5d35bd25cf6f4c",
+    "probe_sha256": "41aebc1f2efc6a36e9eb04f13580bc320674d86d7ee3a65fee0aec5caa329bb0"
+  },
+  "episodes": 119,
+  "trajectories": 42,
+  "means": {
+    "reader_rms": 0.5807954714077861,
+    "injection_result_rms": 0.02051678700607364,
+    "core2_answer_rms": 0.03751478722992064,
+    "core2_memory_rms": 0.031106158230109374,
+    "final_answer_rms": 3.0814905647470168,
+    "reader_delta_rms": 0.5662457061414959,
+    "injection_result_delta_rms": 0.0026526109133494877,
+    "core2_answer_delta_rms": 0.0009952484795866738,
+    "core2_memory_delta_rms": 0.0017693546853036065,
+    "final_answer_delta_rms": 0.19114952083645748,
+    "injection_base_delta_rms": 0.0
+  },
+  "mean_delta_over_real": {
+    "reader": 0.9744203894432067,
+    "injection_result": 0.12930863147695443,
+    "core2_answer": 0.02680655256434252,
+    "core2_memory": 0.05690798849175088,
+    "final_answer": 0.06137214184978892
+  },
+  "bridge_memory_gate": 0.11043579876422882,
+  "bridge_update_gate": 0.11156400293111801,
+  "notice": "Read-only trace of the existing native model; same prefix, fixed stored read plan and target-prefix positions for real/zero. RMS across different layers is not directly a capacity measure. No cold-cache timing or agent-success claim."
+}

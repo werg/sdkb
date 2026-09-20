@@ -1,0 +1,33 @@
+{
+  "inputs": {
+    "source_manifest_sha256": "1dfcec4533e0582c03dd340fd9d0e81c98396ce50f452d41fa90eb5a489246c7",
+    "source_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+    "episodes_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+    "bank_identity_sha256": "89c09d4d4587c79f67acde3f19f958f23c4f6e7dd78179dd8a5d35bd25cf6f4c",
+    "score_sha256": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+    "probe_sha256": "7496f39ceeaf2f35c8d16d3ecb7608d31813b5e2497d9c574da36c179bc6566d"
+  },
+  "episodes": 119,
+  "trajectories": 42,
+  "means": {
+    "real_rms": 0.5807954714077861,
+    "zero_rms": 0.5716240957003682,
+    "wrong_rms": 0.5814241776947214,
+    "real_zero_delta_rms": 0.5662457061414959,
+    "real_wrong_delta_rms": 0.5902050603337649,
+    "real_zero_cosine": 0.5059194978044814,
+    "real_wrong_cosine": 0.4489420799209791
+  },
+  "medians": {
+    "real_rms": 0.5822246074676514,
+    "zero_rms": 0.5715278387069702,
+    "wrong_rms": 0.5813881754875183,
+    "real_zero_delta_rms": 0.5636926293373108,
+    "real_wrong_delta_rms": 0.6168038249015808,
+    "real_zero_cosine": 0.516125500202179,
+    "real_wrong_cosine": 0.43584340810775757
+  },
+  "delta_to_real_rms_ratio": 0.9744203894432067,
+  "correlation_delta_rms_payload_nll_gain": 0.12983023053892181,
+  "notice": "Frozen stored-only reader-token geometry, not information capacity or agent success. Real/zero/wrong use the original causal read plan; reader tokens are measured before the recurrent bridge. OS cache timing is uncontrolled."
+}
