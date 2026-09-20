@@ -1,0 +1,20 @@
+{
+  "applied": true,
+  "potential_bytes": 2034699352,
+  "released_bytes": 2034699352,
+  "replacements": [
+    {
+      "source": "/archive/runs/trajectory-output-distillation-20260920/control/checkpoints/step-000000000-58506bdf2039/model.safetensors",
+      "target": "/archive/runs/trajectory-output-distillation-20260920/distilled/checkpoints/step-000000000-50e897a90b1f/model.safetensors",
+      "sha256": "c73ef6fb8b22f28171eec82de61575802b5d5503e1c40663e853fbb7b661dffe",
+      "bytes": 1017349676
+    },
+    {
+      "source": "/archive/runs/trajectory-output-distillation-20260920/control/checkpoints/step-000000000-58506bdf2039/model.safetensors",
+      "target": "/archive/runs/trajectory-prefix-muon-20260920/recurrent_joint/checkpoints/step-000000400-4fe33fbc85d3/model.safetensors",
+      "sha256": "c73ef6fb8b22f28171eec82de61575802b5d5503e1c40663e853fbb7b661dffe",
+      "bytes": 1017349676
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+}

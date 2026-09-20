@@ -1,0 +1,95 @@
+{
+  "protocol": "119 repository-heldout SWE-smith episodes; separate frozen banks, same IDs and writer depth",
+  "analyzer_sha256": "5704580ac61a950cda2f2427c728834ae11548573f8eb2596af1454a7521b085",
+  "train_sha256": "baecad1d365ce6c0b4930b9ab878329473bfb4f999495179d0939afa52c29818",
+  "validation_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+  "parent_model_sha256": "c73ef6fb8b22f28171eec82de61575802b5d5503e1c40663e853fbb7b661dffe",
+  "arms": {
+    "control": {
+      "checkpoint_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+      "config_sha256": "b3db6573fd8131041249d9b0a7c97f65be6829515793eb35e1dd73118cde10f6",
+      "preflight_sha256": "d6c515a0d15eae2b11bb9973a08250efb34d7de977c03fab04c3e3ce0ef84ab3",
+      "report_sha256": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+      "summary_sha256": "b0685468301d2fa112b18311b189998a31782b6d9491137689d8eaabdfda1a39",
+      "writer_calls": 375,
+      "token_weighted_nll": {
+        "all": 0.9710236656315335,
+        "zero_values": 0.9807144478299529,
+        "wrong_values": 0.982070916788767,
+        "none": 1.0895570608742187
+      }
+    },
+    "distilled": {
+      "checkpoint_model_sha256": "e3dab712a31ea43deb1264ad9a8df330e5e0bec96770f2a21c5a9c7501f1be2a",
+      "config_sha256": "5d1f9269d208ab48d0e417386e11687bb410f1d0cfd5ff89f41645edfe1e507e",
+      "preflight_sha256": "28814ab3d42050c3d660b8c55b803cbf0b453f760e7bebbc5f9337bd7a28a607",
+      "report_sha256": "01c5ae218a395fee672a6be7110129646ab8bb9d0e982b35522cbc3d4a20e330",
+      "summary_sha256": "e5af82d6ea55190e6e735272cc4e8c831796310b757e87d8ac2575eca5054190",
+      "writer_calls": 375,
+      "token_weighted_nll": {
+        "all": 0.9643525586956478,
+        "zero_values": 0.9700877658268363,
+        "wrong_values": 0.9715814828562095,
+        "none": 1.0885322808588918
+      }
+    }
+  },
+  "one_pass_text": {
+    "max_sequence_nll_delta": 0.0,
+    "selected_text_token_weighted_nll": 0.8666495475614205,
+    "no_text_token_weighted_nll": 1.1075686214685552,
+    "control_report_sha256": "27bd803d020d9dce0557306924f4040f732ef52e3dba60d6be9da7cf51001e12",
+    "distilled_report_sha256": "b19ffa6b595be71115f938d89e81f8829b750c97de9c2d5ba06004191e30ec3a"
+  },
+  "paired": {
+    "control_to_distilled_all_nll_reduction": {
+      "mean_episode_delta": 0.009096688398853553,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.0016675415430451336,
+        0.018027794351447902
+      ]
+    },
+    "control_to_distilled_zero_values_nll_reduction": {
+      "mean_episode_delta": 0.012127020612211232,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.006446380780340024,
+        0.01798008327520365
+      ]
+    },
+    "control_to_distilled_wrong_values_nll_reduction": {
+      "mean_episode_delta": 0.013289448603889371,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.0031700747342500615,
+        0.02314538883741692
+      ]
+    },
+    "control_to_distilled_none_nll_reduction": {
+      "mean_episode_delta": 0.003171155732346514,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        0.0013779128143302612,
+        0.005030452995853034
+      ]
+    },
+    "distillation_delta_real_over_zero_values": {
+      "mean_episode_delta": -0.003030332213357679,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.01030518281587254,
+        0.005093234435449412
+      ]
+    },
+    "distillation_delta_real_over_wrong_values": {
+      "mean_episode_delta": -0.004192760205035817,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.016130080041384626,
+        0.009462626591122852
+      ]
+    }
+  },
+  "limits": "Teacher-forced NLL and descriptive trajectory bootstrap, not agent success. Oracle selection and fixed plans do not establish learned retrieval. Text and latent paths have different token and compute budgets. Separate frozen banks reflect each arm\u2019s trained writer; no cold-NVMe or capacity-substitution claim."
+}

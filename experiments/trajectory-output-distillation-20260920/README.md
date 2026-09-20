@@ -30,3 +30,44 @@ alone. Generic recurrent compute, text-token layout and output KL give the two
 paths different workloads, so this is a payload-use intervention rather than an
 information-and-compute-matched capacity-substitution claim. No agent task or
 patch success is measured here.
+
+## Completed matched pilot
+
+Both arms finished all 400 updates under frozen training commit `c8833c1`, with
+one completed read at R=2 on every logged update. Their initial and final full
+recovery checkpoints, W&B offline files, bank records, and raw scores live under
+`/archive/runs/trajectory-output-distillation-20260920`. The evaluator checkout
+was `af48f2b`. Each final checkpoint was scored from a newly serialized bank;
+both banks encoded 375 unique sources with exactly 375 writer calls and a
+64-source writer cache cap. The analyzer checked all 119 episode identities,
+selected IDs and condition pairs. Digest-pinned aggregate results are in
+`results.json`.
+
+| R=2 held-out token-weighted NLL | No KL control | Output-KL arm |
+|---|---:|---:|
+| Real stored values | 0.971024 | 0.964353 |
+| Zeroed values, same selected IDs | 0.980714 | 0.970088 |
+| Wrong values, same selected IDs | 0.982071 | 0.971581 |
+| No memory | 1.089557 | 1.088532 |
+
+The fixed R=1 selected-text teacher scored 0.866650 NLL with text and 1.107569
+without text on both final checkpoints. All 238 corresponding per-sequence scores
+were exactly equal across arms. Output KL therefore improved overall real-value
+NLL but improved the zero-value condition more. The paired change in real-over-zero
+benefit was **−0.00303 mean episode NLL** (42-trajectory descriptive bootstrap
+interval −0.01031 to 0.00509); real-over-wrong changed by −0.00419 (−0.01613 to
+0.00946). This pilot does not show stronger payload-specific use. The real-value
+NLL reduction alone would give the wrong impression.
+
+The original source IDs and read plans were preserved for payload interventions.
+Wrong-value permutation does not guarantee semantic disagreement. Text and latent
+paths differ in token and compute budget, and the study measures teacher-forced
+next-message likelihood, not generation quality, task completion, learned routing,
+composition, or parameter substitution. One seed and this 400-update budget do
+not establish a general result about output distillation.
+
+After both evaluators exited, verified hard-link deduplication reclaimed
+2,034,699,352 external bytes from identical joint-parent and fork-initial model
+files. All five affected complete checkpoint sets reverified against their
+manifests; `dedup.json` records the operation. The retained final states and
+optimizer/RNG information remain intact for exact resume.
