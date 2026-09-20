@@ -1,0 +1,17 @@
+{
+  "window_updates": 100,
+  "arms": {
+    "256": {
+      "metrics_sha256": "55feb5efdc60102edba76b1d3bbb69a41e69bfc93e3f1516de4d53a57889065b",
+      "first_100_update_mean_nll": 1.8264908652599963,
+      "last_100_update_mean_nll": 0.17295987285155473
+    },
+    "8192": {
+      "metrics_sha256": "eef870adf28c28c989c6f83c32f9edc6eb29a3ee82eae84b83b8671fcd2b8f30",
+      "first_100_update_mean_nll": 1.8659968739949269,
+      "last_100_update_mean_nll": 1.0502055408574211
+    }
+  },
+  "script_sha256": "4dd3f9673bc3bada2303946bb089de492edd1ece2432cc17700f0ca79bc231d7",
+  "notice": "Descriptive training fit only. No independent-seed uncertainty or held-out claim."
+}

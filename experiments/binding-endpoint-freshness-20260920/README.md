@@ -144,3 +144,11 @@ After training locks released, SHA256-verified hard-link deduplication removed
 checkpoint and its optimizer/config/RNG/cache state. The record is
 `../operations-20260920/endpoint-freshness-initial-dedup.json`. Primary held-out
 confirmation is running; capability results remain pending.
+
+
+The completed training curves are reproducible with `plot_training.py --root RUN_ROOT`;
+PNG/SVG figures stay in the external run's `analysis` directory. The final
+100-update mean target NLL is 0.173 for 256 worlds and 1.050 for 8,192 worlds,
+versus 1.826 and 1.866 in the first 100 updates. `training-nll.json` pins metric
+file hashes and the calculation. These are teacher-forced training losses with
+one seed and different data streams, not exact-recall or generalization evidence.
