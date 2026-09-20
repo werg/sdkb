@@ -24,6 +24,22 @@ sdkb runs stop --output /fast/sdkb-runs/causal
 sdkb runs start --recipe recipes/looped_causal.yaml --output /fast/sdkb-runs/causal --resume
 ```
 
+Status, cooperative stop, archive/restore and checkpoint relocation inspect metadata
+and copy opaque files; they do not import Torch or Safetensors. From a source
+checkout, a host with Python and PyYAML can inspect container runs through their
+shared host paths:
+
+```bash
+PYTHONPATH=src python3 -m sdkb runs status --output /mnt/external/sdkb-archive/runs/STUDY/STAGE
+PYTHONPATH=src python3 -m sdkb runs stop --output /mnt/external/sdkb-archive/runs/STUDY/STAGE
+```
+
+Training and model save/load still require the native ML environment. For jobs
+launched with `docker exec` into a persistent container, request each job's
+cooperative stop and wait for its checkpoint commit and ownership lock release
+before stopping the container. The foreground container launcher below owns its
+training process directly.
+
 Status gives a persistent console-log path, resolved checkpoint locations and free space.
 `checkpoint_step` is the committed recovery position; `latest_logged_step` reports
 the newest complete training metric in a bounded log tail. With sparse saves these

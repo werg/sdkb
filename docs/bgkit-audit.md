@@ -188,3 +188,12 @@ Successful pytest checkpoint fixtures are now retired automatically, retaining o
 failed session for debugging. Test temporary storage fell from about 258 MiB to
 67 MiB after the passing suite. Experiment recovery sets are unaffected. All 446
 tests pass; see `experiments/operations-20260920/stop-during-save.json`.
+
+
+Host-side checkpoint controls now work without importing Torch or Safetensors.
+Two subprocess regressions failed before moving model serialization imports into
+actual save/load functions; they cover status/stop and archive/restore/relocation
+with opaque checkpoint fixtures. The host, which has no Torch installed, also
+inspected both live native-container training stages through the external mount.
+All 448 tests and Ruff pass. This avoids installing another ML stack just to manage
+storage. See `experiments/operations-20260920/lightweight-operations.json`.

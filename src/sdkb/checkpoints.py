@@ -20,10 +20,6 @@ import threading
 import time
 import uuid
 
-import torch
-from safetensors.torch import load_model, save_model
-
-
 def _fsync(path: Path) -> None:
     with path.open("rb") as handle:
         os.fsync(handle.fileno())
@@ -106,6 +102,8 @@ def resolve_checkpoint(run: str | Path, *, verify: bool = False) -> Path:
 def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
                     cache, fingerprint: str, *, keep: int = 2, archiver=None,
                     accumulation: dict | None = None) -> Path:
+    import torch
+    from safetensors.torch import save_model
     if step < 0 or keep < 1:
         raise ValueError("Invalid checkpoint step/retention")
     from .archiving import ensure_free
@@ -183,6 +181,8 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
 
 def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
                        fingerprint: str, *, progress: dict | None = None) -> int:
+    import torch
+    from safetensors.torch import load_model
     run = Path(run)
     path = resolve_checkpoint(run, verify=True)
     if not (path / 'manifest.json').is_file():

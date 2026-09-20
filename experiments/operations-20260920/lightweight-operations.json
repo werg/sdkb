@@ -1,0 +1,22 @@
+{
+  "failed_regressions_before_fix": 2,
+  "full_suite_passed": 448,
+  "ruff": "passed",
+  "test_log": "/archive/profiles/lightweight-operations-full-tests.log",
+  "host_torch_available": false,
+  "host_live_stage_checks": {
+    "256": {
+      "running": true,
+      "latest_logged_step": 2103,
+      "same_filesystem_as_code": false,
+      "checkpoint_every": 10000
+    },
+    "8192": {
+      "running": true,
+      "latest_logged_step": 2098,
+      "same_filesystem_as_code": false,
+      "checkpoint_every": 10000
+    }
+  },
+  "scope": "Metadata/status/stop and opaque checkpoint archive, restore and relocation need no ML runtime. Actual training and model serialization retain their native dependencies."
+}

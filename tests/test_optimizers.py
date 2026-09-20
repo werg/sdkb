@@ -62,7 +62,8 @@ def test_legacy_muon_slot_ownership_is_rejected_before_loading_weights(tmp_path,
     saved = checkpoints.save_checkpoint(agent, legacy, tmp_path, 0, random.Random(1), cache, 'fixture')
     def forbidden(*args, **kwargs):
         raise AssertionError('Ownership mismatch must fail before model mutation')
-    monkeypatch.setattr(checkpoints, 'load_model', forbidden)
+    import safetensors.torch
+    monkeypatch.setattr(safetensors.torch, 'load_model', forbidden)
     with pytest.raises(ValueError, match='names/order changed'):
         checkpoints.restore_checkpoint(agent, optimizer, saved, random.Random(1), 'fixture')
 
