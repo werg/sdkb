@@ -1,7 +1,7 @@
 # SDKB
 
-[Research status](docs/research-status.md) summarizes what is established, what
-remains open, and the active reader-capacity experiment.
+[Research status](docs/research-status.md) summarizes what is established and what
+remains open, including the completed reader-capacity and real-trajectory studies.
 
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).

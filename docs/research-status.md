@@ -133,3 +133,35 @@ Untouched pretrained one-pass LFM benefits from prior text: token-weighted NLL
 1.490 versus 1.937 without it. This establishes a usable conditioning signal for
 the [declared recurrent-bridge curriculum](../experiments/trajectory-prefix-muon-20260920/README.md),
 not latent-memory utility, cross-experience composition or agent success.
+
+## Completed real-trajectory pilot
+
+The [native Muon trajectory pilot](../experiments/trajectory-prefix-muon-20260920/README.md)
+completed a bridge, latent warmup and 400-update recurrent joint stage on the
+Spark. It operates on frozen-bank causal prefixes from 530 training and 119
+repository-held-out episodes, with full recovery checkpoints directly on the
+external disk. A later matched uniform-data control scored held-out R=2 teacher
+NLL at 0.9710 with real stored values, 0.9807 with zeroed values and 1.0896
+without memory. The selected-text R=1 path scored 0.8666, under a different
+token and compute budget. Thus most of the memory-versus-none improvement is
+also present after value ablation; the incremental payload signal is small.
+
+Three matched or bounded interventions have not increased the average
+payload-specific held-out effect: [selected-text output KL](../experiments/trajectory-output-distillation-20260920/README.md)
+improved real NLL but improved zero-value NLL more; a [training-only high-text-utility
+curriculum](../experiments/trajectory-context-curriculum-20260920/README.md)
+worsened real NLL; and a [raised initial memory gate](../experiments/trajectory-memory-gate-20260920/README.md)
+did not preserve its read-only overlay's slight improvement after 400 updates.
+Reader values vary substantially under payload ablation, but their effect is
+much smaller at the answer state and next-token distribution. The bridge trace
+and gate overlays are exploratory on the reused validation set, not proof of a
+specific bottleneck. A [full training-set stored-bank diagnostic](../experiments/trajectory-train-fit-20260920/README.md)
+is underway to check whether the control fits source content on its own 530
+training episodes.
+
+These results establish a working native causal-prefix and external-storage
+research pipeline and a modest teacher-likelihood payload effect. They do not
+establish content-specific generation, source counterfactual success, autonomous
+agent outcomes or resident-capacity substitution. Further development should
+test source-dependent behavior directly, with a fresh evaluation split for any
+new objective chosen after these exploratory probes.
