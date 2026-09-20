@@ -1,0 +1,214 @@
+{
+  "inputs": {
+    "checkpoint_manifest_sha256": "68c89f581c6153e61540e58a4ab4bf7bb702fa308b8fa6e5369a1c8fc738622b",
+    "episodes_sha256": "bf7ad0f1fd8dacf7a472f5b895f80fb2821b22486706de5767625316871a30b4",
+    "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+    "max_new_tokens": 24,
+    "routing": "oracle required sources",
+    "compact_method": "raw"
+  },
+  "generation_summary": {
+    "multiuse/action": {
+      "all": {
+        "n": 128,
+        "correct": 114
+      },
+      "cf_identifier": {
+        "n": 128,
+        "correct": 113
+      },
+      "cf_permission": {
+        "n": 128,
+        "correct": 124
+      },
+      "cf_restoration": {
+        "n": 128,
+        "correct": 110
+      },
+      "none": {
+        "n": 128,
+        "correct": 62
+      },
+      "zero_values": {
+        "n": 128,
+        "correct": 36
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 0
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 64,
+        "correct": 53
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 53
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 60
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 53
+      },
+      "none": {
+        "n": 64,
+        "correct": 6
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 26
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 64,
+        "correct": 56
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 56
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 56
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 60
+      },
+      "none": {
+        "n": 64,
+        "correct": 27
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 3
+      }
+    }
+  },
+  "generation_counterfactuals": {
+    "multiuse/action": {
+      "cf_permission": {
+        "change_pairs": 128,
+        "both_correct_on_change": 0.859375,
+        "appropriate_prediction_change": 0.890625,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.6875,
+        "appropriate_prediction_change": 0.890625,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.09375
+      },
+      "cf_identifier": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 128,
+        "false_change_rate": 0.1640625
+      }
+    },
+    "multiuse/identifier": {
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.96875
+      },
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.0,
+        "appropriate_prediction_change": 0.96875,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    },
+    "multiuse/permission": {
+      "cf_permission": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.765625,
+        "appropriate_prediction_change": 0.796875,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.296875
+      }
+    },
+    "multiuse/restoration": {
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.8125,
+        "appropriate_prediction_change": 0.8125,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_identifier": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      }
+    }
+  },
+  "bank_sha256": "5b43460a7af0d0ac57f2b1c4ebf90a6ec1551f75066f84adc2404d39d731a103",
+  "results_sha256": "bc8f46f1701d639e932ab65b9ee320650538fc66e0b81df30302dcd937434ee4",
+  "identifier_target_mean_nll": 5.659430315002562,
+  "posthoc_identifier_predictions_in_training_vocabulary": 63
+}

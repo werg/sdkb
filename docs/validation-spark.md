@@ -29,8 +29,9 @@ alternate endpoint histories and one fixed identifier question have not establis
 exact latent recall at the tested budgets. Both models in the fixed-question
 comparison copy 64/64 identifiers from the same selected text. The fixed-query
 continuation also regresses direct permission answers to 59/64 in both question
-forms and still gets 0/64 on its most exposed training questions. A deliberate
-small-corpus copy-fit diagnostic is now running. See the
+forms and still gets 0/64 on its most exposed training questions. A subsequent
+small-corpus fit reaches 64/64 training identifiers but 0/64 held-out identifiers,
+with action/rule regressions and failed endpoint interventions. See the
 [fixed-query study](../experiments/binding-fixed-query-detail-20260920/README.md).
 
 Learned global retrieval remains weaker: corrected training reaches 102/128 free
@@ -375,3 +376,14 @@ per action. Oracle/no-memory predictions reproduce exactly (128/128 and 64/128);
 zeroed payloads give 63/128. The reader consumes stored payloads with writer calls
 forbidden. This is an end-to-end literal-name fixture result using the additional
 lexical index, not a learned-key improvement or fresh counterfactual-policy result.
+
+### Deliberate copy fit — 20 September
+
+The [small-corpus diagnostic](../experiments/binding-copy-fit-20260920/README.md)
+fits 64/64 original training identifiers through stored memory, with 0/64 after
+endpoint replacement and only 17/64 after irrelevant permission changes. Fresh
+held-out identifiers remain 0/64; actions fall from 128/128 to 114/128, and rule
+retention/counterfactual behavior regress. Most new identifier predictions belong
+to the old 64-target vocabulary. Teacher-forced suffix prediction is often correct
+without memory once a training answer is identified by its supplied prefix. This
+is evidence of a fitted finite task with poor transfer, not a general copying rule.

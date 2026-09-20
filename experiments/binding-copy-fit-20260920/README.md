@@ -130,4 +130,44 @@ in the training vocabulary. This descriptive post-hoc vocabulary audit is consis
 with memorized associations, not evidence of a learned general string-copying rule
 or a proof of the internal mechanism. Stored memory is necessary for the training
 fit, but correct intervention behavior is missing. `training-confirmation.json`
-records all aggregates and result hashes. Fresh held-out confirmation is running.
+records all aggregates and result hashes. Fresh held-out confirmation has now completed; see below.
+
+## Fresh held-out confirmation: no transfer and degraded rule behavior
+
+| Original-question outcome | Source | Copy-fit endpoint |
+|---|---:|---:|
+| Exact identifiers | 0/64 | **0/64** |
+| Actions | 128/128 | **114/128** |
+| Direct permissions | 61/64 | 53/64 |
+| Direct restoration | 64/64 | 56/64 |
+| Identifier target NLL | 2.58720 | 5.65943 |
+
+The endpoint retains both correct action answers on only 110/128 permission-change
+pairs and 44/64 restoration-change pairs, versus perfect source controls. It falsely
+changes actions on 6/64 invariant restoration branches and 21/128 endpoint-only
+interventions. Of 64 original held-out identifier predictions, 63 belong to the
+64-target training vocabulary. All identifier conditions remain 0/64 exact.
+`heldout-confirmation.json` and `heldout-generation-comparison.json` pin these results.
+The endpoint is a fit diagnostic and is not promoted over the useful source.
+
+## Teacher-forced prefix diagnostic
+
+Using the stored training bank with the writer disabled, decompose token prediction
+by how many training answers share the already supplied target prefix. These labels
+are computed offline and never enter the model. All per-example NLLs reproduce the
+completed frozen reference within 1e-5. Read queries are captured before any answer
+tokens are presented; only the decoder receives the ordinary causal answer prefix.
+
+Without memory, the model gets **99/135** tokens right after a prefix unique within
+the 64 training answers, versus **5/140** at branching prefixes. With memory both
+are perfect. EOS is 64/64 without memory, while the shared initial token is 0/64.
+This is consistent with memorized suffix completion after answer-prefix information
+is supplied. Position/format and target-vocabulary effects are not separately matched,
+so this does not identify a sole internal mechanism. In particular, teacher-forced
+suffix accuracy is not free generation. `prefix-diagnostic.json` pins the native
+results and source identity.
+
+The next proposed data intervention asks for individual hexadecimal positions,
+alongside the original tasks, to remove multi-token target-prefix assistance for
+those questions. Text-control viability and a matched source/sampling corpus are
+required before treating this as a useful training intervention.

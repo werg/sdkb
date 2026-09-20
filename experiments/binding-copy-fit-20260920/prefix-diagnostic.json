@@ -1,0 +1,59 @@
+{
+  "inputs": {
+    "checkpoint_manifest_sha256": "68c89f581c6153e61540e58a4ab4bf7bb702fa308b8fa6e5369a1c8fc738622b",
+    "episodes_sha256": "ed586aabb57d1a78f7e9314906c78050a5dcc24e23e6574849a3d96669656330",
+    "bank_sha256": "f7b864b5721dde50020155da69c135a78b14890f77e82568fd127028bf8f3a09",
+    "reference_sha256": "0bca37d732621724c31e02034804998c59d5d377f12eb8c051ab3cb2eabc9cc5",
+    "script_sha256": "9a4b4875ed33844ed7d4faba1ac882b8402a7b8d4ce65adc4eee046e34b645de"
+  },
+  "summary": {
+    "all": {
+      "shared_deterministic_prefix": {
+        "tokens": 64,
+        "mean_nll": 2.1695616149841612e-05,
+        "correct": 64
+      },
+      "branching_training_prefix": {
+        "tokens": 140,
+        "mean_nll": 0.0019367612227256358,
+        "correct": 140
+      },
+      "unique_training_prefix": {
+        "tokens": 135,
+        "mean_nll": 7.138368626210986e-06,
+        "correct": 135
+      },
+      "eos": {
+        "tokens": 64,
+        "mean_nll": 2.5890761767843884e-07,
+        "correct": 64
+      }
+    },
+    "none": {
+      "shared_deterministic_prefix": {
+        "tokens": 64,
+        "mean_nll": 5.045421600341797,
+        "correct": 0
+      },
+      "branching_training_prefix": {
+        "tokens": 140,
+        "mean_nll": 6.962843949001814,
+        "correct": 5
+      },
+      "unique_training_prefix": {
+        "tokens": 135,
+        "mean_nll": 1.3790521969159912,
+        "correct": 99
+      },
+      "eos": {
+        "tokens": 64,
+        "mean_nll": 0.003958383067853011,
+        "correct": 64
+      }
+    }
+  },
+  "notice": "Post-hoc teacher-forced training-set diagnostic, not free generation or held-out evidence. Prefix uniqueness is computed over 64 training answers only, never supplied to the model. Queries/reads exclude target tokens; the decoder sees only the ordinary causal answer prefix.",
+  "results_sha256": "993e2b73c8f1628287d4d5f07c77c71bd2f7dfe03639da4ae110064e9ea09c7e",
+  "execution_commit": "5670693",
+  "max_reference_mean_nll_absolute_error": 0.0
+}
