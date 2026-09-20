@@ -15,6 +15,7 @@ from sdkb.evaluation_adapter import load_frozen_agent
 from sdkb.frozen_scoring import FrozenScorer
 from sdkb.metrics import counterfactual_metrics
 from sdkb.operations import atomic_json, run_lock, stop_requested
+from sdkb.runtime import available_host_memory, compute_watchdog
 from sdkb.sessions import read_session
 from sdkb.store import DiskStore, ReadPlan, Selection
 from sdkb.training import config_from_run, autocast_context
@@ -79,11 +80,28 @@ def run(source, episodes_path, output, *, compact_method='raw'):
             if any(value['bank_sha256'] != bank_hash for value in saved.values()):
                 raise ValueError('Partial oracle evaluation bank changed')
         config = config_from_run(checkpoint)
+        resource_stop = None
+        def want_stop():
+            nonlocal resource_stop
+            available = available_host_memory()
+            if available is not None and available < config.train.min_system_available_bytes:
+                resource_stop = f'host memory reserve reached: {available} < {config.train.min_system_available_bytes} bytes'
+            return resource_stop is not None or stop['signal'] is not None or stop_requested(output)
+        if want_stop():
+            raise RuntimeError(f"Stopped before evaluation model allocation: {resource_stop or 'control/signal'}")
         if config.train.arm != 'memory' or config.train.retrieval != 'oracle' or config.train.evidence_scope != 'required':
             raise ValueError('This diagnostic requires oracle required-source memory')
         torch.set_num_threads(config.train.threads)
         agent, _ = load_frozen_agent(config, checkpoint)
         agent.requires_grad_(False)
+        produce = agent.produce
+        def guarded_produce(ids):
+            if want_stop():
+                raise RuntimeError(f"Stopped during atomic offline bank creation: {resource_stop or 'control/signal'}")
+            ensure_free(output, 0, config.train.min_free_disk_bytes)
+            with compute_watchdog(config.train.stall_timeout_seconds, device=agent.device):
+                return produce(ids)
+        agent.produce = guarded_produce
         if compact_method != 'raw':
             if len(config.memory.payload_dims) != 1:
                 raise ValueError('Compact confirmation requires one space')
@@ -101,8 +119,8 @@ def run(source, episodes_path, output, *, compact_method='raw'):
             if compact_method != 'raw':
                 banks[name], code_storage[name] = build_persistent_codes(agent, store, group, namespace=name,
                                                                              view_name='oracle-'+name+'-'+compact_method)
-            if stop['signal'] is not None or stop_requested(output):
-                raise RuntimeError('Stopped after atomic bank publication')
+            if want_stop():
+                raise RuntimeError(f"Stopped after atomic bank publication: {resource_stop or 'control/signal'}")
         bank_hash = file_sha256(store.path)
         if any(value['bank_sha256'] != bank_hash for value in saved.values()):
             raise ValueError('Partial oracle evaluation bank changed during setup')
@@ -118,8 +136,8 @@ def run(source, episodes_path, output, *, compact_method='raw'):
         store = DiskStore(store.path)
         plans = {}
         def progress(event, *, phase='scoring', variant='global'):
-            if stop['signal'] is not None or stop_requested(output):
-                raise RuntimeError('Stopped during reproducible stored evaluation')
+            if want_stop():
+                raise RuntimeError(f"Stopped during reproducible stored evaluation: {resource_stop or 'control/signal'}")
             try:
                 print(json.dumps({'phase': phase, 'variant': variant, **event}), flush=True)
             except OSError:
@@ -167,9 +185,9 @@ def run(source, episodes_path, output, *, compact_method='raw'):
                                 raise ValueError('Partial generation prefix changed')
                             cursor += 1
                             continue
-                        if stop['signal'] is not None or stop_requested(output):
+                        if want_stop():
                             publish('generation-progress.json', rows=rows)
-                            raise RuntimeError('Stopped during reproducible free generation')
+                            raise RuntimeError(f"Stopped during reproducible free generation: {resource_stop or 'control/signal'}")
                         memory, accounting = None, []
                         if condition != 'none':
                             fixed = [[replace(p, namespace=name) for p in step] for step in plans[e.episode_id]]
@@ -185,7 +203,7 @@ def run(source, episodes_path, output, *, compact_method='raw'):
                             row['counterfactual_should_change'] = e.answer != originals[e.episode_id].answer
                         rows.append(row)
                         cursor += 1
-                        if cursor % 32 == 0 or stop['signal'] is not None or stop_requested(output):
+                        if cursor % 32 == 0 or want_stop():
                             publish('generation-progress.json', rows=rows)
                     if index % 32 == 0 or index == len(group):
                         progress({'completed_queries': index, 'total_queries': len(group),

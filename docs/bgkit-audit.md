@@ -238,3 +238,15 @@ guards do not add a CUDA wait. Three regressions failed before the API change;
 smoke. This is not a GPU-hang injection or an automatic restart policy. Active
 capacity runs retain frozen `b38564a`. Evidence:
 `experiments/operations-20260920/compute-completion-watchdog.json`.
+
+
+The long oracle transfer evaluator now also monitors the configured host reserve
+after startup: before each offline source encoding, at periodic scoring progress,
+and between generated answers. Pressure is latched for that attempt. An interrupted
+bank transaction rolls back; completed generations publish before exit and resume
+without repeated writers/scoring. Source forwards use the device-aware compute
+guard, and writes check disk reserves. Two injected-pressure regressions failed
+before correction; all 470 tests and eight focused runner cases pass. This does
+not preempt a running kernel or continuously monitor every evaluation entry point.
+Active frozen capacity training/confirmation retains `b38564a`. Evidence:
+`experiments/operations-20260920/evaluation-pressure-resume.json`.

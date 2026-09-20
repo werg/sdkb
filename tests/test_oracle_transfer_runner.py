@@ -64,7 +64,7 @@ def test_endpoint_counterfactual_changes_only_endpoint_information():
             assert shared_sources.setdefault(new.record_id, new) == new
 
 
-@pytest.mark.parametrize('stop_mode', ['control', 'signal'])
+@pytest.mark.parametrize('stop_mode', ['control', 'signal', 'memory'])
 def test_oracle_runner_resumes_scoring_and_generation_without_repeating_work(tmp_path, tiny_config, monkeypatch, stop_mode):
     import signal
     from sdkb.agent import SDKBAgent
@@ -75,10 +75,15 @@ def test_oracle_runner_resumes_scoring_and_generation_without_repeating_work(tmp
     tiny_config.train.steps = 1
     tiny_config.train.episodes_file = str(path)
     tiny_config.train.evidence_scope = 'required'
+    if stop_mode == 'memory':
+        tiny_config.train.min_system_available_bytes = 1
     source, full, partial = tmp_path/'source', tmp_path/'full', tmp_path/'partial'
     train(tiny_config, source)
     run(source, path, full)
     generate = evaluator.FrozenScorer.generate
+    pressure = {'low': False}
+    if stop_mode == 'memory':
+        monkeypatch.setattr(evaluator, 'available_host_memory', lambda: 0 if pressure['low'] else 2**40, raising=False)
     calls = 0
     def interrupted(self, *args, **kwargs):
         nonlocal calls
@@ -87,8 +92,10 @@ def test_oracle_runner_resumes_scoring_and_generation_without_repeating_work(tmp
         if calls == 5:
             if stop_mode == 'control':
                 request_stop(partial)
-            else:
+            elif stop_mode == 'signal':
                 signal.raise_signal(signal.SIGTERM)
+            else:
+                pressure['low'] = True
         return prediction
     monkeypatch.setattr(evaluator.FrozenScorer, 'generate', interrupted)
     with pytest.raises(RuntimeError, match='Stopped'):
@@ -97,6 +104,7 @@ def test_oracle_runner_resumes_scoring_and_generation_without_repeating_work(tmp
     progress = json.loads((partial/'generation-progress.json').read_text())
     assert len(progress['rows']) == 5
     (control_dir(partial)/'STOP').unlink(missing_ok=True)
+    pressure['low'] = False
     calls = 0
     def count(self, *args, **kwargs):
         nonlocal calls
@@ -173,3 +181,33 @@ def test_oracle_runner_reads_native_compact_codes_and_raw_subsets(tmp_path, tiny
     assert file_sha256(output/'bank.sqlite') == bank_hash
     with pytest.raises(ValueError, match='identity changed'):
         run(source, path, output, compact_method='raw')
+
+
+def test_oracle_offline_pressure_rolls_back_partial_bank(tmp_path, tiny_config, monkeypatch):
+    from sdkb.agent import SDKBAgent
+    from sdkb.store import DiskStore
+    path = tmp_path/'episodes.jsonl'
+    save_episodes(path, make_multiuse_world(17, bindings=1))
+    tiny_config.train.steps = 1
+    tiny_config.train.episodes_file = str(path)
+    tiny_config.train.evidence_scope = 'required'
+    tiny_config.train.min_system_available_bytes = 1
+    source, output = tmp_path/'source', tmp_path/'output'
+    train(tiny_config, source)
+    pressure = {'low': False}
+    original = SDKBAgent.produce
+    def produce(self, *args, **kwargs):
+        result = original(self, *args, **kwargs)
+        pressure['low'] = True
+        return result
+    monkeypatch.setattr(SDKBAgent, 'produce', produce)
+    monkeypatch.setattr(evaluator, 'available_host_memory', lambda: 0 if pressure['low'] else 2**40, raising=False)
+    with pytest.raises(RuntimeError, match='Stopped'):
+        run(source, path, output)
+    with DiskStore(output/'bank.sqlite').connect() as db:
+        assert db.execute('SELECT count(*) FROM records').fetchone()[0] == 0
+    pressure['low'] = False
+    monkeypatch.setattr(SDKBAgent, 'produce', original)
+    run(source, path, output)
+    report = json.loads((output/'results.json').read_text())
+    assert all(writes['writer_calls'] == 2 for writes in report['writes'].values())

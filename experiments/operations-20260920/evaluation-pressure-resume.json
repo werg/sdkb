@@ -1,0 +1,10 @@
+{
+  "scope": "Long oracle transfer evaluator",
+  "problem": "Startup-only host memory reserve missed pressure arising during bank writes and free generation.",
+  "fix": "Latch pressure stop before model allocation, each source encoding, periodic scoring progress, and generation boundaries. Atomic bank transactions roll back and completed generation rows publish before exit; errors report the reserve condition. Source compute uses the enabled device-aware watchdog and disk reserves precede writes.",
+  "regressions_failed_before": 2,
+  "full_tests_passed": 470,
+  "focused_tests_passed": 8,
+  "validation": "Injected host pressure midway through offline writing and after five generations. Retry rebuilds the uncommitted bank; generation resume forbids writer/scoring repetition and matches uninterrupted results.",
+  "limits": "No mid-kernel preemption or actual system-memory exhaustion test. The running capacity study remains frozen at b38564a."
+}
