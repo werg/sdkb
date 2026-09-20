@@ -40,3 +40,26 @@ stages; completed training is not rerun.
 This adapts bgkit2's lesson of matching representations at aligned positions, but
 uses a different teacher and representation. It is not a claim that bgkit's
 frozen-encoder distillation has been reproduced, nor a capability result.
+
+## Native launch checks and fresh confirmation
+
+Frozen training/model code: `797465a`. The pretrained causal/gradient preflight
+passes. A native BF16 Muon test stops after one of two accumulated microbatches
+with mixed cached/live sources and noise, resumes, and matches every model tensor,
+both optimizer components and all RNG state exactly. Only final complete recovery
+sets remain; checksum-verified weight deduplication reclaimed 1,017,349,676 bytes.
+The full suite passed 490 tests; the fresh-corpus exclusion regression also passes.
+
+Before either training endpoint, `fresh-confirmation.json` seals another 32 worlds
+with no model results used in selection. Original and inverted endpoint strings,
+opaque source IDs and exact source-text hashes are disjoint from the four explicitly
+listed training/previously inspected corpora and other accepted worlds. This is
+not a claim of pretrained-model decontamination. The JSONL stays external.
+
+To bound confirmation work, evaluate **both** endpoints on this fresh corpus only
+if treatment reaches at least 8/64 original identifiers, 4/64 correct original/changed
+identifier pairs and 126/128 original actions on the inspected primary split.
+Otherwise retain the sealed corpus unused and report the failed intervention.
+These declared gates decide compute allocation; they are not statistical tests or
+proof of reliable recall. Any apparent benefit still needs the fresh controls,
+with rule/action preservation and text-copying behavior reported separately.

@@ -1,0 +1,76 @@
+{
+  "split": "alignment-fresh-confirmation-20260920",
+  "worlds": 32,
+  "episodes": 320,
+  "accepted_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+  ],
+  "rejected_seeds": [],
+  "episodes_path": "/archive/runs/binding-text-alignment-20260920/fresh-confirmation/episodes.jsonl",
+  "episodes_sha256": "3fce228c7976d91ce12b7b99521811f9c7bfeb47033153b47d436cb7c740aab5",
+  "exclusions": [
+    {
+      "path": "/archive/runs/binding-muon-selected-20260919/data/train.jsonl",
+      "sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "episodes": 1280
+    },
+    {
+      "path": "/archive/runs/binding-endpoint-freshness-20260920/data/worlds-8192.jsonl",
+      "sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+      "episodes": 180224
+    },
+    {
+      "path": "/archive/runs/binding-endpoint-freshness-20260920/heldout.jsonl",
+      "sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+      "episodes": 320
+    },
+    {
+      "path": "/archive/probes/freshness-readout-20260920/episodes.jsonl",
+      "sha256": "0a63b4cb004c1a292873c3b00adcb0ee4df71336359c873f40324eea4a3b8955",
+      "episodes": 10240
+    }
+  ],
+  "generator_sha256": "5e892b0ce74f5a22eeb9627517bfd1b10d8da11e1a3660eeecf1991798912926",
+  "data_generator_sha256": "34059dddf918c3e95ab1339042a63b90298bb69440ad07c28853890bc88f0fa8",
+  "question_generator_sha256": "4d54359fb5f2ffae44ce183cb15de8b160acb14dd7c5724826e551b6e782f70e",
+  "policy": "No model results used in corpus construction. Both original and inverted endpoints, source IDs and exact source-text hashes are disjoint from the explicitly listed corpora and other accepted worlds. This is not pretrained-model decontamination.",
+  "evaluation_gate": {
+    "min_original_identifiers": 8,
+    "min_correct_identifier_pairs": 4,
+    "min_original_actions": 126,
+    "inspected_split_identifier_count": 64,
+    "inspected_split_action_count": 128
+  },
+  "gate_policy": "Run both arms on this fresh corpus only if alignment meets every declared gate on the inspected primary split. Otherwise retain the sealed corpus unused. Gates are an exploratory compute decision, not significance tests or acceptance criteria."
+}

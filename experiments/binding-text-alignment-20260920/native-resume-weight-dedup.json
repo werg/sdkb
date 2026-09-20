@@ -1,0 +1,14 @@
+{
+  "applied": true,
+  "potential_bytes": 1017349676,
+  "released_bytes": 1017349676,
+  "replacements": [
+    {
+      "source": "/archive/probes/alignment-recovery-20260920/full/checkpoints/step-000000002-7b261ca62fb0/model.safetensors",
+      "target": "/archive/probes/alignment-recovery-20260920/stopped/checkpoints/step-000000002-0eb05127fa8b/model.safetensors",
+      "sha256": "fb93abc0a1c016391094257873a2a391c237893cba3edfe237cc099d390750a2",
+      "bytes": 1017349676
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+}
