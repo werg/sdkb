@@ -55,7 +55,7 @@ def main(root):
     run_jobs(root, jobs)
 
 
-def run_jobs(root, jobs):
+def run_jobs(root, jobs, *, script='scripts/evaluate_oracle_transfer.py'):
     """Caller owns the queue lock; all confirmations share stop/cleanup behavior."""
     pending = list(jobs)
     children = {}
@@ -66,7 +66,7 @@ def run_jobs(root, jobs):
                 check_stop(root)
                 label, arguments = pending.pop(0)
                 with (root/('confirmation-'+label+'-console.log')).open('a') as log:
-                    child = subprocess.Popen([sys.executable, 'scripts/evaluate_oracle_transfer.py',
+                    child = subprocess.Popen([sys.executable, str(script),
                         *arguments],
                         stdout=log, stderr=subprocess.STDOUT)
                 children[label] = child

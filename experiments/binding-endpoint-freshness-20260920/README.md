@@ -114,3 +114,15 @@ selected-text/no-memory control for both held-out endpoints to check that their
 decoders retain the source-text task. The repeated no-memory predictions must
 match each latent reference exactly. All outputs remain external; the committed
 `training-diagnostic-inputs.json` pins selection and exposure counts.
+
+
+`run_supplemental.py` waits for the primary confirmation queue to release its lock,
+requires both complete step-4,000 references, then runs at most two fit evaluations
+followed by at most two selected-text controls. It uses the same study-root and
+`confirmation-queue` stop controls, terminates and joins active children on exit,
+and rechecks the sealed corpora after waiting. Launch it with the original
+`c58028c` model checkout's `PYTHONPATH` and Git environment; pass that checkout as
+`--frozen-model-code`. The controller may come from its separately frozen newer
+checkout; it refuses an inconsistent model import path. Resume by clearing only
+released queue/root controls as above and rerunning; child progress is reusable.
+The shared queue's selected-entry-point regression and full suite pass (449 tests).

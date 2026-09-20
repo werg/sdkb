@@ -63,3 +63,20 @@ def test_confirmation_stop_terminates_children_without_launching_pending(tmp_pat
         main(root)
     assert len(children) == 2
     assert all(c.terminated and c.waited for c in children)
+
+
+def test_confirmation_selected_entrypoint_retains_shared_stop_control(tmp_path, monkeypatch):
+    root = tmp_path/'study'
+    main = queue_fixture(root, monkeypatch, [])
+    calls = []
+    def child(command, **kwargs):
+        calls.append(command)
+        return SimpleNamespace(pid=1, poll=lambda: 0)
+    monkeypatch.setitem(main.__globals__, 'subprocess', SimpleNamespace(Popen=child, STDOUT=-2))
+    run_jobs = main.__globals__['run_jobs']
+    run_jobs(root, [('text', ['--output', str(root/'text')])], script='/frozen/text_control.py')
+    assert calls[0][1:] == ['/frozen/text_control.py', '--output', str(root/'text')]
+    request_stop(root)
+    with pytest.raises(RuntimeError, match='Confirmation stop requested'):
+        run_jobs(root, [('pending', [])], script='/frozen/text_control.py')
+    assert len(calls) == 1
