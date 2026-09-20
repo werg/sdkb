@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **426 tests**, with four existing dependency/runtime
+The latest full suite passed **428 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -57,7 +57,7 @@ parameter substitution; the scoped studies and earlier results follow below.
 | Emergency resume | A real BF16 LFM run stopped after one of two accumulated microbatches and reproduced the uninterrupted final model, complete optimizer state and RNG state exactly. No partial optimizer update was taken. |
 | Checkpoint placement | Twenty-five retained stage/diagnostic checkpoint directories were verified and moved externally. The internal run tree fell from about 49 GiB to 52 MiB; internal free space increased by about 48 GiB. |
 | Future launches | This checkout's ignored storage settings select the external run root. Configured directories must exist; relative container training output paths are rejected. Environment overrides remain available on other machines. |
-| Save cadence | Defaults and real-model recipes use 1,000 updates, plus initial, final and emergency saves. Recent declared 400–1,600-update studies use a 10,000-update cadence and retain only initial/final/emergency sets. |
+| Save cadence | Defaults and real-model recipes use 1,000 updates, plus initial, final and emergency saves. Recent declared 400–4,000-update studies use a 10,000-update cadence and retain only initial/final/emergency sets. |
 | Memory and stalls | Optional host-memory reserve, CUDA allocation fraction and compute stack watchdog are implemented. New source versions log host/CUDA memory trends and checkpoint start/commit duration. |
 | Checkpointing cost | Two 100-update Muon profiles had identical training metrics and final weight-file hash. Disabling activation/reader-chunk checkpointing cut median update time 18% and raised peak CUDA allocation from 2.14 to 2.53 GiB. This applies only to the measured short binding distribution, with existing GPU contention. |
 | Offline bank writes | Native BF16 individual/bulk writes produced byte-identical stored records and identical results for all 88 evaluation rows, with the writer disabled during reads. Atomic batching avoids a durable commit per record. |
@@ -392,3 +392,16 @@ A [character-question preflight](../experiments/binding-character-questions-2026
 gets 0/96 single-character answers even with selected text at both one/three loops,
 while retaining 16/16 full-endpoint copying. That proposed auxiliary interface has
 not been trained and is not ready as a clean latent-memory comparison.
+
+
+### Endpoint freshness study launched — 20 September
+
+The [precommitted protocol](../experiments/binding-endpoint-freshness-20260920/README.md)
+compares 256 versus 8,192 source worlds with matched 4,000-update Muon task/depth
+schedules, a fixed full-endpoint question and retained rule/action tasks. Both runs
+and the source confirmation launched from frozen commit `c58028c`. Initial/final/
+emergency artifacts stay on external storage. The smaller arm samples 512 endpoint
+strings repeatedly; the larger samples 7,516 distinct strings, mostly once. World
+content also changes, and equal updates do not mean equal token/FLOP budgets.
+The sealed 32-world confirmation excludes training source IDs and both original
+and inverted endpoint targets. No endpoint result is asserted while training runs.

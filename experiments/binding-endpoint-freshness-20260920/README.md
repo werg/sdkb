@@ -74,3 +74,10 @@ can recover only committed state. Training checkpoints are immutable; resume the
 mutable stage root. Deduplicate identical initial weights only after training locks
 release, retaining complete recovery state. The pre-launch full suite passed 428
 tests with four existing warnings; Ruff passed.
+
+## Launch record
+
+Both training arms and the bounded confirmation controller launched from frozen
+commit `c58028c`. Both external initial checkpoints committed successfully and
+recorded all four named Muon/AdamW groups and offline W&B identity. Source held-out
+confirmation runs alongside training. Endpoint results remain pending.

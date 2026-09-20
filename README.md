@@ -26,8 +26,16 @@ preserve oracle action composition but still give 0/64 exact identifiers.
 [Temporary-compaction training](experiments/binding-compact-aware-20260920/README.md)
 now makes a single mean-plus-mass MLP code preserve 128/128 actions and the tested
 rule-change pairs; its matched raw-trained mean-code control gets 81/128. The raw
-path regresses to 126/128, so a [paired-objective comparison](experiments/binding-paired-compaction-20260920/README.md)
-is running. Raw fallback records remain stored; net disk savings are not established.
+path regresses to 126/128. The completed [paired-objective comparison](experiments/binding-paired-compaction-20260920/README.md)
+has mixed raw-path results and no compact advantage over interleaving. Raw fallback
+records remain stored; net disk savings are not established.
+A [lexical selection control](experiments/binding-lexical-routing-20260920/README.md)
+recovers 128/128 stored-memory actions at 4,096 records using an additional source-token
+index; this exposes the literal-name fixture and does not improve learned keys.
+A [focused copy diagnostic](experiments/binding-copy-fit-20260920/README.md) fits
+64/64 training identifiers but fails changed and held-out endpoints, with rule/action
+regressions. The active [endpoint freshness study](experiments/binding-endpoint-freshness-20260920/README.md)
+compares repeated versus mostly fresh endpoint targets while retaining rule tasks.
 The [bgkit audit](docs/bgkit-audit.md) records storage, recovery and runtime adoption.
 
 **Spatially Superposed Differentiable Knowledge Base**

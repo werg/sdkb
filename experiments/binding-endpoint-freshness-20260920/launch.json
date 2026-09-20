@@ -1,0 +1,315 @@
+{
+  "training_commit": "c58028c",
+  "arms": {
+    "256": {
+      "initial_checkpoint": "/archive/runs/binding-endpoint-freshness-20260920/worlds-256/checkpoints/step-000000000-f4b63f8e6953",
+      "initial_manifest_sha256": "84194c09ec79a4eacd682430effc21dd080920dc8c14cd5796c1bfdec6460ac5",
+      "initial_model_sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+      "environment": {
+        "python": "3.12.3",
+        "machine": "aarch64",
+        "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+        "cuda_runtime": "13.2",
+        "cuda_available": true,
+        "gpu": "NVIDIA GB10",
+        "compute_capability": [
+          12,
+          1
+        ],
+        "bf16_supported": true,
+        "cuda_total_bytes": 130594091008,
+        "git_commit": "c58028cc4a1fea29d95a58eb82774dc3016e1f88",
+        "git_dirty": false,
+        "transformers": "5.17.0",
+        "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+        "runtime_limits": {
+          "host_available_bytes": 89639649280,
+          "cuda_memory_fraction": 0.35,
+          "min_system_available_bytes": 8589934592
+        },
+        "total_parameters": 254331335,
+        "trainable_parameters": 93866055,
+        "notice": "Prototype measurements; not evidence of capacity substitution.",
+        "recurrence": {
+          "mode": "middle_block",
+          "prelude": [
+            0,
+            4
+          ],
+          "core": [
+            4,
+            10
+          ],
+          "coda": [
+            10,
+            14
+          ],
+          "loops": 3,
+          "layer_visits": 26,
+          "layer_types": [
+            "conv",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv"
+          ],
+          "new_bridge_parameters": 3148803,
+          "input_mix": 0.10681643337011337,
+          "update_mix": 0.108786441385746,
+          "memory_mix": 0.10746510326862335,
+          "cache": "disabled; no KV or convolution state crosses a depth boundary",
+          "training_depths": [
+            2,
+            3
+          ],
+          "writer_loops": 1
+        },
+        "resume": false,
+        "attempt": "3f24f0e2c8ac"
+      },
+      "optimizer": {
+        "kind": "muon",
+        "groups": [
+          {
+            "index": 0,
+            "parameters": 69206016,
+            "tensors": 36,
+            "lr": 5e-06,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 1,
+            "parameters": 24594880,
+            "tensors": 35,
+            "lr": 0.0001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 2,
+            "parameters": 21888,
+            "tensors": 21,
+            "lr": 5e-06,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          },
+          {
+            "index": 3,
+            "parameters": 43271,
+            "tensors": 42,
+            "lr": 0.0001,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          }
+        ],
+        "resumed": false,
+        "completed_steps": 0
+      }
+    },
+    "8192": {
+      "initial_checkpoint": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000000000-c3b0d198e4cd",
+      "initial_manifest_sha256": "9b6488d7b40a3cc35dcf007287968c1af212e7dea330f6bd5993c2bc352645b2",
+      "initial_model_sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+      "environment": {
+        "python": "3.12.3",
+        "machine": "aarch64",
+        "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+        "cuda_runtime": "13.2",
+        "cuda_available": true,
+        "gpu": "NVIDIA GB10",
+        "compute_capability": [
+          12,
+          1
+        ],
+        "bf16_supported": true,
+        "cuda_total_bytes": 130594091008,
+        "git_commit": "c58028cc4a1fea29d95a58eb82774dc3016e1f88",
+        "git_dirty": false,
+        "transformers": "5.17.0",
+        "resolved_model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+        "runtime_limits": {
+          "host_available_bytes": 86541799424,
+          "cuda_memory_fraction": 0.35,
+          "min_system_available_bytes": 8589934592
+        },
+        "total_parameters": 254331335,
+        "trainable_parameters": 93866055,
+        "notice": "Prototype measurements; not evidence of capacity substitution.",
+        "recurrence": {
+          "mode": "middle_block",
+          "prelude": [
+            0,
+            4
+          ],
+          "core": [
+            4,
+            10
+          ],
+          "coda": [
+            10,
+            14
+          ],
+          "loops": 3,
+          "layer_visits": 26,
+          "layer_types": [
+            "conv",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv",
+            "full_attention",
+            "conv"
+          ],
+          "new_bridge_parameters": 3148803,
+          "input_mix": 0.10681643337011337,
+          "update_mix": 0.108786441385746,
+          "memory_mix": 0.10746510326862335,
+          "cache": "disabled; no KV or convolution state crosses a depth boundary",
+          "training_depths": [
+            2,
+            3
+          ],
+          "writer_loops": 1
+        },
+        "resume": false,
+        "attempt": "c4b4cf0c956e"
+      },
+      "optimizer": {
+        "kind": "muon",
+        "groups": [
+          {
+            "index": 0,
+            "parameters": 69206016,
+            "tensors": 36,
+            "lr": 5e-06,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 1,
+            "parameters": 24594880,
+            "tensors": 35,
+            "lr": 0.0001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          },
+          {
+            "index": 2,
+            "parameters": 21888,
+            "tensors": 21,
+            "lr": 5e-06,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          },
+          {
+            "index": 3,
+            "parameters": 43271,
+            "tensors": 42,
+            "lr": 0.0001,
+            "betas": [
+              0.9,
+              0.999
+            ],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": false,
+            "maximize": false,
+            "foreach": null,
+            "capturable": false,
+            "differentiable": false,
+            "fused": null,
+            "decoupled_weight_decay": true
+          }
+        ],
+        "resumed": false,
+        "completed_steps": 0
+      }
+    }
+  }
+}
