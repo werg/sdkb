@@ -1,0 +1,12 @@
+{
+  "old_commit": "602cb06b6ca6fd82ac5a6ef77f2791532ba1defe",
+  "new_commit": "1c261c7cab9c7af35155619de7d4c9dad8f6dc90",
+  "script_sha256": "042957494e630f075ab2d52e8c66bb43c5eaa5cb72652ca983e3bd3f576115c1",
+  "input_config_sha256": "47a0e3fb6c4307cc4aa14acd45f40e1044712855a65e51d03683b49b46d97e11",
+  "records_exact": true,
+  "reports": {
+    "old": "807cd3b1f7744a5e458f05dafc8fd64827ddec81f701e5d88a278f6122cc5802",
+    "new": "83106bb9b30bb6fccb68d1eecaebab878849f5dee74f6980bcf198501980af9a"
+  },
+  "notice": "One native BF16 Muon update on unchanged original broad data. Model tensors, gradients, optimizer/state ownership, sampler and Torch/CUDA RNG are compared; no extra weight checkpoints were saved. This is a numerical code-path check, not a full 1,600-update reproduction."
+}

@@ -41,3 +41,25 @@ Preparation uses `scripts/make_fixed_query_identifiers.py`; regression tests ver
 immutable sources/targets/causal metadata, versioned query identities, deterministic
 indexed output and rejection of future or misattributed answers. Full suite before
 launch: 405 passed; Ruff clean.
+
+
+## Completed training and numerical comparability
+
+All 1,600 updates completed. The final sampler state matches both the independently
+reconstructed plan and the independent-world control, as do all 1,600 sampled
+recurrent depths. There are 1,285 identifier microbatches and 941 distinct identifier
+query episodes, matching that control. Thus this budget exposes fewer than half of
+the corpus's 2,048 identifier examples directly as identifier targets; the sources
+also participate in other task families. Do not interpret a negative result as
+failure after exhaustive copy training. `endpoint.json` records hashes and resources.
+
+An isolated native BF16 Muon update on unchanged control data compares the older
+control checkout (`602cb06`) with the new training checkout (`1c261c7`). Initial and
+post-update model tensors, gradients, optimizer/state ownership, sampler and Torch/
+CUDA RNG fingerprints match exactly. `code-parity.json` records the external reports
+and hashes. This checks that executed code path; it is not a second full 1,600-update
+control reproduction. The probe writes fingerprints instead of model checkpoints.
+
+After training ownership released, verified hard-link deduplication reclaimed
+1,017,349,676 bytes from the identical initial weights. Complete recovery state and
+all paths remain intact. Fresh confirmation is running in both question forms.

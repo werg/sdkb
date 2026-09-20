@@ -1,0 +1,21 @@
+{
+  "training_commit": "1c261c7cab9c7af35155619de7d4c9dad8f6dc90",
+  "evaluation_commit": "d766eda67be5096a179ddf0b01709abd73a9ac19",
+  "checkpoint": "/archive/runs/binding-fixed-query-detail-20260920/fixed/checkpoints/step-000001600-d8faf965ff8c",
+  "manifest_sha256": "907bb9fd5a7b69462274243161b05d6c2d1f23812b6ebe616e60a05fad6928d4",
+  "model_sha256": "d31494217f4c59c5e3945c37fc98ea4dfef21ba458f997c45b990ecf61497e03",
+  "initial_model_sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+  "step": 1600,
+  "sampler_state_matches_control_and_plan": true,
+  "all_depths_match_control_and_plan": true,
+  "task_families": {
+    "multiuse/action": 2595,
+    "multiuse/restoration": 1214,
+    "multiuse/permission": 1306,
+    "multiuse/identifier": 1285
+  },
+  "distinct_identifier_queries_sampled": 941,
+  "elapsed_training_seconds": 2695.892854018006,
+  "peak_logged_cuda_allocated_bytes": 2707463168,
+  "notice": "Training/provenance check only. Fixed questions change token compute; contended timing is not a speed comparison."
+}
