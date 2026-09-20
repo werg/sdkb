@@ -1,0 +1,23 @@
+{
+  "result": "/archive/runs/binding-endpoint-freshness-20260920/source-text/results.json",
+  "result_sha256": "9944634b871afaebaa4b549880221ff30ca093dd13b02847eb6a05ba8e2b74ce",
+  "inputs": {
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+    "reference_sha256": "83f4233bf4c2b996166f5241bb901059d77b0c339d7f77b60b88288c3d0369fe",
+    "script_sha256": "51973063f0d55d0954d4294f9b2c15de653db2021dacf932716bc4f0f7c18f25",
+    "max_new_tokens": 24,
+    "selected_text_helper_sha256": "a6c4d64b0e73450b1a39959f7375dc2e32a1074ece8e915263f55c25597bd231"
+  },
+  "summary": {
+    "text_required": {
+      "n": 64,
+      "correct": 64
+    },
+    "none": {
+      "n": 64,
+      "correct": 0
+    }
+  },
+  "notice": "Post-hoc diagnostic on the declared confirmation corpus. Same selected source information; unequal text/latent token budgets. Source text is an inert control input, not a production latent inference fallback. No candidate answers passed to generation."
+}

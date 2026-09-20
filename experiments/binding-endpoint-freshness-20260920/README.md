@@ -81,3 +81,14 @@ Both training arms and the bounded confirmation controller launched from frozen
 commit `c58028c`. Both external initial checkpoints committed successfully and
 recorded all four named Muon/AdamW groups and offline W&B identity. Source held-out
 confirmation runs alongside training. Endpoint results remain pending.
+
+## Source controls on the sealed split
+
+The source gets 128/128 actions and 64/64 in each direct rule family, including all
+tested changed-rule answers and invariant action branches. Identifiers remain 0/64
+in every stored-memory condition. No/zero-memory actions are 64/128 and 61/128.
+The selected-text identifier control gets 64/64, with all 64 repeated no-memory
+predictions exactly reproducing the frozen latent reference (0/64 correct). This
+confirms the question interface is viable for this split. Source text is a separate
+control with unequal token budgets, never an inference fallback. The controls ran
+from frozen `c58028c`; `source-confirmation.json` and `source-text.json` pin outputs.

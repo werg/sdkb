@@ -1,0 +1,218 @@
+{
+  "result": "/archive/runs/binding-endpoint-freshness-20260920/confirmation/source-heldout/results.json",
+  "result_sha256": "83f4233bf4c2b996166f5241bb901059d77b0c339d7f77b60b88288c3d0369fe",
+  "inputs": {
+    "checkpoint_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "episodes_sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+    "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+    "max_new_tokens": 24,
+    "routing": "oracle required sources",
+    "compact_method": "raw"
+  },
+  "generation_summary": {
+    "multiuse/action": {
+      "all": {
+        "n": 128,
+        "correct": 128
+      },
+      "cf_identifier": {
+        "n": 128,
+        "correct": 128
+      },
+      "cf_permission": {
+        "n": 128,
+        "correct": 128
+      },
+      "cf_restoration": {
+        "n": 128,
+        "correct": 128
+      },
+      "none": {
+        "n": 128,
+        "correct": 64
+      },
+      "zero_values": {
+        "n": 128,
+        "correct": 61
+      }
+    },
+    "multiuse/identifier": {
+      "all": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 0
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 0
+      }
+    },
+    "multiuse/permission": {
+      "all": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 33
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 33
+      }
+    },
+    "multiuse/restoration": {
+      "all": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 35
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 28
+      }
+    }
+  },
+  "generation_counterfactuals": {
+    "multiuse/action": {
+      "cf_permission": {
+        "change_pairs": 128,
+        "both_correct_on_change": 1.0,
+        "appropriate_prediction_change": 1.0,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 1.0,
+        "appropriate_prediction_change": 1.0,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 128,
+        "false_change_rate": 0.0
+      }
+    },
+    "multiuse/identifier": {
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 1.0
+      },
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.0,
+        "appropriate_prediction_change": 0.046875,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    },
+    "multiuse/permission": {
+      "cf_permission": {
+        "change_pairs": 64,
+        "both_correct_on_change": 1.0,
+        "appropriate_prediction_change": 1.0,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      }
+    },
+    "multiuse/restoration": {
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_restoration": {
+        "change_pairs": 64,
+        "both_correct_on_change": 1.0,
+        "appropriate_prediction_change": 1.0,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      },
+      "cf_identifier": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      }
+    }
+  },
+  "target_nll": {
+    "multiuse/action": 2.2928764017596644e-06,
+    "multiuse/restoration": 3.7429653385601114e-06,
+    "multiuse/permission": 1.7546079209562748e-06,
+    "multiuse/identifier": 5.116274897789672
+  }
+}
