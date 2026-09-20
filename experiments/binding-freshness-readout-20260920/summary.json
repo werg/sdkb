@@ -1,0 +1,1803 @@
+{
+  "inputs_sha256": "8cf7193f6252dfa28ec9082d86e54625eaa902802b611984866e6cfc7500682f",
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "f9625f73a884eaa7d777149e7089eea28aebc1fb",
+    "git_dirty": false,
+    "transformers": "5.17.0"
+  },
+  "arms": {
+    "source": {
+      "payload": {
+        "linear": {
+          "parameters": 196608,
+          "input_dimension": 2048,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1876,
+                "characters_correct": 11787,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1962,
+                  1955,
+                  1929,
+                  1973,
+                  1984
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  131,
+                  101,
+                  142,
+                  123,
+                  120
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 126,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  37,
+                  14,
+                  6,
+                  13,
+                  24,
+                  32
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  3,
+                  1,
+                  2,
+                  11,
+                  8,
+                  4
+                ]
+              }
+            }
+          },
+          "resume_sha256": "301d92e3096b90758794949b9a7dbc3db7a03ae7573385507f24096baf2f2aa8",
+          "results_sha256": "2f87e85ca09b35a3f02523be2e9c7c8aef26a9148f64b1e155764cf85e9880ea",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "f48e35ed883fce0362b6be11017246ce007fe0a48201473b63e75e15acf6c53f",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 548864,
+          "input_dimension": 2048,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1982,
+                "characters_correct": 11902,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1984,
+                  1984,
+                  1984,
+                  1982,
+                  1984
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 723,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  136,
+                  124,
+                  120
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 121,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  34,
+                  16,
+                  8,
+                  13,
+                  24,
+                  26
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 33,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  5,
+                  2,
+                  4,
+                  12,
+                  4,
+                  6
+                ]
+              }
+            }
+          },
+          "resume_sha256": "4e23570acfd328a34403bdc58b42a79076de19343e8541461f7cdc92a7340459",
+          "results_sha256": "d35b101f5639c8cc6f5afa0829c86c409a6fc83be2218788537e4fe5112177ec",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "f48e35ed883fce0362b6be11017246ce007fe0a48201473b63e75e15acf6c53f",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      },
+      "reader": {
+        "linear": {
+          "parameters": 786432,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 651,
+                "characters_correct": 9756,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1821,
+                  1502,
+                  1466,
+                  1470,
+                  1619,
+                  1878
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 767,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  117,
+                  131,
+                  102,
+                  133,
+                  156,
+                  128
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 81,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  25,
+                  6,
+                  5,
+                  12,
+                  13,
+                  20
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 22,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  4,
+                  3,
+                  8,
+                  1,
+                  2
+                ]
+              }
+            }
+          },
+          "resume_sha256": "ce6c3658cb44c8679d94aa01309330b4821c7d14e246919e7c1eff7901923a78",
+          "results_sha256": "20c832dfdc10146b7ffe63dcf17149d255039f3156e9462d8d960fec0d139d59",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "f48e35ed883fce0362b6be11017246ce007fe0a48201473b63e75e15acf6c53f",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 2121728,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1978,
+                "characters_correct": 11898,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1981,
+                  1983,
+                  1984,
+                  1983,
+                  1983,
+                  1984
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 723,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  136,
+                  124,
+                  120
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 78,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  16,
+                  10,
+                  10,
+                  8,
+                  15,
+                  19
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 28,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  2,
+                  4,
+                  4,
+                  10,
+                  3,
+                  5
+                ]
+              }
+            }
+          },
+          "resume_sha256": "876b19a525e5cf54c637c5967899d2a91b4d088834ff81435d63b70321c4943c",
+          "results_sha256": "ee171d0890297aec30e060ee9c8c4648c50fbc834a2db4a1c6a6201091faec65",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "f48e35ed883fce0362b6be11017246ce007fe0a48201473b63e75e15acf6c53f",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      },
+      "zero_reader": {
+        "linear": {
+          "parameters": 786432,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": true,
+            "heldout": true,
+            "heldout_first_matches_training_first": true
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              }
+            }
+          },
+          "resume_sha256": "fcbeb6870a5731f16ec5a911af5b6c5eb0966074116e554ead01f454b7c7f61c",
+          "results_sha256": "eb9896bbfc88a8658bc9242b055d60da37efe5fd2f587ad78be29785777f1a88",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "f48e35ed883fce0362b6be11017246ce007fe0a48201473b63e75e15acf6c53f",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 2121728,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": true,
+            "heldout": true,
+            "heldout_first_matches_training_first": true
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              }
+            }
+          },
+          "resume_sha256": "b592abf725fb64458f53a355193068cf5ad44f967b77c17b6f9661205a927501",
+          "results_sha256": "82fff36647c91bad3acf5ae6d5a16368fcdebee54e8c1b1c936ff2e59a6d01f8",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "f48e35ed883fce0362b6be11017246ce007fe0a48201473b63e75e15acf6c53f",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      }
+    },
+    "worlds-256": {
+      "payload": {
+        "linear": {
+          "parameters": 196608,
+          "input_dimension": 2048,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1608,
+                "characters_correct": 11474,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1984,
+                  1984,
+                  1845,
+                  1760,
+                  1917
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 737,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  139,
+                  131,
+                  124
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 183,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  61,
+                  51,
+                  31,
+                  18,
+                  8,
+                  14
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 25,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  5,
+                  6,
+                  3,
+                  3,
+                  2,
+                  6
+                ]
+              }
+            }
+          },
+          "resume_sha256": "6a531dc5577950ef419bc9cf9cb071ea20b177086fc073d2ac19a86f5f1555c3",
+          "results_sha256": "be9a6499b13f096a554db468cd73b6f872f326a07b78fbdd34d84ec44a14adfd",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "40fc0298630b4112af74541fc5c6ef39bbaec7af4067394d97f94ebb6f50bb8a",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 548864,
+          "input_dimension": 2048,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1977,
+                "characters_correct": 11897,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1984,
+                  1981,
+                  1984,
+                  1981,
+                  1983
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 724,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  99,
+                  136,
+                  124,
+                  120
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 169,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  60,
+                  47,
+                  34,
+                  12,
+                  8,
+                  8
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 19,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  4,
+                  3,
+                  4,
+                  0,
+                  4
+                ]
+              }
+            }
+          },
+          "resume_sha256": "ac4c15fa9cef4c1ea2a9f7181c727c0c583d2fc5e41417fd444e71f3f24763f6",
+          "results_sha256": "11b26c751f2fc0684b3cd76f36a4879f5cf312309db72904cce5b3e2e47b1d2e",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "40fc0298630b4112af74541fc5c6ef39bbaec7af4067394d97f94ebb6f50bb8a",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      },
+      "reader": {
+        "linear": {
+          "parameters": 786432,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1207,
+                "characters_correct": 10837,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1984,
+                  1967,
+                  1722,
+                  1595,
+                  1585
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 736,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  138,
+                  132,
+                  123
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 160,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  58,
+                  50,
+                  32,
+                  14,
+                  4,
+                  2
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 23,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  6,
+                  3,
+                  7,
+                  1,
+                  0,
+                  6
+                ]
+              }
+            }
+          },
+          "resume_sha256": "9a5f7f8b0947b764f818d4ca0d1aa719cbf7b236ab9a1bd53266fed6707d7a31",
+          "results_sha256": "f83343f3df8865959413e385bc954e8dea8a6cbaec490781f93f8ca4eaa742f5",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "40fc0298630b4112af74541fc5c6ef39bbaec7af4067394d97f94ebb6f50bb8a",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 2121728,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1943,
+                "characters_correct": 11862,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1983,
+                  1978,
+                  1974,
+                  1968,
+                  1975
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 724,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  99,
+                  136,
+                  124,
+                  120
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 158,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  56,
+                  47,
+                  34,
+                  9,
+                  7,
+                  5
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 22,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  6,
+                  5,
+                  1,
+                  2,
+                  4
+                ]
+              }
+            }
+          },
+          "resume_sha256": "dfbef07b9e22e67c6b1fe8fde4dbf3d4833c4876902a5f70548f1894a4565979",
+          "results_sha256": "e07bdc6e57b2c413162ebb1f853a4b19ff070961361fe285deb2fc315d713432",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "40fc0298630b4112af74541fc5c6ef39bbaec7af4067394d97f94ebb6f50bb8a",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      },
+      "zero_reader": {
+        "linear": {
+          "parameters": 786432,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": true,
+            "heldout": true,
+            "heldout_first_matches_training_first": true
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              }
+            }
+          },
+          "resume_sha256": "6db693d192cbe27cb1823bfd3b7541bb3c8f46819d2283d4ba7f50a6757e6342",
+          "results_sha256": "9f5c78c0334c562672df1bf3216fb1899f15ceba20a3e399246b73c2a66182c2",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "40fc0298630b4112af74541fc5c6ef39bbaec7af4067394d97f94ebb6f50bb8a",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 2121728,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": true,
+            "heldout": true,
+            "heldout_first_matches_training_first": true
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              }
+            }
+          },
+          "resume_sha256": "95998cafc3259d1d585a5e940a70f5f986670dbb10a97c1caa0b4cd71c164a79",
+          "results_sha256": "eb44f02eb9d8454a8a485d2857e0e5e3689dc5dba55822f208465ea6a7aea255",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "40fc0298630b4112af74541fc5c6ef39bbaec7af4067394d97f94ebb6f50bb8a",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      }
+    },
+    "worlds-8192": {
+      "payload": {
+        "linear": {
+          "parameters": 196608,
+          "input_dimension": 2048,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1957,
+                "characters_correct": 11877,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1984,
+                  1984,
+                  1974,
+                  1968,
+                  1983
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 725,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  136,
+                  126,
+                  120
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 3,
+                "characters_correct": 251,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  61,
+                  48,
+                  39,
+                  32,
+                  27,
+                  44
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 24,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  5,
+                  4,
+                  2,
+                  6,
+                  3,
+                  4
+                ]
+              }
+            }
+          },
+          "resume_sha256": "e16e89c76307baa7e50bbc19d7d9cbf5c1212191b09b6a66d0136acb0e552ebc",
+          "results_sha256": "e16859bf0caef11816ad3b3e8d205860745024719aae1c400504131ca7d12acb",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 548864,
+          "input_dimension": 2048,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1980,
+                "characters_correct": 11900,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1984,
+                  1984,
+                  1984,
+                  1982,
+                  1982
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 722,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  136,
+                  124,
+                  119
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 212,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  61,
+                  45,
+                  38,
+                  26,
+                  15,
+                  27
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 31,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  7,
+                  6,
+                  7,
+                  2
+                ]
+              }
+            }
+          },
+          "resume_sha256": "c30ca8faddf6920fc9e47b269a4bbc57c548f0ce9b012856b4873ec10642cd34",
+          "results_sha256": "d8d62029d4256e84e73270f3e06b020d66bf9d097ac267448ffd10347c0ec661",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      },
+      "reader": {
+        "linear": {
+          "parameters": 786432,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1387,
+                "characters_correct": 11175,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1979,
+                  1957,
+                  1807,
+                  1672,
+                  1776
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 734,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  96,
+                  140,
+                  129,
+                  124
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 156,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  55,
+                  35,
+                  22,
+                  18,
+                  14,
+                  12
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 22,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  5,
+                  0,
+                  5,
+                  6,
+                  3,
+                  3
+                ]
+              }
+            }
+          },
+          "resume_sha256": "adf7784095eadd586f3333685d10b0e975b7ba51e3d64d2e127584022f2b452e",
+          "results_sha256": "00e65a51ed9714cdc3eb975454fd4d552033a576ff41ad52c7ca7ac846188ddb",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 2121728,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 1945,
+                "characters_correct": 11862,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  1984,
+                  1974,
+                  1978,
+                  1972,
+                  1973,
+                  1981
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 724,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  116,
+                  129,
+                  98,
+                  136,
+                  124,
+                  121
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 156,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  55,
+                  36,
+                  18,
+                  16,
+                  15,
+                  16
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 26,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  5,
+                  2,
+                  7,
+                  6,
+                  2,
+                  4
+                ]
+              }
+            }
+          },
+          "resume_sha256": "4103738f1db7d7c8b6bcbc5fe4dd1e96cbf9f4fa83795fb8710c1cadb774c9f7",
+          "results_sha256": "f0dbf6dc592f0c0cdd0eaccdf98b050f62b617133f97714f67900cb39a7a124c",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      },
+      "zero_reader": {
+        "linear": {
+          "parameters": 786432,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": true,
+            "heldout": true,
+            "heldout_first_matches_training_first": true
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              }
+            }
+          },
+          "resume_sha256": "afda4adfbc224f5692cf32aa2e258cb267caebe29ab9727610019fca58b42653",
+          "results_sha256": "b24bcf92f07420e0adc32e039f8ae9530579a9e6786b299deedb707f92802740",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.weight"
+            ]
+          ]
+        },
+        "mlp256": {
+          "parameters": 2121728,
+          "input_dimension": 8192,
+          "feature_constancy": {
+            "train": true,
+            "heldout": true,
+            "heldout_first_matches_training_first": true
+          },
+          "results": {
+            "train": {
+              "payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              },
+              "shifted_payload": {
+                "n": 1984,
+                "exact_six": 0,
+                "characters_correct": 733,
+                "characters": 11904,
+                "characters_correct_by_position": [
+                  113,
+                  109,
+                  133,
+                  125,
+                  117,
+                  136
+                ]
+              }
+            },
+            "heldout": {
+              "payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              },
+              "shifted_payload": {
+                "n": 64,
+                "exact_six": 0,
+                "characters_correct": 29,
+                "characters": 384,
+                "characters_correct_by_position": [
+                  4,
+                  5,
+                  3,
+                  4,
+                  6,
+                  7
+                ]
+              }
+            }
+          },
+          "resume_sha256": "cf760542c90da303aed3e3911a9767af8982906f706b3c20a89a5ddfc73bb124",
+          "results_sha256": "1f9fffb937c74493a06e3cbec3419a2eb8c3fd19c886b8c6eb0a269c745887c5",
+          "script_sha256": "2738edad50858be8d05bbbc68dfbb161fcc3618122ec1f77cab42ba7c5081286",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "all_declared_updates_and_final_sampler_verified": true,
+          "optimizer_groups": [
+            {
+              "lr": 0.001,
+              "weight_decay": 0.01,
+              "momentum": 0.95,
+              "nesterov": true,
+              "ns_coefficients": [
+                3.4445,
+                -4.775,
+                2.0315
+              ],
+              "eps": 1e-07,
+              "ns_steps": 5,
+              "adjust_lr_fn": "match_rms_adamw"
+            }
+          ],
+          "parameter_names": [
+            [
+              "net.0.weight",
+              "net.2.weight"
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "collector_sha256": "fc2003e20dfc5207c5cbc74d59493a6729c84b60493011922a9db201b6df2bdd",
+  "notice": "All predeclared frozen models, representations and heads. One seed and an already inspected held-out split. Supervised six-position format and unequal head sizes are explicit. Readout accessibility is not language generation or an information bound."
+}

@@ -78,3 +78,52 @@ seeds. The feature probe records whether each split is exactly constant and whet
 its first held-out/training features match, so the native zero-query control can
 be checked directly. Per-position counts supplement the existing aggregate metrics;
 historical readout records retain their original format.
+
+
+## Completed results
+
+All 18 heads completed 1,600 updates from frozen `f9625f7`. The collector verifies
+all final sampler states against the declared 204,800-example draw schedule,
+optimizer settings, metric coverage, source/data/bank identities and result/endpoint
+hashes. The parent controller and every child exited with code zero.
+
+| Frozen model | Features | Head | Train exact /1,984 | Held-out exact /64 | Hex /384 | Shifted hex /384 |
+|---|---|---|---:|---:|---:|---:|
+| source | payload | linear | 1876 | 0 | 126 | 29 |
+| source | payload | mlp256 | 1982 | 0 | 121 | 33 |
+| source | reader | linear | 651 | 0 | 81 | 22 |
+| source | reader | mlp256 | 1978 | 0 | 78 | 28 |
+| source | zero_reader | linear | 0 | 0 | 29 | 29 |
+| source | zero_reader | mlp256 | 0 | 0 | 29 | 29 |
+| worlds-256 | payload | linear | 1608 | 0 | 183 | 25 |
+| worlds-256 | payload | mlp256 | 1977 | 0 | 169 | 19 |
+| worlds-256 | reader | linear | 1207 | 0 | 160 | 23 |
+| worlds-256 | reader | mlp256 | 1943 | 0 | 158 | 22 |
+| worlds-256 | zero_reader | linear | 0 | 0 | 29 | 29 |
+| worlds-256 | zero_reader | mlp256 | 0 | 0 | 29 | 29 |
+| worlds-8192 | payload | linear | 1957 | 3 | 251 | 24 |
+| worlds-8192 | payload | mlp256 | 1980 | 0 | 212 | 31 |
+| worlds-8192 | reader | linear | 1387 | 0 | 156 | 22 |
+| worlds-8192 | reader | mlp256 | 1945 | 0 | 156 | 26 |
+| worlds-8192 | zero_reader | linear | 0 | 0 | 29 | 29 |
+| worlds-8192 | zero_reader | mlp256 | 0 | 0 | 29 | 29 |
+
+All shifted-feature exact counts are zero. The native zero-reader feature vectors
+are exactly constant within both splits and equal across training/held-out splits
+for all three models. Their inability to memorize the training labels closes the
+query-identity shortcut present in the earlier variable-query diagnostic.
+
+Payload heads contain 196,608/548,864 parameters (linear/MLP256); reader and zero
+heads contain 786,432/2,121,728. The broader-training writer exposes more recoverable
+characters to the same payload heads. Its linear payload head recovers three full
+identifiers and 251 characters, versus zero full identifiers and 156 characters
+from the wider reader output. Larger MLP heads fit more training examples without
+improving held-out readout. These findings concern the tested supervised heads and
+budgets; they do not prove that information is irreversibly destroyed by the reader.
+
+For the broader model, payload linear accuracy by position is
+61/48/39/32/27/44 out of 64; reader linear accuracy is 55/35/22/18/14/12. The next
+bounded diagnostic will inspect the reader's input projections and its state before
+final output normalization/projection. This can distinguish an early projection
+limitation from later transformations or readout conditioning. No production reader
+or training objective has been changed on the basis of these probes.

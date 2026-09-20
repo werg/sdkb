@@ -44,6 +44,14 @@ and partial character agreement are recorded separately from exact recall. Both
 final states pass sampler/checkpoint audits; verified initial-weight deduplication
 reclaimed another 2.03 GB while retaining complete recovery sets.
 
+A [fixed-query readout follow-up](../experiments/binding-freshness-readout-20260920/README.md)
+verified all 18 small Muon heads at their declared 1,600-update endpoints. The large
+continuation's payload linear head recovers 3/64 full identifiers and 251/384 hex
+positions, while its reader-output linear head gets 0/64 and 156/384. Native
+zero-value features are exactly constant across worlds and both data splits.
+These supervised format-given probes are separate from language-model generation;
+unequal head sizes and one-seed/post-hoc scope remain explicit.
+
 Learned global retrieval remains weaker: corrected training reaches 102/128 free
 actions at 128 records and 78/128 at 4,096 records on fixed questions. Wider address
 spaces improve training fit without improving held-out retrieval. These exact-scan

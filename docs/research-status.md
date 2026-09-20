@@ -59,8 +59,16 @@ to 3.3872/1.7493. Post-hoc original-generation character agreement is 102/384 an
 125/384 versus 29/384 and 35/384 with zero payloads, concentrated in early positions.
 The small arm emits old training targets in 53/64 cases; the larger does so only
 once. More fresh targets reduces this old-answer reuse pattern at this budget,
-but has not produced reliable copying. The next diagnostic will test recoverable
-content before and after the reader under identical queries; it is not yet evidence.
+but has not produced reliable copying.
+
+The [fixed-query readout follow-up](../experiments/binding-freshness-readout-20260920/README.md)
+completed all 18 declared heads. The larger-corpus writer's payload lets a linear
+six-position classifier recover 3/64 exact identifiers and 251/384 characters;
+the reader output yields 0/64 and 156/384. Zero-value features are exactly constant
+under these identical queries and yield 29/384 characters. These supervised heads
+supply the output format and have different parameter budgets. They locate a gap
+in tested accessibility, not an information-theoretic loss or a language-generation
+success. Intermediate reader states will be checked before choosing a model change.
 
 ## What would support the stronger idea
 
