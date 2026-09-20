@@ -3,7 +3,7 @@ import json
 import pytest
 
 from sdkb.agent import SDKBAgent
-from sdkb.data import make_multiuse_world
+from sdkb.data import make_episode, make_multiuse_world
 from sdkb.store import DiskStore
 from sdkb.trajectory_eval import build_teacher_bank, stored_teacher_evaluation
 
@@ -168,3 +168,14 @@ def test_teacher_writer_and_scoring_guard_compute_but_not_progress_io(tmp_path, 
 
 def assert_disarmed(armed):
     assert not armed
+
+
+def test_teacher_offline_writer_bounds_cached_encoded_sources(tmp_path, tiny_config):
+    agent = SDKBAgent(tiny_config).eval()
+    episodes = [make_episode(i, distractors=0) for i in range(70)]
+    store = DiskStore(tmp_path/'bank.sqlite')
+    report = build_teacher_bank(agent, store, episodes, writer_identity='frozen')
+    assert report['unique_sources'] == 140
+    assert report['writer_calls'] >= 140
+    assert 0 < report['writer_peak_cached_sources'] <= 64
+    assert store.sizes()['records'] == 280

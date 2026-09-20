@@ -1,0 +1,133 @@
+{
+  "protocol": "119 repository-held-out teacher episodes; same frozen latent step-400 model and bank",
+  "sweep_sha256": "5818b52aa3e177c26973bd56566bd73993e9b3f5fb2d6df16ef9f8aca9d47e70",
+  "text_sha256": [
+    "d2152d3be0fa8bcd99162a4461d8fccfff99953f1d60fc777aee26bce02c7e15",
+    "ab63f822b1ab4d036eba7e393180ff5e6ca416ecd16178b56d50b41a71d875e9"
+  ],
+  "writer_calls": 375,
+  "stored_records": 750,
+  "depths": {
+    "1": {
+      "report_sha256": "2b70d3624a900692176511ac557cf77eb7e9655fa300d43a8addf72d02edafb8",
+      "token_weighted_nll": {
+        "all": 1.937262696488535,
+        "none": 1.937262696488535,
+        "zero_values": 1.937262696488535,
+        "wrong_values": 1.937262696488535,
+        "selected_text": 1.4898016881119465
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.0,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.0,
+          0.0
+        ],
+        "positive_episodes": 0
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.0,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.0,
+          0.0
+        ],
+        "positive_episodes": 0
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": false
+    },
+    "2": {
+      "report_sha256": "1a296cb6555f0d6166887afe4560b599b3da20cda888de1f6a2948776a5cdda1",
+      "token_weighted_nll": {
+        "all": 1.3248227695679662,
+        "none": 1.8296000306649682,
+        "zero_values": 1.3331949768837401,
+        "wrong_values": 1.3351701035768808,
+        "selected_text": 1.3970142137505512
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.011733210293050942,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.01001762608133497,
+          0.013450886254627398
+        ],
+        "positive_episodes": 116
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.01359048754910193,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.010294250820757113,
+          0.017033967793435887
+        ],
+        "positive_episodes": 104
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": false
+    },
+    "3": {
+      "report_sha256": "710d687421f9b45630faec3378568addb60a5dc96c507bb98da3cd2deadc4398",
+      "token_weighted_nll": {
+        "all": 1.2709740933617828,
+        "none": 1.7434147877647932,
+        "zero_values": 1.2843752909752457,
+        "wrong_values": 1.2878512188799183,
+        "selected_text": 1.3249826201533692
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.017083303344131717,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.013942081251604089,
+          0.020079832595214276
+        ],
+        "positive_episodes": 110
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.020733481167416735,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.014894623814171904,
+          0.02657716324831815
+        ],
+        "positive_episodes": 100
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": true
+    },
+    "4": {
+      "report_sha256": "8f74cfa7b0d34dd11baf0eff74c6d49aff4e1c0e8b7f91bebfc605cc57d652d2",
+      "token_weighted_nll": {
+        "all": 1.239384508460672,
+        "none": 1.6753033999800404,
+        "zero_values": 1.2565700064751795,
+        "wrong_values": 1.260985252214342,
+        "selected_text": 1.2704486788700595
+      },
+      "real_over_zero": {
+        "mean_episode_nll_reduction": 0.021050103419239023,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.0163577655605049,
+          0.02527536557917365
+        ],
+        "positive_episodes": 105
+      },
+      "real_over_wrong": {
+        "mean_episode_nll_reduction": 0.026933675597940767,
+        "trajectory_groups": 42,
+        "trajectory_bootstrap_interval_95": [
+          0.0191632968805167,
+          0.03489697466488734
+        ],
+        "positive_episodes": 100
+      },
+      "fixed_selection_episodes": 119,
+      "beyond_final_training_depth": true
+    }
+  },
+  "limitations": "Teacher NLL and descriptive trajectory bootstrap only. R=4 exceeds the latent stage training depth. Selected text, no memory and stored memory use different layouts/computation. OS cache state is uncontrolled; this is not cold-NVMe or serving latency. No agent success or parameter-substitution claim."
+}

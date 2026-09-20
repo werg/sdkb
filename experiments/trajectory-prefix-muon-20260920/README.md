@@ -94,6 +94,29 @@ it cannot be credited to stored content. The selected-text condition changes
 token and compute budgets. These are teacher-forced likelihood measurements,
 not agent success, composition or a capacity-substitution result.
 
+### Same-bank depth sweep before joint training
+
+The frozen latent checkpoint was also scored at R=1, 2, 3 and 4 using one stored
+bank and all 119 validation episodes. The evaluator checkout was `9835b06`;
+`latent-depth-results.json` pins each external report and both text-control
+files. R=3 and R=4 exceed this checkpoint's trained depth of two.
+
+| Depth | Real values | Zero values | No memory | Selected text |
+|---:|---:|---:|---:|---:|
+| 1 | 1.937263 | 1.937263 | 1.937263 | 1.489802 |
+| 2 | 1.324823 | 1.333195 | 1.829600 | 1.397014 |
+| 3 | 1.270974 | 1.284375 | 1.743415 | 1.324983 |
+| 4 | 1.239385 | 1.256570 | 1.675303 | 1.270449 |
+
+These are token-weighted teacher NLLs. R=1 makes no read. More core passes help
+all conditions, including zero values and no memory. The real-over-zero paired
+mean episode NLL benefit grows from 0.01173 at R=2 to 0.01708 at R=3 and
+0.02105 at R=4, but remains small. Fixed original IDs held in every intervention
+pair. This same-checkpoint sweep isolates extra recurrence from a changed writer;
+it does not establish that more depth improves actual agent tasks or capacity
+substitution. Evaluation timing includes uncertain page-cache state and must not
+be presented as cold-NVMe latency.
+
 ## Recurrent joint stage
 
 `recurrent_joint.yaml` declares a new 400-update Muon warm-start from the exact

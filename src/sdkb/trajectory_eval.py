@@ -4,7 +4,7 @@ Likelihood is imitation/conditioning, not task execution success. There is no li
 teacher or tool execution, and the reader never calls the source writer.
 """
 from __future__ import annotations
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from dataclasses import asdict, replace
 from pathlib import Path
 import hashlib
@@ -37,16 +37,24 @@ def build_teacher_bank(agent, store, episodes, *, writer_identity=None, want_sto
             if s.record_id in sources and sources[s.record_id] != s:
                 raise ValueError('Conflicting source content')
             sources[s.record_id] = s
-    outputs, complete = {}, True
+    outputs, complete = OrderedDict(), True
+    writer_calls, peak_cached_sources = 0, 0
     if agent.config.train.arm in {'memory', 'direct_latent'}:
         def encoded(rid):
-            if rid not in outputs:
-                with autocast_context(agent.config):
-                    source_ids = agent.text_ids(sources[rid].text, source=True)
-                    with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
-                                                  device=agent.config.train.device):
-                        outputs[rid] = tuple(t.detach().cpu() for t in stored_channel(
-                            agent, agent.produce(source_ids)))
+            nonlocal writer_calls, peak_cached_sources
+            if rid in outputs:
+                outputs.move_to_end(rid)
+                return outputs[rid]
+            with autocast_context(agent.config):
+                source_ids = agent.text_ids(sources[rid].text, source=True)
+                with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
+                                              device=agent.config.train.device):
+                    outputs[rid] = tuple(t.detach().cpu() for t in stored_channel(
+                        agent, agent.produce(source_ids)))
+            writer_calls += 1
+            if len(outputs) > 64:
+                outputs.popitem(last=False)
+            peak_cached_sources = max(peak_cached_sources, len(outputs))
             return outputs[rid]
         ids, seen = sorted(sources), set()
         peers = {rid: ids[(i + 1) % len(ids)] for i, rid in enumerate(ids)}
@@ -95,7 +103,8 @@ def build_teacher_bank(agent, store, episodes, *, writer_identity=None, want_sto
                         expected_count=len(group) * len(spaces))
                 if not complete:
                     break
-    return dict(unique_sources=len(sources), writer_calls=len(outputs),
+    return dict(unique_sources=len(sources), writer_calls=writer_calls,
+                writer_peak_cached_sources=peak_cached_sources,
                 complete=complete,
                 wrong_values_distinct_record_available=len(sources) > 1,
                 wrong_values_policy='Cyclic distinct-record payload permutation; semantic disagreement not guaranteed.')

@@ -322,3 +322,18 @@ leaving SQLite publication and progress-file fsync outside the guard. A focused
 regression checks that writer and scoring forwards are guarded and progress I/O
 is not; the full suite passes 511 tests. The already active frozen latent depth
 sweep keeps its original evaluator checkout.
+
+The local bgkit reference advanced to `b38afd4` after the earlier audit. Its
+checkpoint/archive helpers remain unchanged. A new 2,000-file repository case
+found an OOM from encoding a whole padded directory level, then bounded that
+work in chunks. SDKB does not use bgkit's tree model, but the scaling lesson
+applies to its teacher-bank intervention builder: retaining every encoded source
+would grow with the evaluation corpus. The builder now keeps at most 64 recent
+source encodings, records actual writer calls and peak cache size, and still
+commits complete namespaces atomically. Evicted sources may be re-encoded only
+while creating an unfinished offline bank; completed banks and stored inference
+never invoke the writer. A 140-source regression covers the bound and all 280
+expected raw intervention records. The new bgkit path-walk evaluation also
+reinforces SDKB's existing distinction between teacher NLL and full agent
+success; no path-walk capability is claimed here. Source identities are pinned
+in `experiments/operations-20260920/bgkit-refresh-source.json`.

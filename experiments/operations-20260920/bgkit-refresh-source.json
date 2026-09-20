@@ -1,0 +1,16 @@
+{
+  "repository": "bgkit",
+  "audited_commit": "b38afd476d19019be1d98f99ecb69566283de35e",
+  "clean_worktree": true,
+  "previous_audited_commit": "011150a8281a98a8532322326171136841b2928b",
+  "source_sha256": {
+    "docs/runbook.md": "da2d61d9b559ce0cc9be5d4e149b6b273c53f2992503b528166f0acad5656326",
+    "docs/dgx_spark_perf_playbook.md": "191e717a3bcc91f48bb6090a0106bed7cc220a7e30f2ab3f112a6c5b6020384f",
+    "src/bgkit/training/base_trainer.py": "0704d6cbcee5a060ae75d00df50afd264210fce2c6addec75b4a61b1f36b5126",
+    "src/bgkit/training/checkpoint_archiver.py": "83e5cee49419bf301e83657d2ef23d793915d5fc004078e464cc349aa1cab63c",
+    "src/bgkit/training/checkpointing.py": "7089fc8d83b58ab5ccd859e5117cf7fd31a775c7684bc7db8fc2904aa520bee8",
+    "src/bgkit2/models/multilevel.py": "385bdef3d56ca5a16469b6bcb2c881fc148b746397e79c514fa00eb7c213d3f4",
+    "scripts/bgkit2_eval_walk.py": "405cea990c3da55fd726763ef22f4265bd92daf9dfe732415442bf5580e0ee50"
+  },
+  "scope": "Operational follow-up and bounded offline processing lesson; no bgkit model code, data, weights or credentials imported."
+}
