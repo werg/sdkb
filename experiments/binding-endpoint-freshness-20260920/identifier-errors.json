@@ -1,0 +1,315 @@
+{
+  "arms": {
+    "source-heldout": {
+      "results_sha256": "83f4233bf4c2b996166f5241bb901059d77b0c339d7f77b60b88288c3d0369fe",
+      "full_training_target_vocabulary": 256,
+      "sampled_training_target_vocabulary": 256,
+      "conditions": {
+        "all": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "cf_identifier": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "cf_permission": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "cf_restoration": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "none": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "zero_values": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        }
+      }
+    },
+    "worlds-256": {
+      "results_sha256": "ce5ba4e2d43fc193a75b9c9b73a1a1349af04760848171f27105cfd16b32e819",
+      "full_training_target_vocabulary": 512,
+      "sampled_training_target_vocabulary": 512,
+      "conditions": {
+        "all": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            44,
+            28,
+            17,
+            4,
+            5,
+            4
+          ],
+          "characters_correct": 102,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 53,
+          "predictions_in_sampled_training_target_vocabulary": 53
+        },
+        "cf_identifier": {
+          "n": 64,
+          "valid_format": 61,
+          "hex_positions_correct": [
+            53,
+            31,
+            12,
+            1,
+            3,
+            4
+          ],
+          "characters_correct": 104,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 56,
+          "predictions_in_sampled_training_target_vocabulary": 56
+        },
+        "cf_permission": {
+          "n": 64,
+          "valid_format": 61,
+          "hex_positions_correct": [
+            46,
+            23,
+            18,
+            2,
+            3,
+            3
+          ],
+          "characters_correct": 95,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 53,
+          "predictions_in_sampled_training_target_vocabulary": 53
+        },
+        "cf_restoration": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            44,
+            28,
+            17,
+            4,
+            5,
+            4
+          ],
+          "characters_correct": 102,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 53,
+          "predictions_in_sampled_training_target_vocabulary": 53
+        },
+        "none": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "zero_values": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            6,
+            3,
+            6,
+            2,
+            5,
+            7
+          ],
+          "characters_correct": 29,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 64,
+          "predictions_in_sampled_training_target_vocabulary": 64
+        }
+      }
+    },
+    "worlds-8192": {
+      "results_sha256": "39f2abfaca98507500d6cae732aa5ae101ad565bcf34658526fe68b1af9c8c55",
+      "full_training_target_vocabulary": 16371,
+      "sampled_training_target_vocabulary": 7516,
+      "conditions": {
+        "all": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            47,
+            30,
+            11,
+            14,
+            10,
+            13
+          ],
+          "characters_correct": 125,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 1,
+          "predictions_in_sampled_training_target_vocabulary": 1
+        },
+        "cf_identifier": {
+          "n": 64,
+          "valid_format": 63,
+          "hex_positions_correct": [
+            49,
+            26,
+            18,
+            13,
+            8,
+            8
+          ],
+          "characters_correct": 122,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "cf_permission": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            47,
+            28,
+            17,
+            9,
+            9,
+            14
+          ],
+          "characters_correct": 124,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 1,
+          "predictions_in_sampled_training_target_vocabulary": 1
+        },
+        "cf_restoration": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            47,
+            30,
+            11,
+            14,
+            10,
+            13
+          ],
+          "characters_correct": 125,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 1,
+          "predictions_in_sampled_training_target_vocabulary": 1
+        },
+        "none": {
+          "n": 64,
+          "valid_format": 0,
+          "hex_positions_correct": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "characters_correct": 0,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        },
+        "zero_values": {
+          "n": 64,
+          "valid_format": 64,
+          "hex_positions_correct": [
+            2,
+            5,
+            8,
+            9,
+            7,
+            4
+          ],
+          "characters_correct": 35,
+          "characters": 384,
+          "predictions_in_full_training_target_vocabulary": 0,
+          "predictions_in_sampled_training_target_vocabulary": 0
+        }
+      }
+    }
+  },
+  "script_sha256": "34e56abeaa835158fd82131e602718051edc4f4635f844671669acade62c970b",
+  "notice": "Post-hoc descriptive analysis of completed generations. Only full api_ plus six lowercase hexadecimal strings receive position credit; malformed outputs score zero. Sampled vocabulary is reconstructed only for continuation arms; the source column uses its complete finetuning vocabulary for both fields. Character agreement is not exact recall, and wrong predictions changing is not correct counterfactual behavior."
+}

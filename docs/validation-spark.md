@@ -34,6 +34,16 @@ small-corpus fit reaches 64/64 training identifiers but 0/64 held-out identifier
 with action/rule regressions and failed endpoint interventions. See the
 [fixed-query study](../experiments/binding-fixed-query-detail-20260920/README.md).
 
+The subsequent [freshness study](../experiments/binding-endpoint-freshness-20260920/README.md)
+completed 4,000 updates each on 256 and 8,192 worlds. Both retain 128/128 original
+actions and copy 64/64 identifiers from selected text, but generate 0/64 original
+held-out identifiers through memory. The larger arm gets one changed identifier
+right with zero correct original/changed pairs and a few rule-intervention errors.
+The small arm fits 45/64 common training targets but zero replacements. Lower NLL
+and partial character agreement are recorded separately from exact recall. Both
+final states pass sampler/checkpoint audits; verified initial-weight deduplication
+reclaimed another 2.03 GB while retaining complete recovery sets.
+
 Learned global retrieval remains weaker: corrected training reaches 102/128 free
 actions at 128 records and 78/128 at 4,096 records on fixed questions. Wider address
 spaces improve training fit without improving held-out retrieval. These exact-scan

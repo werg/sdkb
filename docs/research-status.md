@@ -37,27 +37,30 @@ Sources: [fresh source controls](../experiments/binding-endpoint-freshness-20260
 [temporary compaction](../experiments/binding-compact-aware-20260920/README.md),
 [paired compaction](../experiments/binding-paired-compaction-20260920/README.md).
 
-## What the current experiment addresses
+## What the latest completed experiment shows
 
 The [endpoint freshness study](../experiments/binding-endpoint-freshness-20260920/README.md)
-has completed two 4,000-update Muon continuations from the useful original MLP source.
-Both consume the same task/source-count/recurrent-depth schedule and retain rule
-and action tasks. One repeatedly samples 512 endpoint strings; the other samples
-7,516 distinct strings, mostly once. World content also differs, and equal updates
-are not equal token or FLOP budgets.
+completed two 4,000-update Muon continuations from the useful original MLP source.
+Both consumed the same task/source-count/recurrent-depth schedule and retained rule
+and action tasks. One repeatedly sampled 512 endpoint strings; the other sampled
+7,516 distinct strings, mostly once. World content also differed, and equal updates
+were not equal token or FLOP budgets. Both endpoint states pass the complete
+sampler/depth and checkpoint audit.
 
-The sealed held-out split excludes training source IDs and both original and
-inverted endpoint targets. Source controls have completed: perfect tested
-rule/action behavior, 0/64 latent identifiers and 64/64 selected-text identifiers.
-Both endpoint states pass the declared sampler/depth and checkpoint audit. Held-out
-endpoint evaluations are running. Exact generation, changed-endpoint answers,
-irrelevant-rule invariance and retained action composition will be assessed
-together. A lower teacher-forced loss alone will not justify promotion.
+Both models still generate **0/64 original held-out endpoints**, while retaining
+128/128 original actions and 64/64 selected-text endpoints. The larger arm gets
+one changed endpoint right, but neither gets any correct original/changed endpoint
+pairs. It also has a few rule-intervention regressions. The small arm fits 45/64
+common training-corpus endpoints, then fails all 64 replacements and drops to
+26/64 after an irrelevant permission change. Neither is promoted for exact recall.
 
-The completed small-corpus diagnostic matters here: memory-dependent training fit
-can coexist with predictions drawn almost entirely from the old answer vocabulary.
-Likewise, a wrong prediction changing after an intervention is sensitivity, not
-correct recall. Those failure modes remain explicit in the confirmation reports.
+There is partial progress: identifier teacher NLL falls from 5.1163 in the source
+to 3.3872/1.7493. Post-hoc original-generation character agreement is 102/384 and
+125/384 versus 29/384 and 35/384 with zero payloads, concentrated in early positions.
+The small arm emits old training targets in 53/64 cases; the larger does so only
+once. More fresh targets reduces this old-answer reuse pattern at this budget,
+but has not produced reliable copying. The next diagnostic will test recoverable
+content before and after the reader under identical queries; it is not yet evidence.
 
 ## What would support the stronger idea
 

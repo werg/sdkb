@@ -152,3 +152,56 @@ PNG/SVG figures stay in the external run's `analysis` directory. The final
 versus 1.826 and 1.866 in the first 100 updates. `training-nll.json` pins metric
 file hashes and the calculation. These are teacher-forced training losses with
 one seed and different data streams, not exact-recall or generalization evidence.
+
+
+## Completed confirmation
+
+Both primary and supplemental controllers exited successfully. The identity-checked
+`comparison.json` retains all generation/counterfactual summaries, teacher NLL,
+text controls, exposure strata and raw-result hashes.
+
+| Result | Source | 256 worlds | 8,192 worlds |
+|---|---:|---:|---:|
+| Fresh original endpoints /64 | 0 | 0 | 0 |
+| Changed endpoints /64 | 0 | 0 | 1 |
+| Both original and changed endpoint correct /64 | 0 | 0 | 0 |
+| Original actions /128 | 128 | 128 | 128 |
+| Permission-change action pairs both correct /128 | 128 | 128 | 128 |
+| Restoration-change action pairs both correct /64 | 64 | 64 | 63 |
+| Selected-text endpoints /64 | 64 | 64 | 64 |
+| Fresh identifier mean question target NLL | 5.1163 | 3.3872 | 1.7493 |
+| Common training-corpus endpoints /64 | Not run | 45 | 0 |
+
+The small arm preserves every tested direct-rule answer and invariant action branch.
+The large arm misses one changed-restoration action, one changed-permission direct
+answer, and two direct-permission answers after an irrelevant endpoint change.
+No original action flips under endpoint changes in either arm. No/zero-memory
+actions are 64/46 for the small arm and 34/46 for the large arm, each out of 128.
+All 64 repeated no-memory identifier strings in each text control exactly match
+the corresponding latent reference; none is correct.
+
+Training fit is not general copying. The small arm's 45/64 common-corpus answers
+fall to 0/64 after endpoint replacement and 26/64 after an irrelevant permission
+change; no/zero-memory get zero. The large arm gets zero in every condition and
+every recorded exposure stratum (42 zero, 19 single, three multiple target exposures).
+Neither endpoint is promoted as a solution to exact-detail transfer.
+
+### Post-hoc error description
+
+`analyze_identifier_errors.py` and `identifier-errors.json` record a descriptive
+analysis of completed generations, without new model queries. Both continuations
+produce correctly formatted original answers in 64/64 cases; the source produces
+none. Correct hex positions are 102/384 for the small arm and 125/384 for the large
+arm, versus 29/384 and 35/384 with zero payloads. First-position correctness is
+44/64 and 47/64, with much weaker later positions. This is partial content transfer,
+not exact recall. Malformed outputs receive zero position credit.
+
+Of the 64 original predictions, 53 small-arm predictions belong to its 512-target
+training vocabulary; only one large-arm prediction belongs to its sampled
+7,516-target vocabulary. The larger corpus reduces this particular old-answer
+reuse pattern and improves teacher NLL, while leaving reliable exact copying
+unsolved. Wrong predictions change under endpoint interventions in all 64 cases
+for both arms, but correct original/changed pairs remain zero. Single-seed,
+post-hoc position statistics do not establish an information-theoretic limit or
+identify one responsible module. The next diagnostic will compare recoverability
+from stored payloads and reader outputs under identical queries.
