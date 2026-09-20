@@ -68,7 +68,7 @@ the reader output yields 0/64 and 156/384. Zero-value features are exactly const
 under these identical queries and yield 29/384 characters. These supervised heads
 supply the output format and have different parameter budgets. They locate a gap
 in tested accessibility, not an information-theoretic loss or a language-generation
-success. Intermediate reader states will be checked before choosing a model change.
+success. The completed [intermediate-state follow-up](../experiments/binding-reader-stages-20260920/README.md) yields 205/384 characters after input projections and 165/384 in the final shared state with linear heads, with no exact identifiers. The gap precedes the final output transformation; reader capacity/training is the next intervention.
 
 ## What would support the stronger idea
 
@@ -108,9 +108,9 @@ Muon uses the installed NVIDIA Torch implementation for eligible matrix transfor
 with AdamW for embeddings, slots, fallback tokens and other excluded tensors. The
 fallback-token ownership correction changes future optimizer groups; older runs
 must resume with their frozen checkout or explicitly warm-start a new run. The
-active freshness study stays frozen at `c58028c`.
+completed freshness study used frozen `c58028c`; completed intermediate readouts used `417c2f4`.
 
-The latest download-free suite passes 459 tests; native pretrained execution and
+The latest download-free suite passes 461 tests; native pretrained execution and
 a real BF16 Muon emergency-resume comparison have also run. CPU/CUDA configuration
 and portable operating helpers are separate from the Spark wrapper. Tested native
 Spark execution does not imply performance portability to every GPU or backbone.

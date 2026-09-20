@@ -35,3 +35,24 @@ The controller watches root and `confirmation-queue` control files, terminates a
 joins children on stop, and checks pinned inputs before launch. Native preflight
 also requires target-independent features, zero-value world invariance, and
 bitwise equality of the unchanged final reader output with the prior extractor.
+
+## Completed result
+
+All four heads completed and passed optimizer, sampler, data and budget checks.
+
+| Feature | Head | Train exact /1984 | Held-out exact /64 | Characters /384 | Shifted /384 |
+|---|---|---:|---:|---:|---:|
+| Input projections | Linear | 487 | 0 | 205 | 27 |
+| Input projections | MLP-256 | 1983 | 0 | 201 | 25 |
+| Final shared state | Linear | 822 | 0 | 165 | 27 |
+| Final shared state | MLP-256 | 1975 | 0 | 164 | 25 |
+
+The prior broad-model linear payload/result-token heads recovered 251/156 characters.
+The gap is visible before the final output transformation; changing that projection
+alone is not the best-supported next intervention. It remains an accessibility
+comparison with unequal head dimensions, precision and conditioning, not a proof
+that the reader destroys information. All intermediate heads still fail exact recall.
+
+Native capture precision is BF16 for input projections and FP32 for final state
+and returned tokens. The returned tensor's dtype does not imply every operation
+that produced it ran in FP32. Full suite: 461 passed; Ruff and native preflight pass.

@@ -205,7 +205,8 @@ host/disk reserves and a compute-only watchdog; interrupted records roll back an
 committed banks resume without writer calls. Its bounded queue has explicit resume
 acknowledgement for signal-stopped probe children and refuses to clear active-child
 controls. All 457 tests pass, with 18 focused checks after the final report-metadata
-addition. Native diagnostic outcomes are pending. Evidence:
+addition. All 18 native readout heads have since completed; results are recorded in
+`experiments/binding-freshness-readout-20260920/summary.json`. Evidence:
 `experiments/operations-20260920/frozen-readout-controls.json`.
 
 
@@ -214,3 +215,16 @@ watchdog, before serialization/fsync, and preserves the first manifest publisher
 when reusing unchanged bank bytes. Two regressions failed before correction; all
 459 tests pass. Completed frozen `f9625f7` banks/readouts retain their actual
 implementation provenance. See `experiments/operations-20260920/offline-writer-guard.json`.
+
+
+The local reference was rechecked at clean `011150a8281a98a8532322326171136841b2928b`.
+Its six newer commits do not change the audited operational checkpoint/archive
+helpers. They add cached tree browsing, whole-file windowed encoding, matched
+opening text views, wrong-repository browsing controls, and agentic training that
+does not substitute bare tree batches for tool-use trajectories. Applicable lessons
+remain explicit here: never silently truncate decisive source content, never
+re-encode cached memories during reads, match the actual information and tool
+access of controls, and evaluate tool execution separately from authored answers.
+SDKB already enforces the first two and its current experiments declare the latter
+limits. A browsable repository-tree model is not part of this project's implemented
+architecture; no such agent result or imported kernel/training topology is claimed.

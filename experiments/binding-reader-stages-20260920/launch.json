@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "417c2f4a845ced285ac7339ae1e88fe94b8fe516",
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "417c2f4a845ced285ac7339ae1e88fe94b8fe516",
+    "git_dirty": false,
+    "transformers": "5.17.0"
+  },
+  "maximum_children": 2,
+  "inputs_sha256": "443fdc22b943527e6a5e68e5ec7154f202e31b70246e23d7f03a8ef473340e5d",
+  "status": "both children completed with exit code zero; all four 1600-update budgets and sampler states verified"
+}

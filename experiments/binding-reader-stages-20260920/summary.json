@@ -1,0 +1,444 @@
+{
+  "inputs_sha256": "443fdc22b943527e6a5e68e5ec7154f202e31b70246e23d7f03a8ef473340e5d",
+  "arms": {
+    "reader_inputs": {
+      "linear": {
+        "identity": {
+          "parameters": 73728,
+          "input_dimension": 768,
+          "feature_capture_dtypes": {
+            "train": [
+              "torch.bfloat16"
+            ],
+            "heldout": [
+              "torch.bfloat16"
+            ]
+          },
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+          "episodes_sha256": "0a63b4cb004c1a292873c3b00adcb0ee4df71336359c873f40324eea4a3b8955",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "script_sha256": "b2b6b9d988f49e732210fa2974e060659420545492c8049dfea7d72561d00c97"
+        },
+        "results": {
+          "train": {
+            "payload": {
+              "n": 1984,
+              "exact_six": 487,
+              "characters_correct": 9496,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                1984,
+                1829,
+                1618,
+                1346,
+                1251,
+                1468
+              ]
+            },
+            "shifted_payload": {
+              "n": 1984,
+              "exact_six": 0,
+              "characters_correct": 729,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                116,
+                130,
+                96,
+                131,
+                140,
+                116
+              ]
+            }
+          },
+          "heldout": {
+            "payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 205,
+              "characters": 384,
+              "characters_correct_by_position": [
+                60,
+                45,
+                30,
+                26,
+                19,
+                25
+              ]
+            },
+            "shifted_payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 27,
+              "characters": 384,
+              "characters_correct_by_position": [
+                4,
+                4,
+                4,
+                6,
+                2,
+                7
+              ]
+            }
+          }
+        },
+        "resume_sha256": "1a7cacbdbae8977dc25f0d4509c74817d625b40783d531434e44db78f3488453",
+        "results_sha256": "ae9cee67e64239f2ad2b2fb9ba7d99066af2a0fddee5a37c551b2043bb6f84e5",
+        "complete_budget_and_sampler_verified": true,
+        "optimizer_groups": [
+          {
+            "lr": 0.001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          }
+        ]
+      },
+      "mlp256": {
+        "identity": {
+          "parameters": 221184,
+          "input_dimension": 768,
+          "feature_capture_dtypes": {
+            "train": [
+              "torch.bfloat16"
+            ],
+            "heldout": [
+              "torch.bfloat16"
+            ]
+          },
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+          "episodes_sha256": "0a63b4cb004c1a292873c3b00adcb0ee4df71336359c873f40324eea4a3b8955",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "script_sha256": "b2b6b9d988f49e732210fa2974e060659420545492c8049dfea7d72561d00c97"
+        },
+        "results": {
+          "train": {
+            "payload": {
+              "n": 1984,
+              "exact_six": 1983,
+              "characters_correct": 11903,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                1984,
+                1984,
+                1984,
+                1984,
+                1983,
+                1984
+              ]
+            },
+            "shifted_payload": {
+              "n": 1984,
+              "exact_six": 0,
+              "characters_correct": 723,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                116,
+                129,
+                98,
+                136,
+                124,
+                120
+              ]
+            }
+          },
+          "heldout": {
+            "payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 201,
+              "characters": 384,
+              "characters_correct_by_position": [
+                58,
+                45,
+                35,
+                28,
+                18,
+                17
+              ]
+            },
+            "shifted_payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 25,
+              "characters": 384,
+              "characters_correct_by_position": [
+                5,
+                2,
+                4,
+                6,
+                5,
+                3
+              ]
+            }
+          }
+        },
+        "resume_sha256": "84245a2221e125ad77d58e4afe1c58653fdee47329d795d104c386930f25b309",
+        "results_sha256": "d22bda5788922456f7bedc8f5267985c97b8549ea6c312115a56104fc0660814",
+        "complete_budget_and_sampler_verified": true,
+        "optimizer_groups": [
+          {
+            "lr": 0.001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          }
+        ]
+      }
+    },
+    "reader_state": {
+      "linear": {
+        "identity": {
+          "parameters": 196608,
+          "input_dimension": 2048,
+          "feature_capture_dtypes": {
+            "train": [
+              "torch.float32"
+            ],
+            "heldout": [
+              "torch.float32"
+            ]
+          },
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+          "episodes_sha256": "0a63b4cb004c1a292873c3b00adcb0ee4df71336359c873f40324eea4a3b8955",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "script_sha256": "b2b6b9d988f49e732210fa2974e060659420545492c8049dfea7d72561d00c97"
+        },
+        "results": {
+          "train": {
+            "payload": {
+              "n": 1984,
+              "exact_six": 822,
+              "characters_correct": 10200,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                1984,
+                1919,
+                1816,
+                1547,
+                1438,
+                1496
+              ]
+            },
+            "shifted_payload": {
+              "n": 1984,
+              "exact_six": 0,
+              "characters_correct": 727,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                116,
+                131,
+                101,
+                128,
+                134,
+                117
+              ]
+            }
+          },
+          "heldout": {
+            "payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 165,
+              "characters": 384,
+              "characters_correct_by_position": [
+                57,
+                37,
+                20,
+                24,
+                16,
+                11
+              ]
+            },
+            "shifted_payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 27,
+              "characters": 384,
+              "characters_correct_by_position": [
+                5,
+                2,
+                4,
+                8,
+                3,
+                5
+              ]
+            }
+          }
+        },
+        "resume_sha256": "a6423833ebf6f09ef737a1942e83abe908a39f6c64c4fa637b5d701b2be115ab",
+        "results_sha256": "9344fc95cb00b15746b70b68eade2d27b692e9761c81ef5f82b4509406479a00",
+        "complete_budget_and_sampler_verified": true,
+        "optimizer_groups": [
+          {
+            "lr": 0.001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          }
+        ]
+      },
+      "mlp256": {
+        "identity": {
+          "parameters": 548864,
+          "input_dimension": 2048,
+          "feature_capture_dtypes": {
+            "train": [
+              "torch.float32"
+            ],
+            "heldout": [
+              "torch.float32"
+            ]
+          },
+          "feature_constancy": {
+            "train": false,
+            "heldout": false,
+            "heldout_first_matches_training_first": false
+          },
+          "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+          "episodes_sha256": "0a63b4cb004c1a292873c3b00adcb0ee4df71336359c873f40324eea4a3b8955",
+          "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+          "script_sha256": "b2b6b9d988f49e732210fa2974e060659420545492c8049dfea7d72561d00c97"
+        },
+        "results": {
+          "train": {
+            "payload": {
+              "n": 1984,
+              "exact_six": 1975,
+              "characters_correct": 11895,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                1984,
+                1984,
+                1983,
+                1983,
+                1981,
+                1980
+              ]
+            },
+            "shifted_payload": {
+              "n": 1984,
+              "exact_six": 0,
+              "characters_correct": 723,
+              "characters": 11904,
+              "characters_correct_by_position": [
+                116,
+                129,
+                98,
+                136,
+                124,
+                120
+              ]
+            }
+          },
+          "heldout": {
+            "payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 164,
+              "characters": 384,
+              "characters_correct_by_position": [
+                56,
+                34,
+                20,
+                20,
+                20,
+                14
+              ]
+            },
+            "shifted_payload": {
+              "n": 64,
+              "exact_six": 0,
+              "characters_correct": 25,
+              "characters": 384,
+              "characters_correct_by_position": [
+                5,
+                2,
+                5,
+                6,
+                2,
+                5
+              ]
+            }
+          }
+        },
+        "resume_sha256": "a07a2e8f4ac6e5ad75d75944d58e8f9b9e73e983a478297d07d909608b1ce1dc",
+        "results_sha256": "01cb40ccf370db913e712af50c312d3cfe904773f5dddcb37ae51fade92032a0",
+        "complete_budget_and_sampler_verified": true,
+        "optimizer_groups": [
+          {
+            "lr": 0.001,
+            "weight_decay": 0.01,
+            "momentum": 0.95,
+            "nesterov": true,
+            "ns_coefficients": [
+              3.4445,
+              -4.775,
+              2.0315
+            ],
+            "eps": 1e-07,
+            "ns_steps": 5,
+            "adjust_lr_fn": "match_rms_adamw"
+          }
+        ]
+      }
+    }
+  },
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "417c2f4a845ced285ac7339ae1e88fe94b8fe516",
+    "git_dirty": false,
+    "transformers": "5.17.0"
+  },
+  "collector_sha256": "24548516db4b948359c846f4c6bd6326498598b0d856e7f5d164b386bbdd5c49",
+  "notice": "Post-hoc diagnostic on the previously inspected 64 identifiers. No model or writer updates; heads supply six-position output format. Accessibility and optimization comparison, not proof of irreversible information loss."
+}
