@@ -26,7 +26,7 @@ then `run.py` resumes the exact checkpoint. The initial checkpoint and
 `initialization.json` record the changed gate and original value. Native actual-
 LFM preflight executes with the requested gate.
 
-Held-out confirmation will use a frozen newly serialized bank at R=2 and compare
+Held-out confirmation uses a frozen newly serialized bank at R=2 and compares
 real, zero, wrong and absent values to the uniform control using identical
 episodes and original read plans. The primary metric is the paired real-over-
 zero NLL change together with real-value NLL; a larger contrast caused only by
@@ -34,3 +34,34 @@ degrading the zero condition is not success. The one-pass text teacher should
 remain identical. This reused validation set is exploratory, not a sealed final
 test. Teacher-forced NLL is not generation, task success, learned routing or
 capacity substitution.
+
+## Completed matched result
+
+The native run completed all 400 Muon updates from the same joint parent, with
+the requested initial gate 0.30 recorded in the initial full checkpoint. Both
+the control and gate checkpoints were evaluated on the same 119 held-out
+episodes, each from a new stored bank built with 375 writer calls. Their episode
+identities, selected source IDs and read plans match. The one-pass selected-text
+control is exactly identical across all 238 scored sequences (NLL 0.866650).
+
+| R=2 token-weighted teacher NLL | Uniform control | Trained gate fork |
+|---|---:|---:|
+| Real stored values | 0.971024 | 0.972040 |
+| Zeroed values | 0.980714 | 0.982207 |
+| Wrong values | 0.982071 | 0.986463 |
+| No memory | 1.089557 | 1.090899 |
+
+The real-value condition worsens slightly. The paired mean episode change in
+real-over-zero benefit is −0.00121 NLL (42-trajectory descriptive bootstrap
+interval −0.00551 to 0.00317). The earlier read-only gate overlay's improvement
+does not survive this matched training run. Do not promote the raised initial
+gate as a default or infer that the bridge is a proven information bottleneck.
+
+`results.json` pins the analyzer, model, input and evaluation digests. Complete
+initial/final checkpoints, W&B logs and raw scores remain on the external disk.
+The verified deduplication pass found no byte-identical weights in this fork:
+the changed initial gate changes its model file, and both final weights differ.
+All eight related complete checkpoint sets passed manifest verification;
+`dedup.json` records the check. The validation set was reused after inspecting
+read-only gate overlays; the interval is descriptive. These scores measure
+teacher NLL, not controlled transfer, agent success or capacity substitution.

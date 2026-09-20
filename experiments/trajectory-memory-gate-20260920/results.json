@@ -1,0 +1,93 @@
+{
+  "protocol": "Same joint parent, 530 training episodes, seed and 400 Muon updates; initial memory gate only",
+  "analyzer_sha256": "3ef0a4d742ea81dce46479af546b3d06ef3cdc3615caae2a6fccfd804fce2494",
+  "parent_model_sha256": "c73ef6fb8b22f28171eec82de61575802b5d5503e1c40663e853fbb7b661dffe",
+  "validation_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+  "initial_memory_gate": 0.30000001192092896,
+  "prior_memory_gate": 0.10741090774536133,
+  "arms": {
+    "control": {
+      "checkpoint_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+      "report_sha256": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+      "summary_sha256": "b0685468301d2fa112b18311b189998a31782b6d9491137689d8eaabdfda1a39",
+      "writer_calls": 375,
+      "token_weighted_nll": {
+        "all": 0.9710236656315335,
+        "zero_values": 0.9807144478299529,
+        "wrong_values": 0.982070916788767,
+        "none": 1.0895570608742187
+      }
+    },
+    "gate": {
+      "checkpoint_model_sha256": "8bee80a60b936f87f3c6d9b63310a0d0079e4c7baf52b3dbcf9d0e739d05529a",
+      "report_sha256": "e4acb5470ca205e3dfda60c193360c601c1aa45ef472c8bb2d20177879eff94e",
+      "summary_sha256": "ce52dbd8ea5469cf9193c548a61b7a816fb920e4dc69e4ac3ca56bb438c1b312",
+      "writer_calls": 375,
+      "token_weighted_nll": {
+        "all": 0.9720400888606069,
+        "zero_values": 0.9822072845829054,
+        "wrong_values": 0.9864634840744424,
+        "none": 1.0908988985123058
+      }
+    }
+  },
+  "one_pass_text": {
+    "report_sha256": [
+      "27bd803d020d9dce0557306924f4040f732ef52e3dba60d6be9da7cf51001e12",
+      "2dc81df985d3bf7b9947477684ff5e93001f5a1d3e32bba08f3fb92a462b97e3"
+    ],
+    "all_238_scores_identical": true,
+    "selected_text_token_weighted_nll": 0.8666495475614205
+  },
+  "paired": {
+    "all": {
+      "mean_episode_delta": -0.0045875333716405495,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.009321446616842336,
+        -0.0008038979799997561
+      ]
+    },
+    "zero_values": {
+      "mean_episode_delta": -0.0033754016113807144,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.007401049986203782,
+        0.0003266379945971774
+      ]
+    },
+    "wrong_values": {
+      "mean_episode_delta": -0.00863271790871005,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.01441651488286715,
+        -0.0032551220607560773
+      ]
+    },
+    "none": {
+      "mean_episode_delta": -0.003309157090634813,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.004684922376726855,
+        -0.0020210043551439245
+      ]
+    },
+    "real_over_zero_values": {
+      "mean_episode_delta": -0.0012121317602598353,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.005505494866192279,
+        0.00316514258185046
+      ]
+    },
+    "real_over_wrong_values": {
+      "mean_episode_delta": 0.004045184537069499,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.0013336788427150915,
+        0.009595632715294483
+      ]
+    }
+  },
+  "limits": "Exploratory reused validation set; descriptive trajectory bootstrap, one training seed. A larger real-over-zero gap from zero-condition degradation alone is insufficient. Teacher NLL is not agent success, learned routing, composition, parameter substitution or cold-storage timing."
+}

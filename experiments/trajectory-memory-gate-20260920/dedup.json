@@ -1,0 +1,17 @@
+{
+  "applied": true,
+  "potential_bytes": 0,
+  "released_bytes": 0,
+  "replacements": [],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place.",
+  "verified_checkpoints": [
+    "/archive/runs/trajectory-output-distillation-20260920/control/checkpoints/step-000000000-58506bdf2039",
+    "/archive/runs/trajectory-output-distillation-20260920/control/checkpoints/step-000000400-f9667dbdcdfb",
+    "/archive/runs/trajectory-output-distillation-20260920/distilled/checkpoints/step-000000000-50e897a90b1f",
+    "/archive/runs/trajectory-output-distillation-20260920/distilled/checkpoints/step-000000400-d182f2c9f66d",
+    "/archive/runs/trajectory-memory-gate-20260920/memory_gate/checkpoints/step-000000000-02ee57e97873",
+    "/archive/runs/trajectory-memory-gate-20260920/memory_gate/checkpoints/step-000000400-e91a6c0c87c8",
+    "/archive/runs/trajectory-prefix-muon-20260920/recurrent_joint/checkpoints/step-000000000-c0968a481f5d",
+    "/archive/runs/trajectory-prefix-muon-20260920/recurrent_joint/checkpoints/step-000000400-4fe33fbc85d3"
+  ]
+}
