@@ -1,0 +1,86 @@
+{
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "fc9dacf94dbea8cbfa5b84577d2169700aab8dac",
+    "git_dirty": true,
+    "transformers": "5.17.0"
+  },
+  "backend": "hf",
+  "model_id": "LiquidAI/LFM2.5-230M",
+  "resolved_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+  "width": 1024,
+  "parameters": 283673543,
+  "one_loop_identity_max_error": 0.0,
+  "two_loop_delta_max": 0.2211313247680664,
+  "two_loop_identity_required": false,
+  "zero_gate_two_loop_max_error": null,
+  "recurrence": {
+    "mode": "middle_block",
+    "prelude": [
+      0,
+      4
+    ],
+    "core": [
+      4,
+      10
+    ],
+    "coda": [
+      10,
+      14
+    ],
+    "loops": 3,
+    "layer_visits": 26,
+    "layer_types": [
+      "conv",
+      "conv",
+      "full_attention",
+      "conv",
+      "full_attention",
+      "conv",
+      "full_attention",
+      "conv",
+      "full_attention",
+      "conv",
+      "full_attention",
+      "conv",
+      "full_attention",
+      "conv"
+    ],
+    "new_bridge_parameters": 3148803,
+    "input_mix": 0.10000000149011612,
+    "update_mix": 0.10000000149011612,
+    "memory_mix": 0.10000000149011612,
+    "cache": "disabled; no KV or convolution state crosses a depth boundary"
+  },
+  "causal_prefix_max_error": 0.0,
+  "nll": 5.6775078773498535,
+  "gradient_norms": {
+    "write_slots": 0.1067235991358757,
+    "value_head": 0.03143814951181412,
+    "reader_output": 0.7580806016921997,
+    "bridge_reentry": 1.0040298700332642,
+    "bridge_input_gate": 0.009143054485321045,
+    "bridge_update_gate": 0.024975433945655823,
+    "bridge_memory_projection": 0.4360846281051636,
+    "bridge_memory_gate": 0.014635339379310608
+  },
+  "resources": {
+    "process_peak_rss_bytes": 2971537408,
+    "rss_scope": "process lifetime; not phase-isolated",
+    "cuda_peak_allocated_bytes": 2162230784,
+    "cuda_peak_reserved_bytes": 2346713088,
+    "system_mem_available_bytes": 90543575040
+  },
+  "notice": "Numerical preflight only; no capability training or cache-performance claim."
+}

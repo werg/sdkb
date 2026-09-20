@@ -99,6 +99,7 @@ class TrainConfig:
     loop_counts: list[int] = field(default_factory=list)  # sampled once per optimizer step
     oracle_anchor_loops: int | None = None
     allow_recurrence_conversion: bool = False
+    reinitialize_reader: bool = False  # explicit warm-start fork; never applied on resume
     parent_kl_weight: float = 0.0  # fixed one-pass parent, only while native base is frozen
     oracle_anchor_weight: float = 0.0
     episodes_file: str | None = None  # optional general support/query JSONL

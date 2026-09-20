@@ -132,6 +132,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     config.validate()
     if resume and init_from is not None:
         raise ValueError("Choose resume or warm-start, not both")
+    if config.train.reinitialize_reader and not resume and init_from is None:
+        raise ValueError('Reader reinitialization requires a warm-start source')
     if stop_after is not None and stop_after < 1:
         raise ValueError("stop_after must be positive")
     from .episode_index import EpisodeIndex
@@ -183,9 +185,15 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     if init_from is not None:
         source_checkpoint = resolve_checkpoint(init_from, verify=True)
         old = config_from_run(Path(init_from))
-        structural = ("key_dim", "write_slots", "read_slots", "payload_dims", "reader_width", "reader_rounds", "reader")
+        structural = ("key_dim", "write_slots", "read_slots", "payload_dims")
         if any(getattr(old.memory, name) != getattr(config.memory, name) for name in structural):
-            raise ValueError("Warm-start changes the stored interface or reader architecture")
+            raise ValueError("Warm-start changes the stored interface")
+        reader_shape = ('reader_width', 'reader_rounds', 'reader')
+        if not config.train.reinitialize_reader and any(
+                getattr(old.memory, name) != getattr(config.memory, name) for name in reader_shape):
+            raise ValueError('Warm-start changes the reader architecture without explicit reinitialization')
+        if config.train.reinitialize_reader and (old.memory.compaction != 'none' or config.memory.compaction != 'none'):
+            raise ValueError('Reader reinitialization requires raw records without a coupled compactor')
         if old.model.backend != config.model.backend or old.model.model_id != config.model.model_id:
             raise ValueError("Warm-start changes the student backbone")
         old_mode = old.model.recurrence_mode
@@ -200,10 +208,22 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         manifest_path = source_checkpoint / "manifest.json"
         if manifest_path.exists() and json.loads(manifest_path.read_text())["resolved_model_revision"] != agent.resolved_revision:
             raise ValueError("Warm-start base revision differs")
-        missing, unexpected = load_model(agent, str(source_checkpoint / "model.safetensors"),
-                                        strict=False, device=config.train.device)
+        reinitialized = []
+        reader = agent.reader
+        if config.train.reinitialize_reader:
+            reinitialized = ['reader.' + name for name in reader.state_dict()]
+            # Preserve the module insertion order for exact optimizer ownership
+            # on resume. The source reader is deliberately excluded from loading.
+            agent.reader = torch.nn.Identity()
+        try:
+            missing, unexpected = load_model(agent, str(source_checkpoint / "model.safetensors"),
+                                            strict=False, device=config.train.device)
+        finally:
+            agent.reader = reader
         allowed_missing = ("compactor.",)
         allowed_unexpected = ("compactor.",)
+        if config.train.reinitialize_reader:
+            allowed_unexpected += ('reader.',)
         routing_conversion = config.memory.independent_routing_query and not old.memory.independent_routing_query
         if routing_conversion:
             allowed_missing += ('routing_query_head.',)
@@ -216,6 +236,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         if routing_conversion:
             agent.routing_query_head.load_state_dict(agent.query_head.state_dict())
         provenance = {"routing_query_conversion": routing_conversion, "checkpoint": str(source_checkpoint), "optimizer_reset": True,
+                      "reader_reinitialized": config.train.reinitialize_reader,
+                      "reinitialized_parameters": sorted(reinitialized),
                       "missing_initialized": sorted(missing), "unused": sorted(unexpected),
                       "recurrence_conversion": converting}
         (output / "initialization.json").write_text(json.dumps(provenance, indent=2) + "\n")

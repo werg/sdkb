@@ -1,0 +1,15 @@
+{
+  "source": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000004000-8e2bc39c7837",
+  "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+  "episodes": "/archive/runs/binding-endpoint-freshness-20260920/data/worlds-8192.jsonl",
+  "episodes_sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+  "heldout": "/archive/runs/binding-endpoint-freshness-20260920/heldout.jsonl",
+  "heldout_sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+  "steps": 2000,
+  "seed": 149,
+  "configs": {
+    "width-256": "577cb3a17a99f4eb6b56874b935b5242f6f265fe249864bf3075f8616301285d",
+    "width-1024": "33d467c8a859c3831fb7e5f9e8fbba1381773149332e4e6c4b30bafd13b4af4b"
+  },
+  "notice": "Both readers fully reinitialized; all non-reader weights warm-start from the broad freshness endpoint. Equal updates, task schedule and accumulation, not equal parameters/FLOPs. Previously inspected held-out worlds; exploratory one-seed comparison, no promotion on NLL alone."
+}

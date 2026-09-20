@@ -251,3 +251,14 @@ same causal first-boundary query, selected sources and noisy values. This comput
 two decoder paths and changes the loss scale; declare both when comparing budgets.
 Groups too small to reduce still receive the paired objective, as in prefix mode.
 Use a fresh warm-start fork; an exact resume must keep its saved objective.
+
+## Explicit reader-capacity forks
+
+`train.reinitialize_reader: true` is an opt-in warm-start experiment. It replaces
+all reader weights with their seeded initialization while loading every compatible
+non-reader weight from `--init-from`. Reader kind, width and round count may change;
+stored payload, key and slot interfaces may not. Coupled compactor states are
+rejected. The initialization manifest lists every reset reader parameter. Use a
+matched reset-reader control when testing a larger reader, since resetting itself
+changes behavior. This option is never applied during exact resume; the saved
+reader, optimizer ownership and RNG state are restored normally.
