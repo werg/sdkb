@@ -1,0 +1,14 @@
+{
+  "applied": true,
+  "potential_bytes": 1022082588,
+  "released_bytes": 1022082588,
+  "replacements": [
+    {
+      "source": "/archive/runs/binding-compact-aware-20260920/raw-control/checkpoints/step-000000000-97969e3432d3/model.safetensors",
+      "target": "/archive/runs/binding-paired-compaction-20260920/paired/checkpoints/step-000000000-749539c354ae/model.safetensors",
+      "sha256": "2efd1d62ad8329c1acf8715fdefef37d20abba0fb45980219df4a102e5521a31",
+      "bytes": 1022082588
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+}

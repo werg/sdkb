@@ -1,0 +1,16 @@
+{
+  "training_commit": "093295eaa970aea21d6469b120628e2a785cea51",
+  "evaluation_commit": "ed37010c51aa0f10cdfc81152337d1f59114f228",
+  "checkpoint": "/archive/runs/binding-paired-compaction-20260920/paired/checkpoints/step-000000400-c9dc15b61f60",
+  "manifest_sha256": "d53b0dbfa07dff850b63eb52b567b1b1a799536c6a4d9cb36e30d2a543187821",
+  "model_sha256": "66f7101163d03d93eeb7bf03f69dc29b8f670fdef0cdfa932f4b04769a1ccd8f",
+  "initial_model_sha256": "2efd1d62ad8329c1acf8715fdefef37d20abba0fb45980219df4a102e5521a31",
+  "step": 400,
+  "planned_sampler_state_exact": true,
+  "all_depths_match_control": true,
+  "compact_requested": 807,
+  "groups_reduced": 322,
+  "elapsed_training_seconds": 829.7220769999985,
+  "peak_logged_cuda_allocated_bytes": 3133870592,
+  "notice": "Matched update/sampling budget; extra paired decoder work and different loss scale. Contended wall time is not a performance comparison."
+}

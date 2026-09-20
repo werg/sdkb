@@ -34,3 +34,18 @@ memory reserve, native NVIDIA Torch, offline W&B. The `interleaved` directory is
 alias of its existing external run, not another copy of model weights. Training and
 confirmation use frozen checkouts. The new evaluator resumes completed scoring
 variants and generated strings; it never re-encodes sources during inference.
+
+
+## Training endpoint
+
+All 400 updates completed. Initial weights are SHA-identical to the interleaved
+control, all 400 sampled depths match, and final saved Python sampler state exactly
+matches the declared sequence of examples/live choices/compaction requests. There
+were 807 paired requests and 322 reductions of two-source groups. Peak logged CUDA
+allocation was 3,133,870,592 bytes. Elapsed training was 829.7 seconds under changing
+contention; this is not a paired/interleaved speed comparison. `endpoint.json` pins
+the final manifest, model and both frozen execution commits.
+
+The confirmation is running on the new split. After training ownership released,
+verified hard-link deduplication reclaimed 1,022,082,588 bytes from its identical
+initial weights; all checkpoint paths and full recovery state remain intact.
