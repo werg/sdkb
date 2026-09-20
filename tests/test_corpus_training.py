@@ -51,6 +51,26 @@ def test_stored_corpus_forward_uses_only_prefix_and_frozen_payloads(tmp_path, ti
     assert agent.query_maps[0].weight.grad.norm() > 0
     assert agent.query_maps[1].weight.grad.norm() > 0
     agent.zero_grad(set_to_none=True)
+    tiny_config.train.bank_payload_contrast_weight = 0.5
+    contrasted, contrast_info = stored_corpus_forward(agent, store, episode,
+                                                       generation='g1', limits=(2, 1))
+    _, contrast_other = stored_corpus_forward(agent, store, episode.__class__(
+        **(episode.__dict__ | {'answer': 'different target'})),
+        generation='g1', limits=(2, 1))
+    assert contrasted.selected == first.selected
+    assert contrast_info['selected_ids'] == contrast_other['selected_ids']
+    assert contrast_info['swapped_ids'] == contrast_other['swapped_ids']
+    assert all(source_id not in ids for source_id, ids in
+               zip(contrast_info['swapped_ids'], contrast_info['selected_ids'], strict=True))
+    assert torch.isfinite(contrast_info['contrast_loss'])
+    assert torch.isfinite(contrast_info['swapped_source_nll'])
+    assert contrast_info['contrast_loss'] > 0
+    assert contrast_info['swapped_payload_bytes'] == 2 * (24 + 48)
+    (contrasted.loss + 0.5 * contrast_info['contrast_loss']).backward()
+    assert agent.reader.local[0].blocks[0].input.weight.grad.norm() > 0
+    assert agent.reader.local[1].blocks[0].input.weight.grad.norm() > 0
+    tiny_config.train.bank_payload_contrast_weight = 0.0
+    agent.zero_grad(set_to_none=True)
     stored_reference, _ = stored_corpus_forward(agent, store, episode,
                                                 generation='g1', limits=(1, 1))
     stored_reference.nll.backward()
@@ -85,6 +105,7 @@ def test_bank_training_warmstarts_exact_writer_and_resumes(tmp_path, tiny_config
     config.train.steps = 1
     source = Source('source-a', 'Passage: the marker is aqua.', 1, 'passage')
     decoy = Source('source-b', 'Passage: the marker is copper.', 1, 'passage')
+    second_decoy = Source('source-c', 'Passage: the marker is silver.', 1, 'passage')
     episodes = [Episode('q-a', 'test', (source,), 'What is the marker?', 'aqua',
                         ('source-a',), False, 0, 0, 2, 'passage_qa', (),
                         (('source-a',),), 'verified')]
@@ -106,25 +127,31 @@ def test_bank_training_warmstarts_exact_writer_and_resumes(tmp_path, tiny_config
 
     def records():
         with torch.no_grad():
-            for item in (source, decoy):
+            for item in (source, decoy, second_decoy):
                 values = stored_channel(agent, agent.produce(agent.text_ids(item.text, source=True)))
                 yield from output_records(agent, item, values, 'corpus', 'g1')
 
     ensure_offline_shard(store, records, identity=identity, namespace='corpus',
                          generation='g1', spaces=('s0', 's1'), shard_id='000',
-                         source_ids=('source-a', 'source-b'))
+                         source_ids=('source-a', 'source-b', 'source-c'))
     manifest = publish_offline_generation(store, identity=identity, namespace='corpus',
                                           generation='g1', spaces=('s0', 's1'),
-                                          shard_ids=('000',), source_count=2)
+                                          shard_ids=('000',), source_count=3)
     (bank_dir / 'manifest.json').write_text(json.dumps(manifest))
     config.train.bank_dir = str(bank_dir)
     config.train.bank_read_limits = [2, 1]
     config.train.retrieval = 'learned'
     config.train.live_fraction = 0.0
+    config.train.bank_payload_contrast_weight = 0.5
     config.train.sampling_policy = 'shuffled_passes'
     stage = tmp_path / 'bank-stage'
     result = train(config, stage, init_from=base)
     assert result['steps'] == 1
+    first_metric = json.loads((stage / 'metrics.jsonl').read_text().splitlines()[0])
+    assert first_metric['payload_contrast_loss'] > 0
+    assert first_metric['bank']['swapped_payload_bytes'] == 2 * (24 + 48)
+    assert abs(first_metric['optimization_loss'] - (
+        first_metric['loss'] + 0.5 * first_metric['payload_contrast_loss'])) < 1e-6
     assert DiskStore(stage / 'training_cache.sqlite').sizes()['records'] == 0
     config.train.steps = 2
     resumed = train(config, stage, resume=True)

@@ -427,8 +427,8 @@ never calls the writer during inference. Both published-bank evaluators reject a
 model whose actual serialized writer parameters differ from the writer snapshot
 that created the selected bank. A bank-trained reader may change its recurrent
 bridge and query/reader weights while retaining the one-pass writer. A first
-small run is a mechanics check;
-source-held-out behavior and later-task transfer require larger controlled runs.
+small run is a mechanics check; source-held-out behavior and later-task
+transfer require larger controlled runs.
 `scripts/evaluate_bank_ranks.py` measures the complete verified-support rank
 from the same causal native prefix, without fetching payloads. It reports
 median rank, reciprocal rank and recall cutoffs for each space. This makes
@@ -441,9 +441,20 @@ keys and query maps together before any bank refresh. Its input comes from
 distinct-article prior candidates per title-located question. On Spark the
 training distractor pool is bounded to the first 3,072 source rows, leaving
 the later heldout positive source block unseen in every training support role.
-The target is
-kept out of the causal query. During the declared 512-update stage, oracle
+The target is kept out of the causal query. During the declared 512-update stage, oracle
 delivery keeps the answer objective anchored while the differentiable routing
 loss compares all four live candidates. A new bank must be explicitly rebuilt
 from the resulting frozen writer checkpoint; an existing generation cannot
 adopt its changed keys or values.
+
+The optional `train.bank_payload_contrast_weight` stage uses one verified
+stored source per question and a different causally eligible source outside
+the selected neighborhood. It replaces the verified value in each space while
+keeping the native query, selected counts and other fetched values fixed. The
+correct and swapped teacher NLLs share the captured causal prefix and both
+backpropagate before the optimizer step. `swapped_source_nll` and
+`payload_contrast_loss` are logged. This supplies a direct value-use objective
+for a frozen bank; it does not make retrieval successful by itself. The
+unselected swap is an eligible comparison source, not a verified insufficient
+record. Check source ambiguity and heldout interventions before interpreting
+its training loss.

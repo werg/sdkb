@@ -22,9 +22,12 @@ from sdkb.trajectories import file_sha256
 
 
 def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
-             max_episodes: int = 16, limits: tuple[int, ...] = (8, 4, 2, 1)) -> dict:
+             max_episodes: int = 16, limits: tuple[int, ...] = (8, 4, 2, 1),
+             selection: str = 'learned') -> dict:
     if max_episodes < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive evaluation count and a fresh output parent required')
+    if selection not in {'learned', 'oracle'}:
+        raise ValueError('Evaluation selection must be learned or oracle')
     config = config_from_run(run)
     training_bank_dir = config.train.bank_dir
     if len(limits) != len(config.memory.payload_dims):
@@ -44,11 +47,12 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
         raise ValueError('Bank model architecture differs from the evaluator')
     if bank_manifest['identity']['memory'] != asdict(config.memory):
         raise ValueError('Bank writer or stored-memory transform differs')
-    config.train.retrieval = 'learned'
+    config.train.retrieval = selection
     config.train.selected_producers_only = False  # training-only producer policy
     config.train.bank_dir = None
     config.train.bank_read_limits = []
     config.train.payload_contrast_weight = 0.0
+    config.train.bank_payload_contrast_weight = 0.0
     config.memory.neighbors = list(limits)
     config.validate()
     torch.set_num_threads(config.train.threads)
@@ -64,13 +68,17 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
         report = stored_transfer_evaluation(agent, store, episodes,
             namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
             drop_supports=True)
-    report['notice'] = ('Published-corpus stored-only diagnostic. Teacher NLL and complete-support '
-                        'recall do not establish free-generation accuracy or agent success.')
+    report['notice'] = ('Published-corpus stored-only diagnostic. '
+                        + ('Oracle selection uses verified support labels. ' if selection == 'oracle'
+                           else 'Learned selection uses only the causal query. ')
+                        + 'Teacher NLL and recall do not establish free-generation accuracy or agent success.')
     identity = {'run_model_sha256': file_sha256(checkpoint / 'model.safetensors'),
                 'bank_manifest_sha256': file_sha256(bank_manifest_path),
                 'episodes_sha256': file_sha256(episodes_file),
                 'max_episodes': max_episodes, 'read_limits': limits,
-                'selection': 'learned exact scan; supplied support is never used for retrieval'}
+                'selection': ('learned exact scan; supplied support is never used for retrieval'
+                              if selection == 'learned' else
+                              'oracle verified support ID; stored payloads only')}
     output.mkdir()
     atomic_json(output / 'inputs.json', identity)
     atomic_json(output / 'results.json', report)
@@ -86,7 +94,8 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-episodes', type=int, default=16)
     parser.add_argument('--limits', nargs='+', type=int, default=[8, 4, 2, 1])
+    parser.add_argument('--selection', choices=['learned', 'oracle'], default='learned')
     args = parser.parse_args()
     print(json.dumps(evaluate(args.run, args.bank, args.episodes, args.output,
                               max_episodes=args.max_episodes,
-                              limits=tuple(args.limits)), indent=2))
+                              limits=tuple(args.limits), selection=args.selection), indent=2))

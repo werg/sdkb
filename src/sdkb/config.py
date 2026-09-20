@@ -78,6 +78,8 @@ class TrainConfig:
     bank_read_limits: list[int] = field(default_factory=list)  # per-space selected records, <= neighbors
     payload_contrast_weight: float = 0.0  # source-swap ranking on verified one-source episodes
     payload_contrast_margin: float = 0.5
+    bank_payload_contrast_weight: float = 0.0  # stored-value source swap under a fixed bank plan
+    bank_payload_contrast_margin: float = 0.5
     clip_grad_norm: float = 1.0
     precision: str = "bf16"
     device: str = "cuda"
@@ -163,6 +165,12 @@ class Config:
                 or r.read_timing != 'loop_boundary' or t.oracle_anchor_weight
                 or t.oracle_alignment_weight or t.oracle_distillation_weight):
             raise ValueError('Source-swap contrast requires fully live R=2 oracle memory and two selected sources')
+        if (not math.isfinite(t.bank_payload_contrast_weight) or t.bank_payload_contrast_weight < 0
+                or not math.isfinite(t.bank_payload_contrast_margin)
+                or t.bank_payload_contrast_margin < 0):
+            raise ValueError('Invalid stored-bank source-swap weight or margin')
+        if t.bank_payload_contrast_weight and t.bank_dir is None:
+            raise ValueError('Stored-bank source-swap requires a published bank')
         if not math.isfinite(t.oracle_alignment_weight) or t.oracle_alignment_weight < 0:
             raise ValueError('Invalid oracle alignment weight')
         if t.oracle_alignment_weight and (t.arm != 'memory' or t.retrieval != 'oracle'

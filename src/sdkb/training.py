@@ -455,7 +455,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                               "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
                     bank_totals = ({'selected_counts': [0.] * len(config.memory.payload_dims),
                                     'learned_positive_recall': [0.] * len(config.memory.payload_dims),
-                                    'selected_payload_bytes': 0.} if bank is not None else None)
+                                    'selected_payload_bytes': 0.,
+                                    'swapped_payload_bytes': 0.} if bank is not None else None)
                     anchor_total, micro_start = 0.0, 0
                     alignment_total = 0.0
                     distillation_total = 0.0
@@ -511,6 +512,12 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                             result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
                                            step=step, compact=compact)
                         loss = result.loss
+                        if bank is not None and config.train.bank_payload_contrast_weight:
+                            contrast = bank_info['contrast_loss']
+                            loss = loss + config.train.bank_payload_contrast_weight * contrast
+                            contrast_total += float(contrast.detach()) / config.train.gradient_accumulation
+                            wrong_nll_total += (float(bank_info['swapped_source_nll'].detach()) /
+                                                config.train.gradient_accumulation)
                         if config.train.payload_contrast_weight:
                             wrong_index = next(i for i, source in enumerate(episode.supports)
                                                if source.record_id not in episode.required_ids)
@@ -570,6 +577,10 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                 bank_totals[name][space] += value / config.train.gradient_accumulation
                         bank_totals['selected_payload_bytes'] += (
                             bank_info['selected_payload_bytes'] / config.train.gradient_accumulation)
+                        bank_totals['swapped_payload_bytes'] = (
+                            bank_totals.get('swapped_payload_bytes', 0.) +
+                            bank_info.get('swapped_payload_bytes', 0) /
+                            config.train.gradient_accumulation)
                     if want_stop() and micro + 1 < config.train.gradient_accumulation:
                         # Replay has finished for this microbatch. Preserve its complete
                         # cotangents, RNG, sampled depth and cache instead of discarding
@@ -597,7 +608,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                    "optimization_loss": (totals["loss"] + config.train.oracle_anchor_weight * anchor_total
                                          + config.train.oracle_alignment_weight * alignment_total
                                          + config.train.oracle_distillation_weight * distillation_total
-                                         + config.train.payload_contrast_weight * contrast_total),
+                                         + (config.train.payload_contrast_weight +
+                                            config.train.bank_payload_contrast_weight) * contrast_total),
                    "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
                    "elapsed_seconds": time.perf_counter() - start_time}
             if bank_totals is not None:
