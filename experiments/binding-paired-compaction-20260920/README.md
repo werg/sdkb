@@ -49,3 +49,24 @@ the final manifest, model and both frozen execution commits.
 The confirmation is running on the new split. After training ownership released,
 verified hard-link deduplication reclaimed 1,022,082,588 bytes from its identical
 initial weights; all checkpoint paths and full recovery state remain intact.
+
+
+## Partial fresh confirmation: raw reads
+
+| Objective | Original actions | Permission-change both correct | Restoration-change both correct | False restoration changes / 64 | False endpoint changes / 128 |
+|---|---:|---:|---:|---:|---:|
+| Interleaved | 128/128 | 125/128 | 62/64 | 0 | 1 |
+| Paired | 127/128 | 126/128 | 64/64 | 1 | 1 |
+
+The result is mixed, not a demonstrated repair of raw-read reliability. All six
+interleaved errors across supplied-memory counterfactual conditions omit required
+restoration (`RETRY` instead of `RESTORE_RETRY`). The paired arm has one such
+permission-intervention error and one original `STOP` case predicted as
+`RESTORE_RETRY`. These are substantive action errors, not string-format mismatches.
+The paired arm's one false change under an irrelevant restoration intervention
+corrects that initially wrong answer; it remains a failure of the required
+invariance. Both arms still generate 0/64 exact identifiers.
+
+Mean and learned-code confirmation are pending. `raw-confirmation.json` pins the
+completed counts; the one-seed, 32-world sample does not justify promoting the
+paired objective on raw-read results alone.
