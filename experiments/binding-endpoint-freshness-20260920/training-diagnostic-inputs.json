@@ -1,0 +1,686 @@
+{
+  "script_sha256": "79d5797942dc8323b89ca9419f0e5b63ec9b8a96f93a7b938d4ce6e1010ef38a",
+  "episodes_sha256": "01693012d59b267e72357908d2bc2b52108493e39e071f30542be9252b975281",
+  "episodes": 64,
+  "worlds": 32,
+  "arms": {
+    "256": {
+      "corpus_sha256": "2752a588db7adc2b7e728ec201bf709c5b4c824d118494c74245e2076bdf39fa",
+      "rows": [
+        {
+          "episode": "18f77e23af58fd5a",
+          "identifier_target_exposures": 11,
+          "identifier_selected_record_exposures": 11
+        },
+        {
+          "episode": "ea9f99ae10e8a8a5",
+          "identifier_target_exposures": 16,
+          "identifier_selected_record_exposures": 16
+        },
+        {
+          "episode": "c1ca7c9b716923b5",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "cbb9237e1dc0650b",
+          "identifier_target_exposures": 21,
+          "identifier_selected_record_exposures": 21
+        },
+        {
+          "episode": "410c2850e1874571",
+          "identifier_target_exposures": 22,
+          "identifier_selected_record_exposures": 22
+        },
+        {
+          "episode": "eb6bf24469713573",
+          "identifier_target_exposures": 22,
+          "identifier_selected_record_exposures": 22
+        },
+        {
+          "episode": "04e2a651b391db46",
+          "identifier_target_exposures": 17,
+          "identifier_selected_record_exposures": 17
+        },
+        {
+          "episode": "1de41b6a6436e738",
+          "identifier_target_exposures": 16,
+          "identifier_selected_record_exposures": 16
+        },
+        {
+          "episode": "ec85bb65d7d8c2f8",
+          "identifier_target_exposures": 20,
+          "identifier_selected_record_exposures": 20
+        },
+        {
+          "episode": "88dd97931456b93c",
+          "identifier_target_exposures": 17,
+          "identifier_selected_record_exposures": 17
+        },
+        {
+          "episode": "0a8a057bb0c32018",
+          "identifier_target_exposures": 16,
+          "identifier_selected_record_exposures": 16
+        },
+        {
+          "episode": "f2baaace368191ed",
+          "identifier_target_exposures": 13,
+          "identifier_selected_record_exposures": 13
+        },
+        {
+          "episode": "6005f8961216b330",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "6572351da7fe03e0",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "f8d6733bff4e4279",
+          "identifier_target_exposures": 14,
+          "identifier_selected_record_exposures": 14
+        },
+        {
+          "episode": "ce9953f1ee0af748",
+          "identifier_target_exposures": 27,
+          "identifier_selected_record_exposures": 27
+        },
+        {
+          "episode": "684cc370484a215d",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "702152f50603710e",
+          "identifier_target_exposures": 25,
+          "identifier_selected_record_exposures": 25
+        },
+        {
+          "episode": "a2aaa6a9fd5c8b46",
+          "identifier_target_exposures": 23,
+          "identifier_selected_record_exposures": 23
+        },
+        {
+          "episode": "a779aee5f3f44a55",
+          "identifier_target_exposures": 21,
+          "identifier_selected_record_exposures": 21
+        },
+        {
+          "episode": "d85511f0cb17ce9c",
+          "identifier_target_exposures": 30,
+          "identifier_selected_record_exposures": 30
+        },
+        {
+          "episode": "a408cc0ad7d5458f",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "cace06239ba56f66",
+          "identifier_target_exposures": 24,
+          "identifier_selected_record_exposures": 24
+        },
+        {
+          "episode": "a4cc3d9ade36390c",
+          "identifier_target_exposures": 22,
+          "identifier_selected_record_exposures": 22
+        },
+        {
+          "episode": "1c74f2f0e164788c",
+          "identifier_target_exposures": 14,
+          "identifier_selected_record_exposures": 14
+        },
+        {
+          "episode": "13de12c38ee71a51",
+          "identifier_target_exposures": 21,
+          "identifier_selected_record_exposures": 21
+        },
+        {
+          "episode": "20600aa7b20800d0",
+          "identifier_target_exposures": 26,
+          "identifier_selected_record_exposures": 26
+        },
+        {
+          "episode": "3ad8380b4cfe1bc6",
+          "identifier_target_exposures": 17,
+          "identifier_selected_record_exposures": 17
+        },
+        {
+          "episode": "88865438f315ddc4",
+          "identifier_target_exposures": 14,
+          "identifier_selected_record_exposures": 14
+        },
+        {
+          "episode": "c9cdcce356f66131",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "4847f61cc111a748",
+          "identifier_target_exposures": 22,
+          "identifier_selected_record_exposures": 22
+        },
+        {
+          "episode": "7ab293a33e4ef64c",
+          "identifier_target_exposures": 36,
+          "identifier_selected_record_exposures": 36
+        },
+        {
+          "episode": "02eb6ba05575063e",
+          "identifier_target_exposures": 15,
+          "identifier_selected_record_exposures": 15
+        },
+        {
+          "episode": "2f52cdf5a796d389",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "08a6466973076702",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "ab11fff712b6d414",
+          "identifier_target_exposures": 24,
+          "identifier_selected_record_exposures": 24
+        },
+        {
+          "episode": "ef6f1e29277d21f8",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "8e26865ef531da62",
+          "identifier_target_exposures": 15,
+          "identifier_selected_record_exposures": 15
+        },
+        {
+          "episode": "dc55fec377f67a54",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "cd946b4d559f4546",
+          "identifier_target_exposures": 21,
+          "identifier_selected_record_exposures": 21
+        },
+        {
+          "episode": "d1bdf4df70d87d55",
+          "identifier_target_exposures": 17,
+          "identifier_selected_record_exposures": 17
+        },
+        {
+          "episode": "e6404b088db7964e",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "119e9e8261c4dc98",
+          "identifier_target_exposures": 11,
+          "identifier_selected_record_exposures": 11
+        },
+        {
+          "episode": "95f429bfcf969f3a",
+          "identifier_target_exposures": 16,
+          "identifier_selected_record_exposures": 16
+        },
+        {
+          "episode": "e4e63e18a605b12d",
+          "identifier_target_exposures": 16,
+          "identifier_selected_record_exposures": 16
+        },
+        {
+          "episode": "abfaa53731bbd9e2",
+          "identifier_target_exposures": 23,
+          "identifier_selected_record_exposures": 23
+        },
+        {
+          "episode": "3ceddc657636f159",
+          "identifier_target_exposures": 15,
+          "identifier_selected_record_exposures": 15
+        },
+        {
+          "episode": "5887b221a7a433d3",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "77d06b48c4662c68",
+          "identifier_target_exposures": 23,
+          "identifier_selected_record_exposures": 23
+        },
+        {
+          "episode": "c640e420bd8490a3",
+          "identifier_target_exposures": 17,
+          "identifier_selected_record_exposures": 17
+        },
+        {
+          "episode": "f112819a2c543cd4",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "2dd97cd492b72931",
+          "identifier_target_exposures": 18,
+          "identifier_selected_record_exposures": 18
+        },
+        {
+          "episode": "b4366cc965644024",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "8fe3fc25be6e53a6",
+          "identifier_target_exposures": 24,
+          "identifier_selected_record_exposures": 24
+        },
+        {
+          "episode": "614c4e8ea3447ab1",
+          "identifier_target_exposures": 20,
+          "identifier_selected_record_exposures": 20
+        },
+        {
+          "episode": "f54d223c4560e11e",
+          "identifier_target_exposures": 25,
+          "identifier_selected_record_exposures": 25
+        },
+        {
+          "episode": "97ac607c90814999",
+          "identifier_target_exposures": 23,
+          "identifier_selected_record_exposures": 23
+        },
+        {
+          "episode": "964ed4a2c4373905",
+          "identifier_target_exposures": 19,
+          "identifier_selected_record_exposures": 19
+        },
+        {
+          "episode": "0dfd5ec91d541825",
+          "identifier_target_exposures": 26,
+          "identifier_selected_record_exposures": 26
+        },
+        {
+          "episode": "1ffcf59d9c10de2d",
+          "identifier_target_exposures": 20,
+          "identifier_selected_record_exposures": 20
+        },
+        {
+          "episode": "9b24b523a7bf97e0",
+          "identifier_target_exposures": 15,
+          "identifier_selected_record_exposures": 15
+        },
+        {
+          "episode": "abe1df56b6cb0a22",
+          "identifier_target_exposures": 15,
+          "identifier_selected_record_exposures": 15
+        },
+        {
+          "episode": "a38dc8a2a420db04",
+          "identifier_target_exposures": 27,
+          "identifier_selected_record_exposures": 27
+        },
+        {
+          "episode": "5210e9c892ec2ea4",
+          "identifier_target_exposures": 24,
+          "identifier_selected_record_exposures": 24
+        }
+      ],
+      "target_exposure_histogram": {
+        "11": 2,
+        "16": 5,
+        "18": 9,
+        "21": 4,
+        "22": 4,
+        "17": 5,
+        "20": 3,
+        "13": 1,
+        "19": 7,
+        "14": 3,
+        "27": 2,
+        "25": 2,
+        "23": 4,
+        "30": 1,
+        "24": 4,
+        "26": 2,
+        "36": 1,
+        "15": 5
+      }
+    },
+    "8192": {
+      "corpus_sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+      "rows": [
+        {
+          "episode": "18f77e23af58fd5a",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "ea9f99ae10e8a8a5",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "c1ca7c9b716923b5",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "cbb9237e1dc0650b",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "410c2850e1874571",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "eb6bf24469713573",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "04e2a651b391db46",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "1de41b6a6436e738",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "ec85bb65d7d8c2f8",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "88dd97931456b93c",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "0a8a057bb0c32018",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "f2baaace368191ed",
+          "identifier_target_exposures": 3,
+          "identifier_selected_record_exposures": 3
+        },
+        {
+          "episode": "6005f8961216b330",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "6572351da7fe03e0",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "f8d6733bff4e4279",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "ce9953f1ee0af748",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "684cc370484a215d",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "702152f50603710e",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "a2aaa6a9fd5c8b46",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "a779aee5f3f44a55",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "d85511f0cb17ce9c",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "a408cc0ad7d5458f",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "cace06239ba56f66",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "a4cc3d9ade36390c",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "1c74f2f0e164788c",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "13de12c38ee71a51",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "20600aa7b20800d0",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "3ad8380b4cfe1bc6",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "88865438f315ddc4",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "c9cdcce356f66131",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "4847f61cc111a748",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "7ab293a33e4ef64c",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "02eb6ba05575063e",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "2f52cdf5a796d389",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "08a6466973076702",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "ab11fff712b6d414",
+          "identifier_target_exposures": 2,
+          "identifier_selected_record_exposures": 2
+        },
+        {
+          "episode": "ef6f1e29277d21f8",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "8e26865ef531da62",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "dc55fec377f67a54",
+          "identifier_target_exposures": 2,
+          "identifier_selected_record_exposures": 2
+        },
+        {
+          "episode": "cd946b4d559f4546",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "d1bdf4df70d87d55",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "e6404b088db7964e",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "119e9e8261c4dc98",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "95f429bfcf969f3a",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "e4e63e18a605b12d",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "abfaa53731bbd9e2",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "3ceddc657636f159",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "5887b221a7a433d3",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "77d06b48c4662c68",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "c640e420bd8490a3",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "f112819a2c543cd4",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "2dd97cd492b72931",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "b4366cc965644024",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "8fe3fc25be6e53a6",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "614c4e8ea3447ab1",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "f54d223c4560e11e",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "97ac607c90814999",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "964ed4a2c4373905",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "0dfd5ec91d541825",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "1ffcf59d9c10de2d",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        },
+        {
+          "episode": "9b24b523a7bf97e0",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "abe1df56b6cb0a22",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "a38dc8a2a420db04",
+          "identifier_target_exposures": 1,
+          "identifier_selected_record_exposures": 1
+        },
+        {
+          "episode": "5210e9c892ec2ea4",
+          "identifier_target_exposures": 0,
+          "identifier_selected_record_exposures": 0
+        }
+      ],
+      "target_exposure_histogram": {
+        "1": 19,
+        "0": 42,
+        "3": 1,
+        "2": 2
+      }
+    }
+  },
+  "selection": "First 32 training worlds in corpus order; both original whole-endpoint questions, excluding six replica questions. Identical serialized episodes are present in both corpora. No model outcomes used.",
+  "notice": "Supplemental training-corpus diagnostic declared while both trainings run. Not held-out evidence. Exposure counts cover endpoint-target microbatches; they do not count appearances in action/rule source text or teacher anchors. Full held-out confirmation remains primary."
+}

@@ -92,3 +92,25 @@ predictions exactly reproducing the frozen latent reference (0/64 correct). This
 confirms the question interface is viable for this split. Source text is a separate
 control with unequal token budgets, never an inference fallback. The controls ran
 from frozen `c58028c`; `source-confirmation.json` and `source-text.json` pin outputs.
+
+
+## Supplemental diagnostics declared during training
+
+Before either endpoint is available, `prepare_training_diagnostic.py` seals the
+same 64 endpoint questions from the first 32 training worlds for both arms. It
+keeps the original whole-answer episode and drops six replica questions, verifies
+that each complete episode is identical in both corpora, and records the planned
+sampler exposures. No model outcomes choose this subset. It supplements the
+pre-launch held-out protocol; it does not replace it or constitute held-out evidence.
+
+All 64 targets are sampled 11–36 times by the small arm. In the large arm, 42 have
+zero endpoint-target exposures, 19 have one, two have two, and one has three.
+These are target-supervision counts, not absence of the endpoint from source text
+in other tasks. Evaluate both final models with the existing frozen six-condition
+oracle evaluator on this common corpus, and stratify the results by the recorded
+exposures. This distinguishes training fit from fresh recall without changing the
+models, training budget or primary confirmation split. In addition, run the existing
+selected-text/no-memory control for both held-out endpoints to check that their
+decoders retain the source-text task. The repeated no-memory predictions must
+match each latent reference exactly. All outputs remain external; the committed
+`training-diagnostic-inputs.json` pins selection and exposure counts.
