@@ -1,0 +1,133 @@
+{
+  "source": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+  "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+  "data": {
+    "split": "endpoint-freshness-train-20260920",
+    "steps": 4000,
+    "seed": 127,
+    "accumulation": 4,
+    "script_sha256": "4f94834b8683a3b17177e74a9ad38b6f8dee56b758d5d1e02a1c5197fd905f29",
+    "question_generator_sha256": "4d54359fb5f2ffae44ce183cb15de8b160acb14dd7c5724826e551b6e782f70e",
+    "corpora": {
+      "256": {
+        "episodes": 5632,
+        "sha256": "2752a588db7adc2b7e728ec201bf709c5b4c824d118494c74245e2076bdf39fa",
+        "distinct_identifier_targets": 512,
+        "schedule_sha256": "5d10dce710157653da22887857c8979b90d6e78c664deffbccba5eb1a51e62bf",
+        "families": {
+          "multiuse/identifier": 10097,
+          "multiuse/action": 2984,
+          "multiuse/permission": 1409,
+          "multiuse/restoration": 1510
+        },
+        "distinct_identifier_targets_sampled": 512,
+        "identifier_target_exposure_histogram": {
+          "16": 31,
+          "20": 51,
+          "24": 25,
+          "23": 31,
+          "30": 5,
+          "18": 43,
+          "22": 39,
+          "19": 61,
+          "21": 38,
+          "13": 13,
+          "29": 7,
+          "11": 9,
+          "27": 12,
+          "17": 44,
+          "15": 30,
+          "25": 20,
+          "26": 13,
+          "28": 6,
+          "14": 15,
+          "10": 2,
+          "36": 1,
+          "31": 4,
+          "12": 11,
+          "8": 1
+        }
+      },
+      "8192": {
+        "episodes": 180224,
+        "sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+        "distinct_identifier_targets": 16371,
+        "schedule_sha256": "5d10dce710157653da22887857c8979b90d6e78c664deffbccba5eb1a51e62bf",
+        "families": {
+          "multiuse/identifier": 10097,
+          "multiuse/action": 2984,
+          "multiuse/permission": 1409,
+          "multiuse/restoration": 1510
+        },
+        "distinct_identifier_targets_sampled": 7516,
+        "identifier_target_exposure_histogram": {
+          "1": 5436,
+          "2": 1651,
+          "3": 363,
+          "4": 60,
+          "5": 6
+        }
+      }
+    },
+    "notice": "Same initial source/task/loop schedule is possible with these slot-major corpora. World content and target freshness differ. Equal updates are not equal token compute."
+  },
+  "config_sha256": {
+    "256": "cda293bc7a2591fdffa33c5dcf5a722300eaa85fef97ccd1db289169dde9a607",
+    "8192": "579fe057e21e3e490dbe90bad7f80ae2831b9a10765dc2a0fa0ee3a4fcf9c795"
+  },
+  "heldout_sha256": "4205bb6b644f445da094cc375e90a22e52988f9411fd81e21d80a4e9df3d8171",
+  "heldout_split": "endpoint-freshness-heldout-20260920",
+  "heldout_world_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    28,
+    29,
+    30,
+    31,
+    32
+  ],
+  "overlap_rejected_world_seeds": [
+    27
+  ],
+  "overlap_policy": "Before any training or evaluation, take the first 32 worlds with source IDs, endpoint targets and inverted endpoint targets disjoint from source finetuning and both nested training corpora. No model outcomes are used.",
+  "checked_corpora": {
+    "source_finetuning": {
+      "sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "source_records": 512,
+      "source_endpoint_values": 256
+    },
+    "fresh_training": {
+      "sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+      "source_records": 32768,
+      "source_endpoint_values": 16371
+    }
+  },
+  "steps": 4000,
+  "seed": 127,
+  "notice": "Matched 16000-microbatch source/task/depth schedule; world content and endpoint freshness differ, and token/FLOP budgets are not identical. All original rule/action tasks retained. Oracle required sources; no global routing or capacity claim."
+}
