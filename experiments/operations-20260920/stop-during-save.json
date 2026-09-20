@@ -1,0 +1,19 @@
+{
+  "failed_regressions_before_fix": 2,
+  "full_suite_passed": 446,
+  "ruff": "passed",
+  "test_log": "/archive/profiles/checkpoint-stop-dedup-full-tests.log",
+  "checks": [
+    "Stop during initial save writes only one step-zero checkpoint",
+    "Stop during periodic save reuses that committed checkpoint",
+    "Resume preserves final weights, optimizer state and tested RNG state",
+    "A stopped resume commits an extended total-step budget"
+  ],
+  "scope": "Only snapshots committed during the current invocation can be reused. Partial accumulation and resumed configuration changes retain their save path. Active frozen studies keep their original implementation.",
+  "pytest_storage_policy": {
+    "successful_fixtures": "retired",
+    "failed_sessions_retained": 1,
+    "observed_temporary_directory_MiB_before": 258,
+    "observed_temporary_directory_MiB_after": 67
+  }
+}

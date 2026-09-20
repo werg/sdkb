@@ -283,9 +283,11 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         atomic_json(archive_run / 'run.json', {'id': run_identity(output), 'source_run': str(output.resolve())})
         if resume:
             archiver.submit(resolve_checkpoint(output, verify=True))
+    last_saved_step = None
     if not resume:
         save_checkpoint(agent, optimizer, output, 0, rng, cache, fingerprint,
                         keep=config.train.keep_checkpoints, archiver=archiver)
+        last_saved_step = 0
     completed = start
     generation = "mixed-training-v0"  # intentional stale/live training distribution, never evaluation
     history = []
@@ -297,9 +299,13 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                 if available is not None and available < config.train.min_system_available_bytes:
                     resource_stop = {'reason': 'host_memory_reserve', 'available_bytes': available}
             if want_stop():
-                save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
-                                keep=config.train.keep_checkpoints, archiver=archiver,
-                                accumulation=progress or None)
+                # A stop arriving during a save needs no second identical write.
+                # Only reuse saves from this invocation: a stopped resume may
+                # need to commit an extended budget or other allowed config change.
+                if last_saved_step != completed or progress:
+                    save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
+                                    keep=config.train.keep_checkpoints, archiver=archiver,
+                                    accumulation=progress or None)
                 break
             # One depth per optimizer update, not per microbatch or replay callback.
             # This RNG is part of the atomic checkpoint. Producer depth stays fixed.
@@ -405,6 +411,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             if completed % config.train.checkpoint_every == 0 or stopping or completed == config.train.steps:
                 save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
                                 keep=config.train.keep_checkpoints, archiver=archiver)
+                last_saved_step = completed
             if stopping:
                 break
     if archiver is not None:

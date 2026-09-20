@@ -178,3 +178,13 @@ of two accumulated microbatches again reproduces the uninterrupted final model,
 both optimizer components and all RNG state exactly. Only the final complete sets
 are retained; verified weight deduplication removes their duplicate model bytes.
 `experiments/operations-20260920/muon-emergency-resume.json` pins the result.
+
+
+A stop arriving during an initial/periodic checkpoint no longer triggers a second
+identical save at the next loop boundary. Two failing-before tests reproduce the
+redundant writes; resumed training preserves final model/optimizer/RNG results. A
+stopped resume with an extended step budget still commits the new configuration.
+Successful pytest checkpoint fixtures are now retired automatically, retaining one
+failed session for debugging. Test temporary storage fell from about 258 MiB to
+67 MiB after the passing suite. Experiment recovery sets are unaffected. All 446
+tests pass; see `experiments/operations-20260920/stop-during-save.json`.

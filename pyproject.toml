@@ -24,6 +24,9 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+# Retire successful checkpoint fixtures; retain one failed session for debugging.
+tmp_path_retention_count = 1
+tmp_path_retention_policy = "failed"
 markers = ["integration: requires optional Transformers, model downloads, or accelerator"]
 
 [tool.ruff]

@@ -105,6 +105,10 @@ Stop and final checkpoints remain mandatory regardless of periodic cadence.
 
 Console logs mark `checkpoint_start` and `checkpoint_committed`, with elapsed
 seconds and serialized bytes. These separate storage waits from compute stalls.
+If a stop arrives during an initial or periodic save, the trainer reuses that just
+committed state instead of writing it a second time. This reuse is limited to the
+current invocation; a stopped resume still commits allowed configuration changes
+such as an extended total step budget.
 Direct external saves can take minutes under disk contention, including graceful
 stop saves. The asynchronous archive mode below provides a faster local save path
 when explicitly configured; direct external output does not silently stage an
@@ -327,3 +331,8 @@ to active evaluators, whose current implementation flushes generation progress.
 This controller stop does not stop a separately running training process; target
 that training stage explicitly when needed. Clear the requested stop before
 restarting the same frozen controller.
+
+
+Successful pytest temporary checkpoint fixtures are retired automatically. One failed
+session is retained for debugging. This policy applies to disposable test directories,
+not experiment checkpoints or their recovery state.

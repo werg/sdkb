@@ -243,3 +243,59 @@ def test_incomplete_legacy_state_requires_explicit_warm_start(tmp_path, tiny_con
     manifest_path.write_text(json.dumps(manifest))
     with pytest.raises(ValueError, match='complete resume state'):
         train(tiny_config, run, resume=True)
+
+
+@pytest.mark.parametrize('stop_at_saved_step', [0, 1])
+def test_stop_during_save_reuses_that_committed_state(tmp_path, tiny_config, monkeypatch, stop_at_saved_step):
+    from sdkb import training
+    from sdkb.operations import request_stop
+    config = copy.deepcopy(tiny_config)
+    config.train.steps = 3
+    config.train.checkpoint_every = 1 if stop_at_saved_step else 10000
+    full, stopped = tmp_path/'full', tmp_path/'stopped'
+    train(config, full)
+    original = training.save_checkpoint
+    saved_steps = []
+    def save(*args, **kwargs):
+        checkpoint = original(*args, **kwargs)
+        saved_steps.append(args[3])
+        if args[3] == stop_at_saved_step:
+            request_stop(stopped)
+        return checkpoint
+    monkeypatch.setattr(training, 'save_checkpoint', save)
+    result = train(config, stopped)
+    assert result['steps'] == stop_at_saved_step and result['stopped_early']
+    assert saved_steps == ([0] if stop_at_saved_step == 0 else [0, 1])
+    monkeypatch.setattr(training, 'save_checkpoint', original)
+    assert train(config, stopped, resume=True)['steps'] == 3
+    a, b = resolve_checkpoint(full, verify=True), resolve_checkpoint(stopped, verify=True)
+    a_weights, b_weights = load_file(str(a/'model.safetensors')), load_file(str(b/'model.safetensors'))
+    for name, tensor in a_weights.items():
+        torch.testing.assert_close(tensor, b_weights[name], rtol=0, atol=0)
+    a_state = torch.load(a/'training_state.pt', weights_only=True)
+    b_state = torch.load(b/'training_state.pt', weights_only=True)
+    assert a_state['python_rng'] == b_state['python_rng']
+    assert a_state['optimizer_parameter_names'] == b_state['optimizer_parameter_names']
+    assert a_state['optimizer']['param_groups'] == b_state['optimizer']['param_groups']
+    for index, state in a_state['optimizer']['state'].items():
+        for key, value in state.items():
+            torch.testing.assert_close(value, b_state['optimizer']['state'][index][key], rtol=0, atol=0)
+    torch.testing.assert_close(a_state['torch_rng'], b_state['torch_rng'], rtol=0, atol=0)
+
+
+def test_stopped_resume_commits_an_extended_step_budget(tmp_path, tiny_config, monkeypatch):
+    from sdkb import training
+    from sdkb.operations import request_stop
+    config = copy.deepcopy(tiny_config)
+    run = tmp_path/'run'
+    train(config, run, stop_after=1)
+    config.train.steps = 4
+    original = training.restore_checkpoint
+    def restore(*args, **kwargs):
+        step = original(*args, **kwargs)
+        request_stop(run)
+        return step
+    monkeypatch.setattr(training, 'restore_checkpoint', restore)
+    result = train(config, run, resume=True)
+    assert result['steps'] == 1 and result['stopped_early']
+    assert training.config_from_run(run).train.steps == 4
