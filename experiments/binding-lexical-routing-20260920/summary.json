@@ -1,0 +1,103 @@
+{
+  "inputs": {
+    "bank_sha256": "1310fb8bf2d74c0400d13cdef79d0bd6e55bd1e285b9b58b5cbb24ce8ee02201",
+    "corpus_sha256": "4c9cd6091b9422c688a4e92d04a74325b4131f699c944d5dd2c5f3c33ff296aa",
+    "script_sha256": "f7cf40b4d174974f036eb6b22f81f33dde5baea8ce2fc2e894ad5e4d028cbc8e",
+    "reference_sha256": "506b73e502f1b82a090e99387c3042307f16ffde5f3bcf4698f6cd88c918971f",
+    "index_sha256": "05b90b6aeaf5f877c5f763d626345e44b7905253c8d32b30761e2386b8cf8098"
+  },
+  "candidate_records": 4096,
+  "serialized_index_bytes": 1643978,
+  "summary": {
+    "multiuse/action": {
+      "1": {
+        "queries": 128,
+        "complete_support": 0,
+        "all_required": 0,
+        "learned_complete_support": 37,
+        "learned_all_required": 35,
+        "learned_count_histogram": {
+          "2": 128
+        }
+      },
+      "2": {
+        "queries": 128,
+        "complete_support": 128,
+        "all_required": 128,
+        "learned_complete_support": 37,
+        "learned_all_required": 35,
+        "learned_count_histogram": {
+          "2": 128
+        }
+      }
+    },
+    "multiuse/identifier": {
+      "1": {
+        "queries": 64,
+        "complete_support": 0,
+        "all_required": 0,
+        "learned_complete_support": 14,
+        "learned_all_required": 14,
+        "learned_count_histogram": {
+          "1": 64
+        }
+      },
+      "2": {
+        "queries": 64,
+        "complete_support": 64,
+        "all_required": 64,
+        "learned_complete_support": 14,
+        "learned_all_required": 14,
+        "learned_count_histogram": {
+          "1": 64
+        }
+      }
+    },
+    "multiuse/permission": {
+      "1": {
+        "queries": 64,
+        "complete_support": 0,
+        "all_required": 0,
+        "learned_complete_support": 18,
+        "learned_all_required": 18,
+        "learned_count_histogram": {
+          "1": 64
+        }
+      },
+      "2": {
+        "queries": 64,
+        "complete_support": 64,
+        "all_required": 64,
+        "learned_complete_support": 18,
+        "learned_all_required": 18,
+        "learned_count_histogram": {
+          "1": 64
+        }
+      }
+    },
+    "multiuse/restoration": {
+      "1": {
+        "queries": 64,
+        "complete_support": 64,
+        "all_required": 64,
+        "learned_complete_support": 56,
+        "learned_all_required": 56,
+        "learned_count_histogram": {
+          "1": 64
+        }
+      },
+      "2": {
+        "queries": 64,
+        "complete_support": 64,
+        "all_required": 64,
+        "learned_complete_support": 56,
+        "learned_all_required": 56,
+        "learned_count_histogram": {
+          "1": 64
+        }
+      }
+    }
+  },
+  "notice": "Known-corpus retrieval-only control using eligible-source TF-IDF cosine. Fixed top-one and top-two budgets; learned policy may use a different count. Source lexical features are an additional index, not a learned 64-dimensional key or equal-byte comparison. No latent inference, generation, capability or ANN/latency claim.",
+  "results_sha256": "55da7d7e8e8309048bf1545eba7227598f5d6a8620fa1c1a4072262712f0e698"
+}

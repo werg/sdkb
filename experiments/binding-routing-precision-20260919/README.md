@@ -22,8 +22,9 @@ all payload/reader/decoder controls and candidate-free generation.
 ## Completed stored diagnostic
 
 Corrected global training produces 102/128 freely generated actions, compared
-with 58/128 for corrected within-world training. Both-required-source retrieval
-is 73/128 versus 10/128. The paired action difference is 34.38 percentage points
+with 58/128 for corrected within-world training. Sufficient-group retrieval
+is 73/128 versus 10/128; selecting both annotated action records is 71/128 versus
+5/128. The paired action difference is 34.38 percentage points
 (world-bootstrap 95% interval 21.88–47.66). Historical global training produced
 101/128 on these same questions; this correction preserves the narrow result.
 
@@ -50,8 +51,14 @@ This checks whether the previously observed scaling loss survives the arithmetic
 correction; it is another known-corpus implementation diagnostic.
 
 Completed: free actions fall from 102/128 at 128 records to **78/128** at 4,096;
-both-required-source retrieval falls from 73/128 to 37/128. The large-bank free
+sufficient-group retrieval falls from 73/128 to 37/128; full annotated pairs fall
+from 71/128 to 35/128. The large-bank free
 action advantage is 10.94 points over no memory (world-bootstrap interval
 0–21.88) and 11.72 over zero payloads (0.78–22.66). This still leaves substantial
 scaling loss; the small, single-seed diagnostic does not establish robust global
 retrieval. Historical large-bank free actions were 76/128.
+
+Metric-label correction, 20 September: earlier prose called the sufficient-group
+counts both-required-source retrieval. The captured `all_required` field gives the
+full-pair counts now stated above; raw historical results are unchanged. See
+[the cross-study audit](../binding-lexical-routing-20260920/README.md).

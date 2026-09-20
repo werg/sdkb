@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **412 tests**, with four existing dependency/runtime
+The latest full suite passed **416 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -354,3 +354,17 @@ native codes. Raw reads remain mixed: pairing gives 127/128 original actions ver
 128/128 for interleaving, with some better changed-rule pairs and one new false
 restoration change. Pairing adds decoder work without an observed compact benefit.
 [Full result and limits](../experiments/binding-paired-compaction-20260920/README.md).
+
+### Lexical address control — 20 September
+
+A [retrieval-only comparator](../experiments/binding-lexical-routing-20260920/README.md)
+uses stored source-token features with visibility-filtered TF-IDF statistics. At
+4,096 records it retrieves both annotated sources for 128/128 action questions at
+a top-two budget, versus 35/128 for the learned router. Its top-one rank always
+favors restoration records in this fixture, so it fails permission/identifier
+selection at a one-record budget. The index retains lexical terms and is 1.64 MB;
+this is not an equal-representation or equal-storage comparison, a generation result,
+or a learned-router improvement. It exposes an easy lexical structure in this
+synthetic retrieval fixture. The accompanying audit corrects prose that called
+sufficient-group counts (73/128 and 37/128) full-pair retrieval; the full-pair
+counts are 71/128 and 35/128. Raw historical records remain unchanged.

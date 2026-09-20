@@ -98,3 +98,8 @@ The initial source training-fit reference is already recorded at
 `/archive/runs/binding-fixed-query-detail-20260920/train-fit/fixed/results.json`.
 Its checkpoint and episode hashes match this protocol's source and training file;
 it need not be regenerated for the comparison.
+
+The source checkpoint confirmation on the newly declared held-out split is complete:
+128/128 original and counterfactual actions, 61/64 direct permissions, 64/64 direct
+restoration answers and 0/64 identifiers. `source-confirmation.json` records this
+control before the candidate endpoint is evaluated.

@@ -1,0 +1,80 @@
+{
+  "global-stored-20260919/global/evaluation/pool-1.json": {
+    "sha256": "c8347fd42ad0e135bde86e6872ff0ce8443626cbd4aced80b1a8f34b0c1ce1e0",
+    "queries": 128,
+    "any_sufficient_group": 69,
+    "all_annotated_records": 69
+  },
+  "global-stored-20260919/global/evaluation/pool-32.json": {
+    "sha256": "f822da748bdef0402c96e6c4975ca0d3e5af7400673190be8a47aa7ceacc5671",
+    "queries": 128,
+    "any_sufficient_group": 40,
+    "all_annotated_records": 38
+  },
+  "global-stored-20260919/world/evaluation/pool-1.json": {
+    "sha256": "472c76e2a91ad1244c76cf07d263fd6a34c1549d3d3ee2ba5a37a9dfc49f965d",
+    "queries": 128,
+    "any_sufficient_group": 90,
+    "all_annotated_records": 83
+  },
+  "global-stored-20260919/world/evaluation/pool-32.json": {
+    "sha256": "a13bb5ecfa894a868b0e60dab555b660f264eaad2787dea9a49ad4f89b38cd21",
+    "queries": 128,
+    "any_sufficient_group": 12,
+    "all_annotated_records": 5
+  },
+  "global-stored-fp32-20260919/global/evaluation/pool-32.json": {
+    "sha256": "ffdf4330c2cdafdd01517dac9e24ea99127cf906e5ade435accc49cd5d7d82ac",
+    "queries": 128,
+    "any_sufficient_group": 73,
+    "all_annotated_records": 71
+  },
+  "global-stored-fp32-20260919/world/evaluation/pool-32.json": {
+    "sha256": "f8e5a22f8e05d475fba2723b1e2be07cfda4d5dd38b4921ca8592df1ea640494",
+    "queries": 128,
+    "any_sufficient_group": 10,
+    "all_annotated_records": 5
+  },
+  "global-stored-fp32-scale-20260919/evaluation/pool-1024.json": {
+    "sha256": "506b73e502f1b82a090e99387c3042307f16ffde5f3bcf4698f6cd88c918971f",
+    "queries": 128,
+    "any_sufficient_group": 37,
+    "all_annotated_records": 35
+  },
+  "global-stored-long-20260919/global_long/evaluation/pool-1.json": {
+    "sha256": "c42d3d4538955a5964098a012c5bc94d7b561985101a2faef48ebc2a0dbf14bd",
+    "queries": 128,
+    "any_sufficient_group": 79,
+    "all_annotated_records": 77
+  },
+  "global-stored-long-20260919/global_long/evaluation/pool-32.json": {
+    "sha256": "0d986603c10cd9e5ba03c21d059f9fa2b56b38fde977b3bc8a5a5638e9e3ac71",
+    "queries": 128,
+    "any_sufficient_group": 73,
+    "all_annotated_records": 71
+  },
+  "global-stored-long-20260919/global_short/evaluation/pool-1.json": {
+    "sha256": "a7adbd728faca414a7693ed7da15bccb3557fd26b5f70cc361c3ebe7425d07b9",
+    "queries": 128,
+    "any_sufficient_group": 54,
+    "all_annotated_records": 53
+  },
+  "global-stored-long-20260919/global_short/evaluation/pool-32.json": {
+    "sha256": "3959354776bf56e12561de8ef380dbee34349cc7beff7127f86c0d0a027c7757",
+    "queries": 128,
+    "any_sufficient_group": 38,
+    "all_annotated_records": 37
+  },
+  "global-stored-long-20260919/world_long/evaluation/pool-1.json": {
+    "sha256": "52fc4f92097de9a26eac223089ebe8e418f3c97201d855c65382f239c220affc",
+    "queries": 128,
+    "any_sufficient_group": 97,
+    "all_annotated_records": 91
+  },
+  "global-stored-long-20260919/world_long/evaluation/pool-32.json": {
+    "sha256": "6ed528268687e04eb5f5863f4d3a3070188b76abf81e97ce087cd1175b833b9a",
+    "queries": 128,
+    "any_sufficient_group": 9,
+    "all_annotated_records": 5
+  }
+}
