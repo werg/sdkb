@@ -101,7 +101,7 @@ def run(source, features_root, output, steps=200, representation='address_query'
                     save(step)
                     raise RuntimeError('Read-count probe stopped with complete optimizer/sampling state')
                 indices = torch.randint(len(labels['train']), (1280,), generator=generator).to(config.train.device)
-                with compute_watchdog(config.train.stall_timeout_seconds):
+                with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                     optimizer.zero_grad(set_to_none=True)
                     with autocast_context(config):
                         loss = F.cross_entropy(head(values['train'][indices]).float(), labels['train'][indices])

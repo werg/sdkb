@@ -188,7 +188,7 @@ def run(source, features_root, output, steps):
                         raise RuntimeError('Feature continuation stopped with full optimizer/sampling state')
                     indices = torch.randint(len(episodes['train']), (1280,), generator=generator).to(config.train.device)
                     batch = {k: v[indices] for k, v in features['train'].items()}
-                    with compute_watchdog(config.train.stall_timeout_seconds):
+                    with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                         optimizer.zero_grad(set_to_none=True)
                         with autocast_context(config):
                             scores, stop = model(batch)

@@ -174,7 +174,7 @@ def run(source, features_root, output, steps=800, batch_size=128):
                         save(step)
                         raise RuntimeError('Routing continuation stopped at complete optimizer boundary')
                     indices = torch.randint(len(episodes['train']), (batch_size,), generator=sampler).to(config.train.device)
-                    with compute_watchdog(config.train.stall_timeout_seconds):
+                    with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                         optimizer.zero_grad(set_to_none=True)
                         with autocast_context(config):
                             scores = address_scores(model, data['train'], indices, scope)

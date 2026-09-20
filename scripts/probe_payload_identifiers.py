@@ -96,7 +96,7 @@ def reader_feature(agent, store, episode, *, zero_values=False, representation='
             hooks.append(agent.reader.output.register_forward_pre_hook(
                 lambda _module, args: captures.append(args[0].detach())))
     try:
-        with autocast_context(agent.config):
+        with compute_watchdog(agent.config.train.stall_timeout_seconds, device=agent.device), autocast_context(agent.config):
             session = read_session(agent, store, agent.prompt_ids(episode.query), namespace='global',
                 generation='frozen-v1', query_time=episode.query_time, oracle_ids=episode.required_ids,
                 ablate_values=zero_values)
@@ -229,7 +229,7 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32,
                         save(step)
                         raise RuntimeError('Readout stopped at complete optimizer boundary')
                     index = torch.randint(len(values['train']), (128,), generator=sampler).to(config.train.device)
-                    with compute_watchdog(config.train.stall_timeout_seconds):
+                    with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                         optimizer.zero_grad(set_to_none=True)
                         with autocast_context(config):
                             loss = F.cross_entropy(model(values['train'][index]).flatten(0, 1), labels['train'][index].flatten())

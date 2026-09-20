@@ -68,7 +68,7 @@ the reader output yields 0/64 and 156/384. Zero-value features are exactly const
 under these identical queries and yield 29/384 characters. These supervised heads
 supply the output format and have different parameter budgets. They locate a gap
 in tested accessibility, not an information-theoretic loss or a language-generation
-success. The completed [intermediate-state follow-up](../experiments/binding-reader-stages-20260920/README.md) yields 205/384 characters after input projections and 165/384 in the final shared state with linear heads, with no exact identifiers. The gap precedes the final output transformation; reader capacity/training is the next intervention.
+success. The completed [intermediate-state follow-up](../experiments/binding-reader-stages-20260920/README.md) yields 205/384 characters after input projections and 165/384 in the final shared state with linear heads, with no exact identifiers. The gap precedes the final output transformation; the [reader-capacity intervention](../experiments/binding-reader-capacity-20260920/README.md) is now training matched reset 256- and 1024-wide readers from the same writer/controller. Results are pending.
 
 ## What would support the stronger idea
 
@@ -110,7 +110,7 @@ fallback-token ownership correction changes future optimizer groups; older runs
 must resume with their frozen checkout or explicitly warm-start a new run. The
 completed freshness study used frozen `c58028c`; completed intermediate readouts used `417c2f4`.
 
-The latest download-free suite passes 461 tests; native pretrained execution and
+The latest download-free suite passes 468 tests; native pretrained execution and
 a real BF16 Muon emergency-resume comparison have also run. CPU/CUDA configuration
 and portable operating helpers are separate from the Spark wrapper. Tested native
 Spark execution does not imply performance portability to every GPU or backbone.

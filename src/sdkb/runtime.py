@@ -41,16 +41,19 @@ def memory_metrics(device):
 
 
 @contextmanager
-def compute_watchdog(seconds):
+def compute_watchdog(seconds, *, device=None):
     """Dump stacks on a stall; never hard-kill a process with unsaved work.
 
-    Armed only around an optimizer update, excluding setup, saves and evaluation.
+    Armed around the declared compute region, excluding setup and saves.
+    With a CUDA device, completion is awaited before disarming an enabled guard.
     Cooperative stopping still needs the current native kernel to return.
     """
     if seconds:
         faulthandler.dump_traceback_later(seconds, repeat=True)
     try:
         yield
+        if seconds and device is not None and torch.device(device).type == 'cuda':
+            torch.cuda.synchronize(device)
     finally:
         if seconds:
             faulthandler.cancel_dump_traceback_later()

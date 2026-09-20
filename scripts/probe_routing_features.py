@@ -234,7 +234,7 @@ def run(checkpoint, root, steps, train_worlds=0, batch_size=0):
                         batch = {k: v[indices] for k, v in train_features.items()}
                     else:
                         batch = train_features
-                    with compute_watchdog(config.train.stall_timeout_seconds):
+                    with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                         optimizer.zero_grad(set_to_none=True)
                         with autocast_context(config):
                             loss = pair_loss(model(batch), batch['required'], batch['lengths'])

@@ -228,3 +228,13 @@ access of controls, and evaluate tool execution separately from authored answers
 SDKB already enforces the first two and its current experiments declare the latter
 limits. A browsable repository-tree model is not part of this project's implemented
 architecture; no such agent result or imported kernel/training topology is claimed.
+
+
+Device-aware compute watchdogs now await asynchronous CUDA completion before an
+active guard is disarmed. Main optimizer updates, small-probe updates and frozen
+reader feature extraction use this path; saves remain outside it. CPU and disabled
+guards do not add a CUDA wait. Three regressions failed before the API change;
+468 tests pass, and a native CUDA event is complete before disarming in a bounded
+smoke. This is not a GPU-hang injection or an automatic restart policy. Active
+capacity runs retain frozen `b38564a`. Evidence:
+`experiments/operations-20260920/compute-completion-watchdog.json`.

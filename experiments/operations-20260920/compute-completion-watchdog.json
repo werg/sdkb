@@ -1,0 +1,13 @@
+{
+  "problem": "Async CUDA completion could occur after an optimizer compute guard was disarmed.",
+  "fix": "Enabled device-aware watchdog waits for queued CUDA completion before disarming. Applied to main updates, small-probe updates and reader-feature extraction. CPU and disabled guards add no CUDA wait; saves remain outside the guard.",
+  "regressions_failed_before": 3,
+  "full_tests_passed": 468,
+  "native": {
+    "completion_event_ready_before_guard_disarmed": true,
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "gpu": "NVIDIA GB10",
+    "notice": "Completion ordering smoke, not an injected GPU hang or throughput comparison."
+  },
+  "active_study": "Reader capacity remains frozen at b38564a; no live hotpatch or changed-protocol resume."
+}

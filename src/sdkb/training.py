@@ -332,7 +332,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             # One depth per optimizer update, not per microbatch or replay callback.
             # This RNG is part of the atomic checkpoint. Producer depth stays fixed.
             with ExitStack() as compute:
-                compute.enter_context(compute_watchdog(config.train.stall_timeout_seconds))
+                compute.enter_context(compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device))
                 if progress:
                     agent.backbone.loops = progress['loops']
                     totals, anchor_total = progress['totals'], progress['anchor_total']

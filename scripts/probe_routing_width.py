@@ -145,7 +145,7 @@ def run(source, features_root, output, widths=(64,128,256), steps=3200, batch_si
                         save(step)
                         raise RuntimeError('Width probe stopped at complete optimizer boundary')
                     indices = torch.randint(len(episodes['train']),(batch_size,),generator=sampler).to(config.train.device)
-                    with compute_watchdog(config.train.stall_timeout_seconds):
+                    with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                         optimizer.zero_grad(set_to_none=True)
                         with autocast_context(config):
                             scores = address_scores(model,data['train'],indices,'global')

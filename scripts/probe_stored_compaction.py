@@ -213,7 +213,7 @@ def run(source, train_file, output, steps=400, batch_size=32, seed=59, initial=N
                     raise RuntimeError('Stopped at complete optimizer boundary with full resume state')
                 indices = torch.randint(len(data['train']['raw']), (batch_size,), generator=sampler).to(agent.device)
                 raw, query = data['train']['raw'][indices], data['train']['query'][indices]
-                with compute_watchdog(config.train.stall_timeout_seconds):
+                with compute_watchdog(config.train.stall_timeout_seconds, device=config.train.device):
                     optimizer.zero_grad(set_to_none=True)
                     with autocast_context(config):
                         values, weights = serialized_codes(compactor, raw)
