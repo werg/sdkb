@@ -17,21 +17,22 @@ from sdkb.key_index import PublishedKeyIndex
 from sdkb.offline_bank import (assert_bank_writer_compatible, canonical_json,
                                publish_offline_generation)
 from sdkb.operations import atomic_json
+from sdkb.sessions import read_session
 from sdkb.store import DiskStore, ReadPlan, Selection
 from sdkb.training import autocast_context, config_from_run
 from sdkb.trajectories import file_sha256
 
 
 def supplied_mixed_plans(agent, searcher, episodes, *, namespace: str,
-                         generation: str, limits: tuple[int, ...]) -> dict:
-    """Match corpus training's positive-plus-neighbors plan using causal queries."""
-    plans = {}
+                         generation: str, limits: tuple[int, ...]) -> tuple[dict, dict]:
+    """Match corpus training's correct and source-swapped causal read plans."""
+    plans, swapped_plans = {}, {}
     with torch.no_grad(), autocast_context(agent.config):
         for episode in episodes:
             if episode.support_annotation != 'verified' or len(episode.required_ids) != 1:
                 raise ValueError('Matched bank plan requires one verified positive')
             domain = episode.provenance.get('domain', 'research')
-            read_plans = []
+            read_plans, swapped_read_plans = [], []
 
             def provider(completed, _query, routing_query):
                 if completed != 1:
@@ -44,8 +45,16 @@ def supplied_mixed_plans(agent, searcher, episodes, *, namespace: str,
                     ids.extend(item.record_id for item in found.selections
                                if item.record_id not in ids)
                     ids = ids[:limit]
+                    wrong_id = next((item.record_id for item in found.selections
+                                     if item.record_id not in ids and
+                                     item.record_id not in episode.required_ids), None)
+                    if wrong_id is None:
+                        raise ValueError('Matched bank plan needs an eligible unselected source')
                     read_plans.append(ReadPlan(namespace, f's{space}', generation, domain,
                         episode.query_time, tuple(Selection(rid, 0.0) for rid in ids)))
+                    swapped_read_plans.append(ReadPlan(namespace, f's{space}', generation,
+                        domain, episode.query_time, tuple(Selection(rid, 0.0)
+                        for rid in (wrong_id, *ids[1:]))))
                 return None
 
             agent.plan_loop_memory(agent.prompt_ids(episode.query), provider,
@@ -53,16 +62,57 @@ def supplied_mixed_plans(agent, searcher, episodes, *, namespace: str,
             if len(read_plans) != len(limits):
                 raise ValueError('Causal native read was not reached')
             plans[episode.episode_id] = [read_plans]
-    return plans
+            swapped_plans[episode.episode_id] = [swapped_read_plans]
+    return plans, swapped_plans
+
+
+def generate_from_published_bank(agent, store, episodes, *, namespace: str,
+                                 generation: str, selection: str,
+                                 fixed_plans: dict | None, swapped_plans: dict | None,
+                                 max_new_tokens: int) -> dict:
+    """Generate without target tokens or source re-encoding from captured plans."""
+    rows = []
+    with torch.no_grad(), autocast_context(agent.config):
+        for episode in episodes:
+            prompt = agent.prompt_ids(episode.query)
+            common = dict(namespace=namespace, generation=generation,
+                          query_time=episode.query_time,
+                          domain=episode.provenance.get('domain', 'research'))
+            plan = None if fixed_plans is None else fixed_plans[episode.episode_id]
+            oracle = episode.required_ids if selection == 'oracle' else None
+            correct = read_session(agent, store, prompt, oracle_ids=oracle,
+                                   fixed_plans=plan, **common)
+            zero = read_session(agent, store, prompt, fixed_plans=correct.plans,
+                                ablate_values=True, **common)
+            arms = {'all': correct.memory, 'zero_values': zero.memory}
+            if swapped_plans is not None:
+                wrong = read_session(agent, store, prompt,
+                    fixed_plans=swapped_plans[episode.episode_id], **common)
+                arms['source_swap'] = wrong.memory
+            predictions = {arm: agent.generate_from_memory(prompt, memory,
+                max_new_tokens=max_new_tokens) for arm, memory in arms.items()}
+            rows.append({'episode': episode.episode_id, 'answer': episode.answer,
+                         'predictions': predictions,
+                         'exact_match': {arm: pred == episode.answer for arm, pred
+                                         in predictions.items()}})
+    conditions = tuple(rows[0]['predictions']) if rows else ()
+    return {'protocol': 'Greedy generation from published stored payloads; '
+                        'source writer disabled and targets withheld.',
+            'max_new_tokens': max_new_tokens, 'episodes': len(rows),
+            'exact_match': {condition: sum(row['exact_match'][condition] for row in rows)
+                            for condition in conditions}, 'rows': rows}
 
 
 def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
              max_episodes: int = 16, limits: tuple[int, ...] = (8, 4, 2, 1),
-             selection: str = 'learned') -> dict:
+             selection: str = 'learned', generate_episodes: int = 0,
+             generate_max_tokens: int = 32) -> dict:
     if max_episodes < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive evaluation count and a fresh output parent required')
     if selection not in {'learned', 'oracle', 'supplied_mixed'}:
         raise ValueError('Evaluation selection must be learned, oracle or supplied_mixed')
+    if generate_episodes < 0 or generate_episodes > max_episodes or generate_max_tokens < 1:
+        raise ValueError('Generation needs a bounded episode count and positive token budget')
     config = config_from_run(run)
     training_bank_dir = config.train.bank_dir
     if len(limits) != len(config.memory.payload_dims):
@@ -96,21 +146,38 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     assert_bank_writer_compatible(run, checkpoint, bank_dir, bank_manifest,
                                   training_bank_dir=training_bank_dir)
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
+    def forbidden_writer(*_args, **_kwargs):
+        raise AssertionError('Published-bank evaluation must not re-encode a source')
+    agent.produce = forbidden_writer
     episodes = load_episodes(episodes_file)[:max_episodes]
     if not episodes:
         raise ValueError('Evaluation needs at least one episode')
-    fixed_plans = None
+    fixed_plans, swapped_plans = None, None
     if selection == 'supplied_mixed':
         index = PublishedKeyIndex(store, namespace=bank_manifest['namespace'],
             generation=bank_manifest['generation'], spaces=tuple(bank_manifest['spaces']),
             expected_sources=bank_manifest['sources'])
-        fixed_plans = supplied_mixed_plans(agent, index, episodes,
+        fixed_plans, swapped_plans = supplied_mixed_plans(agent, index, episodes,
             namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
             limits=limits)
     with torch.no_grad():
         report = stored_transfer_evaluation(agent, store, episodes,
             namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
             drop_supports=True, fixed_plans_by_episode=fixed_plans)
+        if swapped_plans is not None:
+            swapped = stored_transfer_evaluation(agent, store, episodes,
+                namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
+                fixed_plans_by_episode=swapped_plans, full_evidence_only=True)
+            report['source_swap_summary'] = swapped['summary']['all']
+            report['source_swap_mean_nll_gap'] = (
+                report['source_swap_summary']['mean_target_nll'] -
+                report['summary']['all']['mean_target_nll'])
+        if generate_episodes:
+            report['generation'] = generate_from_published_bank(agent, store,
+                episodes[:generate_episodes], namespace=bank_manifest['namespace'],
+                generation=bank_manifest['generation'], selection=selection,
+                fixed_plans=fixed_plans, swapped_plans=swapped_plans,
+                max_new_tokens=generate_max_tokens)
     report['notice'] = ('Published-corpus stored-only diagnostic. '
                         + ('Oracle selection uses verified support labels. ' if selection == 'oracle'
                            else ('Supplied-mixed selection includes one verified support and causal-query neighbors. '
@@ -121,6 +188,8 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
                 'bank_manifest_sha256': file_sha256(bank_manifest_path),
                 'episodes_sha256': file_sha256(episodes_file),
                 'max_episodes': max_episodes, 'read_limits': limits,
+                'generate_episodes': generate_episodes,
+                'generate_max_tokens': generate_max_tokens if generate_episodes else None,
                 'selection': ('learned exact scan; supplied support is never used for retrieval'
                               if selection == 'learned' else
                               'supplied positive plus causal exact neighbors; stored payloads only'
@@ -143,7 +212,11 @@ if __name__ == '__main__':
     parser.add_argument('--limits', nargs='+', type=int, default=[8, 4, 2, 1])
     parser.add_argument('--selection', choices=['learned', 'oracle', 'supplied_mixed'],
                         default='learned')
+    parser.add_argument('--generate-episodes', type=int, default=0)
+    parser.add_argument('--generate-max-tokens', type=int, default=32)
     args = parser.parse_args()
     print(json.dumps(evaluate(args.run, args.bank, args.episodes, args.output,
                               max_episodes=args.max_episodes,
-                              limits=tuple(args.limits), selection=args.selection), indent=2))
+                              limits=tuple(args.limits), selection=args.selection,
+                              generate_episodes=args.generate_episodes,
+                              generate_max_tokens=args.generate_max_tokens), indent=2))

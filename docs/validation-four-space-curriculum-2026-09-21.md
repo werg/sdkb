@@ -147,3 +147,52 @@ for the zero-value intervention; it never re-encodes a source.
 The new evaluator regression test passed, as did the full native test suite
 (556 tests) and Ruff. The run remains on the external disk and continues to
 its one-pass, 1,000-update endpoint for a controlled final comparison.
+
+## Full bank pass and second-pass stop
+
+The stored-bank value-contrast run completed one shuffled pass over all 2,000
+training questions at step 1,000. On 64 heldout questions under the matched
+neighborhood, mean teacher NLL was 2.8038 with correct payloads, 2.8071 with
+all values zeroed, and 2.8058 when the verified source was replaced by an
+eligible retrieved source in each space. Exact learned retrieval found a
+complete support in 6/64 questions. The smaller first-16 subset showed a
+larger 0.013–0.014 NLL effect; the full set establishes that it was optimistic.
+Greedy generation on four of those questions had 0/4 exact matches, with
+identical predictions under correct, zero and swapped payloads.
+
+An additional 500 updates reached a full recovery checkpoint at step 1,500.
+On the same 64 questions, learned complete-support recall rose to 9/64, but
+the matched value effect reversed: correct 2.7791, zero 2.7737, swapped
+2.7733 NLL. Greedy generation remained 0/8 exact, with no useful payload
+intervention response. The bank-value stage is stopped at step 1,500; more
+updates on this objective are not justified by these controls. Source-swap
+comparisons are eligible negatives, not proof that the alternative source is
+insufficient. These are teacher NLL and retrieval diagnostics, not agent
+success or parameter substitution.
+
+## Short-passage reconstruction preparation
+
+The next writer/reader stage uses 6,000 training and 512 validation sources
+with complete 28-word passages. Tokenizer lengths of source text span 35–64;
+the model's source and target limits allow one extra EOS token. The prepared
+corpus at `/archive/corpora/squad-short-reconstruction-20260921` has disjoint
+source IDs and article titles across splits, and no target text in queries.
+Its training and validation episode SHA-256 values are
+`a2b53b2cbacef742392ff43eb5ed2c60b83cc503fead0ef205b6ee523ed729ca`
+and `53b9fe3a2b12954a38763d806a792b8c77a02a0576dc2ad0fa896793ef06d027`.
+The first launch stopped when a 64-token raw source became 65 tokens with
+EOS; the corrected fresh run uses a 65-token model limit. That failure left
+the source manifest untouched and did not create a trained checkpoint.
+
+The corrected run at `/archive/runs/four-space-short-reconstruction-v2-20260921`
+warm-starts the compatible four-space local-routing checkpoint and trains the
+live writer and reader with oracle source delivery. Its step-0 stored-only
+baseline on 16 article-disjoint validation passages had mean teacher NLL
+3.6745 with correct BF16 payloads and 3.6808 with zeroed payloads, and 0/16
+exact greedy reconstructions. At step 256, the same passage set scored 3.2913
+and 3.3217 NLL, respectively; all 16 greedy outputs changed under the value
+ablation, although exact reconstruction remained 0/16. These are early
+information-flow signs, not a solved reconstruction task. A separate offline
+writer phase creates the evaluation bank, after which the writer is disabled
+and the stored payloads are reopened for inference. The run is continuing to
+step 1,000 for the next controlled check.

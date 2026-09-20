@@ -36,9 +36,11 @@ def test_supplied_mixed_plan_uses_prefix_query_and_deduplicates(monkeypatch):
     episode = SimpleNamespace(episode_id='q', query='earlier question',
         answer='future answer', query_time=7, required_ids=('positive',),
         support_annotation='verified', provenance={'domain': 'test'})
-    result = planner(Agent(), Searcher(), [episode], namespace='bank',
-                     generation='g', limits=(3, 2))
+    result, swapped = planner(Agent(), Searcher(), [episode], namespace='bank',
+                              generation='g', limits=(3, 2))
     assert [[item.record_id for item in plan.selections] for plan in result['q'][0]] == [
         ['positive', 'a', 'b'], ['positive', 'a']]
+    assert [[item.record_id for item in plan.selections] for plan in swapped['q'][0]] == [
+        ['c', 'a', 'b'], ['b', 'a']]
     assert [call['space'] for call in calls] == ['s0', 's1']
     assert all(call['query_time'] == 7 and call['domain'] == 'test' for call in calls)
