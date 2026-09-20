@@ -191,6 +191,17 @@ It reports both token-weighted and per-example scores, plus trajectory-clustered
 uncertainty for paired memory benefits. Optional `--generate-tokens` saves generated
 text and exact-reference matches; neither is a patch verifier or agent task score.
 
+Teacher evaluation now uses a stable sibling output directory by default. Each
+environment and intervention namespace commits its raw frozen-writer records with
+an input and contents manifest. A restart verifies the checkpoint model, prepared
+episodes, evaluator version and committed bank bytes before reusing them; completed
+namespaces do not call the writer again. Each scored condition and its original
+read plan are saved together, so a stopped evaluation resumes without repeating
+completed NLL calls or changing the fixed-plan payload controls. `STOP` or a
+termination signal is checked between namespaces and scoring conditions, and the
+launcher publishes a stage evaluation marker only after all conditions finish.
+Use a new output directory if checkpoint, data, evaluator, or limits change.
+
 All downloaded instructions, shell commands and code remain data. A separate execution
 environment would be needed to assess tool/patch success. No live teacher endpoint or
 tracking service is necessary for the implemented imitation curriculum.

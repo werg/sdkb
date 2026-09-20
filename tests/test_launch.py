@@ -46,6 +46,20 @@ def test_full_three_stages_and_idempotent_resume(tmp_path, tiny_config):
         assert 'token_weighted_nll' in report['summary']['all']
 
 
+def test_teacher_evaluation_stop_does_not_publish_stage_marker(tmp_path, tiny_config, monkeypatch):
+    import sdkb.trajectory_eval as teacher_eval
+    recipe, out = make_recipe(tmp_path, tiny_config), tmp_path / 'run'
+    calls = []
+    def evaluator(run, episodes, **kwargs):
+        calls.append(kwargs['output'])
+        return {'status': 'checkpointed' if len(calls) == 1 else 'complete'}
+    monkeypatch.setattr(teacher_eval, 'evaluate_teacher_run', evaluator)
+    assert launch(recipe, out)['status'] == 'checkpointed'
+    assert not (out/'text_bootstrap-evaluation.json').exists()
+    assert launch(recipe, out, resume=True)['status'] == 'complete'
+    assert calls[0] == calls[1] == out/'text_bootstrap-evaluation'
+
+
 def test_stored_teacher_reads_cannot_call_producer(tmp_path, tiny_config, monkeypatch):
     recipe = make_recipe(tmp_path, tiny_config)
     prepare_launch(recipe, tmp_path / 'prepared')

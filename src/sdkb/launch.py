@@ -229,8 +229,12 @@ def _launch(recipe_path, output, *, resume, prepare_only, stop):
             return dict(status='checkpointed', stage=stage['name'])
         report = output / (stage['name'] + '-evaluation.json')
         if not report.exists():
-            atomic_json(report, evaluate_teacher_run(run, output / 'data/validation.jsonl',
-                        max_episodes=manifest['recipe'].get('evaluation', {}).get('max_episodes', 64)))
+            evaluation = evaluate_teacher_run(run, output / 'data/validation.jsonl',
+                max_episodes=manifest['recipe'].get('evaluation', {}).get('max_episodes', 64),
+                output=output / (stage['name'] + '-evaluation'))
+            if evaluation.get('status') == 'checkpointed':
+                return dict(status='checkpointed', stage=stage['name'], boundary='teacher_evaluation')
+            atomic_json(report, evaluation)
     last = manifest['stages'][-1]
     last_config = load_config(last['config'])
     compact_evaluation = (last_config.memory.compaction != 'none' and last_config.train.arm == 'memory')
