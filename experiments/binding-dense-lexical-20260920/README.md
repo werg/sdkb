@@ -49,3 +49,32 @@ stops between queries; completed arms and dense indices are validated/reused on
 restart. No model checkpoint or source bank is changed. All artifacts remain on the
 external disk, with a 10 GiB reserve. Tests cover deterministic encoding, byte/shape
 accounting, persisted boundaries/digest rejection, opaque IDs and strict visibility.
+
+## Completed result
+
+All 13 declared arms completed on CPU from frozen commit `3ac680f`. The full suite
+passed 431 tests before launch; Ruff passed. `results.json` records all task/count
+aggregates, index sizes and raw report hashes. The bank and corpus stayed unchanged.
+
+| Encoder | Both annotated action sources, top two (of 128) |
+|---|---:|
+| Earlier learned 64D keys | 35 |
+| Earlier sparse TF-IDF | 128 |
+| Unprojected sparse TF, no IDF | 64 |
+| Dense TF 64D, seeds 11 / 23 / 47 | **2 / 0 / 0** |
+| Dense TF 128D, same seeds | 0 / 0 / 0 |
+| Dense TF 256D, same seeds | 15 / 1 / 0 |
+| Dense TF 1024D, same seeds | 2 / 43 / 0 |
+
+The 64D control does not preserve the lexical advantage at equal key bytes. Removing
+IDF already lowers full action-pair retrieval to 64/128, and projection further
+degrades it with substantial seed sensitivity. Larger widths do not monotonically
+recover the result on this fixture. This experiment therefore does not show that a
+simple fixed 64D lexical projection is an adequate replacement, or that 64 dimensions
+are an inherent limit for learned encoding. It separates two losses in this specified
+encoder; it is not a general dimensionality theorem or a tuned lexical baseline.
+
+The 64D blobs occupy exactly 1,048,576 bytes, but complete serialized indices occupy
+2,277,753 bytes including verbose metadata and headers. The learned key-blob number
+also excludes its database metadata. No equality of total deployed storage is
+claimed. No candidate was promoted or evaluated for generation from these results.

@@ -1,0 +1,788 @@
+{
+  "implementation_commit": "3ac680f",
+  "inputs": {
+    "bank_sha256": "1310fb8bf2d74c0400d13cdef79d0bd6e55bd1e285b9b58b5cbb24ce8ee02201",
+    "episodes_sha256": "4c9cd6091b9422c688a4e92d04a74325b4131f699c944d5dd2c5f3c33ff296aa",
+    "reference_sha256": "506b73e502f1b82a090e99387c3042307f16ffde5f3bcf4698f6cd88c918971f",
+    "script_sha256": "035478a6c3ade18078834caa265e5f3e159d44218e70af1ef4f9862d05609a51",
+    "lexical_helper_sha256": "f7cf40b4d174974f036eb6b22f81f33dde5baea8ce2fc2e894ad5e4d028cbc8e",
+    "widths": [
+      64,
+      128,
+      256,
+      1024
+    ],
+    "seeds": [
+      11,
+      23,
+      47
+    ]
+  },
+  "arms": {
+    "sparse-tf": {
+      "width": null,
+      "seed": null,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 49,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 94,
+            "all_required": 64
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "result": "/archive/probes/dense-lexical-routing-20260920/sparse-tf.json",
+      "result_sha256": "e2888a484b83b6ac774ecca8db2c812c3ecc55c87ef676c332c25c0d9c189925"
+    },
+    "width-64-seed-11": {
+      "width": 64,
+      "seed": 11,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 1,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 4,
+            "all_required": 2
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 17,
+            "all_required": 17
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 21,
+            "all_required": 21
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 49,
+            "all_required": 49
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 57,
+            "all_required": 57
+          }
+        }
+      },
+      "key_blob_bytes": 1048576,
+      "serialized_index_bytes": 2277753,
+      "index_manifest_sha256": "20395e43c767aa9a3399c61596535e7606bb3ccf7d98e984af7b6df26cc3ec9c",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-64-seed-11.json",
+      "result_sha256": "626e5cbc5562f7d7f4ae92d96323830b115ec7df65be2cdf2046f6a8323cfd65"
+    },
+    "width-64-seed-23": {
+      "width": 64,
+      "seed": 23,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 2,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 3,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 6,
+            "all_required": 6
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 10,
+            "all_required": 10
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 22,
+            "all_required": 22
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 29,
+            "all_required": 29
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 1048576,
+      "serialized_index_bytes": 2277753,
+      "index_manifest_sha256": "5d6673eb1c1466dd62c470746853125e9fecab0d89af79ed99ebc00ecb1e0692",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-64-seed-23.json",
+      "result_sha256": "b825430659bebd30681760ad466717cf2ccbe0a23a96b1e64658f2b83640a613"
+    },
+    "width-64-seed-47": {
+      "width": 64,
+      "seed": 47,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 1,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 16,
+            "all_required": 16
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 22,
+            "all_required": 22
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 13,
+            "all_required": 13
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 21,
+            "all_required": 21
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 62,
+            "all_required": 62
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 1048576,
+      "serialized_index_bytes": 2277753,
+      "index_manifest_sha256": "6a39a4256707c6fe4e65a2ba6753873d42bac8d5675cbab460e6d8f754f2879c",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-64-seed-47.json",
+      "result_sha256": "c6c5820f1824ab00725563b202e8bf9393463aa03670f6336e712555734d4e2b"
+    },
+    "width-128-seed-11": {
+      "width": 128,
+      "seed": 11,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 8,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 17,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 35,
+            "all_required": 35
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 50,
+            "all_required": 50
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 2097152,
+      "serialized_index_bytes": 3326330,
+      "index_manifest_sha256": "d339d1edfa1f8d6a38286eab1c924a5e951825602534a5da1d0cdf50245c90e2",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-128-seed-11.json",
+      "result_sha256": "b72c202aad080d157717f46846149589aea3a75ed2705eac248d5713d9ed7c48"
+    },
+    "width-128-seed-23": {
+      "width": 128,
+      "seed": 23,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 4,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 10,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 14,
+            "all_required": 14
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 30,
+            "all_required": 30
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 22,
+            "all_required": 22
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 50,
+            "all_required": 50
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 2097152,
+      "serialized_index_bytes": 3326330,
+      "index_manifest_sha256": "74a936eda81c143458ab9ebe8674b99df6d40e221f5e7a6724c20aec870b6ca6",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-128-seed-23.json",
+      "result_sha256": "4d8425f037d5a4ad76f7e68d8c93994e4de997c59701e5d0ba60dadd9613aa60"
+    },
+    "width-128-seed-47": {
+      "width": 128,
+      "seed": 47,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 6,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 8,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 29,
+            "all_required": 29
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 53,
+            "all_required": 53
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 35,
+            "all_required": 35
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 40,
+            "all_required": 40
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 2097152,
+      "serialized_index_bytes": 3326330,
+      "index_manifest_sha256": "2e0f00935ce8d2fb50ad3b6730d6f6d0c41fc68733c02d0539bcf48b3743702e",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-128-seed-47.json",
+      "result_sha256": "c3c8f7ffede225bca228d1388b9988d670e4e38d9a257884e0caea8d2243f074"
+    },
+    "width-256-seed-11": {
+      "width": 256,
+      "seed": 11,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 21,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 33,
+            "all_required": 15
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 7,
+            "all_required": 7
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 53,
+            "all_required": 53
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 4194304,
+      "serialized_index_bytes": 5423482,
+      "index_manifest_sha256": "394999ba7436aca1d19bc720a1b8bef5a6bb3cfb526be38d44be3b9f27246d73",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-256-seed-11.json",
+      "result_sha256": "0e3a009ba6b5bcc8b8619521b2afb09a942db90b4d9941a3883278c5b99c8eab"
+    },
+    "width-256-seed-23": {
+      "width": 256,
+      "seed": 23,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 23,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 29,
+            "all_required": 1
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 5,
+            "all_required": 5
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 36,
+            "all_required": 36
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 54,
+            "all_required": 54
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 63,
+            "all_required": 63
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 4194304,
+      "serialized_index_bytes": 5423482,
+      "index_manifest_sha256": "297d44779840ce16d35a9dba529c15d506df8048784029784ec980aa874254ed",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-256-seed-23.json",
+      "result_sha256": "3035c7528884de5884accd4c587ea1e8fd1de6206570ede1fa3d56b6f9d40b31"
+    },
+    "width-256-seed-47": {
+      "width": 256,
+      "seed": 47,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 7,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 11,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 42,
+            "all_required": 42
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 63,
+            "all_required": 63
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 4194304,
+      "serialized_index_bytes": 5423482,
+      "index_manifest_sha256": "8f3cfb811ab9e7551f867b339fc5d6125f46311fb087c2c1692230ce38c7366e",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-256-seed-47.json",
+      "result_sha256": "956f1e9e2a8d5707cbb1bc2b6d3e5904b3777ac75a09d0e7aebcc915bdc0a74e"
+    },
+    "width-1024-seed-11": {
+      "width": 1024,
+      "seed": 11,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 42,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 60,
+            "all_required": 2
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 13,
+            "all_required": 13
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 61,
+            "all_required": 61
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 16777216,
+      "serialized_index_bytes": 18006395,
+      "index_manifest_sha256": "ddaaf28c90d741daec08012bb2511b70391f9ccd4df1f41e3bdbc5034228d728",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-1024-seed-11.json",
+      "result_sha256": "54387233fab3d214d47ccd3f6172f20cebe3b116b2c5b13c0363cc3b932642e5"
+    },
+    "width-1024-seed-23": {
+      "width": 1024,
+      "seed": 23,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 37,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 78,
+            "all_required": 43
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 62,
+            "all_required": 62
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 9,
+            "all_required": 9
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 16777216,
+      "serialized_index_bytes": 18006395,
+      "index_manifest_sha256": "45bc2006a7821608163bddb7228a0d2fac7f842789b9fbdaae855624f95e49af",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-1024-seed-23.json",
+      "result_sha256": "bc1e9b284bb0da09f086d5622b0726f8e645b3250171e809fd0bc0aab891048d"
+    },
+    "width-1024-seed-47": {
+      "width": 1024,
+      "seed": 47,
+      "summary": {
+        "multiuse/action": {
+          "1": {
+            "n": 128,
+            "complete_support": 43,
+            "all_required": 0
+          },
+          "2": {
+            "n": 128,
+            "complete_support": 60,
+            "all_required": 0
+          }
+        },
+        "multiuse/identifier": {
+          "1": {
+            "n": 64,
+            "complete_support": 0,
+            "all_required": 0
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/permission": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        },
+        "multiuse/restoration": {
+          "1": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          },
+          "2": {
+            "n": 64,
+            "complete_support": 64,
+            "all_required": 64
+          }
+        }
+      },
+      "key_blob_bytes": 16777216,
+      "serialized_index_bytes": 18006395,
+      "index_manifest_sha256": "eaf5fd3bc9752c4bd4fc79816fa82c0905aa20f5cdeb61f648365d725de5237a",
+      "result": "/archive/probes/dense-lexical-routing-20260920/width-1024-seed-47.json",
+      "result_sha256": "79b72ab8f87e428a8a8030a514794aee78f155db93706af5bf60e02f5f59b795"
+    }
+  },
+  "notice": "All predeclared arms reported. Retrieval only on the known literal-name fixture. Sparse TF omits IDF; dense TF adds projection loss. No new generation or learned-router improvement."
+}

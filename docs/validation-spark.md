@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **428 tests**, with four existing dependency/runtime
+The latest full suite passed **434 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -405,3 +405,11 @@ strings repeatedly; the larger samples 7,516 distinct strings, mostly once. Worl
 content also changes, and equal updates do not mean equal token/FLOP budgets.
 The sealed 32-world confirmation excludes training source IDs and both original
 and inverted endpoint targets. No endpoint result is asserted while training runs.
+
+
+The [dense lexical follow-up](../experiments/binding-dense-lexical-20260920/README.md)
+fails to retain the sparse lexical advantage at equal key-blob bytes: fixed 64D
+TF projections recover only 2/128, 0/128 and 0/128 full action pairs across three
+seeds. The unprojected no-IDF baseline gets 64/128 versus the earlier TF-IDF 128/128.
+All declared widths/seeds are reported. This identifies losses in this fixed encoder,
+not an inherent dimension limit or a learned-router improvement.
