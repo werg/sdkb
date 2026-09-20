@@ -57,9 +57,12 @@ recover 205/384 characters from the concatenated input projections and 165/384
 from the final shared state with linear heads, with zero exact identifiers. Native
 hooks preserve the original returned output bitwise and never use targets or writers.
 The [capacity intervention](../experiments/binding-reader-capacity-20260920/README.md)
-is training 256- and 1024-wide reset readers from the same broad endpoint. Native
-wide-reader causal/gradient preflight passes; initial audits verify every non-reader
-tensor against the common source. Final behavior remains pending.
+completed 256- and 1024-wide reset readers from the same broad endpoint. Initial
+audits verify every non-reader tensor against the common source; final audits verify
+all 2000 updates and complete Muon recovery. Original identifiers are 1/64 and 0/64,
+with zero correct original/changed identifier pairs in both arms. Selected text
+remains 64/64, and original actions are 128/128 and 127/128. The wider reader is not
+promoted; lower teacher NLL did not yield reliable exact recall.
 
 Learned global retrieval remains weaker: corrected training reaches 102/128 free
 actions at 128 records and 78/128 at 4,096 records on fixed questions. Wider address

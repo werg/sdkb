@@ -71,5 +71,31 @@ exactly its initial and final checkpoints on external storage. Training took abo
 
 The complete 100-update-window loss curves are exported under the external run's
 `analysis/training-nll.{png,svg}`; `training-nll.json` records both complete log
-prefixes. Training fit improved in both arms. Held-out behavior and text controls
-are still running; no reader-capacity benefit is asserted from these losses.
+prefixes. Training fit improved in both arms. All confirmations and text controls completed
+with exit code zero; `comparison.json` verifies checkpoint/corpus identity and all
+1920 generated rows per arm, plus repeated no-memory strings.
+
+## Completed behavior
+
+| Measure | Reset width 256 | Reset width 1024 |
+|---|---:|---:|
+| Original identifiers /64 | 1 | 0 |
+| Changed identifiers /64 | 1 | 2 |
+| Correct original + changed identifier pairs /64 | 0 | 0 |
+| Original actions /128 | 128 | 127 |
+| Permission-change action pairs /128 | 128 | 127 |
+| Restoration-change action pairs /64 | 64 | 63 |
+| Selected-text identifiers /64 | 64 | 64 |
+| No-memory / zero-value identifiers /64 | 0 / 0 | 0 / 0 |
+| Identifier teacher NLL | 1.31826 | 1.12088 |
+
+The wider reader does not establish a practical exact-recall benefit. Its lower
+teacher NLL coexists with zero correct identifier pairs and a few rule/action
+regressions. Irrelevant permission changes alter identifier predictions in 38/64
+and 30/64 cases respectively. The narrower arm preserves all tested rule/action
+counterfactuals, but its single correct original identifier does not constitute
+reliable copying. Both controllers still copy all selected-text identifiers.
+
+Neither arm is promoted as a recall solution. This one-seed, previously inspected
+split motivates testing a richer learning signal from the text path; it does not
+rule out capacity or optimization effects under other budgets.

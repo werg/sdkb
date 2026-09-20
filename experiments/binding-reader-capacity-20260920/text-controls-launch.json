@@ -2,7 +2,7 @@
   "controller_commit": "25e6290ce36c2a6325e9dc7b539f15eff94b6961",
   "model_commit": "b38564a128f789acd327f47209dc09aa94a6bb4c",
   "declaration_sha256": "41ed18e757532a862fa65ed03be24fb7dfacf4dfb5ce8a0506fd402dd42c121f",
-  "status": "waiting for the primary confirmation ownership lock",
+  "status": "both text controls completed with exit code 0; comparison collector verified coverage and repeated no-memory predictions",
   "maximum_children": 2,
   "model_code": "/workspace/sdkb/.sdkb/reader-capacity",
   "controller_code": "/workspace/sdkb/.sdkb/reader-capacity-supplement"
