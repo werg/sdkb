@@ -72,28 +72,60 @@ def assess(model, values, labels, config):
 
 
 @torch.no_grad()
-def reader_feature(agent, store, episode, *, zero_values=False):
+def reader_feature(agent, store, episode, *, zero_values=False, representation='reader', metadata=None):
     """First native reader output, before bridge injection; targets are never inputs."""
     from sdkb.recurrence import LoopMemory
     from sdkb.sessions import read_session
     if (agent.training or agent.config.memory.read_timing != 'loop_boundary'
             or agent.config.memory.read_steps != 1):
         raise ValueError('Reader feature requires a frozen, single-read recurrent agent')
-    with autocast_context(agent.config):
-        session = read_session(agent, store, agent.prompt_ids(episode.query), namespace='global',
-            generation='frozen-v1', query_time=episode.query_time, oracle_ids=episode.required_ids,
-            ablate_values=zero_values)
+    if representation not in {'reader', 'reader_inputs', 'reader_state'}:
+        raise ValueError('Unknown reader feature boundary')
+    captures, hooks = [], []
+    if representation != 'reader':
+        from sdkb.readers import SetReader
+        if not isinstance(agent.reader, SetReader) or len(episode.required_ids) != 1:
+            raise ValueError('Intermediate features require one selected record and one reader space')
+        if representation == 'reader_inputs':
+            if agent.reader.kind != 'mlp':
+                raise ValueError('Input-projection diagnostic currently covers the MLP reader')
+            for block in agent.reader.blocks:
+                hooks.append(block.input.register_forward_hook(
+                    lambda _module, _args, result: captures.append(result.detach())))
+        else:
+            hooks.append(agent.reader.output.register_forward_pre_hook(
+                lambda _module, args: captures.append(args[0].detach())))
+    try:
+        with autocast_context(agent.config):
+            session = read_session(agent, store, agent.prompt_ids(episode.query), namespace='global',
+                generation='frozen-v1', query_time=episode.query_time, oracle_ids=episode.required_ids,
+                ablate_values=zero_values)
+    finally:
+        for hook in hooks:
+            hook.remove()
     memory = session.memory
     if not isinstance(memory, LoopMemory) or not memory.events or memory.events[0] is None:
         raise ValueError('Missing first-boundary reader output')
-    return memory.events[0].detach().float().flatten().cpu()
+    if representation == 'reader_inputs':
+        if len(captures) != agent.reader.rounds or any(x.shape[:2] != (1, 1) for x in captures):
+            raise ValueError('Expected one actual input projection per complete reader round')
+        feature = torch.cat(captures, dim=-1)
+    elif representation == 'reader_state':
+        if len(captures) != 1:
+            raise ValueError('Expected exactly one final reader state')
+        feature = captures[0]
+    else:
+        feature = memory.events[0]
+    if metadata is not None:
+        metadata['captured_dtype'] = str(feature.dtype)
+    return feature.detach().float().flatten().cpu()
 
 
 def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32, representation='payload'):
     if steps < 1:
         raise ValueError('Positive optimizer budget required')
-    if representation not in {'payload', 'reader', 'zero_reader'}:
-        raise ValueError('Choose payload, reader or zero_reader representation')
+    if representation not in {'payload', 'reader', 'zero_reader', 'reader_inputs', 'reader_state'}:
+        raise ValueError('Unknown frozen feature representation')
     output.mkdir(parents=True, exist_ok=True)
     with run_lock(output, clear_stop=False):
         checkpoint = resolve_checkpoint(source, verify=True)
@@ -124,8 +156,10 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32,
             agent.produce = forbidden
             if agent.compactor is not None:
                 agent.compactor.forward = forbidden
+        capture_dtypes = {}
         for split, episodes in groups.items():
             payloads = []
+            dtypes = set()
             for e in episodes:
                 record = lookup_record(store, e.required_ids[0], namespace='global', space='s0',
                                        generation='frozen-v1', query_time=e.query_time)
@@ -138,12 +172,21 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32,
                 available = available_host_memory()
                 if available is not None and available < config.train.min_system_available_bytes:
                     raise RuntimeError('Host memory reserve reached during frozen feature reads')
-                payloads.append(record.payload.float().flatten() if agent is None else
-                                reader_feature(agent, store, e, zero_values=representation == 'zero_reader'))
+                metadata = {}
+                if agent is None:
+                    feature = record.payload.float().flatten()
+                    metadata['captured_dtype'] = str(record.payload.dtype)
+                else:
+                    feature = reader_feature(agent, store, e, zero_values=representation == 'zero_reader',
+                        representation=(representation if representation in {'reader_inputs', 'reader_state'} else 'reader'),
+                        metadata=metadata)
+                payloads.append(feature)
+                dtypes.add(metadata['captured_dtype'])
                 if len(payloads) % 128 == 0:
                     print(json.dumps({'feature_split': split, 'completed': len(payloads),
                                       'total': len(episodes), 'representation': representation}), flush=True)
             values[split] = torch.stack(payloads).to(config.train.device)
+            capture_dtypes[split] = sorted(dtypes)
             labels[split] = torch.tensor([[int(c, 16) for c in e.answer[4:]] for e in episodes], device=config.train.device)
         del agent
         feature_constancy = {split: bool(torch.equal(value, value[:1].expand_as(value)))
@@ -155,6 +198,7 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32,
                     'steps': steps, 'heldout_worlds': heldout_worlds, 'batch': 128,
                     'representation': representation, 'input_dimension': values['train'].shape[1],
                     'feature_constancy': feature_constancy,
+                    'feature_capture_dtypes': capture_dtypes,
                     'script_sha256': file_sha256(__file__), 'split_episodes': {k: [e.episode_id for e in v] for k, v in groups.items()},
                     'notice': 'Six supervised hexadecimal classifiers from declared frozen features. Reader features include the causal query. Wider features change readout parameter counts; zero_reader controls query-only information. Negative results do not prove information absent.'}
         if (output/'inputs.json').exists() and json.loads((output/'inputs.json').read_text()) != identity:
@@ -209,7 +253,7 @@ if __name__ == '__main__':
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--steps', type=int, default=1600)
     parser.add_argument('--heldout-worlds', type=int, default=32)
-    parser.add_argument('--representation', choices=['payload', 'reader', 'zero_reader'], default='payload')
+    parser.add_argument('--representation', choices=['payload', 'reader', 'zero_reader', 'reader_inputs', 'reader_state'], default='payload')
     args = parser.parse_args()
     def stop(_signal, _frame):
         (control_dir(args.output)/'STOP').touch()

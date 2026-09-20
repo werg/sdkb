@@ -1,0 +1,23 @@
+{
+  "checkpoint": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000004000-8e2bc39c7837",
+  "manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+  "episodes": "/archive/probes/freshness-readout-20260920/episodes.jsonl",
+  "episodes_sha256": "0a63b4cb004c1a292873c3b00adcb0ee4df71336359c873f40324eea4a3b8955",
+  "bank": "/archive/probes/freshness-readout-20260920/worlds-8192/bank/bank.sqlite",
+  "bank_sha256": "cc0d4e28603bd2ee7a907177df70b5c7b2fd8cadb2749839c118132736a1595d",
+  "probe_script_sha256": "b2b6b9d988f49e732210fa2974e060659420545492c8049dfea7d72561d00c97",
+  "steps": 1600,
+  "batch": 128,
+  "heldout_worlds": 32,
+  "seed": 83,
+  "learning_rate": 0.001,
+  "representations": [
+    "reader_inputs",
+    "reader_state"
+  ],
+  "heads": [
+    "linear",
+    "mlp256"
+  ],
+  "notice": "Post-hoc diagnostic on the previously inspected 64 identifiers. No model or writer updates; heads supply six-position output format. Accessibility and optimization comparison, not proof of irreversible information loss."
+}

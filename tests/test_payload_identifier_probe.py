@@ -45,7 +45,8 @@ def test_readout_normalization_is_fixed_from_training_values():
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
 
 
-def test_reader_feature_uses_only_causal_stored_memory(tmp_path, tiny_config, monkeypatch):
+@pytest.mark.parametrize('representation', ['reader', 'reader_inputs', 'reader_state'])
+def test_reader_feature_uses_only_causal_stored_memory(tmp_path, tiny_config, monkeypatch, representation):
     from sdkb.agent import SDKBAgent
     from sdkb.evaluation import build_shared_bank
     from sdkb.store import DiskStore
@@ -68,11 +69,15 @@ def test_reader_feature_uses_only_causal_stored_memory(tmp_path, tiny_config, mo
         raise AssertionError('Feature extraction used source encoding or target tokens')
     monkeypatch.setattr(agent, 'produce', forbidden)
     monkeypatch.setattr(agent, 'target_ids', forbidden)
-    full = reader_feature(agent, store, episode)
-    changed_target = reader_feature(agent, store, replace(episode, answer='UNSEEN FUTURE'))
-    zero = reader_feature(agent, store, episode, zero_values=True)
-    assert full.shape == (c.memory.read_slots*agent.width,)
+    options = {} if representation == 'reader' else {'representation': representation}
+    full = reader_feature(agent, store, episode, **options)
+    changed_target = reader_feature(agent, store, replace(episode, answer='UNSEEN FUTURE'), **options)
+    zero = reader_feature(agent, store, episode, zero_values=True, **options)
+    width = {'reader': c.memory.read_slots*agent.width,
+             'reader_inputs': c.memory.reader_rounds*c.memory.reader_width,
+             'reader_state': c.memory.read_slots*c.memory.reader_width}[representation]
+    assert full.shape == (width,)
     torch.testing.assert_close(full, changed_target, rtol=0, atol=0)
     assert not torch.equal(full, zero)
-    torch.testing.assert_close(zero, reader_feature(agent, store, other, zero_values=True), rtol=0, atol=0)
+    torch.testing.assert_close(zero, reader_feature(agent, store, other, zero_values=True, **options), rtol=0, atol=0)
     assert not full.requires_grad and full.device.type == 'cpu'

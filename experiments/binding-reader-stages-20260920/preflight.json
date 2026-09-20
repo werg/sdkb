@@ -1,0 +1,23 @@
+{
+  "default_output_bitwise_equal_to_f9625f7": true,
+  "boundaries": {
+    "reader_inputs": {
+      "captured_dtype": "torch.bfloat16",
+      "dimension": 768,
+      "target_independent": true,
+      "zero_values_world_independent": true
+    },
+    "reader_state": {
+      "captured_dtype": "torch.float32",
+      "dimension": 2048,
+      "target_independent": true,
+      "zero_values_world_independent": true
+    },
+    "reader": {
+      "captured_dtype": "torch.float32",
+      "dimension": 8192,
+      "target_independent": true,
+      "zero_values_world_independent": true
+    }
+  }
+}
