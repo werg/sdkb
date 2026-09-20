@@ -39,3 +39,15 @@ identity. Full suite after this extension: 363 passed; Ruff clean.
 `run_confirmation.py` waits for both committed 400-update endpoints and released
 training locks, then runs two evaluator processes at a time. It checks frozen
 config/corpus identities and treats incomplete or stopped training as a failure.
+
+Both endpoints completed and are recorded in `endpoints.json`. Their initial weight
+hashes are identical, all 400 sampled depths match, and each final saved Python
+sampler state exactly matches the declared exposure trace. Of 1,600 microbatches,
+807 request compaction and 322 actually reduce a two-source action group. The raw
+control's compactor remains byte-identical to initialization; the temporary arm's
+compactor parameters change. These are training/provenance checks, not capability
+results. Fresh confirmation is running.
+
+After both training locks released, verified hard-link deduplication reclaimed
+1,022,082,588 bytes from the duplicate initial weights. All checkpoint paths,
+optimizer/RNG state and manifests remain intact; see the operations record.

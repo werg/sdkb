@@ -1,0 +1,26 @@
+{
+  "seed": 103,
+  "steps": 400,
+  "microbatches": 1600,
+  "task_families": {
+    "multiuse/permission": 349,
+    "multiuse/identifier": 305,
+    "multiuse/action": 641,
+    "multiuse/restoration": 305
+  },
+  "compact_requested": {
+    "multiuse/permission": 185,
+    "multiuse/restoration": 157,
+    "multiuse/action": 322,
+    "multiuse/identifier": 143
+  },
+  "groups_reduced": {
+    "multiuse/action": 322
+  },
+  "loop_counts": {
+    "3": 205,
+    "2": 195
+  },
+  "sampling_trace_sha256": "7ab59584655c2514353b736218fd42b3301ad252fde901b9ca09249157606047",
+  "notice": "Expected sampling from the common Python RNG stream. Validate final saved sampler state and every logged depth before treating exposure as confirmed. Single-source compact requests are no-op groups."
+}

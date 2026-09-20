@@ -1,0 +1,39 @@
+{
+  "training_commit": "1e2c93e636b5abb9dc285f73bffaf7365f61f024",
+  "endpoints": {
+    "raw-control": {
+      "checkpoint": "/archive/runs/binding-compact-aware-20260920/raw-control/checkpoints/step-000000400-e5ee501f55fc",
+      "manifest_sha256": "5067e9bdd397a9fcdac4ba0a9dde3162e15e2c74704358962d016214635e75be",
+      "model_sha256": "d43923c7e076cdd02767322e1d40076155c8803e5c6928b210e07843a8c8bac2",
+      "initial_model_sha256": "2efd1d62ad8329c1acf8715fdefef37d20abba0fb45980219df4a102e5521a31",
+      "step": 400,
+      "planned_sampler_state_exact": true,
+      "changed_compactor_parameters": [],
+      "elapsed_training_seconds": 829.4144977469987
+    },
+    "temporary": {
+      "checkpoint": "/archive/runs/binding-compact-aware-20260920/temporary/checkpoints/step-000000400-ea744cf85fd0",
+      "manifest_sha256": "6cdbdecd999ca763a565cbc7c7d90bf1a688a602540661b99f90baa4b983066a",
+      "model_sha256": "fc6f790332a599940439577ad930b292b9c57c5ce103c9f072758e75e3d56374",
+      "initial_model_sha256": "2efd1d62ad8329c1acf8715fdefef37d20abba0fb45980219df4a102e5521a31",
+      "step": 400,
+      "planned_sampler_state_exact": true,
+      "changed_compactor_parameters": [
+        "compactor.codes.0.bias",
+        "compactor.codes.0.weight",
+        "compactor.codes.2.bias",
+        "compactor.codes.2.weight",
+        "compactor.encode.0.bias",
+        "compactor.encode.0.weight",
+        "compactor.encode.2.bias",
+        "compactor.encode.2.weight",
+        "compactor.multiplicity.bias",
+        "compactor.multiplicity.weight"
+      ],
+      "elapsed_training_seconds": 858.9346272340044
+    }
+  },
+  "identical_400_sampled_depths": true,
+  "identical_initial_weights": true,
+  "notice": "Both final sampler states exactly match the declared trace; equal examples and depth schedules verified. Warm, contended timings are not a performance comparison."
+}
