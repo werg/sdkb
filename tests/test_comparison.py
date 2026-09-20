@@ -70,3 +70,42 @@ def test_unchanged_counterfactual_delta_counts_spurious_prediction_changes():
     assert delta['ci95'] == [1., 1.]
     assert delta['n_queries'] == 1
     assert 'cf_permission' not in result['counterfactual_both_correct_gain']
+
+
+def generation_report():
+    return {'inputs': {'episodes_sha256': 'same-corpus', 'max_new_tokens': 24},
+            'generation_rows': [dict(episode=r['episode'], environment=r['environment'],
+                task_family=r['task_family'], condition=r['condition'], answer='yes',
+                prediction='no', exact_match=False) for r in report()['rows']]}
+
+
+def test_free_generation_comparison_keeps_world_and_control_pairing():
+    from sdkb.comparison import compare_generation_results
+    old = generation_report()
+    new = deepcopy(old)
+    for row in new['generation_rows']:
+        row.update(prediction='yes', exact_match=True)
+    result = compare_generation_results(old, new)
+    assert result['metric'] == 'free_generation_exact_match'
+    assert result['overall']['accuracy_gain']['all']['mean_gain'] == 1.
+    assert result['overall']['accuracy_gain']['all']['n_worlds'] == 1
+    assert result['overall']['memory_advantage_gain']['zero_values']['mean_gain'] == 0.
+
+
+@pytest.mark.parametrize('mutation', ['corpus', 'budget', 'incorrect_flag', 'duplicate', 'missing'])
+def test_free_generation_comparison_rejects_mismatched_evidence(mutation):
+    from sdkb.comparison import compare_generation_results
+    old = generation_report()
+    new = deepcopy(old)
+    if mutation == 'corpus':
+        new['inputs']['episodes_sha256'] = 'different'
+    elif mutation == 'budget':
+        new['inputs']['max_new_tokens'] = 64
+    elif mutation == 'incorrect_flag':
+        new['generation_rows'][0]['exact_match'] = True
+    elif mutation == 'duplicate':
+        new['generation_rows'].append(deepcopy(new['generation_rows'][0]))
+    else:
+        new['generation_rows'].pop()
+    with pytest.raises(ValueError):
+        compare_generation_results(old, new)
