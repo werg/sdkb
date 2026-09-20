@@ -25,5 +25,21 @@ reserve 10 GiB disk and 8 GiB host memory, CUDA fraction .35, watchdog 300 secon
 offline W&B. Resume with the frozen launch checkout and unchanged configuration.
 No live teacher, shell command from a trajectory, or benchmark environment runs.
 
-Native preflight is required before this training stage starts. Outcomes remain
-pending; NLL must remain separate from counterfactual transfer and agent success.
+Native preflight passed on the pinned LFM checkpoint. All 200 updates completed;
+the initial and final complete checkpoints are on the external drive. The final
+checkpoint is step 200, and the held-out scoring file is
+`/archive/runs/trajectory-prefix-muon-20260920/heldout-text/results.json`.
+The frozen training code is commit `48cabfa`; the evaluator records the checkpoint
+model digest, input digests, code digest and each completed scoring row for resume.
+
+| Same checkpoint and 119 repository-held-out episodes | R=1 token-weighted NLL | R=2 token-weighted NLL |
+|---|---:|---:|
+| Selected prior source text | 1.489802 | 1.447101 |
+| No prior source text | 1.937263 | 1.902615 |
+
+The R=1 scores exactly match the untouched pretrained baseline. R=2 improves
+teacher-forced NLL in both text conditions; these 200 updates establish a usable
+recurrent bridge for the next latent stage, not latent-memory transfer, source
+sufficiency, composition, or agent success. The selected-text benefit is a context
+control with a different token and compute budget. No model weights or raw
+trajectory text are committed to Git.

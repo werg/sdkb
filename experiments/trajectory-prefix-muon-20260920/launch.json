@@ -1,0 +1,8 @@
+{
+  "implementation_commit": "48cabfafe6ce1e03a10ec18e846fc4159057c47d",
+  "status": "native preflight passed; launching the 200-update bridge stage",
+  "full_suite": "502 passed, 4 warnings, 36.70 seconds",
+  "model_probe_sha256": "d8cfcf705e468e5226394cbf9865978b5bf4890c883255546bbf42369e1ea370",
+  "frozen_code": "/workspace/sdkb/.sdkb/trajectory-bridge",
+  "all_runtime_caches": "/archive/cache"
+}
