@@ -314,3 +314,11 @@ to completion with zero writer calls on the resumed attempt. It kept all 119
 original read selections fixed under both payload controls. The 509-test suite
 and Ruff passed. This is frozen-inference progress, separate from training's
 complete optimizer/RNG/partial-gradient checkpoint contract.
+
+One subsequent guard audit found that this new teacher path did not yet arm the
+device-aware stall watchdog around its actual writer and scorer computations.
+The corrected path awaits CUDA completion before disarming each forward, while
+leaving SQLite publication and progress-file fsync outside the guard. A focused
+regression checks that writer and scoring forwards are guarded and progress I/O
+is not; the full suite passes 511 tests. The already active frozen latent depth
+sweep keeps its original evaluator checkout.

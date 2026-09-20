@@ -201,6 +201,9 @@ completed NLL calls or changing the fixed-plan payload controls. `STOP` or a
 termination signal is checked between namespaces and scoring conditions, and the
 launcher publishes a stage evaluation marker only after all conditions finish.
 Use a new output directory if checkpoint, data, evaluator, or limits change.
+Frozen writer forwards, read planning and score computation use the configured
+device-aware stall watchdog; it is disarmed before progress files or SQLite
+transactions are flushed to the external disk.
 
 All downloaded instructions, shell commands and code remain data. A separate execution
 environment would be needed to assess tool/patch success. No live teacher endpoint or

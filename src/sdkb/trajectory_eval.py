@@ -23,6 +23,7 @@ from .sessions import read_session
 from .store import DiskStore, ReadPlan, Selection
 from .operations import atomic_json, run_lock, stop_requested
 from .trajectories import file_sha256
+from . import runtime
 from .training import autocast_context, config_from_run, output_records, stored_channel, resource_report, reset_resource_peaks
 
 
@@ -41,8 +42,11 @@ def build_teacher_bank(agent, store, episodes, *, writer_identity=None, want_sto
         def encoded(rid):
             if rid not in outputs:
                 with autocast_context(agent.config):
-                    outputs[rid] = tuple(t.detach().cpu() for t in stored_channel(
-                        agent, agent.produce(agent.text_ids(sources[rid].text, source=True))))
+                    source_ids = agent.text_ids(sources[rid].text, source=True)
+                    with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
+                                                  device=agent.config.train.device):
+                        outputs[rid] = tuple(t.detach().cpu() for t in stored_channel(
+                            agent, agent.produce(source_ids)))
             return outputs[rid]
         ids, seen = sorted(sources), set()
         peers = {rid: ids[(i + 1) % len(ids)] for i, rid in enumerate(ids)}
@@ -152,27 +156,35 @@ def stored_teacher_evaluation(agent, store, episodes, *, generate_tokens=0, clus
             memory, selected = None, []
             if arm in {'memory', 'direct_latent'} and condition != 'none':
                 namespace = ('wrong_values' if condition == 'wrong_values' else 'all') + '/' + e.environment
-                session = read_session(agent, store, prompt, namespace=namespace, generation='teacher-eval-v1',
-                                       query_time=e.query_time,
-                                       oracle_ids=visible if agent.config.train.retrieval == 'oracle' else None,
-                                       ablate_values=condition == 'zero_values',
-                                       cluster_bank=cluster_bank if condition == 'compact' else None,
-                                       fixed_plans=None if condition == 'all' else
-                                           [[replace(p, namespace=namespace) for p in step] for step in original_plans])
+                with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
+                                              device=agent.config.train.device):
+                    session = read_session(agent, store, prompt, namespace=namespace, generation='teacher-eval-v1',
+                                           query_time=e.query_time,
+                                           oracle_ids=visible if agent.config.train.retrieval == 'oracle' else None,
+                                           ablate_values=condition == 'zero_values',
+                                           cluster_bank=cluster_bank if condition == 'compact' else None,
+                                           fixed_plans=None if condition == 'all' else
+                                               [[replace(p, namespace=namespace) for p in step] for step in original_plans])
                 memory, selected = session.memory, session.selected_ids
                 if condition == 'all':
                     plans_by_episode[e.episode_id] = [[asdict(p) for p in step] for step in session.plans]
             elif arm == 'shared_compute':
-                memory = agent.shared_compute_tokens(prompt)
+                with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
+                                              device=agent.config.train.device):
+                    memory = agent.shared_compute_tokens(prompt)
             target = agent.target_ids(e.answer)
-            nll = float(agent.conditioned_nll(prompt, target, memory, reduction='sum'))
+            with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
+                                          device=agent.config.train.device):
+                nll = float(agent.conditioned_nll(prompt, target, memory, reduction='sum'))
             r = dict(episode=e.episode_id, trajectory=e.environment, dataset=e.provenance.get('dataset'),
                      condition=condition, token_count=target.numel(), sequence_nll=nll, mean_nll=nll / target.numel(),
                      selected_ids=selected, support_annotation=e.support_annotation)
             if condition == 'compact':
                 r['payload_accounting'] = session.payload_accounting
             if generate_tokens:
-                prediction = agent.generate_from_memory(prompt, memory, max_new_tokens=generate_tokens)
+                with runtime.compute_watchdog(agent.config.train.stall_timeout_seconds,
+                                              device=agent.config.train.device):
+                    prediction = agent.generate_from_memory(prompt, memory, max_new_tokens=generate_tokens)
                 r.update(prediction=prediction, reference_exact_match=prediction.strip() == e.answer.strip())
             rows.append(r)
             if progress is not None:

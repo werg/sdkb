@@ -134,3 +134,37 @@ def test_teacher_run_resumes_without_rewriting_checkpoint_or_scored_rows(tmp_pat
     episodes.write_text(episodes.read_text() + '\n')
     with pytest.raises(ValueError, match='identity changed'):
         evaluate_teacher_run(checkpoint, episodes, output=output)
+
+
+def test_teacher_writer_and_scoring_guard_compute_but_not_progress_io(tmp_path, tiny_config, monkeypatch):
+    from contextlib import contextmanager
+    import sdkb.runtime as runtime
+    agent = SDKBAgent(tiny_config).eval()
+    episodes = make_multiuse_world(14, bindings=1)[:1]
+    store = DiskStore(tmp_path/'bank.sqlite')
+    armed = []
+    @contextmanager
+    def guard(*args, **kwargs):
+        armed.append(True)
+        try:
+            yield
+        finally:
+            armed.pop()
+    monkeypatch.setattr(runtime, 'compute_watchdog', guard)
+    original_produce = agent.produce
+    def produce(*args, **kwargs):
+        assert armed
+        return original_produce(*args, **kwargs)
+    monkeypatch.setattr(agent, 'produce', produce)
+    build_teacher_bank(agent, store, episodes, writer_identity='frozen')
+    original_nll = agent.conditioned_nll
+    def nll(*args, **kwargs):
+        assert armed
+        return original_nll(*args, **kwargs)
+    monkeypatch.setattr(agent, 'conditioned_nll', nll)
+    stored_teacher_evaluation(agent, store, episodes,
+                              progress=lambda rows, plans: assert_disarmed(armed))
+
+
+def assert_disarmed(armed):
+    assert not armed

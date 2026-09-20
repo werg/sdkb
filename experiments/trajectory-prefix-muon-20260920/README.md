@@ -104,5 +104,8 @@ embeddings follow the `recurrent_core` freeze policy. The same prepared sources,
 validation split, oracle access and external checkpoint policy remain pinned.
 `joint-inputs.json` and `run_joint.py` reject changes to the config, data, base
 revision or latent initialization before native model preflight and training.
+`joint_text_control.yaml` is the corresponding read-only text-scoring config for
+the same eventual checkpoint; it switches the inference arm and disables the
+training-only selected-producer and anchor settings.
 The joint outcome is pending; a tiny positive payload effect in latent warmup
 does not establish that extra recurrence will improve transfer.
