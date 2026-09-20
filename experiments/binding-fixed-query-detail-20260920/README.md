@@ -91,3 +91,18 @@ The text and latent token budgets differ. This tests decoding and interface effe
 it does not enable a source-text fallback in stored-latent inference. Completed
 strings are atomically recorded on external storage and resumed after cooperative
 stops; it writes no model checkpoints.
+
+The fixed-form text controls completed: **64/64 exact with selected text and 0/64
+without memory for both checkpoints**. Every repeated no-memory prediction matches
+its latent confirmation reference exactly. See `fixed-form-text-control.json` for
+source/data/result hashes. Full suite after the diagnostic addition: 405 passed,
+Ruff clean; native execution used `2d07c58`.
+
+`prepare_train_fit.py` reconstructs the sealed run's sampler and selects its 64 most
+frequently sampled identifier queries, breaking ties by opaque episode ID. This
+post-hoc training-fit check uses unchanged source/query/target records from 61
+training worlds: 56 queries appeared three times, seven four times and one five
+times as identifier targets. Source records also appear with other task families.
+`train-fit-inputs.json` pins the subset. The fixed endpoint is being evaluated using
+the same stored-only oracle/counterfactual evaluator; this subset is explicitly
+training data and cannot provide held-out evidence.

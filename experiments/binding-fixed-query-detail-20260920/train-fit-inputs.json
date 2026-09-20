@@ -1,0 +1,17 @@
+{
+  "training_sha256": "6c6bb47ad7e30f42992b859316124c795832650542d2f28fcfbb9256a071e389",
+  "subset_sha256": "ed586aabb57d1a78f7e9314906c78050a5dcc24e23e6574849a3d96669656330",
+  "script_sha256": "4ac514c6d9cd7ac1a67d45da2a04da3ce859be31cee4a70b65ece93c036234ad",
+  "sampling_seed": 79,
+  "steps": 1600,
+  "microbatches_per_step": 4,
+  "selection": "64 most frequently sampled identifier episode IDs; descending exposure count then opaque ID. Post-hoc training-fit diagnostic, not held-out evaluation.",
+  "selected_exposure_histogram": {
+    "5": 1,
+    "4": 7,
+    "3": 56
+  },
+  "identifier_microbatches": 1285,
+  "distinct_identifier_queries_sampled": 941,
+  "unique_selected_worlds": 61
+}
