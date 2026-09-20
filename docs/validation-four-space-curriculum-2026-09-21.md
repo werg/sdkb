@@ -88,3 +88,62 @@ positive source IDs. The corrected episode SHA-256 is
 `9630774d00752f5019f5cfa4f56919650cc49f697efe722e9c28fbbbe98060a3`.
 The live-key run is a new warm start from the Phase A checkpoint; it does not
 resume either the contaminated data attempt or the frozen-bank stage.
+
+## Live-key bank refresh
+
+The corrected local-routing stage completed 512 Muon updates and exactly one
+pass over 1,024 questions with four live source candidates each. Mean routing
+loss over the first 128 updates was 1.428; over the last 128 it was 0.826.
+Mean answer NLL over the same windows changed from 2.888 to 2.718. These are
+training metrics, not proof of bank retrieval or value use.
+
+Its frozen writer produced a separate complete 10,000-source bank at
+`/archive/banks/four-space-squad-local-routing-10k`, generation
+`0c2f794f83924025b204c123`. The 157 atomic shards contain 40,000 stored
+views; the SQLite file occupies 109,105,152 bytes. No previous generation
+was relabeled or overwritten.
+
+On the same 32 heldout queries, verified-source median ranks under the new
+writer/query pair are s0 739, s1 584, s2 1,746 and s3 1,178. The previous
+writer/query pair ranked them at 5,077, 4,891, 4,830 and 5,518. On 16 heldout
+questions, learned retrieval found a complete support in 1/16; correct-value
+NLL was 2.660 versus 2.661 with zero values. With the verified source supplied,
+correct-value NLL was 2.663 versus 2.662 with zero values. Thus addressing
+improved markedly, while payload dependence remains unestablished. A separate
+stored-only validation set from source-disjoint articles had correct-value
+NLL 3.484, zero-value 3.480, wrong-value 3.486 and 0/16 free-generation
+exact matches.
+
+The next stage trains reader/query paths against this immutable generation
+with a fixed-plan stored-value source-swap loss. Its 2,000 training source IDs
+are disjoint from the 64 heldout source IDs. Swapped sources are eligible
+comparisons, not verified insufficient records; heldout interventions remain
+the decision criterion.
+
+## Stored-bank value-contrast checkpoint
+
+The value-contrast stage at
+`/archive/runs/four-space-bank10k-value-contrast-20260921` uses a new set of
+2,000 source-disjoint training questions, two microbatches per update, and
+the immutable local-routing bank. It freezes the bank writer and trains the
+reader, recurrent bridge and causal query paths. Each training plan includes
+the verified source plus exact-search distractors, with per-space counts
+[8, 4, 2, 1]. The wrong-value arm replaces only the verified stored payload
+in each space, under a fixed plan. The checkpoint at step 260 was written
+cooperatively, with full resume state, then training resumed.
+
+At step 260, heldout exact retrieval still found complete support in 0/16
+questions. Median verified-source ranks on 32 questions were 587, 472, 930
+and 595 across the four spaces. With the verified source alone, mean
+teacher NLL was 2.614 using its stored values and 2.621 with those values
+zeroed. In a new matched-neighborhood evaluation that supplied the verified
+source plus causal-query distractors in the same [8, 4, 2, 1] pattern as
+training, stored-value NLL was 2.623 versus 2.619 with all values zeroed.
+Thus the single-source gain does not survive the training-shaped read;
+retrieval and value-dependent answer behavior remain unproven. The
+matched-neighborhood evaluation captures one causal read plan and reuses it
+for the zero-value intervention; it never re-encodes a source.
+
+The new evaluator regression test passed, as did the full native test suite
+(556 tests) and Ruff. The run remains on the external disk and continues to
+its one-pass, 1,000-update endpoint for a controlled final comparison.

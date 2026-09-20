@@ -13,12 +13,47 @@ from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes
 from sdkb.evaluation import stored_transfer_evaluation
+from sdkb.key_index import PublishedKeyIndex
 from sdkb.offline_bank import (assert_bank_writer_compatible, canonical_json,
                                publish_offline_generation)
 from sdkb.operations import atomic_json
-from sdkb.store import DiskStore
-from sdkb.training import config_from_run
+from sdkb.store import DiskStore, ReadPlan, Selection
+from sdkb.training import autocast_context, config_from_run
 from sdkb.trajectories import file_sha256
+
+
+def supplied_mixed_plans(agent, searcher, episodes, *, namespace: str,
+                         generation: str, limits: tuple[int, ...]) -> dict:
+    """Match corpus training's positive-plus-neighbors plan using causal queries."""
+    plans = {}
+    with torch.no_grad(), autocast_context(agent.config):
+        for episode in episodes:
+            if episode.support_annotation != 'verified' or len(episode.required_ids) != 1:
+                raise ValueError('Matched bank plan requires one verified positive')
+            domain = episode.provenance.get('domain', 'research')
+            read_plans = []
+
+            def provider(completed, _query, routing_query):
+                if completed != 1:
+                    return None
+                for space, limit in enumerate(limits):
+                    found = searcher.search(agent.query_maps[space](routing_query)[0],
+                        top_k=max(limit + 1, 8), namespace=namespace, space=f's{space}',
+                        generation=generation, domain=domain, query_time=episode.query_time)
+                    ids = list(episode.required_ids)
+                    ids.extend(item.record_id for item in found.selections
+                               if item.record_id not in ids)
+                    ids = ids[:limit]
+                    read_plans.append(ReadPlan(namespace, f's{space}', generation, domain,
+                        episode.query_time, tuple(Selection(rid, 0.0) for rid in ids)))
+                return None
+
+            agent.plan_loop_memory(agent.prompt_ids(episode.query), provider,
+                                   include_routing_query=True)
+            if len(read_plans) != len(limits):
+                raise ValueError('Causal native read was not reached')
+            plans[episode.episode_id] = [read_plans]
+    return plans
 
 
 def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
@@ -26,8 +61,8 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
              selection: str = 'learned') -> dict:
     if max_episodes < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive evaluation count and a fresh output parent required')
-    if selection not in {'learned', 'oracle'}:
-        raise ValueError('Evaluation selection must be learned or oracle')
+    if selection not in {'learned', 'oracle', 'supplied_mixed'}:
+        raise ValueError('Evaluation selection must be learned, oracle or supplied_mixed')
     config = config_from_run(run)
     training_bank_dir = config.train.bank_dir
     if len(limits) != len(config.memory.payload_dims):
@@ -47,7 +82,7 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
         raise ValueError('Bank model architecture differs from the evaluator')
     if bank_manifest['identity']['memory'] != asdict(config.memory):
         raise ValueError('Bank writer or stored-memory transform differs')
-    config.train.retrieval = selection
+    config.train.retrieval = 'oracle' if selection == 'supplied_mixed' else selection
     config.train.selected_producers_only = False  # training-only producer policy
     config.train.bank_dir = None
     config.train.bank_read_limits = []
@@ -64,13 +99,23 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     episodes = load_episodes(episodes_file)[:max_episodes]
     if not episodes:
         raise ValueError('Evaluation needs at least one episode')
+    fixed_plans = None
+    if selection == 'supplied_mixed':
+        index = PublishedKeyIndex(store, namespace=bank_manifest['namespace'],
+            generation=bank_manifest['generation'], spaces=tuple(bank_manifest['spaces']),
+            expected_sources=bank_manifest['sources'])
+        fixed_plans = supplied_mixed_plans(agent, index, episodes,
+            namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
+            limits=limits)
     with torch.no_grad():
         report = stored_transfer_evaluation(agent, store, episodes,
             namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
-            drop_supports=True)
+            drop_supports=True, fixed_plans_by_episode=fixed_plans)
     report['notice'] = ('Published-corpus stored-only diagnostic. '
                         + ('Oracle selection uses verified support labels. ' if selection == 'oracle'
-                           else 'Learned selection uses only the causal query. ')
+                           else ('Supplied-mixed selection includes one verified support and causal-query neighbors. '
+                                 if selection == 'supplied_mixed' else
+                                 'Learned selection uses only the causal query. '))
                         + 'Teacher NLL and recall do not establish free-generation accuracy or agent success.')
     identity = {'run_model_sha256': file_sha256(checkpoint / 'model.safetensors'),
                 'bank_manifest_sha256': file_sha256(bank_manifest_path),
@@ -78,6 +123,8 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
                 'max_episodes': max_episodes, 'read_limits': limits,
                 'selection': ('learned exact scan; supplied support is never used for retrieval'
                               if selection == 'learned' else
+                              'supplied positive plus causal exact neighbors; stored payloads only'
+                              if selection == 'supplied_mixed' else
                               'oracle verified support ID; stored payloads only')}
     output.mkdir()
     atomic_json(output / 'inputs.json', identity)
@@ -94,7 +141,8 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-episodes', type=int, default=16)
     parser.add_argument('--limits', nargs='+', type=int, default=[8, 4, 2, 1])
-    parser.add_argument('--selection', choices=['learned', 'oracle'], default='learned')
+    parser.add_argument('--selection', choices=['learned', 'oracle', 'supplied_mixed'],
+                        default='learned')
     args = parser.parse_args()
     print(json.dumps(evaluate(args.run, args.bank, args.episodes, args.output,
                               max_episodes=args.max_episodes,
