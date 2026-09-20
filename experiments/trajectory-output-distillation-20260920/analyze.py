@@ -64,7 +64,7 @@ def analyze(root: Path, output: Path) -> dict:
         if report['summary']['all']['episodes'] != 119:
             raise ValueError('Unexpected held-out count')
         reports[arm] = (report, _episodes(report), file_sha256(report_path),
-                        file_sha256(root / f'{arm}-depth' / 'summary.json'))
+                        file_sha256(root / f'{arm}-depth' / 'summary.json'), identity)
     control, distilled = reports['control'][1], reports['distilled'][1]
     if set(control) != set(distilled):
         raise ValueError('Different held-out episodes across arms')
@@ -89,13 +89,17 @@ def analyze(root: Path, output: Path) -> dict:
              - (control[key][control_name]['mean_nll'] - control[key]['all']['mean_nll']))
             for key in control])
     result = dict(protocol='119 repository-heldout SWE-smith episodes; separate frozen banks, same IDs and writer depth',
+                  analyzer_sha256=file_sha256(Path(__file__)),
                   train_sha256=lock['train_sha256'], validation_sha256=lock['validation_sha256'],
                   parent_model_sha256=lock['parent_model_sha256'], arms={name: dict(
+                      checkpoint_model_sha256=identity['checkpoint_model_sha256'],
+                      config_sha256=lock['config_sha256'][name],
+                      preflight_sha256=file_sha256(root / f'{name}-model-probe.json'),
                       report_sha256=report_sha, summary_sha256=summary_sha,
                       writer_calls=json.loads((root / f'{name}-depth' / 'summary.json').read_text())['write_phase']['writer_calls'],
                       token_weighted_nll={condition: report['summary'][condition]['token_weighted_nll']
                                           for condition in CONDITIONS})
-                      for name, (report, _, report_sha, summary_sha) in reports.items()},
+                      for name, (report, _, report_sha, summary_sha, identity) in reports.items()},
                   paired=comparisons,
                   limits='Teacher-forced NLL and descriptive trajectory bootstrap, not agent success. Oracle selection and fixed plans do not establish learned retrieval. Text and latent paths have different token and compute budgets. Separate frozen banks reflect each arm’s trained writer; no cold-NVMe or capacity-substitution claim.')
     output.write_text(json.dumps(result, indent=2) + '\n')
