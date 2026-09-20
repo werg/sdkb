@@ -51,3 +51,34 @@ results. Fresh confirmation is running.
 After both training locks released, verified hard-link deduplication reclaimed
 1,022,082,588 bytes from the duplicate initial weights. All checkpoint paths,
 optimizer/RNG state and manifests remain intact; see the operations record.
+
+
+## Partial confirmation: raw and mean arms complete
+
+The learned-code arms are still running. On the declared 32 fresh worlds:
+
+| Training | Read representation | Generated actions | Permission-change both correct | Restoration-change both correct |
+|---|---|---:|---:|---:|
+| Raw control | Raw | 128/128 | 128/128 | 64/64 |
+| Temporary compaction | Raw | 126/128 | 122/128 | 60/64 |
+| Raw control | Mean plus mass | 81/128 | 31/128 | 0/64 |
+| Temporary compaction | Mean plus mass | 128/128 | 128/128 | 64/64 |
+
+Temporary training makes this cheap full-cluster mean code substantially more
+useful: action accuracy improves by 36.72 percentage points versus the matched
+raw-trained mean-code control, with a world-bootstrap interval [26.56, 46.09].
+The compact-trained mean arm also has no false action changes on 64 unaffected
+restoration pairs or 128 endpoint-only interventions. Its no-memory/zero-value
+controls get 59/128 and 44/128 actions; exact identifiers remain 0/64.
+
+Raw-read behavior has a measurable cost: the temporary arm's raw path produces
+three false action changes under endpoint-only interventions and loses some correct
+rule-change pairs. This motivates the separately frozen paired-objective follow-up;
+it is not evidence that both paths were perfectly preserved.
+
+The bank contains 64 full-cluster codes per variant, 4,236 serialized bytes per
+code, while retaining all raw records for partial selection. This establishes a
+narrow one-seed improvement in conditional compactability on synthetic oracle reads,
+not net disk savings or parameter substitution. `raw-mean-confirmation.json` pins
+all four completed outputs and `mean-code-training-generation.json` records the
+paired comparison. Final learned-code results will be appended separately.
