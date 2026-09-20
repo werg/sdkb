@@ -20,9 +20,14 @@ from sdkb.trajectories import file_sha256
 
 
 def evaluate(run: Path, episodes_file: Path, output: Path, *,
-             max_episodes: int = 16, max_new_tokens: int = 65) -> dict:
+             max_episodes: int = 16, generate_episodes: int | None = None,
+             max_new_tokens: int = 65) -> dict:
     if min(max_episodes, max_new_tokens) < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive budgets and a fresh output parent required')
+    if generate_episodes is None:
+        generate_episodes = max_episodes
+    if not 0 <= generate_episodes <= max_episodes:
+        raise ValueError('Generated episode count must fit the scored subset')
     config = config_from_run(run)
     if config.train.arm != 'memory' or config.train.retrieval != 'oracle':
         raise ValueError('Short reconstruction needs the oracle memory interface')
@@ -31,9 +36,9 @@ def evaluate(run: Path, episodes_file: Path, output: Path, *,
     checkpoint = resolve_checkpoint(run, verify=True)
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     episodes = load_episodes(episodes_file)[:max_episodes]
-    if not episodes or any(e.task_family != 'passage_reconstruction'
+    if not episodes or any(e.task_family not in {'passage_reconstruction', 'passage_span'}
                            or len(e.required_ids) != 1 for e in episodes):
-        raise ValueError('Evaluation needs one-source reconstruction episodes')
+        raise ValueError('Evaluation needs one-source passage reconstruction episodes')
     output.mkdir()
     writer_sha = file_sha256(checkpoint / 'model.safetensors')
     generation = writer_sha[:20]
@@ -50,7 +55,7 @@ def evaluate(run: Path, episodes_file: Path, output: Path, *,
             namespace='short_eval', generation=generation, drop_supports=True)
         rows = []
         with autocast_context(config):
-            for episode in episodes:
+            for episode in episodes[:generate_episodes]:
                 prompt = agent.prompt_ids(episode.query)
                 correct = read_session(agent, store, prompt, namespace='short_eval',
                     generation=generation, query_time=episode.query_time,
@@ -68,12 +73,14 @@ def evaluate(run: Path, episodes_file: Path, output: Path, *,
                                              in predictions.items()}})
     report['generation'] = {'protocol': 'Greedy from reopened stored payloads; '
         'writer disabled and target withheld.', 'max_new_tokens': max_new_tokens,
+        'episodes': len(rows),
         'exact_match': {arm: sum(row['exact_match'][arm] for row in rows)
                         for arm in ('all', 'zero_values')}, 'rows': rows}
     report['write_phase'] = writes
     atomic_json(output / 'inputs.json', {'run_checkpoint': checkpoint.name,
         'model_sha256': writer_sha, 'episodes_sha256': file_sha256(episodes_file),
-        'max_episodes': max_episodes, 'max_new_tokens': max_new_tokens})
+        'max_episodes': max_episodes, 'generate_episodes': generate_episodes,
+        'max_new_tokens': max_new_tokens})
     atomic_json(output / 'results.json', report)
     return {'output': str(output), 'episodes': len(episodes),
             'teacher_nll': {key: round(value['mean_target_nll'], 6)
@@ -87,8 +94,10 @@ if __name__ == '__main__':
     parser.add_argument('--episodes', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-episodes', type=int, default=16)
+    parser.add_argument('--generate-episodes', type=int)
     parser.add_argument('--max-new-tokens', type=int, default=65)
     args = parser.parse_args()
     print(json.dumps(evaluate(args.run, args.episodes, args.output,
                               max_episodes=args.max_episodes,
+                              generate_episodes=args.generate_episodes,
                               max_new_tokens=args.max_new_tokens), indent=2))

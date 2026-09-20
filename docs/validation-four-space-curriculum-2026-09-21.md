@@ -194,5 +194,21 @@ and 3.3217 NLL, respectively; all 16 greedy outputs changed under the value
 ablation, although exact reconstruction remained 0/16. These are early
 information-flow signs, not a solved reconstruction task. A separate offline
 writer phase creates the evaluation bank, after which the writer is disabled
-and the stored payloads are reopened for inference. The run is continuing to
-step 1,000 for the next controlled check.
+and the stored payloads are reopened for inference. The next controlled
+check was at step 1,000.
+
+At step 1,000, a broader 64-passage stored-only evaluation scored 3.3246
+teacher NLL with correct values and 3.4527 with zero values. This is a
+payload-dependent teacher-forced signal under oracle delivery. Greedy exact
+reconstruction remained 0/16; the correct-value outputs changed under
+ablation but their mean generated-word overlap did not exceed the zero-value
+control. The run is continuing through all 6,000 unique sources before the
+next decision.
+
+A following full-passage plus indexed-span stage has been prepared, not
+launched, at `/archive/corpora/squad-short-span-curriculum-20260921`. It has
+12,000 training episodes over the same 6,000 sources and 1,024 validation
+episodes over 512 separate sources. Each source receives one full-passage
+target and one exact eight-word span target; the span query contains word
+positions rather than passage content. Its training data SHA-256 is
+`c3c20e513ff70572c11bf242d8f21d131234a029e3a605de8f53f7d6d1e8981f`.
