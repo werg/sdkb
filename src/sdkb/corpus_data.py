@@ -69,6 +69,22 @@ def with_distractor(episode: Episode, distractor: Source) -> Episode:
                                                       [distractor.record_id]})
 
 
+def title_located_question(episode: Episode) -> Episode:
+    """Place a source-internal article locator in the causal question prefix."""
+    title = episode.provenance.get('article_title')
+    if episode.task_family != 'passage_qa' or not isinstance(title, str) or not title:
+        raise ValueError('A passage QA with article provenance is required')
+    query = f'Article: {title}\nQuestion: {episode.query}'
+    answer_words = re.sub(r'[\W_]+', ' ', episode.answer, flags=re.UNICODE).strip().casefold()
+    query_words = re.sub(r'[\W_]+', ' ', query, flags=re.UNICODE).strip().casefold()
+    if f' {answer_words} ' in f' {query_words} ':
+        raise ValueError('Article locator would disclose the target answer')
+    return replace(episode,
+                   episode_id=_digest(f'title-located:{episode.episode_id}')[:32],
+                   query=query,
+                   provenance=episode.provenance | {'query_locator': 'source_article_title'})
+
+
 def prepare_squad(raw: str | Path, output: str | Path, tokenizer, *,
                   max_train_sources: int, max_validation_sources: int,
                   max_source_tokens: int = 512, max_target_tokens: int = 128) -> dict:

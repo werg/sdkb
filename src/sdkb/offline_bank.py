@@ -143,13 +143,15 @@ def ensure_offline_shard(store: DiskStore, factory: Callable[[], Iterable[Stored
 
 def publish_offline_generation(store: DiskStore, *, identity: dict, namespace: str,
                                generation: str, spaces: tuple[str, ...],
-                               shard_ids: tuple[str, ...], source_count: int) -> dict:
-    """Verify every declared shard before exposing its immutable generation."""
+                               shard_ids: tuple[str, ...], source_count: int,
+                               verify_only: bool = False) -> dict:
+    """Verify every shard; published readers use a shared read transaction."""
     if not shard_ids or len(shard_ids) != len(set(shard_ids)) or source_count < 1:
         raise ValueError('Distinct shards and positive source count required')
     with store.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
-        _shard_schema(db)
+        db.execute('BEGIN' if verify_only else 'BEGIN IMMEDIATE')
+        if not verify_only:
+            _shard_schema(db)
         rows = db.execute('''SELECT shard_id,identity,source_ids,records,digest FROM offline_shards
                              WHERE namespace=? AND generation=? ORDER BY shard_id''',
                           (namespace, generation)).fetchall()
@@ -176,6 +178,8 @@ def publish_offline_generation(store: DiskStore, *, identity: dict, namespace: s
         if prior is not None and prior[0] != serialized:
             raise ValueError('Offline generation publication changed')
         if prior is None:
+            if verify_only:
+                raise ValueError('Offline generation has not been published')
             db.execute('INSERT INTO offline_generations VALUES (?,?,?)',
                        (namespace, generation, serialized))
     return manifest

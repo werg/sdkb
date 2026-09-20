@@ -309,6 +309,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         for module in agent.children():
             module.eval()
     bank = None
+    bank_index = None
     bank_manifest = None
     bank_manifest_sha = None
     if config.train.bank_dir is not None:
@@ -324,7 +325,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         verified = publish_offline_generation(bank, identity=bank_manifest['identity'],
                     namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
                     spaces=tuple(bank_manifest['spaces']), shard_ids=tuple(bank_manifest['shards']),
-                    source_count=bank_manifest['sources'])
+                    source_count=bank_manifest['sources'], verify_only=True)
         if canonical_json(verified) != canonical_json({key: bank_manifest[key] for key in verified}):
             raise ValueError('Published bank manifest differs from verified stored records')
         if tuple(bank_manifest['spaces']) != tuple(f's{i}' for i in range(len(config.memory.payload_dims))):
@@ -337,6 +338,11 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         if not resume:
             if init_from is None or file_sha256(source_checkpoint / 'model.safetensors') != bank_manifest['identity']['writer_checkpoint_sha256']:
                 raise ValueError('Bank training must initialize from its exact frozen writer snapshot')
+        from .key_index import PublishedKeyIndex
+        bank_index = PublishedKeyIndex(bank, namespace=bank_manifest['namespace'],
+                                      generation=bank_manifest['generation'],
+                                      spaces=tuple(bank_manifest['spaces']),
+                                      expected_sources=bank_manifest['sources'])
         for name, parameter in agent.named_parameters():
             if name.startswith(('write_slots', 'key_head.', 'value_head.', 'address_maps.', 'codecs.')):
                 parameter.requires_grad_(False)
@@ -350,6 +356,10 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         "total_parameters": sum(p.numel() for p in agent.parameters()),
         "trainable_parameters": sum(p.numel() for p in agent.parameters() if p.requires_grad),
         "notice": "Prototype measurements; not evidence of capacity substitution."}
+    if bank_index is not None:
+        manifest['bank_key_index'] = {'kind': 'resident_exact_cpu',
+                                      'key_bytes': bank_index.key_bytes,
+                                      'query_scopes': 'namespace,space,generation,domain,created_at,deleted'}
     if hasattr(agent.backbone, "manifest"):
         manifest["recurrence"] = agent.backbone.manifest()
         manifest["recurrence"]["training_depths"] = config.train.loop_counts or [config.model.loops]
@@ -463,7 +473,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                             result, bank_info = stored_corpus_forward(
                                 agent, bank, episode, generation=bank_manifest['generation'],
                                 limits=tuple(config.train.bank_read_limits),
-                                namespace=bank_manifest['namespace'])
+                                namespace=bank_manifest['namespace'], searcher=bank_index)
                             support_text = ''
                         else:
                             records = []

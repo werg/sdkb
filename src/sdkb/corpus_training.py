@@ -11,7 +11,7 @@ from .store import DiskStore, ReadPlan, Selection, lookup_record
 
 def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, *,
                           generation: str, limits: tuple[int, ...],
-                          namespace: str = 'corpus') -> tuple[ForwardResult, dict]:
+                          namespace: str = 'corpus', searcher=None) -> tuple[ForwardResult, dict]:
     """Plan each space from a causal native prefix, then train on fetched values.
 
     Known sufficient supports are delivered during this initial mixed-selection
@@ -28,6 +28,7 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
     if any(source.created_at >= episode.query_time for source in episode.supports):
         raise ValueError('Corpus sources must precede their query')
     domain = episode.provenance.get('domain', 'research')
+    searcher = searcher or store
     prompt, target = agent.prompt_ids(episode.query), agent.target_ids(episode.answer)
     routing_terms = []
     selected_ids, learned_recalls = [], []
@@ -39,7 +40,7 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
         for space, (dim, limit) in enumerate(zip(agent.config.memory.payload_dims, limits, strict=True)):
             space_name = f's{space}'
             address = agent.query_maps[space](routing_query)
-            candidates = store.search(address[0], top_k=max(limit, 8), namespace=namespace,
+            candidates = searcher.search(address[0], top_k=max(limit, 8), namespace=namespace,
                                       space=space_name, generation=generation, domain=domain,
                                       query_time=episode.query_time)
             found = [selection.record_id for selection in candidates.selections]

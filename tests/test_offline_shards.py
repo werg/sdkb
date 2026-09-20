@@ -26,6 +26,12 @@ def test_shards_commit_complete_records_and_resume_without_reencoding(tmp_path):
     manifest = publish_offline_generation(store, shard_ids=('000', '001'),
                                           source_count=3, **kwargs)
     assert manifest['records'] == 6 and manifest['sources'] == 3
+    assert publish_offline_generation(store, shard_ids=('000', '001'),
+                                      source_count=3, verify_only=True, **kwargs) == manifest
+    with store.connect() as writer:
+        writer.execute('BEGIN IMMEDIATE')
+        assert publish_offline_generation(store, shard_ids=('000', '001'),
+                                          source_count=3, verify_only=True, **kwargs) == manifest
     assert store.sizes()['records'] == 6
     with pytest.raises(ValueError, match='identity'):
         ensure_offline_shard(store, lambda: (), shard_id='000', source_ids=('a', 'b'),

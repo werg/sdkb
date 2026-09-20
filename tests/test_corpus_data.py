@@ -50,6 +50,34 @@ def test_eligible_distractor_preserves_verified_target_and_causal_identity():
     assert all(s.created_at < mixed.query_time for s in mixed.supports)
 
 
+def test_title_located_question_retains_target_and_prior_source():
+    from sdkb.corpus_data import title_located_question
+    from sdkb.data import Episode, Source
+    source = Source('source', 'Title: Helios\nPassage: Helios uses the code aqua.', 1, 'passage')
+    original = Episode('q', 'squad-train', (source,), 'What code does it use?', 'aqua',
+                       ('source',), False, 0, 0, 2, 'passage_qa', (),
+                       (('source',),), 'verified', {'article_title': 'Helios'})
+    located = title_located_question(original)
+    assert 'Helios' in located.query and located.answer not in located.query
+    assert located.supports == original.supports
+    assert located.required_ids == original.required_ids
+    assert located.query_time == original.query_time
+    assert located.answer == original.answer
+
+
+def test_title_locator_rejects_answer_hidden_by_underscores():
+    import pytest
+    from sdkb.corpus_data import title_located_question
+    from sdkb.data import Episode, Source
+    source = Source('source', 'Title: Royal_Institute_of_British_Architects', 1, 'passage')
+    original = Episode('q', 'squad-train', (source,), 'What does RIBA stand for?',
+                       'Royal Institute of British Architects', ('source',), False,
+                       0, 0, 2, 'passage_qa', (), (('source',),), 'verified',
+                       {'article_title': 'Royal_Institute_of_British_Architects'})
+    with pytest.raises(ValueError, match='disclose'):
+        title_located_question(original)
+
+
 def _title(want_validation):
     for i in range(100):
         title = f'Article {i}'

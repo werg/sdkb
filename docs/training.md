@@ -383,10 +383,22 @@ the learned retriever's unaided positive recall separately. The writer and its
 stored transforms are frozen. Resume checks the immutable bank and its data
 fingerprint, restoring optimizer, sampler, RNG and partial-microbatch state.
 
-Search is an exact CPU SQLite key scan. There is no ANN claim or measured million
-record throughput. This path establishes corpus-backed reader/address training;
+Published bank training loads a resident, contiguous FP32 key array for each
+space (10.24 MB at 10,000 sources and four 64-dimensional keys). It performs an
+exact CPU scan with the same domain/time/exclusion ordering as the SQLite
+reference at index load; selected payloads still come from SQLite with fresh
+visibility checks. A later deletion therefore fails closed at fetch time.
+The resident array is rebuilt from the verified immutable generation on each
+start and is never copied into optimizer checkpoints. A warm-cache Spark probe
+measured about 0.05–0.06 seconds per space for the SQLite scan and about
+0.0006–0.0007 seconds per space for the resident array on the 10,000-source bank.
+These timings exclude cold NVMe behavior and do not claim ANN or million-record
+throughput. This path establishes corpus-backed reader/address training;
 joint live-writer replay against a refreshed corpus, learned-only delivery and
 full-budget neighborhood training still need controlled validation.
+Published-bank readers verify shard bytes under a shared SQLite read
+transaction, so concurrent trainers and evaluations do not contend for a
+write lock merely to recheck an immutable generation.
 
 The optional `train.payload_contrast_weight` fork uses episodes with one verified
 source and an earlier independent distractor (`--with-distractor` in
@@ -399,9 +411,18 @@ the optimizer step. The fork requires one R=2 oracle read, no compaction and
 The target NLL remains an anchor. Compare stored all/zero/wrong payload conditions
 on held-out sources before treating a lower training loss as memory use.
 
-`scripts/prepare_bank_queries.py` selects questions on bank sources beyond the
-first 1,024 pilot sources. `scripts/evaluate_published_bank.py` verifies the
+`scripts/prepare_bank_training.py` creates title-located, answer-filtered QA
+from a declared source offset. The current Spark bank stage uses sources
+1,024 onward, disjoint from the first 1,024 reconstruction sources.
+`scripts/prepare_bank_queries.py` selects a later disjoint block for evaluation;
+the current source offset is 3,072. Article titles are present in stored source
+text, and normalized answer strings are rejected if they occur in the query.
+`scripts/evaluate_published_bank.py` verifies the
 published generation, uses exact learned selection at explicit per-space budgets,
 and reports NLL, support recall, zero-payload and removed-support controls. It
 never calls the writer during inference. A first small run is a mechanics check;
 source-held-out behavior and later-task transfer require larger controlled runs.
+`scripts/evaluate_bank_ranks.py` measures the complete verified-support rank
+from the same causal native prefix, without fetching payloads. It reports
+median rank, reciprocal rank and recall cutoffs for each space. This makes
+addressing progress visible before a positive enters the small read budget.

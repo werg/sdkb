@@ -35,7 +35,7 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     verified = publish_offline_generation(store, identity=bank_manifest['identity'],
         namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
         spaces=tuple(bank_manifest['spaces']), shard_ids=tuple(bank_manifest['shards']),
-        source_count=bank_manifest['sources'])
+        source_count=bank_manifest['sources'], verify_only=True)
     if canonical_json(verified) != canonical_json({key: bank_manifest[key] for key in verified}):
         raise ValueError('Published bank failed byte verification')
     if bank_manifest['identity']['model'] != asdict(config.model):
