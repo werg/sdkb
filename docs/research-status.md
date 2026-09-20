@@ -167,3 +167,10 @@ establish content-specific generation, source counterfactual success, autonomous
 agent outcomes or resident-capacity substitution. Further development should
 test source-dependent behavior directly, with a fresh evaluation split for any
 new objective chosen after these exploratory probes.
+
+A [fresh trajectory slice](../experiments/trajectory-fresh-holdout-20260920/README.md)
+is now prepared from later rows of the same pinned public stream. It excludes all
+89 repository groups in the original sample and seals 342 as-yet-unscored episodes
+across 30 new groups for evaluation only. This supplies a repository-disjoint
+confirmation set for a predeclared next intervention; it does not itself address
+source-dependent behavior or establish broader dataset independence.

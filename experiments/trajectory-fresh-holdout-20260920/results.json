@@ -1,0 +1,48 @@
+{
+  "protocol": "Both new, unused subsets reserved for evaluation only",
+  "source_revision": "08e109b4a59eaeebf80e4675cd125d42e7ac99a4",
+  "previous_normalized_sha256": "8e8c0c223a76affb0385555089b3c4a1f5584d4398d02ca5e6fe93c81dcb8fd2",
+  "preparation_manifest_sha256": "a7a58a3d54249c4c0ac1d4804350e58a777236f085521453b002082cb8330ad6",
+  "train_sha256": "9714d97b0abd1002264e3bf72abcb3eda82d5c221d7b02c46b9fe650d28a4600",
+  "validation_sha256": "1de32de8abe7381e1ba31aecc840104b1c017d809eea951420b24153e2cec156",
+  "evaluation_sha256": "5194345ade33bc79145c75d26e8dbf963ef57004264145ca1fb7808e237c25a6",
+  "episodes": 342,
+  "trajectories": 121,
+  "repository_groups": 30,
+  "prior_repository_groups": 89,
+  "group_overlap": 0,
+  "source_trajectories_overlap": 0,
+  "target_tokens": 34122,
+  "preparation_commit": "64db124",
+  "notice": "Data-only freshness seal; no model has been scored on these episodes. Later comparisons need a predeclared objective and matched controls.",
+  "stream_counts": {
+    "rows_skipped": 512,
+    "rows_scanned": 2048,
+    "excluded_prior_group": 752,
+    "filtered:filtered_unsuccessful": 1175,
+    "accepted_train": 107,
+    "accepted_validation": 14
+  },
+  "split_summaries": {
+    "train": {
+      "episodes": 304,
+      "complete_target_tokens": 30807,
+      "skipped_long_or_empty_target": 17,
+      "trajectories": 107,
+      "groups": 25
+    },
+    "validation": {
+      "episodes": 38,
+      "complete_target_tokens": 3315,
+      "skipped_long_or_empty_target": 4,
+      "trajectories": 14,
+      "groups": 5
+    }
+  },
+  "prepared_sha256": {
+    "train.jsonl": "9714d97b0abd1002264e3bf72abcb3eda82d5c221d7b02c46b9fe650d28a4600",
+    "validation.jsonl": "1de32de8abe7381e1ba31aecc840104b1c017d809eea951420b24153e2cec156",
+    "normalized.jsonl": "f0b98209040982048a4015918e212c034c320dc3bf610d921352ecfbb6cb781e"
+  },
+  "input_lock_sha256": "e0bca756aa4a57c0ba2e0d11b97c161a1ddc1e123215c270c1c9e9ebd80ae584"
+}
