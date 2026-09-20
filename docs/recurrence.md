@@ -299,6 +299,13 @@ entire sweep. R=1 is the exact no-in-loop-read control; comparisons among R>=2 u
 the same read budget. More passes can reduce quality; R=4 is an explicit test beyond
 the joint stage's main training depths, not an assumed improvement.
 
+The sweep pins its checkpoint, episode file, requested depths and evaluator code
+to a stable output directory. Its frozen bank is verified on resume without source
+encoding, and completed depth reports are reused. Teacher-protocol scoring saves
+each condition with its original read plan, so STOP or a signal can resume within
+a depth without rerouting payload interventions. Transfer scoring stops between
+completed depths; the active depth finishes before a cooperative stop returns.
+
 The timing includes prefix planning, payload access, and all candidate/condition
 scoring. It is evaluation wall time, not a tokens-per-second serving result.
 
