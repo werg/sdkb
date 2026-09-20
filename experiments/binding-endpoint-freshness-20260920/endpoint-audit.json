@@ -1,0 +1,37 @@
+{
+  "training_commit": "c58028c",
+  "arms": {
+    "256": {
+      "checkpoint": "/archive/runs/binding-endpoint-freshness-20260920/worlds-256/checkpoints/step-000004000-f28944d49c70",
+      "manifest_sha256": "80dcae4bf8b17b8f0ed8c0cd1ca6475692f1886000c7feb1f9538d2f1ce619e1",
+      "model_sha256": "2af42f5d4b57ef27e1c0120f848fd1b234b7f22aed707320a55d84e6fcb2e15c",
+      "initial_model_sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+      "step": 4000,
+      "all_depths_and_sampler_match_declared_plan": true,
+      "elapsed_training_seconds": 6352.091702909995,
+      "peak_logged_cuda_allocated_bytes": 2709506048,
+      "minimum_logged_host_available_bytes": 55010041856,
+      "retained_checkpoint_directories": [
+        "step-000000000-f4b63f8e6953",
+        "step-000004000-f28944d49c70"
+      ]
+    },
+    "8192": {
+      "checkpoint": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000004000-8e2bc39c7837",
+      "manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+      "model_sha256": "44c15ade0ccd4a802f61fe3822a30908ce3a896682982edbac15afbeb36997bf",
+      "initial_model_sha256": "941be91d5acdd1b04deedb8285b20a4aaef06992e756d8a021e9339aa36ff947",
+      "step": 4000,
+      "all_depths_and_sampler_match_declared_plan": true,
+      "elapsed_training_seconds": 6331.0555616659985,
+      "peak_logged_cuda_allocated_bytes": 2710029312,
+      "minimum_logged_host_available_bytes": 55063261184,
+      "retained_checkpoint_directories": [
+        "step-000000000-c3b0d198e4cd",
+        "step-000004000-8e2bc39c7837"
+      ]
+    }
+  },
+  "audit_script_sha256": "685ea6f6e3562a60267f12ef8254160afa8b30224dfaa9448b67f1486b7ef412",
+  "notice": "Training provenance only; generation and intervention results are separate. Contended time is not a throughput comparison."
+}

@@ -126,3 +126,21 @@ and rechecks the sealed corpora after waiting. Launch it with the original
 checkout; it refuses an inconsistent model import path. Resume by clearing only
 released queue/root controls as above and rerunning; child progress is reusable.
 The shared queue's selected-entry-point regression and full suite pass (449 tests).
+
+
+## Training endpoints committed and audited
+
+Both native training processes exited successfully at update 4,000. The audit
+verifies the sealed corpus hashes, all 4,000 sampled recurrent depths, the final
+16,000-microbatch sampler state, complete Muon state without pending accumulation,
+and clean frozen `c58028c` provenance. `endpoint-audit.json` pins both final model
+and manifest hashes. Each arm retains exactly its initial and final checkpoints.
+Peak logged CUDA allocations were about 2.52 GiB; minimum logged host available
+memory was about 51.2 GiB. Training took about 106 minutes per arm under shared
+machine contention; these times are not an isolated throughput comparison.
+
+After training locks released, SHA256-verified hard-link deduplication removed
+2,034,699,352 redundant initial-model bytes while preserving every complete
+checkpoint and its optimizer/config/RNG/cache state. The record is
+`../operations-20260920/endpoint-freshness-initial-dedup.json`. Primary held-out
+confirmation is running; capability results remain pending.

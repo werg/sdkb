@@ -40,7 +40,7 @@ Sources: [fresh source controls](../experiments/binding-endpoint-freshness-20260
 ## What the current experiment addresses
 
 The [endpoint freshness study](../experiments/binding-endpoint-freshness-20260920/README.md)
-is running two 4,000-update Muon continuations from the useful original MLP source.
+has completed two 4,000-update Muon continuations from the useful original MLP source.
 Both consume the same task/source-count/recurrent-depth schedule and retain rule
 and action tasks. One repeatedly samples 512 endpoint strings; the other samples
 7,516 distinct strings, mostly once. World content also differs, and equal updates
@@ -49,7 +49,8 @@ are not equal token or FLOP budgets.
 The sealed held-out split excludes training source IDs and both original and
 inverted endpoint targets. Source controls have completed: perfect tested
 rule/action behavior, 0/64 latent identifiers and 64/64 selected-text identifiers.
-Training endpoint results are pending. Exact generation, changed-endpoint answers,
+Both endpoint states pass the declared sampler/depth and checkpoint audit. Held-out
+endpoint evaluations are running. Exact generation, changed-endpoint answers,
 irrelevant-rule invariance and retained action composition will be assessed
 together. A lower teacher-forced loss alone will not justify promotion.
 
