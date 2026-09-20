@@ -1,0 +1,8 @@
+{
+  "removed_worktree": "/home/werg/sdkb/.sdkb/reader-stages",
+  "commit": "417c2f4a845ced285ac7339ae1e88fe94b8fe516",
+  "clean_and_ancestor_of_main": true,
+  "no_container_process_references": true,
+  "apparent_file_bytes_removed": 6916267,
+  "retained": "All experiment artifacts and small-head recovery states on external disk; implementation commit in Git. Active reader-capacity and prior-extractor comparison checkout retained."
+}

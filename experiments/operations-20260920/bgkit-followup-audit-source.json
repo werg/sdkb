@@ -1,0 +1,20 @@
+{
+  "repository": "bgkit",
+  "audited_commit": "011150a8281a98a8532322326171136841b2928b",
+  "previous_audited_commit": "2015354d9093ce8c9509eba28ac54dfff0ba68bf",
+  "original_operational_files_unchanged": true,
+  "files": {
+    "docs/runbook.md": "da2d61d9b559ce0cc9be5d4e149b6b273c53f2992503b528166f0acad5656326",
+    "docs/dgx_spark_perf_playbook.md": "191e717a3bcc91f48bb6090a0106bed7cc220a7e30f2ab3f112a6c5b6020384f",
+    "src/bgkit/training/base_trainer.py": "0704d6cbcee5a060ae75d00df50afd264210fce2c6addec75b4a61b1f36b5126",
+    "src/bgkit/training/checkpoint_archiver.py": "83e5cee49419bf301e83657d2ef23d793915d5fc004078e464cc349aa1cab63c",
+    "src/bgkit/training/checkpointing.py": "7089fc8d83b58ab5ccd859e5117cf7fd31a775c7684bc7db8fc2904aa520bee8",
+    "scripts/restart-train.sh": "857a73a11bda3e9a6f27f25e181af9b0b5a38774164d006d59c881eca3b7da7d",
+    "src/bgkit2/training/core.py": "7846f6719a6406d190ff389f44faadea606fd42c09643dd700f6e61a5eded97a",
+    "src/bgkit2/training/bgkit2_trainer.py": "a9db3888d218127028e8c74bc1cb712533d55f5409a9610d8998362010a5c193",
+    "src/bgkit2/models/multilevel.py": "1f8b1edfb2f33a2d3b33cc724c0d3302d8dc24019800f84b5d9ebf94941aa429",
+    "src/bgkit2/agent/runner.py": "ba0a33129a35c4f3144999c011f2759d918c21375b93e487e363963824443101",
+    "scripts/bgkit2_eval_agent.py": "81d9e4c6599c758933c17b21d167257e144cc3538198205e8a1c37b3ba6e6b94"
+  },
+  "scope": "Read-only source audit. New whole-file/cached-browse/text-access/tool-execution lessons documented in docs/bgkit-audit.md; no source code, credentials or artifacts imported."
+}
