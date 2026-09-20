@@ -1,0 +1,93 @@
+{
+  "protocol": "Frozen control; full 530 training episodes versus 119 held-out episodes; R=2 stored-only teacher scoring",
+  "analyzer_sha256": "1fb22177b17238e08f07504331bc5d0d76e484d14a4b65b6f20442da8dd3129a",
+  "checkpoint_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+  "checkpoint_manifest_sha256": "1dfcec4533e0582c03dd340fd9d0e81c98396ce50f452d41fa90eb5a489246c7",
+  "datasets": {
+    "train": {
+      "episodes_sha256": "baecad1d365ce6c0b4930b9ab878329473bfb4f999495179d0939afa52c29818",
+      "report_sha256": "8892576def33cc13c1be4300c62061c59b9c8394720a45ca8938dc33cb756381",
+      "summary_sha256": "d04193da09968d73d5743084a57ca336b8c7ff68a66f48cc033d04b3a3544fd7",
+      "episodes": 530,
+      "trajectories": 187,
+      "writer_calls": 1680,
+      "target_tokens": 52733,
+      "mean_target_tokens": 99.49622641509434,
+      "token_weighted_nll": {
+        "all": 0.6478323039988614,
+        "zero_values": 0.658004659846642,
+        "wrong_values": 0.6610105303899677,
+        "none": 0.8076494127326043
+      },
+      "paired_episode_benefit": {
+        "zero_values": {
+          "mean_episode_nll_benefit": 0.019154750218514156,
+          "trajectory_groups": 187,
+          "trajectory_bootstrap_interval_95": [
+            0.017263248942365254,
+            0.02124570370837627
+          ]
+        },
+        "wrong_values": {
+          "mean_episode_nll_benefit": 0.030065093542746973,
+          "trajectory_groups": 187,
+          "trajectory_bootstrap_interval_95": [
+            0.026024973575017804,
+            0.03401261626617028
+          ]
+        },
+        "none": {
+          "mean_episode_nll_benefit": 0.340771695325568,
+          "trajectory_groups": 187,
+          "trajectory_bootstrap_interval_95": [
+            0.32553129643274453,
+            0.3558031361582068
+          ]
+        }
+      }
+    },
+    "heldout": {
+      "episodes_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+      "report_sha256": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+      "summary_sha256": "b0685468301d2fa112b18311b189998a31782b6d9491137689d8eaabdfda1a39",
+      "episodes": 119,
+      "trajectories": 42,
+      "writer_calls": 375,
+      "target_tokens": 12858,
+      "mean_target_tokens": 108.05042016806723,
+      "token_weighted_nll": {
+        "all": 0.9710236656315335,
+        "zero_values": 0.9807144478299529,
+        "wrong_values": 0.982070916788767,
+        "none": 1.0895570608742187
+      },
+      "paired_episode_benefit": {
+        "zero_values": {
+          "mean_episode_nll_benefit": 0.017220997243860676,
+          "trajectory_groups": 42,
+          "trajectory_bootstrap_interval_95": [
+            0.005954427115554563,
+            0.026386559991920484
+          ]
+        },
+        "wrong_values": {
+          "mean_episode_nll_benefit": 0.027753538588144996,
+          "trajectory_groups": 42,
+          "trajectory_bootstrap_interval_95": [
+            0.014697513874283794,
+            0.04100834797901705
+          ]
+        },
+        "none": {
+          "mean_episode_nll_benefit": 0.2957936234131436,
+          "trajectory_groups": 42,
+          "trajectory_bootstrap_interval_95": [
+            0.26466125614130964,
+            0.33005407999986464
+          ]
+        }
+      }
+    }
+  },
+  "limits": "Training-fit diagnostic only; unequal source/target distribution and target lengths may affect comparisons. Teacher NLL is not generation, controlled transfer or agent success."
+}

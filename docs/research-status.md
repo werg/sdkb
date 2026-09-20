@@ -156,8 +156,10 @@ Reader values vary substantially under payload ablation, but their effect is
 much smaller at the answer state and next-token distribution. The bridge trace
 and gate overlays are exploratory on the reused validation set, not proof of a
 specific bottleneck. A [full training-set stored-bank diagnostic](../experiments/trajectory-train-fit-20260920/README.md)
-is underway to check whether the control fits source content on its own 530
-training episodes.
+is complete. Its real-versus-zero token-weighted NLL gain is 0.01017 on training
+versus 0.00969 heldout, despite real-value NLL of 0.6478 versus 0.9710. This
+does not support a large training-only payload effect. Unequal repositories and
+target lengths limit the direct split comparison.
 
 These results establish a working native causal-prefix and external-storage
 research pipeline and a modest teacher-likelihood payload effect. They do not
