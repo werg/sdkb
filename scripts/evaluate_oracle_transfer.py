@@ -95,17 +95,18 @@ def run(source, episodes_path, output, *, compact_method='raw'):
             agent.compactor.forward = forbidden
         store = DiskStore(store.path)
         plans = {}
-        def progress(event):
+        def progress(event, *, phase='scoring', variant='global'):
             if stop_requested(output):
                 raise RuntimeError('Stopped during reproducible stored evaluation')
-            print(json.dumps(event), flush=True)
+            print(json.dumps({'phase': phase, 'variant': variant, **event}), flush=True)
         scores = stored_transfer_evaluation(agent, store, episodes, drop_supports=True,
                                             capture_plans=plans, progress=progress, cluster_bank=banks.get('global'),
                                             use_codes_for_all_conditions=compact_method != 'raw')
         originals = {e.episode_id: e for e in episodes}
         for name, group in variants.items():
             changed = stored_transfer_evaluation(agent, store, group, namespace=name,
-                full_evidence_only=True, fixed_plans_by_episode=plans, progress=progress, cluster_bank=banks.get(name),
+                full_evidence_only=True, fixed_plans_by_episode=plans,
+                progress=lambda event, variant=name: progress(event, variant=variant), cluster_bank=banks.get(name),
                 use_codes_for_all_conditions=compact_method != 'raw')
             for row in changed['rows']:
                 row['condition'] = 'cf_'+name
@@ -114,7 +115,7 @@ def run(source, episodes_path, output, *, compact_method='raw'):
         scorer, rows = FrozenScorer(agent), []
         with autocast_context(config):
             for name, group in [('global', episodes), *variants.items()]:
-                for e in group:
+                for index, e in enumerate(group, 1):
                     if stop_requested(output):
                         raise RuntimeError('Stopped during reproducible free generation')
                     prompt = agent.prompt_ids(e.query)
@@ -133,6 +134,10 @@ def run(source, episodes_path, output, *, compact_method='raw'):
                         if name != 'global':
                             row['counterfactual_should_change'] = e.answer != originals[e.episode_id].answer
                         rows.append(row)
+                    if index % 32 == 0 or index == len(group):
+                        progress({'completed_queries': index, 'total_queries': len(group),
+                                  'completed_generations': len(rows), 'total_generations': 6*len(episodes)},
+                                 phase='generation', variant=name)
         families = sorted({e.task_family for e in episodes})
         summary = {f: {c: {'n': len(group), 'correct': sum(r['exact_match'] for r in group)}
                       for c in sorted({r['condition'] for r in rows})
