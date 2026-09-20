@@ -1,0 +1,14 @@
+{
+  "applied": true,
+  "potential_bytes": 1017349676,
+  "released_bytes": 1017349676,
+  "replacements": [
+    {
+      "source": "/archive/runs/binding-copy-fit-20260920/copy/checkpoints/step-000000000-41f2b242db56/model.safetensors",
+      "target": "/archive/runs/binding-fixed-query-detail-20260920/fixed/checkpoints/step-000001600-d8faf965ff8c/model.safetensors",
+      "sha256": "d31494217f4c59c5e3945c37fc98ea4dfef21ba458f997c45b990ecf61497e03",
+      "bytes": 1017349676
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+}

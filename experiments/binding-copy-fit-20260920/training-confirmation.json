@@ -1,0 +1,105 @@
+{
+  "inputs": {
+    "checkpoint_manifest_sha256": "68c89f581c6153e61540e58a4ab4bf7bb702fa308b8fa6e5369a1c8fc738622b",
+    "episodes_sha256": "ed586aabb57d1a78f7e9314906c78050a5dcc24e23e6574849a3d96669656330",
+    "script_sha256": "74bbf7bab07e83f71ce1acaa2fc8499f0cb7f7d42968805c0217dd541dcbf286",
+    "max_new_tokens": 24,
+    "routing": "oracle required sources",
+    "compact_method": "raw"
+  },
+  "generation_summary": {
+    "multiuse/identifier": {
+      "all": {
+        "n": 64,
+        "correct": 64
+      },
+      "cf_identifier": {
+        "n": 64,
+        "correct": 0
+      },
+      "cf_permission": {
+        "n": 64,
+        "correct": 17
+      },
+      "cf_restoration": {
+        "n": 64,
+        "correct": 64
+      },
+      "none": {
+        "n": 64,
+        "correct": 0
+      },
+      "zero_values": {
+        "n": 64,
+        "correct": 1
+      }
+    }
+  },
+  "generation_counterfactuals": {
+    "multiuse/identifier": {
+      "cf_permission": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.734375
+      },
+      "cf_restoration": {
+        "change_pairs": 0,
+        "both_correct_on_change": null,
+        "appropriate_prediction_change": null,
+        "unchanged_pairs": 64,
+        "false_change_rate": 0.0
+      },
+      "cf_identifier": {
+        "change_pairs": 64,
+        "both_correct_on_change": 0.0,
+        "appropriate_prediction_change": 1.0,
+        "unchanged_pairs": 0,
+        "false_change_rate": null
+      }
+    }
+  },
+  "bank_sha256": "f7b864b5721dde50020155da69c135a78b14890f77e82568fd127028bf8f3a09",
+  "results_sha256": "0bca37d732621724c31e02034804998c59d5d377f12eb8c051ab3cb2eabc9cc5",
+  "identifier_target_mean_nll": 0.0006144372350308101,
+  "posthoc_training_target_vocabulary": {
+    "all": {
+      "queries": 64,
+      "predictions_in_training_target_set": 64,
+      "answers_in_training_target_set": 64,
+      "unique_predictions": 64
+    },
+    "cf_identifier": {
+      "queries": 64,
+      "predictions_in_training_target_set": 64,
+      "answers_in_training_target_set": 0,
+      "unique_predictions": 36
+    },
+    "cf_permission": {
+      "queries": 64,
+      "predictions_in_training_target_set": 60,
+      "answers_in_training_target_set": 64,
+      "unique_predictions": 47
+    },
+    "cf_restoration": {
+      "queries": 64,
+      "predictions_in_training_target_set": 64,
+      "answers_in_training_target_set": 64,
+      "unique_predictions": 64
+    },
+    "none": {
+      "queries": 64,
+      "predictions_in_training_target_set": 0,
+      "answers_in_training_target_set": 64,
+      "unique_predictions": 1
+    },
+    "zero_values": {
+      "queries": 64,
+      "predictions_in_training_target_set": 64,
+      "answers_in_training_target_set": 64,
+      "unique_predictions": 1
+    }
+  },
+  "notice": "Training-set fit only, not held-out transfer. Target-vocabulary membership is post-hoc descriptive evidence, not an identification of internal mechanism."
+}

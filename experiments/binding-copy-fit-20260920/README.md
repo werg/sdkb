@@ -103,3 +103,31 @@ The source checkpoint confirmation on the newly declared held-out split is compl
 128/128 original and counterfactual actions, 61/64 direct permissions, 64/64 direct
 restoration answers and 0/64 identifiers. `source-confirmation.json` records this
 control before the candidate endpoint is evaluated.
+
+## Completed training and training-set confirmation
+
+All 1,600 Muon updates completed. Saved sampler state and every recurrent depth
+match the declared plan: 6,400 identifier microbatches, 64 distinct targets,
+80–135 exposures each. Initial weights exactly match the source. `endpoint.json`
+pins the final checkpoint and resource observations. Only initial/final sets were
+written; after ownership released, verified deduplication reclaimed 1,017,349,676
+bytes while preserving both complete recovery sets and all paths.
+
+| Training-set condition | Exact identifiers |
+|---|---:|
+| Original stored memories | **64/64** |
+| No memory | 0/64 |
+| Zeroed values | 1/64 |
+| Endpoint replacement | **0/64** |
+| Irrelevant permission change | **17/64** |
+| Irrelevant restoration change | 64/64 |
+
+Original target NLL is 0.00061444. Every endpoint replacement changes the model's
+answer, but every changed prediction belongs to the original 64-target training
+vocabulary; none of those counterfactual targets belongs to that vocabulary.
+Permission changes falsely alter 47/64 identifiers, with 60/64 predictions still
+in the training vocabulary. This descriptive post-hoc vocabulary audit is consistent
+with memorized associations, not evidence of a learned general string-copying rule
+or a proof of the internal mechanism. Stored memory is necessary for the training
+fit, but correct intervention behavior is missing. `training-confirmation.json`
+records all aggregates and result hashes. Fresh held-out confirmation is running.

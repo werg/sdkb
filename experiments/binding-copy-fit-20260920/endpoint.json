@@ -1,0 +1,16 @@
+{
+  "training_commit": "a75b4e8",
+  "checkpoint": "/archive/runs/binding-copy-fit-20260920/copy/checkpoints/step-000001600-4c6ae966a2f8",
+  "manifest_sha256": "68c89f581c6153e61540e58a4ab4bf7bb702fa308b8fa6e5369a1c8fc738622b",
+  "model_sha256": "1c94c2dcb7a552b3ae380fb40a10ca055b12caff2de17bbe2401aa80baa6fe47",
+  "initial_model_sha256": "d31494217f4c59c5e3945c37fc98ea4dfef21ba458f997c45b990ecf61497e03",
+  "step": 1600,
+  "all_depths_and_sampler_match_declared_plan": true,
+  "identifier_microbatches": 6400,
+  "distinct_identifiers": 64,
+  "exposure_min": 80,
+  "exposure_max": 135,
+  "elapsed_training_seconds": 1753.651142058996,
+  "peak_logged_cuda_allocated_bytes": 2640462336,
+  "notice": "Training endpoint/provenance only; training-set fit and fresh held-out generation are evaluated separately. Contended time is not a speed comparison."
+}
