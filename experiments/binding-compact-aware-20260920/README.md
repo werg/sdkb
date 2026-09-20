@@ -46,7 +46,7 @@ sampler state exactly matches the declared exposure trace. Of 1,600 microbatches
 807 request compaction and 322 actually reduce a two-source action group. The raw
 control's compactor remains byte-identical to initialization; the temporary arm's
 compactor parameters change. These are training/provenance checks, not capability
-results. Fresh confirmation is running.
+results. Fresh confirmation is now complete.
 
 After both training locks released, verified hard-link deduplication reclaimed
 1,022,082,588 bytes from the duplicate initial weights. All checkpoint paths,
@@ -82,3 +82,27 @@ narrow one-seed improvement in conditional compactability on synthetic oracle re
 not net disk savings or parameter substitution. `raw-mean-confirmation.json` pins
 all four completed outputs and `mean-code-training-generation.json` records the
 paired comparison. Final learned-code results will be appended separately.
+
+
+## Completed learned-code confirmation
+
+The native synthetic code also achieves 128/128 actions in all four supplied-memory
+conditions, 128/128 permission-change pairs and 64/64 restoration-change pairs,
+with no false action changes on the tested invariant pairs. Mean codes achieve the
+same result. The raw-control endpoint's untrained synthetic compactor gives the
+same aggregate action counts as its mean code: 81/128 original, 80/128 endpoint-
+changed, 78/128 permission-changed and 79/128 restoration-changed. It must not be
+presented as a separately fitted post-hoc compactor baseline.
+
+The synthetic and mean banks are numerically distinct. Across the four variants,
+all 256 temporary-arm code values differ (maximum absolute difference 0.0625),
+while masses are identical. There are 447 differing target-NLL rows out of 2,368,
+with maximum difference 0.00027115, but zero changed strings among 1,920 generations.
+The control banks also differ numerically and have one changed (still incorrect)
+identifier prediction. `mean-vs-learned-code-difference.json` records these checks.
+Thus this study supports training-induced compactability; it does not establish an
+incremental benefit from the learned compactor over mean-plus-mass at this budget.
+
+All six arms are pinned in `confirmation.json`. The original raw-path regression
+and zero exact identifier recall remain. The paired-objective follow-up uses a new
+held-out split and is not part of these completed results.

@@ -20,8 +20,7 @@ CPU reference evidence remains in `validation-v0.2.md`.
    passes replay, causal, stored-code and emergency-resume checks. Temporary training
    now preserves 128/128 actions and tested rule-change pairs through mean codes,
    versus 81/128 for its raw-trained mean control. Its raw path falls to 126/128;
-   a paired-objective continuation tests this cost. Native learned-code confirmation
-   is still running. Raw fallbacks remain necessary and count toward disk use.
+   a paired-objective continuation tests this cost. Native learned codes match the mean-code action result without improving it. Raw fallbacks remain necessary and count toward disk use.
 4. **Real task success and capacity substitution.** Synthetic composition and
    teacher NLL do not establish these. Compare information-matched systems with
    actual task verifiers and resident-weight/storage/latency accounting.

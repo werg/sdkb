@@ -331,3 +331,10 @@ preservation of the original raw behavior is incomplete. Native learned-code
 confirmation is still running; the paired-objective follow-up is separate.
 [Full protocol, counts and paired intervals](../experiments/binding-compact-aware-20260920/README.md).
 Raw subset fallback records remain stored: no net disk-saving claim.
+
+
+The learned-code confirmation has now completed with the same perfect tested
+compact action/counterfactual counts as mean codes. All 256 codes differ numerically
+across the four banks, but all 1,920 generated strings match the corresponding mean
+arm. This supports compactability induced by training; it does not show a learned-
+compactor advantage over simple mean-plus-mass. The raw-path cost remains.

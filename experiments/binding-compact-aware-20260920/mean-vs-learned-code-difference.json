@@ -1,0 +1,38 @@
+{
+  "raw-control": {
+    "code_count_across_variants": 256,
+    "tensor_differences": {
+      "weights": {
+        "changed_codes": 0,
+        "max_absolute_difference": 0.0
+      },
+      "values": {
+        "changed_codes": 256,
+        "max_absolute_difference": 0.015625
+      }
+    },
+    "scored_rows": 2368,
+    "changed_target_nll_rows": 396,
+    "maximum_target_nll_difference": 0.29164346059163426,
+    "generated_rows": 1920,
+    "changed_predictions": 1
+  },
+  "temporary": {
+    "code_count_across_variants": 256,
+    "tensor_differences": {
+      "weights": {
+        "changed_codes": 0,
+        "max_absolute_difference": 0.0
+      },
+      "values": {
+        "changed_codes": 256,
+        "max_absolute_difference": 0.0625
+      }
+    },
+    "scored_rows": 2368,
+    "changed_target_nll_rows": 447,
+    "maximum_target_nll_difference": 0.00027114764920302804,
+    "generated_rows": 1920,
+    "changed_predictions": 0
+  }
+}
