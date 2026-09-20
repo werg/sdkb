@@ -1,0 +1,40 @@
+{
+  "source": "/archive/runs/binding-muon-continuation-20260919/recurrent_core/checkpoints/step-000001600-ae2efaf16b1c",
+  "optimizer": "muon",
+  "device": "cuda",
+  "precision": "bf16",
+  "completed_steps": 2,
+  "interrupted_microbatches": 1,
+  "exact_model_and_optimizer_rng_state": true,
+  "full_checkpoint": "/archive/probes/muon-recovery-20260920/full/checkpoints/step-000000002-aa2a7d30631c",
+  "resumed_checkpoint": "/archive/probes/muon-recovery-20260920/stopped/checkpoints/step-000000002-13b541ceb2f3",
+  "note": "No optimizer update is taken from partial accumulation. Not a capability experiment.",
+  "implementation_commit": "799b560",
+  "validation_script_sha256": "e72d263024bd6a3b93c5746235230bc812ef81a6d7b82d2f576744641d8562ff",
+  "checkpoints": {
+    "full_checkpoint": {
+      "manifest_sha256": "a16b1aa8d5dcb3c0edfec6bd597a5f97634091cfc625aed1c20132c52195ba1d",
+      "model_sha256": "e461dcd323089cf24fb2f1d18edcad01dcfc8deac3d719aca45041a4b5dcd1e9",
+      "training_state_sha256": "a2aa45c646b4a19d4df2065c623d8f98ca2f958566617060fdd14d0f1cd20d96"
+    },
+    "resumed_checkpoint": {
+      "manifest_sha256": "37a5d2cf41d1a5907963cd5e8797a3971190702bafb4189cbfd8973b4d989e75",
+      "model_sha256": "e461dcd323089cf24fb2f1d18edcad01dcfc8deac3d719aca45041a4b5dcd1e9",
+      "training_state_sha256": "a2aa45c646b4a19d4df2065c623d8f98ca2f958566617060fdd14d0f1cd20d96"
+    }
+  },
+  "deduplication": {
+    "applied": true,
+    "potential_bytes": 1017349676,
+    "released_bytes": 1017349676,
+    "replacements": [
+      {
+        "source": "/archive/probes/muon-recovery-20260920/full/checkpoints/step-000000002-aa2a7d30631c/model.safetensors",
+        "target": "/archive/probes/muon-recovery-20260920/stopped/checkpoints/step-000000002-13b541ceb2f3/model.safetensors",
+        "sha256": "e461dcd323089cf24fb2f1d18edcad01dcfc8deac3d719aca45041a4b5dcd1e9",
+        "bytes": 1017349676
+      }
+    ],
+    "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+  }
+}

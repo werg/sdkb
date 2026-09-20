@@ -170,3 +170,11 @@ run ID. A complete training comparison matches final weights, optimizer and RNG
 exactly despite both injected failures. Setup errors remain fatal before training.
 All 441 tests pass. This does not add a timeout to a hung SDK call. Evidence:
 `experiments/operations-20260920/tracking-failure-isolation.json`.
+
+
+Native BF16 emergency-resume validation was repeated after the fallback-table fix
+from frozen `799b560`. With mixed live/cached sources and noise, a stop after one
+of two accumulated microbatches again reproduces the uninterrupted final model,
+both optimizer components and all RNG state exactly. Only the final complete sets
+are retained; verified weight deduplication removes their duplicate model bytes.
+`experiments/operations-20260920/muon-emergency-resume.json` pins the result.

@@ -1,0 +1,125 @@
+{
+  "removed_clean_inactive_detached_worktrees": [
+    {
+      "path": "/home/werg/sdkb/.sdkb/centered-lexical",
+      "commit": "d19cbad9fb4b0421cbace17545e1d3c0a75acf6e",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6638208
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/character-preflight",
+      "commit": "289a4965dd157b927de3a39dc9a71ed8edab5703",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6523404
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compact-aware",
+      "commit": "1e2c93e636b5abb9dc285f73bffaf7365f61f024",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 5943638
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/compact-evaluation",
+      "commit": "2861dfc13f65222dc0fb1b5b911039efc1b1fce6",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 5952838
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/copy-fit",
+      "commit": "a75b4e85dd3a76bc6a86ae8967c9e15a3f6c8f82",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6342519
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/copy-prefix",
+      "commit": "56706936a6e12e5150b77434be44fc203ae1a16a",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6477547
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/dense-lexical",
+      "commit": "3ac680fd7784bbf8b90deb4b6e51e0721283115f",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6586110
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/detail-breadth",
+      "commit": "602cb06b6ca6fd82ac5a6ef77f2791532ba1defe",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 5734107
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/detail-evaluation-v2",
+      "commit": "3ebc2e5b7691d1e3695bb2bd1b2e255ce8e60a12",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 5748253
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/endpoint-views",
+      "commit": "adf146abda2005b5c93845625f6a0727e745a1b3",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 5910231
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/fixed-query-detail",
+      "commit": "1c261c7cab9c7af35155619de7d4c9dad8f6dc90",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6191882
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/fixed-query-evaluation",
+      "commit": "d766eda67be5096a179ddf0b01709abd73a9ac19",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6194541
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/fixed-query-text",
+      "commit": "23a27ecc00e33383fa0873a7d0fb5a45e36653ad",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6333592
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/lexical-generation",
+      "commit": "9459c681b3b528c35b50c4267aba930bfd2b5b88",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6441772
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/paired-compaction",
+      "commit": "093295eaa970aea21d6469b120628e2a785cea51",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6076668
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/paired-evaluation",
+      "commit": "ed37010c51aa0f10cdfc81152337d1f59114f228",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 6130636
+    },
+    {
+      "path": "/home/werg/sdkb/.sdkb/reader-readout",
+      "commit": "e33c744bb64c1a35be71aa9ff238d6731a9054e9",
+      "active_reference": false,
+      "dirty": false,
+      "apparent_bytes": 5988938
+    }
+  ],
+  "apparent_file_bytes_removed": 105214884,
+  "notice": "Only completed detached study checkouts removed. All revisions are ancestors of main; experiment artifacts and recovery checkpoints remain external. The active freshness checkout, recovery-validation checkout and named study branches were retained."
+}
