@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import hashlib
 import json
 import os
@@ -57,6 +57,16 @@ def short_reconstruction(source: Source, *, max_words: int = 40,
                    'passage_reconstruction', (), ((source.record_id,),), 'verified',
                    {'source_id': source.record_id, 'max_words': max_words, 'actual_words': word_count,
                     'ordering': 'source-before-query'})
+
+
+def with_distractor(episode: Episode, distractor: Source) -> Episode:
+    """Add an earlier, independently identified source without changing the label."""
+    if (distractor.created_at >= episode.query_time or
+            distractor.record_id in {source.record_id for source in episode.supports}):
+        raise ValueError('Distractor must be distinct and causally eligible')
+    return replace(episode, supports=episode.supports + (distractor,),
+                   provenance=episode.provenance | {'distractor_ids':
+                                                      [distractor.record_id]})
 
 
 def prepare_squad(raw: str | Path, output: str | Path, tokenizer, *,

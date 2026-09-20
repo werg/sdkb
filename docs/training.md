@@ -387,3 +387,21 @@ Search is an exact CPU SQLite key scan. There is no ANN claim or measured millio
 record throughput. This path establishes corpus-backed reader/address training;
 joint live-writer replay against a refreshed corpus, learned-only delivery and
 full-budget neighborhood training still need controlled validation.
+
+The optional `train.payload_contrast_weight` fork uses episodes with one verified
+source and an earlier independent distractor (`--with-distractor` in
+`scripts/prepare_four_space_pilot.py`). It adds a second native read using the
+distractor for the *same* causal query and target, then penalizes a correct-source
+NLL that fails to beat the distractor NLL by the declared margin. Both writers
+are fully live and both consumer graphs contribute before selective replay and
+the optimizer step. The fork requires one R=2 oracle read, no compaction and
+`live_fraction: 1`; `payload_contrast_loss` and `swapped_source_nll` are logged.
+The target NLL remains an anchor. Compare stored all/zero/wrong payload conditions
+on held-out sources before treating a lower training loss as memory use.
+
+`scripts/prepare_bank_queries.py` selects questions on bank sources beyond the
+first 1,024 pilot sources. `scripts/evaluate_published_bank.py` verifies the
+published generation, uses exact learned selection at explicit per-space budgets,
+and reports NLL, support recall, zero-payload and removed-support controls. It
+never calls the writer during inference. A first small run is a mechanics check;
+source-held-out behavior and later-task transfer require larger controlled runs.

@@ -36,6 +36,20 @@ def test_short_reconstruction_preserves_source_whitespace():
     assert short_reconstruction(source, max_words=2).answer == 'Alpha  beta'
 
 
+def test_eligible_distractor_preserves_verified_target_and_causal_identity():
+    from sdkb.corpus_data import short_reconstruction, with_distractor
+    from sdkb.data import Source
+    primary = Source('a', 'Title: A\nPassage: Alpha beta.', 1, 'passage')
+    decoy = Source('b', 'Title: B\nPassage: Copper silver.', 1, 'passage')
+    original = short_reconstruction(primary)
+    mixed = with_distractor(original, decoy)
+    assert mixed.required_ids == original.required_ids
+    assert mixed.answer == original.answer and mixed.query == original.query
+    assert mixed.supports == (primary, decoy)
+    assert mixed.sufficient_groups == original.sufficient_groups
+    assert all(s.created_at < mixed.query_time for s in mixed.supports)
+
+
 def _title(want_validation):
     for i in range(100):
         title = f'Article {i}'

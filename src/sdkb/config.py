@@ -76,6 +76,8 @@ class TrainConfig:
     sampling_policy: str = 'random_with_replacement'  # or deterministic shuffled_passes
     bank_dir: str | None = None  # published immutable frozen-writer corpus generation
     bank_read_limits: list[int] = field(default_factory=list)  # per-space selected records, <= neighbors
+    payload_contrast_weight: float = 0.0  # source-swap ranking on verified one-source episodes
+    payload_contrast_margin: float = 0.5
     clip_grad_norm: float = 1.0
     precision: str = "bf16"
     device: str = "cuda"
@@ -149,6 +151,18 @@ class Config:
                     any(not isinstance(k, int) or isinstance(k, bool) or k < 1 or k > cap
                         for k, cap in zip(t.bank_read_limits, r.neighbors, strict=True))):
                 raise ValueError('Bank read limits must be positive per-space counts within neighbor caps')
+        if (not math.isfinite(t.payload_contrast_weight) or t.payload_contrast_weight < 0 or
+                not math.isfinite(t.payload_contrast_margin) or t.payload_contrast_margin < 0):
+            raise ValueError('Invalid source-swap contrast weight or margin')
+        if t.payload_contrast_weight and (
+                t.bank_dir is not None or t.arm != 'memory' or t.retrieval != 'oracle'
+                or t.live_fraction != 1.0 or t.selected_producers_only
+                or t.evidence_scope != 'required'
+                or r.compaction != 'none' or r.read_steps != 1
+                or m.recurrence_mode != 'middle_block' or m.loops != 2
+                or r.read_timing != 'loop_boundary' or t.oracle_anchor_weight
+                or t.oracle_alignment_weight or t.oracle_distillation_weight):
+            raise ValueError('Source-swap contrast requires fully live R=2 oracle memory and two selected sources')
         if not math.isfinite(t.oracle_alignment_weight) or t.oracle_alignment_weight < 0:
             raise ValueError('Invalid oracle alignment weight')
         if t.oracle_alignment_weight and (t.arm != 'memory' or t.retrieval != 'oracle'

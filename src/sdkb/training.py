@@ -114,6 +114,16 @@ def stored_channel(agent: SDKBAgent, outputs: tuple[torch.Tensor, ...]) -> tuple
     return tuple(x.float() if i % 2 == 0 else x.to(dtype).float() for i, x in enumerate(outputs))
 
 
+def payload_contrast_loss(base_loss: torch.Tensor, correct_nll: torch.Tensor,
+                          swapped_nll: torch.Tensor, *,
+                          weight: float, margin: float) -> tuple[torch.Tensor, torch.Tensor]:
+    """Anchor correct likelihood and require a different source to score worse."""
+    if weight < 0 or margin < 0:
+        raise ValueError('Source-swap weight and margin must be nonnegative')
+    contrast = torch.nn.functional.softplus(margin + correct_nll - swapped_nll)
+    return base_loss + weight * contrast, contrast
+
+
 def persist_outputs(store: DiskStore, agent: SDKBAgent, source: Source,
                     outputs: tuple[torch.Tensor, ...], namespace: str, generation: str) -> None:
     for record in output_records(agent, source, outputs, namespace, generation):
@@ -173,6 +183,12 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     if config.train.bank_dir is not None and any(
             len(episode.required_ids) > min(config.train.bank_read_limits) for episode in episodes):
         raise ValueError('Bank read limits must fit every verified sufficient support set')
+    if config.train.payload_contrast_weight and any(
+            episode.support_annotation != 'verified' or len(episode.required_ids) != 1
+            or len(episode.supports) < 2 or
+            not any(source.record_id not in episode.required_ids for source in episode.supports)
+            for episode in episodes):
+        raise ValueError('Source-swap contrast requires one verified positive and an eligible distractor')
     if config.train.optimization_scope == 'compactor' and config.train.retrieval == 'oracle' and not any(
             len(evidence_ids(e, config.train.evidence_scope)) > config.memory.compact_records for e in episodes):
         raise ValueError('Compactor-only training cannot reduce any selected group; lower compact_records')
@@ -315,6 +331,9 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             raise ValueError('Bank spaces are incompatible with this model')
         if bank_manifest['identity']['model'] != asdict(config.model) or bank_manifest['identity']['memory'] != asdict(config.memory):
             raise ValueError('Bank writer architecture or storage transform changed')
+        if (bank_manifest['identity'].get('compute_precision') != config.train.precision or
+                bank_manifest['identity'].get('max_source_tokens') != config.train.max_source_tokens):
+            raise ValueError('Bank writer precision or source token contract changed')
         if not resume:
             if init_from is None or file_sha256(source_checkpoint / 'model.safetensors') != bank_manifest['identity']['writer_checkpoint_sha256']:
                 raise ValueError('Bank training must initialize from its exact frozen writer snapshot')
@@ -412,6 +431,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                     alignment_total = (progress['alignment_total'] if config.train.oracle_alignment_weight else 0.)
                     distillation_total = (progress['distillation_total']
                                           if config.train.oracle_distillation_weight else 0.)
+                    contrast_total = progress.get('contrast_total', 0.)
+                    wrong_nll_total = progress.get('wrong_nll_total', 0.)
                     micro_start = progress['microbatches']
                     if not 0 < micro_start < config.train.gradient_accumulation:
                         raise ValueError('Invalid saved accumulation position')
@@ -428,6 +449,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                     anchor_total, micro_start = 0.0, 0
                     alignment_total = 0.0
                     distillation_total = 0.0
+                    contrast_total = 0.0
+                    wrong_nll_total = 0.0
                 for micro in range(micro_start, config.train.gradient_accumulation):
                     episode = (episodes[sampler.index(step * config.train.gradient_accumulation + micro)]
                                if sampler is not None else rng.choice(episodes))
@@ -478,6 +501,17 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                             result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
                                            step=step, compact=compact)
                         loss = result.loss
+                        if config.train.payload_contrast_weight:
+                            wrong_index = next(i for i, source in enumerate(episode.supports)
+                                               if source.record_id not in episode.required_ids)
+                            swapped = agent(prompt, agent.target_ids(episode.answer), records,
+                                            [wrong_index], step=step)
+                            loss, contrast = payload_contrast_loss(
+                                loss, result.nll, swapped.nll,
+                                weight=config.train.payload_contrast_weight,
+                                margin=config.train.payload_contrast_margin)
+                            contrast_total += float(contrast.detach()) / config.train.gradient_accumulation
+                            wrong_nll_total += float(swapped.nll.detach()) / config.train.gradient_accumulation
                         if config.train.oracle_anchor_weight and config.train.arm == "memory":
                             oracle_prompt = agent.prompt_ids(episode.query, support_text)
                             if config.train.oracle_alignment_weight:
@@ -533,7 +567,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                         progress = dict(microbatches=micro + 1, loops=agent.backbone.loops,
                                         totals=totals, anchor_total=anchor_total,
                                         alignment_total=alignment_total, distillation_total=distillation_total,
-                                        bank_totals=bank_totals)
+                                        bank_totals=bank_totals,
+                                        contrast_total=contrast_total, wrong_nll_total=wrong_nll_total)
                         compute.close()
                         save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
                                         keep=config.train.keep_checkpoints, archiver=archiver,
@@ -547,9 +582,12 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             row = {"step": step + 1, **totals, "oracle_anchor_nll": anchor_total,
                    "oracle_alignment_loss": alignment_total,
                    "oracle_distillation_kl": distillation_total,
+                   "payload_contrast_loss": contrast_total,
+                   "swapped_source_nll": wrong_nll_total,
                    "optimization_loss": (totals["loss"] + config.train.oracle_anchor_weight * anchor_total
                                          + config.train.oracle_alignment_weight * alignment_total
-                                         + config.train.oracle_distillation_weight * distillation_total),
+                                         + config.train.oracle_distillation_weight * distillation_total
+                                         + config.train.payload_contrast_weight * contrast_total),
                    "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
                    "elapsed_seconds": time.perf_counter() - start_time}
             if bank_totals is not None:

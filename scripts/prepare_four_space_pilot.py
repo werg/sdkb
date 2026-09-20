@@ -11,8 +11,8 @@ import shutil
 import uuid
 
 import sdkb.corpus_data as corpus_data
-from sdkb.corpus_data import short_reconstruction
-from sdkb.data import Source
+from sdkb.corpus_data import short_reconstruction, with_distractor
+from sdkb.data import Source, episode_from_dict
 from sdkb.trajectories import file_sha256
 
 REVISION = '40cb2ad3b3044d5a41eee083a6103c8b523afa45'
@@ -20,7 +20,7 @@ REVISION = '40cb2ad3b3044d5a41eee083a6103c8b523afa45'
 
 def prepare(data: Path, output: Path, tokenizer, *, source_count: int = 1024,
             validation_count: int = 64, max_words: int = 40,
-            max_target_tokens: int = 128) -> dict:
+            max_target_tokens: int = 128, add_distractor: bool = False) -> dict:
     if min(source_count, validation_count, max_words, max_target_tokens) < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive budgets and a fresh output under an existing parent required')
     if output.parent.stat().st_dev == Path(__file__).resolve().parents[1].stat().st_dev:
@@ -41,9 +41,10 @@ def prepare(data: Path, output: Path, tokenizer, *, source_count: int = 1024,
                            (data / f'sources-{split}.jsonl').read_text().splitlines()]
             if len(source_rows) < count:
                 raise ValueError('Source budget exceeds prepared corpus')
+            selected_rows = source_rows[:count]
             selected = {row['record_id']: Source(**{key: row[key] for key in
                                                    ('record_id', 'text', 'created_at', 'kind')})
-                        for row in source_rows[:count]}
+                        for row in selected_rows}
             qa = {}
             for line in (data / f'{split}.jsonl').open():
                 row = json.loads(line)
@@ -53,10 +54,23 @@ def prepare(data: Path, output: Path, tokenizer, *, source_count: int = 1024,
             if len(qa) != len(selected):
                 raise ValueError('Every selected source needs a verified QA')
             episodes = []
-            for source_id, source in selected.items():
-                episodes.extend((asdict(short_reconstruction(
-                    source, max_words=max_words, tokenizer=tokenizer,
-                    max_target_tokens=max_target_tokens)), qa[source_id]))
+            for source_index, (source_id, source) in enumerate(selected.items()):
+                pair = [short_reconstruction(source, max_words=max_words, tokenizer=tokenizer,
+                                             max_target_tokens=max_target_tokens),
+                        episode_from_dict(qa[source_id])]
+                if add_distractor:
+                    title = selected_rows[source_index]['provenance']['article_title']
+                    start = int(hashlib.sha256(f'distractor:{source_id}'.encode()).hexdigest()[:8], 16) % count
+                    alternate = next((selected_rows[(start + j) % count] for j in range(count)
+                                      if selected_rows[(start + j) % count]['record_id'] != source_id
+                                      and selected_rows[(start + j) % count]['provenance']['article_title'] != title),
+                                     None)
+                    if alternate is None:
+                        raise ValueError('No distinct-article distractor in the selected split')
+                    decoy = Source(**{key: alternate[key] for key in
+                                      ('record_id', 'text', 'created_at', 'kind')})
+                    pair = [with_distractor(episode, decoy) for episode in pair]
+                episodes.extend(asdict(episode) for episode in pair)
             for episode in episodes:
                 tokens = len(tokenizer.encode(episode['answer'], add_special_tokens=False))
                 if tokens + int(tokenizer.eos_token_id is not None) > max_target_tokens:
@@ -76,9 +90,11 @@ def prepare(data: Path, output: Path, tokenizer, *, source_count: int = 1024,
                   'corpus_module_sha256': file_sha256(Path(corpus_data.__file__)),
                   'source_count': source_count, 'max_words': max_words,
                   'max_target_tokens': max_target_tokens,
+                  'add_distractor': add_distractor,
                   'tokenizer_revision': REVISION,
                   'splits': summaries,
-                  'notice': 'One source record per task, supplied oracle selection; this pilot does not train global retrieval.'}
+                  'notice': ('Verified one-source task labels with an earlier independent distractor.' if add_distractor
+                             else 'One source record per task, supplied oracle selection; this stage does not train global retrieval.')}
         (pending / 'manifest.json').write_text(json.dumps(result, indent=2) + '\n')
         os.replace(pending, output)
     except BaseException:
@@ -96,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--validation-count', type=int, default=64)
     parser.add_argument('--max-words', type=int, default=40)
     parser.add_argument('--max-target-tokens', type=int, default=128)
+    parser.add_argument('--with-distractor', action='store_true')
     args = parser.parse_args()
     from transformers import AutoTokenizer
     snapshot = args.cache / 'huggingface/hub/models--LiquidAI--LFM2.5-230M/snapshots' / REVISION
@@ -104,4 +121,5 @@ if __name__ == '__main__':
                              source_count=args.source_count,
                              validation_count=args.validation_count,
                              max_words=args.max_words,
-                             max_target_tokens=args.max_target_tokens), indent=2))
+                             max_target_tokens=args.max_target_tokens,
+                             add_distractor=args.with_distractor), indent=2))

@@ -100,7 +100,9 @@ def test_bank_training_warmstarts_exact_writer_and_resumes(tmp_path, tiny_config
     agent = SDKBAgent(config).eval()
     load_model(agent, str(checkpoint / 'model.safetensors'), device='cpu')
     identity = {'writer_checkpoint_sha256': file_sha256(checkpoint / 'model.safetensors'),
-                'model': asdict(config.model), 'memory': asdict(config.memory)}
+                'model': asdict(config.model), 'memory': asdict(config.memory),
+                'compute_precision': config.train.precision,
+                'max_source_tokens': config.train.max_source_tokens}
 
     def records():
         with torch.no_grad():
