@@ -207,3 +207,10 @@ acknowledgement for signal-stopped probe children and refuses to clear active-ch
 controls. All 457 tests pass, with 18 focused checks after the final report-metadata
 addition. Native diagnostic outcomes are pending. Evidence:
 `experiments/operations-20260920/frozen-readout-controls.json`.
+
+
+A follow-up to the new offline writer moves CUDA completion inside its compute
+watchdog, before serialization/fsync, and preserves the first manifest publisher
+when reusing unchanged bank bytes. Two regressions failed before correction; all
+459 tests pass. Completed frozen `f9625f7` banks/readouts retain their actual
+implementation provenance. See `experiments/operations-20260920/offline-writer-guard.json`.

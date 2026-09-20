@@ -1,0 +1,23 @@
+{
+  "implementation_commit": "f9625f73a884eaa7d777149e7089eea28aebc1fb",
+  "environment": {
+    "python": "3.12.3",
+    "machine": "aarch64",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "cuda_runtime": "13.2",
+    "cuda_available": true,
+    "gpu": "NVIDIA GB10",
+    "compute_capability": [
+      12,
+      1
+    ],
+    "bf16_supported": true,
+    "cuda_total_bytes": 130594091008,
+    "git_commit": "f9625f73a884eaa7d777149e7089eea28aebc1fb",
+    "git_dirty": false,
+    "transformers": "5.17.0"
+  },
+  "maximum_children": 2,
+  "status": "all bank and readout child processes completed with exit code zero",
+  "inputs_sha256": "8cf7193f6252dfa28ec9082d86e54625eaa902802b611984866e6cfc7500682f"
+}

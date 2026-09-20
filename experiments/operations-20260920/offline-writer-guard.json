@@ -1,0 +1,11 @@
+{
+  "failed_regressions_before_fix": 2,
+  "full_suite_passed": 459,
+  "ruff": "passed",
+  "test_log": "/archive/profiles/offline-writer-guard-full-tests.log",
+  "changes": [
+    "Complete queued CUDA forwards inside the compute watchdog before SQLite serialization or fsync",
+    "Preserve the original bank manifest publisher when committed payloads are reused; reject mismatched published identities"
+  ],
+  "scope": "The CUDA ordering check uses a mocked device-completion boundary and runs without a GPU. This changes watchdog/provenance handling, not model mathematics. The completed native readout study remains frozen at f9625f7."
+}

@@ -1,0 +1,22 @@
+{
+  "removed": [
+    {
+      "path": ".sdkb/endpoint-freshness",
+      "commit": "c58028cc4a1fea29d95a58eb82774dc3016e1f88",
+      "apparent_bytes": 6552609
+    },
+    {
+      "path": ".sdkb/endpoint-finalize",
+      "commit": "b915bf8421a720041f1f2f0a0fbaf4e19dda304b",
+      "apparent_bytes": 6740858
+    },
+    {
+      "path": ".sdkb/muon-recovery-20260920",
+      "commit": "799b5601328b908b0e39bd37c9ed9eec6fd3f683",
+      "apparent_bytes": 6680219
+    }
+  ],
+  "apparent_bytes_removed": 19973686,
+  "checks": "Each checkout was clean, its commit is retained in main history, all associated training/evaluation processes exited, and the container process list had no references to these paths.",
+  "scope": "Completed detached code checkouts only. All checkpoints, banks, metrics and named historical branches remain. The active freshness-readout checkout is retained."
+}
