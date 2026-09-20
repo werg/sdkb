@@ -307,7 +307,9 @@ a depth without rerouting payload interventions. Transfer scoring stops between
 completed depths; the active depth finishes before a cooperative stop returns.
 
 The timing includes prefix planning, payload access, and all candidate/condition
-scoring. It is evaluation wall time, not a tokens-per-second serving result.
+scoring after bank materialization. OS page-cache state is uncontrolled; it is
+neither cold-NVMe timing nor a tokens-per-second serving result. Oracle routing
+uses declared source IDs; learned routing uses the exact stored-key scan, not ANN.
 
 Offline execution without downloads:
 

@@ -137,7 +137,9 @@ def evaluate_depths(run: str | Path, episodes_file: str | Path, output: str | Pa
             reports.append({k: v for k, v in report.items() if k != 'rows'})
         result = dict(status='complete', protocol=protocol, writer_depth=1, write_phase=write_phase,
                       same_serialized_bank=True, checkpoint=str(checkpoint), bank_sizes=store.sizes(), depths=reports,
-                      timing_scope='All conditions, fixed-plan candidate scoring, prefix recomputation and I/O included; not serving latency.',
+                      timing_scope='All conditions, fixed-plan candidate scoring, prefix recomputation and I/O included after bank materialization. OS page-cache state is uncontrolled; this is neither cold-NVMe nor serving latency.',
+                      retrieval_scope=('Oracle source IDs; no ANN search' if config.train.retrieval == 'oracle'
+                                       else 'Exact stored-key scan; no ANN index'),
                       comparison='R=1 is a no-in-loop-memory control. Compare R>=2 at fixed read budget; no claim of extrapolation gains.')
         atomic_json(summary_file, result)
         return result
