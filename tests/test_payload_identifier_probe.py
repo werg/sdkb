@@ -43,3 +43,33 @@ def test_readout_normalization_is_fixed_from_training_values():
     model(torch.full((2, 6), 1e3)).sum().backward()
     assert all(torch.equal(dict(model.named_buffers())[k], v) for k, v in before.items())
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
+
+
+def test_reader_feature_uses_only_causal_stored_memory(tmp_path, tiny_config, monkeypatch):
+    from sdkb.agent import SDKBAgent
+    from sdkb.evaluation import build_shared_bank
+    from sdkb.store import DiskStore
+    from probe_payload_identifiers import reader_feature
+    c = tiny_config
+    c.model.tiny_layers = 4
+    c.model.recurrence_mode = 'middle_block'
+    c.model.recurrent_start, c.model.recurrent_end = 1, 3
+    c.model.loops, c.model.writer_loops = 3, 1
+    c.memory.read_timing, c.memory.read_steps = 'loop_boundary', 1
+    c.train.max_source_tokens = c.train.max_prompt_tokens = 512
+    c.validate()
+    agent = SDKBAgent(c).eval().requires_grad_(False)
+    episode = next(e for e in make_multiuse_world(1, bindings=1) if e.task_family == 'multiuse/identifier')
+    store = DiskStore(tmp_path/'bank.sqlite')
+    build_shared_bank(agent, store, [episode])
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Feature extraction used source encoding or target tokens')
+    monkeypatch.setattr(agent, 'produce', forbidden)
+    monkeypatch.setattr(agent, 'target_ids', forbidden)
+    full = reader_feature(agent, store, episode)
+    changed_target = reader_feature(agent, store, replace(episode, answer='UNSEEN FUTURE'))
+    zero = reader_feature(agent, store, episode, zero_values=True)
+    assert full.shape == (c.memory.read_slots*agent.width,)
+    torch.testing.assert_close(full, changed_target, rtol=0, atol=0)
+    assert not torch.equal(full, zero)
+    assert not full.requires_grad and full.device.type == 'cpu'

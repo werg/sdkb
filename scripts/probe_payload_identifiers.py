@@ -1,4 +1,4 @@
-"""Supervised character readout from frozen payloads; not a decoder capability test."""
+"""Supervised character readout from frozen payloads or reader tokens; not decoder capability."""
 import argparse
 from dataclasses import asdict
 import json
@@ -70,9 +70,29 @@ def assess(model, values, labels, config):
             for name, p in [('payload', prediction), ('shifted_payload', shuffled)]}
 
 
-def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32):
+@torch.no_grad()
+def reader_feature(agent, store, episode, *, zero_values=False):
+    """First native reader output, before bridge injection; targets are never inputs."""
+    from sdkb.recurrence import LoopMemory
+    from sdkb.sessions import read_session
+    if (agent.training or agent.config.memory.read_timing != 'loop_boundary'
+            or agent.config.memory.read_steps != 1):
+        raise ValueError('Reader feature requires a frozen, single-read recurrent agent')
+    with autocast_context(agent.config):
+        session = read_session(agent, store, agent.prompt_ids(episode.query), namespace='global',
+            generation='frozen-v1', query_time=episode.query_time, oracle_ids=episode.required_ids,
+            ablate_values=zero_values)
+    memory = session.memory
+    if not isinstance(memory, LoopMemory) or not memory.events or memory.events[0] is None:
+        raise ValueError('Missing first-boundary reader output')
+    return memory.events[0].detach().float().flatten().cpu()
+
+
+def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32, representation='payload'):
     if steps < 1:
         raise ValueError('Positive optimizer budget required')
+    if representation not in {'payload', 'reader', 'zero_reader'}:
+        raise ValueError('Choose payload, reader or zero_reader representation')
     output.mkdir(parents=True, exist_ok=True)
     with run_lock(output, clear_stop=False):
         checkpoint = resolve_checkpoint(source, verify=True)
@@ -81,7 +101,7 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32)
         config.train.steps, config.train.seed, config.train.learning_rate = steps, 83, .001
         config.train.gradient_accumulation = 1
         config.train.loop_counts = []
-        config.train.wandb_group = 'frozen-payload-identifier-readout'
+        config.train.wandb_group = 'frozen-identifier-readout-'+representation
         config.train.episodes_file = str(episodes_path)
         config.model.freeze_backbone = True
         configure_memory(config.train)
@@ -93,6 +113,16 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32)
         groups = split_identifiers(load_episodes(episodes_path), heldout_worlds)
         config.train.train_worlds = len({e.environment for e in groups['train']})
         store, values, labels = DiskStore(bank_path), {}, {}
+        agent = None
+        if representation != 'payload':
+            from sdkb.evaluation_adapter import load_frozen_agent
+            agent, _ = load_frozen_agent(config, checkpoint)
+            agent.requires_grad_(False)
+            def forbidden(*_args, **_kwargs):
+                raise AssertionError('Reader feature extraction invoked writer or compactor')
+            agent.produce = forbidden
+            if agent.compactor is not None:
+                agent.compactor.forward = forbidden
         for split, episodes in groups.items():
             payloads = []
             for e in episodes:
@@ -102,14 +132,25 @@ def run(source, episodes_path, bank_path, output, steps=1600, heldout_worlds=32)
                 if (record.source_id != e.required_ids[0] or record.created_at != source_record.created_at
                         or record.payload.numel() != config.memory.payload_dims[0]):
                     raise ValueError('Stored source provenance differs')
-                payloads.append(record.payload.float().flatten())
+                if stop_requested(output):
+                    raise RuntimeError('Stopped during reproducible frozen feature reads')
+                available = available_host_memory()
+                if available is not None and available < config.train.min_system_available_bytes:
+                    raise RuntimeError('Host memory reserve reached during frozen feature reads')
+                payloads.append(record.payload.float().flatten() if agent is None else
+                                reader_feature(agent, store, e, zero_values=representation == 'zero_reader'))
+                if len(payloads) % 128 == 0:
+                    print(json.dumps({'feature_split': split, 'completed': len(payloads),
+                                      'total': len(episodes), 'representation': representation}), flush=True)
             values[split] = torch.stack(payloads).to(config.train.device)
             labels[split] = torch.tensor([[int(c, 16) for c in e.answer[4:]] for e in episodes], device=config.train.device)
+        del agent
         identity = {'source_manifest_sha256': manifest_hash, 'episodes_sha256': data_hash,
                     'bank_sha256': file_sha256(bank_path), 'bank_identity': reference, 'config': asdict(config),
                     'steps': steps, 'heldout_worlds': heldout_worlds, 'batch': 128,
+                    'representation': representation, 'input_dimension': values['train'].shape[1],
                     'script_sha256': file_sha256(__file__), 'split_episodes': {k: [e.episode_id for e in v] for k, v in groups.items()},
-                    'notice': 'Six supervised hexadecimal classifiers from payload only. Negative readout results do not prove information absent.'}
+                    'notice': 'Six supervised hexadecimal classifiers from declared frozen features. Reader features include the causal query. Wider features change readout parameter counts; zero_reader controls query-only information. Negative results do not prove information absent.'}
         if (output/'inputs.json').exists() and json.loads((output/'inputs.json').read_text()) != identity:
             raise ValueError('Readout experiment identity changed')
         atomic_json(output/'inputs.json', identity)
@@ -162,9 +203,10 @@ if __name__ == '__main__':
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--steps', type=int, default=1600)
     parser.add_argument('--heldout-worlds', type=int, default=32)
+    parser.add_argument('--representation', choices=['payload', 'reader', 'zero_reader'], default='payload')
     args = parser.parse_args()
     def stop(_signal, _frame):
         (control_dir(args.output)/'STOP').touch()
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    run(args.source, args.episodes, args.bank, args.output, args.steps, args.heldout_worlds)
+    run(args.source, args.episodes, args.bank, args.output, args.steps, args.heldout_worlds, args.representation)
