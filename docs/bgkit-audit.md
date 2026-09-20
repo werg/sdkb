@@ -331,9 +331,13 @@ applies to its teacher-bank intervention builder: retaining every encoded source
 would grow with the evaluation corpus. The builder now keeps at most 64 recent
 source encodings, records actual writer calls and peak cache size, and still
 commits complete namespaces atomically. Evicted sources may be re-encoded only
-while creating an unfinished offline bank; completed banks and stored inference
-never invoke the writer. A 140-source regression covers the bound and all 280
-expected raw intervention records. The new bgkit path-walk evaluation also
+while creating original offline scopes. Wrong-value scopes now copy the exact
+serialized peer payload from completed original scopes without another writer
+call, while retaining each original key, source ID and visibility metadata.
+Completed banks and stored inference never invoke the writer. A 140-source
+regression covers the bound and all 280 expected raw intervention records;
+another compares wrong-value bank bytes to the original writer-based reference.
+The new bgkit path-walk evaluation also
 reinforces SDKB's existing distinction between teacher NLL and full agent
 success; no path-walk capability is claimed here. Source identities are pinned
 in `experiments/operations-20260920/bgkit-refresh-source.json`.

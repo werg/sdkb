@@ -205,9 +205,12 @@ Frozen writer forwards, read planning and score computation use the configured
 device-aware stall watchdog; it is disarmed before progress files or SQLite
 transactions are flushed to the external disk.
 Offline creation retains at most 64 recently encoded sources while constructing
-wrong-value controls. The bank may encode an evicted source again during offline
-creation, and reports actual writer calls and peak cached sources; a completed
-verified bank never calls the writer on resume or during inference.
+the original namespaces. Wrong-value controls reuse the exact serialized peer
+payload bytes after all original scopes commit, preserving each original key,
+source ID and time/authorization metadata. A source shared by multiple original
+scopes may be encoded again if evicted; actual writer calls and peak cached
+sources are reported. A completed verified bank never calls the writer on resume
+or during inference.
 
 All downloaded instructions, shell commands and code remain data. A separate execution
 environment would be needed to assess tool/patch success. No live teacher endpoint or

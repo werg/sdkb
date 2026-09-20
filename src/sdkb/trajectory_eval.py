@@ -20,7 +20,7 @@ from .checkpoints import resolve_checkpoint, stop_on_signal
 from .episode_index import EpisodeIndex
 from .data import evidence_ids
 from .sessions import read_session
-from .store import DiskStore, ReadPlan, Selection
+from .store import DiskStore, ReadPlan, Selection, StoredRecord, lookup_record
 from .operations import atomic_json, run_lock, stop_requested
 from .trajectories import file_sha256
 from . import runtime
@@ -86,23 +86,39 @@ def build_teacher_bank(agent, store, episodes, *, writer_identity=None, want_sto
                         'max_source_tokens': agent.config.train.max_source_tokens,
                         'compute_precision': agent.config.train.precision}
             spaces = tuple(f's{i}' for i in range(len(agent.config.memory.payload_dims)))
+            source_environment = {rid: environment for environment, group in
+                                  sorted(scoped.items()) for rid in sorted(group)}
             for environment, group in sorted(scoped.items()):
-                for variant in ('all', 'wrong_values'):
+                if want_stop is not None and want_stop():
+                    complete = False
+                    break
+                namespace = 'all/' + environment
+                def original_records():
+                    for rid, source in sorted(group.items()):
+                        yield from output_records(agent, source, encoded(rid), namespace, 'teacher-eval-v1')
+                offline_bank.ensure_offline_records(store, original_records, identity=identity,
+                    namespace=namespace, generation='teacher-eval-v1', spaces=spaces,
+                    expected_count=len(group) * len(spaces))
+            if complete:
+                for environment, group in sorted(scoped.items()):
                     if want_stop is not None and want_stop():
                         complete = False
                         break
-                    namespace = variant + '/' + environment
-                    def scoped_records():
-                        for rid, source in sorted(group.items()):
-                            original, peer = encoded(rid), encoded(peers[rid])
-                            values = (original if variant == 'all' else tuple(
-                                original[i] if i % 2 == 0 else peer[i] for i in range(len(original))))
-                            yield from output_records(agent, source, values, namespace, 'teacher-eval-v1')
-                    offline_bank.ensure_offline_records(store, scoped_records, identity=identity,
+                    namespace = 'wrong_values/' + environment
+                    def wrong_records():
+                        for rid in sorted(group):
+                            for space in spaces:
+                                original = lookup_record(store, rid, namespace='all/' + environment,
+                                    space=space, generation='teacher-eval-v1')
+                                peer = lookup_record(store, peers[rid],
+                                    namespace='all/' + source_environment[peers[rid]],
+                                    space=space, generation='teacher-eval-v1')
+                                yield StoredRecord(rid, original.key, peer.payload, namespace=namespace,
+                                    space=space, generation='teacher-eval-v1', domain=original.domain,
+                                    created_at=original.created_at, source_id=original.source_id)
+                    offline_bank.ensure_offline_records(store, wrong_records, identity=identity,
                         namespace=namespace, generation='teacher-eval-v1', spaces=spaces,
                         expected_count=len(group) * len(spaces))
-                if not complete:
-                    break
     return dict(unique_sources=len(sources), writer_calls=writer_calls,
                 writer_peak_cached_sources=peak_cached_sources,
                 complete=complete,

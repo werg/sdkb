@@ -179,3 +179,21 @@ def test_teacher_offline_writer_bounds_cached_encoded_sources(tmp_path, tiny_con
     assert report['writer_calls'] >= 140
     assert 0 < report['writer_peak_cached_sources'] <= 64
     assert store.sizes()['records'] == 280
+
+
+def test_teacher_wrong_value_scopes_reuse_serialized_peer_values(tmp_path, tiny_config, monkeypatch):
+    agent = SDKBAgent(tiny_config).eval()
+    episodes = make_multiuse_world(15, bindings=1) + make_multiuse_world(16, bindings=1)
+    reference, managed = DiskStore(tmp_path/'reference.sqlite'), DiskStore(tmp_path/'managed.sqlite')
+    build_teacher_bank(agent, reference, episodes)
+    original = agent.produce
+    calls = []
+    def counted(*args, **kwargs):
+        calls.append(True)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(agent, 'produce', counted)
+    result = build_teacher_bank(agent, managed, episodes, writer_identity='frozen')
+    assert len(calls) == result['unique_sources'] == result['writer_calls']
+    with reference.connect() as a, managed.connect() as b:
+        query = 'SELECT * FROM records ORDER BY namespace,record_id,space'
+        assert a.execute(query).fetchall() == b.execute(query).fetchall()
