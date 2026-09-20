@@ -44,3 +44,24 @@ answer-annotation independence, future-source rejection, persisted-only ranking,
 visibility and corrupt-vector rejection. Neither active GPU training arm changes.
 
 Pre-launch validation: 436 tests passed, with four existing warnings; Ruff passed.
+
+## Completed: centering does not repair action routing
+
+All 12 arms completed from frozen `d19cbad`. Source/query-ID disjointness and all
+artifact identities passed. The fitted calibration uses 1,280 questions and 512
+unique source records; targets and required IDs never enter the means.
+
+| Width | Full action pairs at top two, seeds 11 / 23 / 47 (of 128) |
+|---|---:|
+| 64 | **0 / 0 / 0** |
+| 128 | 0 / 0 / 0 |
+| 256 | 0 / 0 / 0 |
+| 1024 | 0 / 1 / 0 |
+
+This specified centering adjustment fails to recover the action pair, even where
+individual facts can be retrieved. It does not repair the uncentered control and
+is not promoted. `results.json` includes every task/count result, seed, byte count
+and output hash. No generation run was launched and no default router changed.
+Together these controls show that the earlier sparse TF-IDF success cannot simply
+be attributed to an equally effective untuned 64D token projection. They do not
+prove learned dense routing is impossible or isolate a fundamental dimension limit.

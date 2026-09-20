@@ -15,7 +15,7 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **434 tests**, with four existing dependency/runtime
+The latest full suite passed **436 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
@@ -413,3 +413,11 @@ TF projections recover only 2/128, 0/128 and 0/128 full action pairs across thre
 seeds. The unprojected no-IDF baseline gets 64/128 versus the earlier TF-IDF 128/128.
 All declared widths/seeds are reported. This identifies losses in this fixed encoder,
 not an inherent dimension limit or a learned-router improvement.
+
+A [prior-corpus centering follow-up](../experiments/binding-centered-lexical-20260920/README.md)
+also fails: all three 64D seeds retrieve 0/128 full action pairs; across larger
+widths only one 1024D seed gets 1/128. Its two fitted means use only disjoint
+original training sources/queries, never targets. All arms are reported and none
+is promoted. The source control for the ongoing freshness study independently
+retains perfect tested rule/action behavior and copies 64/64 endpoints from selected
+text, versus 0/64 from stored latent memory.

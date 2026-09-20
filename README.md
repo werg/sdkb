@@ -1,5 +1,8 @@
 # SDKB
 
+[Research status](docs/research-status.md) summarizes what is established, what
+remains open, and the active exact-copy experiment.
+
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
 See [current Spark validation](docs/validation-spark.md) for tested behavior and remaining limits.
