@@ -38,6 +38,33 @@ The new arm completed all 1,600 updates; `endpoint.json` pins its final manifest
 and model hashes. Its final saved sampler state and every sampled recurrent depth
 match the independent-world control exactly. The new histories therefore change
 the conditional training examples at matched sampling positions and update budget.
-Fresh confirmation is running. After training ownership released, the identical
+Fresh confirmation is complete; results follow below. After training ownership released, the identical
 initial weights were verified and linked to the original source, reclaiming another
 1,017,349,676 bytes without dropping recovery state or changing checkpoint paths.
+
+
+## Fresh held-out confirmation
+
+| Frozen endpoint | Action exact | Identifier exact | Identifier target NLL | Action without memory | Action with zero values |
+|---|---:|---:|---:|---:|---:|
+| Original source | 128/128 | 0/64 | 4.7557 | 63/128 | 62/128 |
+| 1,024 independent worlds | 128/128 | 0/64 | 2.7963 | 64/128 | 49/128 |
+| 128 worlds × eight endpoint histories | 128/128 | 0/64 | 2.6551 | 46/128 | 56/128 |
+
+Every arm also generates all permission/restoration answers correctly, preserves
+128/128 action answers under permission changes and 64/64 affected restoration
+pairs, and makes no action changes on the 64 unaffected restoration pairs or 128
+endpoint-only changes. All three still generate zero exact endpoint strings under
+endpoint counterfactuals. Wrong identifier predictions change with the supplied
+endpoint in 10/64, 46/64 and 55/64 cases respectively; this is sensitivity, not
+successful recall. Irrelevant permission changes also alter identifier predictions
+in 48/64, 38/64 and 36/64 cases. Endpoint-specific behavior is not cleanly isolated.
+
+Thus this matched continuation preserves synthetic composition and slightly lowers
+identifier teacher NLL, but does not solve latent exact-detail recall. Removing the
+fixed query-to-answer association alone was insufficient at this update budget.
+This does not rule out a longer curriculum or different representation. The
+comparison is one seed on 32 fresh worlds; it establishes neither agent success
+nor parameter substitution. `confirmation.json` pins input/result/bank hashes and
+all condition counts; `independent-vs-views-generation.json` records the paired
+world bootstrap comparison. Raw records and predictions remain on external disk.

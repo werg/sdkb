@@ -306,3 +306,15 @@ mechanism. The rerun payload baseline reproduces prior weights, normalization an
 all aggregate outcomes exactly. Targets/source text never enter reader extraction;
 source/compactor calls are forbidden and a causal regression changes the target
 without changing features.
+
+
+## Matched endpoint-history continuation (20 September)
+
+The completed source / independent-world / alternate-history comparison on a new
+32-world split preserves 128/128 generated actions and the tested rule-change
+counterfactuals in every arm. Identifiers remain 0/64 exact in all arms. Alternate
+histories lower identifier target NLL to 2.6551 versus 2.7963 for independent worlds,
+but 55/64 wrong predictions changing with the endpoint is sensitivity, not recall;
+36/64 also change under irrelevant permission interventions. See
+[the frozen protocol and full result](../experiments/binding-endpoint-views-20260920/README.md).
+No agent-success or capacity-substitution result follows.
