@@ -1,0 +1,15 @@
+{
+  "source": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000004000-8e2bc39c7837",
+  "optimizer": "muon",
+  "device": "cuda",
+  "oracle_alignment_weight": 1.0,
+  "precision": "bf16",
+  "completed_steps": 2,
+  "interrupted_microbatches": 1,
+  "exact_model_and_optimizer_rng_state": true,
+  "full_checkpoint": "/archive/probes/alignment-recovery-20260920/full/checkpoints/step-000000002-7b261ca62fb0",
+  "resumed_checkpoint": "/archive/probes/alignment-recovery-20260920/stopped/checkpoints/step-000000002-0eb05127fa8b",
+  "note": "No optimizer update is taken from partial accumulation. Not a capability experiment.",
+  "implementation_commit": "797465af70fbf0af2329810b3ffc8f9438d78823",
+  "validation_script_sha256": "51e9264fd95a82d8c5a25904c6c93d51fcda98e3041c39b962ae6cd41c681b9f"
+}

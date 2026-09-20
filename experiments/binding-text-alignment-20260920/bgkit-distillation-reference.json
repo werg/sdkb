@@ -1,0 +1,8 @@
+{
+  "reference_commit": "6fd86bd3744bda8fb612a1ee83241f941fbcab0c",
+  "source_sha256": {
+    "src/bgkit2/models/multilevel.py": "1f8b1edfb2f33a2d3b33cc724c0d3302d8dc24019800f84b5d9ebf94941aa429",
+    "src/bgkit2/training/core.py": "7846f6719a6406d190ff389f44faadea606fd42c09643dd700f6e61a5eded97a"
+  },
+  "lesson": "Match corresponding representations using explicitly aligned positions and a detached teacher; preserve a working path. SDKB uses an anchored shared-current selected-text teacher and answer states, not bgkit frozen encoder projections."
+}

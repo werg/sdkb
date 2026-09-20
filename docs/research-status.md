@@ -110,8 +110,16 @@ fallback-token ownership correction changes future optimizer groups; older runs
 must resume with their frozen checkout or explicitly warm-start a new run. The
 completed freshness study used frozen `c58028c`; completed intermediate readouts used `417c2f4`.
 
-The latest download-free suite passes 481 tests; native pretrained execution and
+The latest download-free suite passes 490 tests; native pretrained execution and
 a real BF16 Muon emergency-resume comparison have also run. CPU/CUDA configuration
 and portable operating helpers are separate from the Spark wrapper. Tested native
 Spark execution does not imply performance portability to every GPU or backbone.
 See [current machine validation](validation-spark.md) for scope and artifacts.
+
+
+The [selected-text alignment experiment](../experiments/binding-text-alignment-20260920/README.md)
+is now running an 800-update matched Muon control/treatment comparison. It tests
+detached next-token state supervision from the anchored text path, with unchanged
+stored-only inference. Native BF16 partial-microbatch recovery matches complete
+weights, optimizer and RNG exactly. No learning outcome is asserted before the
+declared counterfactual and text confirmations finish.

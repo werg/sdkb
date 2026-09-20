@@ -22,6 +22,12 @@ host pressure after startup. Explicit reader-reset warm starts support matched
 capacity controls without changing stored interfaces. Current machine evidence
 and scientific limits are maintained separately in `docs/research-status.md`.
 
+Optional selected-text answer-state alignment adds a detached, position-matched
+training objective with explicit evidence and causal checks, full producer replay,
+and complete Muon microbatch recovery. It remains default-off and has no inference
+text path. Native emergency recovery and 490 core tests pass; scientific outcomes
+are reported separately.
+
 ## 0.4.0 — Pretrained recurrent-core conversion and in-loop memory
 
 Added native prelude/core/coda conversion preserving every parent layer and the
