@@ -410,6 +410,9 @@ the optimizer step. The fork requires one R=2 oracle read, no compaction and
 `live_fraction: 1`; `payload_contrast_loss` and `swapped_source_nll` are logged.
 The target NLL remains an anchor. Compare stored all/zero/wrong payload conditions
 on held-out sources before treating a lower training loss as memory use.
+Use `sdkb evaluate-teachers --output <fresh-directory>` for each checkpoint in a
+fork; the result identity includes the checkpoint bytes and cannot be reused for
+a different step.
 
 `scripts/prepare_bank_training.py` creates title-located, answer-filtered QA
 from a declared source offset. The current Spark bank stage uses sources
@@ -426,3 +429,17 @@ source-held-out behavior and later-task transfer require larger controlled runs.
 from the same causal native prefix, without fetching payloads. It reports
 median rank, reciprocal rank and recall cutoffs for each space. This makes
 addressing progress visible before a positive enters the small read budget.
+
+When a frozen published bank has near-chance addressing, the controlled
+`configs/lfm25_230m_four_space_local_routing_spark.yaml` stage trains source
+keys and query maps together before any bank refresh. Its input comes from
+`scripts/prepare_local_routing.py`: one verified earlier passage and three
+distinct-article prior candidates per title-located question. On Spark the
+training distractor pool is bounded to the first 3,072 source rows, leaving
+the later heldout positive source block unseen in every training support role.
+The target is
+kept out of the causal query. During the declared 512-update stage, oracle
+delivery keeps the answer objective anchored while the differentiable routing
+loss compares all four live candidates. A new bank must be explicitly rebuilt
+from the resulting frozen writer checkpoint; an existing generation cannot
+adopt its changed keys or values.

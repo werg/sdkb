@@ -43,6 +43,7 @@ def main(argv: list[str] | None = None) -> None:
     p = sub.add_parser("evaluate-teachers", help="Stored-only teacher NLL and payload interventions")
     p.add_argument("--run", required=True)
     p.add_argument("--episodes", required=True)
+    p.add_argument("--output", help="Fresh result directory for this checkpoint")
     p.add_argument("--max-episodes", type=int, default=64)
     p.add_argument("--generate-tokens", type=int, default=0)
     p = sub.add_parser("doctor", help="Inspect runtime and test BF16 CUDA when available")
@@ -161,7 +162,7 @@ def main(argv: list[str] | None = None) -> None:
     elif args.command == "evaluate-teachers":
         from .trajectory_eval import evaluate_teacher_run
         result = evaluate_teacher_run(args.run, args.episodes, max_episodes=args.max_episodes,
-                                      generate_tokens=args.generate_tokens)
+                                      generate_tokens=args.generate_tokens, output=args.output)
     elif args.command == "doctor":
         from .diagnostics import doctor
         result = doctor(args.require_spark)

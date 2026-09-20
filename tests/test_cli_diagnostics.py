@@ -13,6 +13,21 @@ def test_doctor_cli(capsys):
     assert 'torch' in json.loads(capsys.readouterr().out)
 
 
+def test_teacher_evaluation_cli_accepts_checkpoint_specific_output(monkeypatch, capsys):
+    import sdkb.trajectory_eval as trajectory_eval
+    received = {}
+    def fake_evaluate(run, episodes, *, max_episodes, generate_tokens, output):
+        received.update(run=run, episodes=episodes, count=max_episodes,
+                        tokens=generate_tokens, output=output)
+        return {'status': 'complete'}
+    monkeypatch.setattr(trajectory_eval, 'evaluate_teacher_run', fake_evaluate)
+    main(['evaluate-teachers', '--run', 'run-a', '--episodes', 'heldout.jsonl',
+          '--max-episodes', '16', '--generate-tokens', '96', '--output', 'run-a-step-100'])
+    assert received == {'run': 'run-a', 'episodes': 'heldout.jsonl', 'count': 16,
+                        'tokens': 96, 'output': 'run-a-step-100'}
+    assert json.loads(capsys.readouterr().out)['status'] == 'complete'
+
+
 def test_make_data_cli(tmp_path, capsys):
     target = tmp_path / 'episodes.jsonl'
     main(['make-data', '--output', str(target), '--count', '3'])
