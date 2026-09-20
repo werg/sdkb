@@ -1,0 +1,53 @@
+{
+  "protocol": "119 matched repository-heldout episodes; source context effect vs real-over-zero payload effect",
+  "source_report_sha256": {
+    "control-text-r1/results.json": "27bd803d020d9dce0557306924f4040f732ef52e3dba60d6be9da7cf51001e12",
+    "distilled-text-r1/results.json": "b19ffa6b595be71115f938d89e81f8829b750c97de9c2d5ba06004191e30ec3a",
+    "control-depth/depth-2.json": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+    "distilled-depth/depth-2.json": "01c5ae218a395fee672a6be7110129646ab8bb9d0e982b35522cbc3d4a20e330"
+  },
+  "analyzer_sha256": "231a45eefcd1390e46ce9e19826b47e948bca04ff2c8834bc135e63e7c306998",
+  "episodes": 119,
+  "trajectory_groups": 42,
+  "control_pearson": 0.08996027930887658,
+  "distilled_pearson": 0.3704310248255738,
+  "pearson_delta": 0.2804707455166972,
+  "pearson_delta_trajectory_interval_95": [
+    0.11473641389369238,
+    0.3968215838505822
+  ],
+  "control_spearman": 0.4089018658310782,
+  "distilled_spearman": 0.5108602763139154,
+  "spearman_delta": 0.10195841048283721,
+  "spearman_delta_trajectory_interval_95": [
+    -0.02501478747344038,
+    0.22233687170293176
+  ],
+  "quartiles": {
+    "lowest_text_gain": {
+      "episodes": 30,
+      "trajectory_groups": 27,
+      "mean_text_gain": 0.02980945100763073,
+      "control_mean_payload_gain": 0.006264931552638575,
+      "distilled_mean_payload_gain": 0.0018436655185090796,
+      "paired_payload_gain_delta": -0.004421266034129495,
+      "trajectory_bootstrap_interval_95": [
+        -0.007163059802928363,
+        -0.0016201234389003978
+      ]
+    },
+    "highest_text_gain": {
+      "episodes": 30,
+      "trajectory_groups": 26,
+      "mean_text_gain": 0.9822689260273999,
+      "control_mean_payload_gain": 0.021017997349916183,
+      "distilled_mean_payload_gain": 0.02639230935704159,
+      "paired_payload_gain_delta": 0.005374312007125405,
+      "trajectory_bootstrap_interval_95": [
+        -0.019126343311391562,
+        0.0331647435941231
+      ]
+    }
+  },
+  "limitations": "Exploratory, post-hoc correlations on one model seed and 119 episodes; bootstrap clusters are trajectories, not independent training runs. Quartiles are selected using the observed text-context gain. A stronger correlation does not establish causal use, learned retrieval or agent success."
+}

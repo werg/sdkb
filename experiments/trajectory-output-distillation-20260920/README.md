@@ -71,3 +71,21 @@ After both evaluators exited, verified hard-link deduplication reclaimed
 files. All five affected complete checkpoint sets reverified against their
 manifests; `dedup.json` records the operation. The retained final states and
 optimizer/RNG information remain intact for exact resume.
+
+## Post-hoc source-utility diagnostic
+
+`context_gain.py` pairs each episode's R=1 selected-text improvement over no
+text with its R=2 real-over-zero payload improvement. The digest-pinned aggregate
+is `context-gain.json`; no trajectory text or per-episode scores are committed.
+The Pearson association rose from 0.090 in the control to 0.370 in the KL arm
+(descriptive trajectory-bootstrap delta 0.280, interval 0.115–0.397). The rank
+association rose from 0.409 to 0.511, but its delta interval spans zero
+(−0.025–0.222). For the 30 episodes with least text benefit, the KL arm's
+payload benefit fell by 0.00442 mean episode NLL; for the 30 with most text
+benefit it rose by 0.00537, with a wide interval spanning zero.
+
+This exploratory pattern suggests the KL arm may concentrate some response on
+source-useful cases, yet its **average payload effect fell**. The Pearson and
+rank diagnostics disagree on how firm the change is, and the quartiles were
+chosen after seeing the text scores. They are a direction for a predeclared
+contrastive source-effect experiment, not a positive transfer conclusion.
