@@ -51,6 +51,7 @@ case "$command" in
     else
       mkdir -p "$cache"
     fi
+    mkdir -p "$cache"/{tmp,xdg,triton,cuda,torchinductor,torch,wandb}
     if [[ "$command" == start || ( "${1:-}" == sdkb && ( "${2:-}" == launch || "${2:-}" == train || ( "${2:-}" == runs && "${3:-}" == start ) ) ) ]]; then
       previous=""
       for argument in "$@"; do
@@ -68,6 +69,9 @@ case "$command" in
       --ulimit memlock=-1 --ulimit stack=67108864 \
       --user "$(id -u):$(id -g)" --env HOME=/tmp \
       --env HF_HOME=/cache/huggingface --env NVIDIA_IMEX_CHANNELS=0 \
+      --env XDG_CACHE_HOME=/cache/xdg --env TRITON_CACHE_DIR=/cache/triton \
+      --env CUDA_CACHE_PATH=/cache/cuda --env TORCHINDUCTOR_CACHE_DIR=/cache/torchinductor \
+      --env TORCH_HOME=/cache/torch --env WANDB_CACHE_DIR=/cache/wandb --env TMPDIR=/cache/tmp \
       --mount "type=bind,src=$root,dst=/workspace/sdkb" \
       --mount "type=bind,src=$cache,dst=/cache" \
       --mount "type=bind,src=$runs,dst=/runs" --workdir /workspace/sdkb)

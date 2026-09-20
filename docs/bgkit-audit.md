@@ -292,3 +292,12 @@ reclaiming 464,141,663 bytes. Its legacy path resolves to external storage, and 
 internal project cache is now about 620 KiB. New trajectory preparation
 sets Hugging Face, Xet, dataset, XDG and temporary paths to external storage.
 The full suite passes 499 tests. Evidence: `experiments/operations-20260920/external-cache-placement.json`.
+
+
+A runtime-cache check found another 203,978,160 bytes of CUDA driver cache in the
+project container's local filesystem. After all GPU jobs exited, the files were
+copied and checksum-verified externally, the duplicate was removed, and the old
+path became a symlink. The wrapper now places CUDA/Triton/Torch/XDG/W&B caches and
+temporary files under its configured cache mount. The new argument regression
+failed before the fix; the full suite passes 501 tests. No CUDA/Torch stack was
+replaced. Evidence: `experiments/operations-20260920/cuda-cache-migration.json`.

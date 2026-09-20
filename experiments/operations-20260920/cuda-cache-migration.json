@@ -1,0 +1,9 @@
+{
+  "source": "/tmp/.nv/ComputeCache",
+  "destination": "/archive/cache/cuda",
+  "verified_entries": 17,
+  "released_internal_file_bytes": 203978160,
+  "file_manifest_sha256": "136075abecc2058e11a49e181140545932ff413b2293f3ab1ec57d6a06491a49",
+  "legacy_source_is_symlink": true,
+  "notice": "Completed project container GPU processes had exited. Compiler cache only; no Torch/CUDA package replacement."
+}

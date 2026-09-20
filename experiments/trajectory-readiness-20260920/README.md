@@ -47,5 +47,11 @@ host pressure between scores, and rejects changed inputs before model allocation
 A regression reproduces uninterrupted rows exactly after stopping at the first
 score and verifies that no source writer is ever called.
 
-Native preflight and text scoring are the next gates; no utility or agent-success
-result is asserted yet.
+Native preflight and all 238 condition scores completed from frozen `76ab096`.
+Selected-text token-weighted NLL is **1.48980**, versus **1.93726** without support;
+mean-episode NLL is 1.80457 versus 2.38351. The paired mean reduction is .57894,
+with a descriptive repository-bootstrap interval [.50746, .65872] over 12 groups.
+This supports attempting a bounded latent-memory curriculum; it does not establish
+that learned payloads retain the context benefit or that an agent solves tasks.
+The next declared stage is a frozen-backbone recurrent text bridge, using Muon.
+

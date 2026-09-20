@@ -144,3 +144,10 @@ The release was developed and tested on x86 CPU. Actual Spark/Docker/LFM executi
 and upstream dataset downloads have not been performed in this environment. The
 remaining real-machine checks are implemented in the launch command and their
 results are written before the main curriculum. See [validation](validation-v0.3.md).
+
+
+The wrapper also directs XDG, Triton, CUDA driver, TorchInductor, Torch and W&B
+artifact caches to subdirectories of `/cache`, and creates `/cache/tmp` before
+setting `TMPDIR`. This prevents runtime compilation and temporary files from
+silently returning to container-local storage. These are cache-location settings;
+they do not replace or patch the NVIDIA software stack.

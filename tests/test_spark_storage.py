@@ -47,6 +47,17 @@ def test_machine_cache_default_and_environment_override(wrapper, tmp_path, monke
     assert f'type=bind,src={override},dst=/cache' in capture.read_text().splitlines()
 
 
+def test_runtime_and_temporary_caches_share_configured_storage(wrapper, tmp_path):
+    _, script, capture = wrapper
+    subprocess.run(['bash', str(script), 'run', 'sdkb', 'doctor'], check=True, capture_output=True)
+    args = capture.read_text().splitlines()
+    for setting in ['XDG_CACHE_HOME=/cache/xdg', 'TRITON_CACHE_DIR=/cache/triton',
+                    'CUDA_CACHE_PATH=/cache/cuda', 'TORCHINDUCTOR_CACHE_DIR=/cache/torchinductor',
+                    'TORCH_HOME=/cache/torch', 'WANDB_CACHE_DIR=/cache/wandb', 'TMPDIR=/cache/tmp']:
+        assert setting in args
+    assert (tmp_path/'cache/tmp').is_dir()
+
+
 @pytest.mark.parametrize('environment', [False, True])
 def test_missing_configured_cache_is_not_created(wrapper, tmp_path, monkeypatch, environment):
     root, script, capture = wrapper

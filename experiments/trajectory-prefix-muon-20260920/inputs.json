@@ -1,0 +1,14 @@
+{
+  "stage": "recurrence_bridge",
+  "steps": 200,
+  "seed": 197,
+  "config_sha256": "d56d7f82b649b3ba0f5091d8218000b78697ea4d14d92a7083b27e88d1c09320",
+  "source": "untouched pretrained LiquidAI/LFM2.5-230M",
+  "revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+  "train": "/archive/probes/trajectory-readiness-20260920/data/train.jsonl",
+  "train_sha256": "baecad1d365ce6c0b4930b9ab878329473bfb4f999495179d0939afa52c29818",
+  "validation": "/archive/probes/trajectory-readiness-20260920/data/validation.jsonl",
+  "validation_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+  "baseline_results_sha256": "c1f31901b00fc089b04ebaa5c0aaa3d45c903398d33059aa0b78fb561e48fbe0",
+  "plan": "200-update R=2 text bridge with frozen pretrained backbone and .1 one-pass-parent KL. Fresh Muon state, accumulation four. Validate held-out text utility before declaring or launching latent warmup. Initial/final/emergency only, keep two, direct external storage, offline W&B, configured memory/disk reserves and compute watchdog. No teacher calls or source-command execution."
+}
