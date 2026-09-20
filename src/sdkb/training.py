@@ -356,6 +356,12 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                         records = []
                         if config.train.arm in {"memory", "direct_latent"}:
                             for source in episode.supports:
+                                if config.train.selected_producers_only and source.record_id not in visible:
+                                    # Preserve the Python sampler schedule, including
+                                    # the live/cache draw for every declared source.
+                                    # The opt-in policy has no cached-value history.
+                                    rng.random()
+                                    continue
                                 ids = agent.text_ids(source.text, source=True)
                                 # Repeated source IDs use genuinely stored old payloads; first encounter populates the cache.
                                 if config.train.live_fraction < 1:
@@ -372,6 +378,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                 else:
                                     value = tuple(x.detach() for x in cached)
                                 records.append(value)
+                            if config.train.selected_producers_only:
+                                read_indices = list(range(len(records)))
                         support_text = "\n".join(s.text for s in episode.supports if s.record_id in visible)
                         prompt = agent.prompt_ids(episode.query, support_text if config.train.arm == "oracle_text" else "")
                         compact = (config.train.arm == "memory" and config.memory.compaction != "none"

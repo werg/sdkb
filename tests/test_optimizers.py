@@ -84,14 +84,16 @@ def assert_state_equal(a, b):
 
 
 @pytest.mark.skipif(not hasattr(torch.optim, 'Muon'), reason='Native Muon unavailable in this Torch')
-def test_muon_ownership_and_complete_resume(tmp_path, tiny_config, monkeypatch):
+@pytest.mark.parametrize('selected_only', [False, True])
+def test_muon_ownership_and_complete_resume(tmp_path, tiny_config, monkeypatch, selected_only):
     from sdkb.operations import request_stop
     from sdkb.replay import ReplayTape
     config = copy.deepcopy(tiny_config)
     config.train.optimizer = 'muon'
     config.train.steps = 3
     config.train.gradient_accumulation = 2
-    config.train.live_fraction = .5
+    config.train.live_fraction = 1. if selected_only else .5
+    config.train.selected_producers_only = selected_only
     config.train.checkpoint_every = 1000
     config.memory.noise_std = .02
     agent = SDKBAgent(config)

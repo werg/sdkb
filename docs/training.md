@@ -262,3 +262,19 @@ rejected. The initialization manifest lists every reset reader parameter. Use a
 matched reset-reader control when testing a larger reader, since resetting itself
 changes behavior. This option is never applied during exact resume; the saved
 reader, optimizer ownership and RNG state are restored normally.
+
+## Selected producer computation for fully live oracle training
+
+`train.selected_producers_only: true` is an explicit compute-policy fork. Only
+sources already selected by the oracle evidence scope are materialized; every
+selected source and scheduled read remains present. Python live/cache draws are
+still consumed for all declared sources, preserving the episode/depth sampler.
+The policy requires memory training, oracle selection and `live_fraction: 1`.
+Cached history and learned routing require their existing full candidate behavior.
+Inference and offline bank creation are unaffected.
+
+The default remains false. Omitting an unused stochastic writer forward can change
+Torch RNG consumption, so this is a recorded training configuration, not a silent
+optimization or an allowed exact-resume override. Full-graph and replay execution
+remain available under either policy. A native numerical/timing profile is recorded
+separately before adopting the policy in future experiments.

@@ -1,0 +1,23 @@
+{
+  "source_checkpoint": "/archive/runs/binding-endpoint-freshness-20260920/worlds-8192/checkpoints/step-000004000-8e2bc39c7837",
+  "source_manifest_sha256": "6a16e1ee6233a3e4177959edffa2ad3bdb572a60dd83422c8010a766a9c08a26",
+  "episodes_sha256": "bdbe5420cb9002c348a428bf99fea7be39c885a98d8f5dbfaa18435909f6041d",
+  "configs": {
+    "reference": {
+      "config": "/archive/profiles/selected-producers-20260920/reference.yaml",
+      "sha256": "a5bba4bc49c9c08f0bf1d1d04ec6c1563ce3bc1e002734d374b18170671a99c3",
+      "run": "/archive/profiles/selected-producers-20260920/reference"
+    },
+    "selected": {
+      "config": "/archive/profiles/selected-producers-20260920/selected.yaml",
+      "sha256": "c709082cd8d9417804ee09d0529d49c045b4146db1aa2de92295a624a680ee03",
+      "run": "/archive/profiles/selected-producers-20260920/selected"
+    }
+  },
+  "order": [
+    "reference",
+    "selected"
+  ],
+  "steps": 50,
+  "notice": "Bounded native BF16 Muon numerical-equivalence and contended-time profile. Both warm-start from the same source; no capability claim. Initial/final/emergency saves only, retain one full final state per arm. Existing capacity study remains unchanged."
+}

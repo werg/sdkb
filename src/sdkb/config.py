@@ -78,6 +78,7 @@ class TrainConfig:
     replay: bool = True
     verify_replay: bool = False
     live_fraction: float = 0.5
+    selected_producers_only: bool = False  # explicit all-live oracle compute policy
     train_worlds: int = 128
     distractors: int = 2
     eval_worlds: int = 16
@@ -126,6 +127,8 @@ class Config:
             raise ValueError('Invalid runtime resource limits')
         if t.optimizer not in {'adamw', 'muon'}:
             raise ValueError('Optimizer must be adamw or muon')
+        if t.selected_producers_only and (t.arm != 'memory' or t.retrieval != 'oracle' or t.live_fraction != 1.):
+            raise ValueError('Selected-only producers require fully live oracle memory training')
         if (t.weight_decay < 0 or t.adam_eps <= 0 or len(t.adam_betas) != 2
                 or any(not 0 <= b < 1 for b in t.adam_betas)
                 or not 0 <= t.muon_momentum < 1 or t.muon_ns_steps < 1):
