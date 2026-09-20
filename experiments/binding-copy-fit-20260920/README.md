@@ -41,3 +41,60 @@ Training and its bounded confirmation controller launched from frozen commit
 `a75b4e8`. The external initial checkpoint committed successfully; offline W&B and
 all four named Muon/AdamW parameter groups are recorded. The source held-out
 evaluation runs alongside training; final training/held-out checks are queued.
+
+## Run control and reproduction
+
+Use the frozen `a75b4e8` checkout with the existing native environment. On this
+machine the host archive is `/mnt/external/sdkb-archive`, mounted as `/archive`
+in the container. The following paths are container paths; on another machine,
+prepare a fresh run with its actual artifact paths and preserve the recorded
+scientific settings and input hashes.
+
+```bash
+sdkb train --config /archive/runs/binding-copy-fit-20260920/copy.yaml \
+  --output /archive/runs/binding-copy-fit-20260920/copy \
+  --init-from /archive/runs/binding-fixed-query-detail-20260920/fixed/checkpoints/step-000001600-d8faf965ff8c
+python experiments/binding-copy-fit-20260920/run_confirmation.py \
+  --root /archive/runs/binding-copy-fit-20260920
+```
+
+To stop both training and queued/in-progress confirmation, request both controls:
+
+```bash
+sdkb runs stop --output /archive/runs/binding-copy-fit-20260920
+sdkb runs stop --output /archive/runs/binding-copy-fit-20260920/copy
+```
+
+Training finishes its current microbatch/replay and commits complete emergency
+state, including partial accumulated gradients. The queue stops launching jobs and
+asks active evaluators to save completed progress. Wait for ownership locks to
+release before restarting. Resume training with the same frozen checkout/config:
+
+```bash
+sdkb train --config /archive/runs/binding-copy-fit-20260920/copy.yaml \
+  --output /archive/runs/binding-copy-fit-20260920/copy --resume
+```
+
+A deliberate queue restart also requires clearing its root stop request through
+the operations helper; the controller deliberately uses `clear_stop=False` and
+will not silently discard an operator stop. Completed confirmation files are
+validated/reused. A hard kill can only return training to a committed checkpoint;
+it cannot promise the newest partial microbatch state.
+
+After the stopped training has been resumed and the old queue has exited, clear
+only the study/queue stop controls while holding their ownership locks, then rerun
+the confirmation command above:
+
+```python
+from pathlib import Path
+from sdkb.operations import run_lock
+
+root = Path('/archive/runs/binding-copy-fit-20260920')
+with run_lock(root / 'confirmation-queue'), run_lock(root):
+    pass
+```
+
+The initial source training-fit reference is already recorded at
+`/archive/runs/binding-fixed-query-detail-20260920/train-fit/fixed/results.json`.
+Its checkpoint and episode hashes match this protocol's source and training file;
+it need not be regenerated for the comparison.
