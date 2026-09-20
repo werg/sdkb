@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "protocol": "prefix",
+  "seed": 191,
+  "validation_fraction": 0.2,
+  "sources": [
+    {
+      "spec": {
+        "path": "SWE-bench/SWE-smith-trajectories",
+        "config": "default",
+        "split": "tool",
+        "adapter": "swe_smith",
+        "license": "mit",
+        "success_only": true,
+        "name": "swe_smith",
+        "max_rows": 512,
+        "shuffle_buffer": 256,
+        "shuffle_seed": 191,
+        "revision": "08e109b4a59eaeebf80e4675cd125d42e7ac99a4"
+      },
+      "counts": {
+        "rows_scanned": 512,
+        "filtered:filtered_unsuccessful": 283,
+        "accepted_train": 187,
+        "accepted_validation": 42
+      }
+    }
+  ],
+  "budgets": {
+    "max_supports": 4,
+    "max_targets_per_trajectory": 3,
+    "recent_messages": 1,
+    "recent_tokens": 512,
+    "task_tokens": 160,
+    "max_source_tokens": 512,
+    "max_prompt_tokens": 4096,
+    "max_target_tokens": 512
+  },
+  "summary": {
+    "train": {
+      "episodes": 530,
+      "complete_target_tokens": 52203,
+      "skipped_long_or_empty_target": 31,
+      "trajectories": 187,
+      "groups": 77
+    },
+    "validation": {
+      "episodes": 119,
+      "complete_target_tokens": 12739,
+      "skipped_long_or_empty_target": 7,
+      "trajectories": 42,
+      "groups": 12
+    }
+  },
+  "sha256": {
+    "train.jsonl": "baecad1d365ce6c0b4930b9ab878329473bfb4f999495179d0939afa52c29818",
+    "validation.jsonl": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+    "normalized.jsonl": "8e8c0c223a76affb0385555089b3c4a1f5584d4398d02ca5e6fe93c81dcb8fd2"
+  },
+  "teacher_policy": "Recorded assistant targets; no live teacher calls or tool execution.",
+  "support_labels": "Provided context, not verified sufficient or necessary support.",
+  "split_policy": "Group-disjoint subsets of the specified upstream split; SWE grouped by repository.",
+  "leakage_checks": {
+    "overlapping_groups": 0,
+    "exact_trajectory_dedup": true,
+    "near_duplicate_detection": false,
+    "external_benchmark_decontamination": false
+  }
+}

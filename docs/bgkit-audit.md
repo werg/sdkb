@@ -287,7 +287,8 @@ run artifacts were external, but the wrapper still defaulted Hugging Face caches
 to the internal disk. `SDKB_CACHE_DIR` now overrides an ignored `.sdkb/cache-dir`
 setting, and explicitly configured missing cache paths fail before Docker launch.
 This machine selects the external cache. The existing pinned model cache was copied
-and every file/link verified (464,141,663 file bytes); the original is temporarily
-retained for already-running frozen-container evaluators. New trajectory preparation
+and every file/link verified (464,141,663 file bytes); after all frozen-container evaluators exited, the verified duplicate was retired,
+reclaiming 464,141,663 bytes. Its legacy path resolves to external storage, and the
+internal project cache is now about 620 KiB. New trajectory preparation
 sets Hugging Face, Xet, dataset, XDG and temporary paths to external storage.
 The full suite passes 499 tests. Evidence: `experiments/operations-20260920/external-cache-placement.json`.

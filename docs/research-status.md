@@ -110,7 +110,7 @@ fallback-token ownership correction changes future optimizer groups; older runs
 must resume with their frozen checkout or explicitly warm-start a new run. The
 completed freshness study used frozen `c58028c`; completed intermediate readouts used `417c2f4`.
 
-The latest download-free suite passes 499 tests; native pretrained execution and
+The latest download-free suite passes 500 tests; native pretrained execution and
 a real BF16 Muon emergency-resume comparison have also run. CPU/CUDA configuration
 and portable operating helpers are separate from the Spark wrapper. Tested native
 Spark execution does not imply performance portability to every GPU or backbone.
@@ -118,8 +118,10 @@ See [current machine validation](validation-spark.md) for scope and artifacts.
 
 
 The [selected-text alignment experiment](../experiments/binding-text-alignment-20260920/README.md)
-is now running an 800-update matched Muon control/treatment comparison. It tests
-detached next-token state supervision from the anchored text path, with unchanged
-stored-only inference. Native BF16 partial-microbatch recovery matches complete
-weights, optimizer and RNG exactly. No learning outcome is asserted before the
-declared counterfactual and text confirmations finish.
+completed its 800-update matched Muon comparison. Both arms recover 0/64 identifiers
+in every latent condition and 64/64 from selected text. Alignment slightly reduces
+teacher NLL but introduces three false action changes under irrelevant identifier
+changes. It is not promoted; the predeclared fresh-corpus gate failed and those
+worlds remain unevaluated. Native BF16 partial-microbatch recovery still matches
+complete weights, optimizer and RNG exactly. The next readiness check uses causal
+public trajectories and first measures the pretrained text path's context utility.

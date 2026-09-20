@@ -1,6 +1,6 @@
 {
   "training_commit": "797465af70fbf0af2329810b3ffc8f9438d78823",
-  "status": "control and alignment children started; text controls waiting on the primary ownership lock",
+  "status": "both trainings, primary confirmations and text controls completed with exit code 0; full coverage verified; fresh gate failed",
   "inputs_sha256": "3039d2010e5f7452f1af18111519bbe2174198458e003a25f33d3bc5497307d9",
   "model_code": "/workspace/sdkb/.sdkb/text-alignment",
   "full_suite": "490 passed, 4 warnings; 49.54 seconds",

@@ -67,8 +67,10 @@
     }
   },
   "all_files_and_links_verified": true,
-  "source_retired": false,
-  "reason": "Existing frozen container mounts the old cache; retain until its primary and selected-text evaluators finish. Future wrapper launches use external cache.",
-  "wrapper_tests": "17 passed; 3 new cache-placement regressions failed before fix",
-  "full_suite": "499 passed, 4 warnings, 41.66 seconds"
+  "source_retired": true,
+  "reason": "All old frozen-container evaluators exited. Reverified every copied file before retiring the duplicate; legacy cache path remains a symlink to external storage.",
+  "source_now_symlink_to": "/mnt/external/sdkb-archive/cache/huggingface/hub/models--LiquidAI--LFM2.5-230M",
+  "released_internal_file_bytes": 464141663,
+  "full_suite": "499 passed, 4 warnings, 41.66 seconds",
+  "wrapper_tests": "17 passed; three new cache regressions failed before fix"
 }

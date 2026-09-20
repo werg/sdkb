@@ -1,0 +1,45 @@
+{
+  "declaration": {
+    "protocol": "prefix",
+    "seed": 191,
+    "validation_fraction": 0.2,
+    "budgets": {
+      "max_supports": 4,
+      "max_targets_per_trajectory": 3,
+      "recent_messages": 1,
+      "recent_tokens": 512,
+      "task_tokens": 160,
+      "max_source_tokens": 512,
+      "max_prompt_tokens": 4096,
+      "max_target_tokens": 512
+    },
+    "tokenizer_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "tokenizer_files": {
+      "tokenizer_config.json": "75c287923e252b08b0a0f1c367bbe557ab23a681d0b71c5a34e0932ddbe2f5ee",
+      "tokenizer.json": "df1d8d5ec5d091b460562ffd545e4a5e91d17d4a0db7ebe733be34ed374377bd",
+      "chat_template.jinja": "c5b67247c9f736f6c40eaa91ae1ef27dc67f5b041eedaadb97a1bea5030fb0ff"
+    },
+    "request": {
+      "name": "swe_smith",
+      "max_rows": 512,
+      "shuffle_buffer": 256,
+      "shuffle_seed": 191
+    },
+    "cache": "/archive/cache",
+    "notice": "Recorded public trajectories only; no live teacher calls or source-command execution. Row limit is not a network-byte limit. Preparation does not train a model or demonstrate agent success."
+  },
+  "pinned_source": {
+    "path": "SWE-bench/SWE-smith-trajectories",
+    "config": "default",
+    "split": "tool",
+    "adapter": "swe_smith",
+    "license": "mit",
+    "success_only": true,
+    "name": "swe_smith",
+    "max_rows": 512,
+    "shuffle_buffer": 256,
+    "shuffle_seed": 191,
+    "revision": "08e109b4a59eaeebf80e4675cd125d42e7ac99a4"
+  },
+  "preparer_sha256": "b9b1e316bc44dbe1ad46bc75d3c1ca2015ba5ea66f010b4f010f42a3923bd7c7"
+}

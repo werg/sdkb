@@ -63,3 +63,19 @@ Otherwise retain the sealed corpus unused and report the failed intervention.
 These declared gates decide compute allocation; they are not statistical tests or
 proof of reliable recall. Any apparent benefit still needs the fresh controls,
 with rule/action preservation and text-copying behavior reported separately.
+
+## Completed outcome
+
+All primary and selected-text controls completed with exit code zero, and the
+collector verified every declared row and repeated no-memory string. Both arms
+score **0/64 identifiers in every latent condition**, including changed identifiers,
+and **64/64 from selected text**. Original actions are 128/128 in both arms, as
+are changed-permission and changed-restoration actions. Under irrelevant identifier
+changes, actions remain 128/128 for control but fall to 125/128 for alignment.
+Identifier teacher NLL is 1.49814 versus 1.44801; the small NLL reduction and falling
+alignment loss did not yield exact recall. Neither endpoint is promoted.
+
+`fresh-gate.json` records the failed predeclared gate. The sealed fresh corpus was
+not evaluated. This is a negative result for this weight, budget, seed and shared
+moving teacher, not a disproof of representation distillation generally. Full
+training loss plots are on external storage under `analysis/training-losses.*`.

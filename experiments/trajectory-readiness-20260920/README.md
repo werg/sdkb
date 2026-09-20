@@ -30,5 +30,22 @@ python experiments/trajectory-readiness-20260920/prepare.py \
   --root /archive/probes/trajectory-readiness-20260920 --cache /archive/cache
 ```
 
-Preparation is in progress. No native text-readiness or latent-training outcome
-is asserted yet.
+Preparation completed: 512 scanned rows, 283 unsuccessful trajectories filtered,
+187 accepted training trajectories from 77 repository groups and 42 validation
+trajectories from 12 disjoint groups. The prepared sets contain 530 and 119 episodes;
+31/7 oversized or empty targets were skipped. Upstream revision is pinned in
+`preparation-inputs.json`; the complete audit is external, with only metadata in Git.
+
+The declared next check uses **all 119 validation episodes**, the untouched
+pretrained LFM at native depth one, and `selected_text` versus `none` conditions.
+No synthetic-study weights are loaded and no optimizer is constructed. Report
+both token-weighted and mean-episode NLL, plus a descriptive paired bootstrap over
+repository groups. Text changes token/compute budgets, so this is context utility,
+not a capacity comparison. `evaluate_text.py` atomically saves each completed score,
+validates its complete ordered prefix on resume, handles signal/control stops and
+host pressure between scores, and rejects changed inputs before model allocation.
+A regression reproduces uninterrupted rows exactly after stopping at the first
+score and verifies that no source writer is ever called.
+
+Native preflight and text scoring are the next gates; no utility or agent-success
+result is asserted yet.

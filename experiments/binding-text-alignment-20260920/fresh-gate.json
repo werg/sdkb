@@ -1,0 +1,17 @@
+{
+  "declared_gate": {
+    "min_original_identifiers": 8,
+    "min_correct_identifier_pairs": 4,
+    "min_original_actions": 126,
+    "inspected_split_identifier_count": 64,
+    "inspected_split_action_count": 128
+  },
+  "observed": {
+    "original_identifiers": 0,
+    "correct_identifier_pairs": 0,
+    "original_actions": 128
+  },
+  "gate_passed": false,
+  "fresh_corpus_evaluated": false,
+  "comparison_sha256": "c5a67054607fd1f2b85be99cc52025a5cee57a7bc225b82f940d7bcc71e09e07"
+}
