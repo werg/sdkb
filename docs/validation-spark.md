@@ -1,6 +1,6 @@
 # Current Spark validation
 
-19 September 2026. This is the current machine-validation record. The earlier
+Updated 20 September 2026. This is the current machine-validation record. The earlier
 [0.4 handoff](validation-v0.4.md) remains a historical CPU execution record.
 
 ## Runtime and implementation
@@ -15,30 +15,37 @@ and native GPU curricula have run. Middle-block recurrence repeats layers
 `[4:10]`; the writer remains one pass and evaluation reads serialized BF16
 payloads. This verifies execution of the real model, not a simulated GPU backend.
 
-The latest full suite passed **324 tests**, with four existing dependency/runtime
+The latest full suite passed **405 tests**, with four existing dependency/runtime
 warnings. Ruff passed for `src`, `tests`, and `scripts`. Core tests require no
 downloads. Coverage includes full/replay gradients, causal prefixes, serialized
 precision, checkpoint recovery, storage visibility and concurrent invalidation.
 
 ## Latest research boundary
 
-The longer core-only MLP continuation preserves 100% oracle action composition,
-as does the earlier attention source. Learned retrieval remains weaker. On a
-fresh 32-world stored confirmation, an independent routing-query head plus a
-frozen 130-parameter one/two-record classifier reaches 70.31% action choice
-accuracy and 19/32 candidate-free actions. The classifier predicts every required
-cardinality in this finite split, but that does not guarantee correct selected
-entities. Permission/restoration choice accuracy is 78.13%/92.19%; unseen
-identifier generation remains 0/16. Oracle/no-memory rows and serialized payloads
-are exactly preserved across count and routing interventions. See
-`experiments/binding-count-stored-20260919/` for paired intervals and controls.
+The useful core-only MLP source and several Muon continuations preserve 128/128
+oracle-supported action generations, including the tested rule and identifier
+counterfactual conditions. Exact identifiers remain 0/64. More independent worlds,
+alternate endpoint histories and one fixed identifier question have not established
+exact latent recall at the tested budgets. Both models in the fixed-question
+comparison copy 64/64 identifiers from the same selected text. The fixed-query
+continuation also regresses direct permission answers to 59/64; the original-query
+confirmation and training-fit diagnostic are still running. See the
+[fixed-query study](../experiments/binding-fixed-query-detail-20260920/README.md).
 
-Persistent single-space compact codes now work at native recurrent boundaries,
-including cumulative partial-selection fallback, mass and visibility checks.
-Two frozen-reader Muon compactor fits reduce heldout conditional-statistics and
-rollout losses versus mean-plus-mass. Their stored semantic and counterfactual
-confirmation is still in progress. This does not establish net disk savings,
-arbitrary subset decoding, real agent success or parameter substitution.
+Learned global retrieval remains weaker: corrected training reaches 102/128 free
+actions at 128 records and 78/128 at 4,096 records on fixed questions. Wider address
+spaces improve training fit without improving held-out retrieval. These exact-scan
+diagnostics do not establish robust large-bank retrieval or an ANN frontier.
+
+Persistent single-space compact codes work at recurrent boundaries with cumulative
+partial-selection fallback, mass and visibility checks. Temporary compaction
+training preserves 128/128 actions and the tested action counterfactual pairs
+through mean codes, versus 81/128 for the matched raw-trained mean-code control.
+Its raw path regresses to 126/128; a paired-objective follow-up has mixed raw
+results and no demonstrated compact advantage. Learned codes match the mean-code
+action result without improving it. Raw fallbacks remain stored. These results do
+not establish net disk savings, arbitrary-subset decoding, real agent success or
+parameter substitution; the scoped studies and earlier results follow below.
 
 ## Operational evidence
 
@@ -48,7 +55,7 @@ arbitrary subset decoding, real agent success or parameter substitution.
 | Emergency resume | A real BF16 LFM run stopped after one of two accumulated microbatches and reproduced the uninterrupted final model, complete optimizer state and RNG state exactly. No partial optimizer update was taken. |
 | Checkpoint placement | Twenty-five retained stage/diagnostic checkpoint directories were verified and moved externally. The internal run tree fell from about 49 GiB to 52 MiB; internal free space increased by about 48 GiB. |
 | Future launches | This checkout's ignored storage settings select the external run root. Configured directories must exist; relative container training output paths are rejected. Environment overrides remain available on other machines. |
-| Save cadence | Defaults and current real-model recipes use 1,000 updates, plus initial, final and emergency saves. Short 200–400-update stages normally save only their initial and final states. |
+| Save cadence | Defaults and real-model recipes use 1,000 updates, plus initial, final and emergency saves. Recent declared 400–1,600-update studies use a 10,000-update cadence and retain only initial/final/emergency sets. |
 | Memory and stalls | Optional host-memory reserve, CUDA allocation fraction and compute stack watchdog are implemented. New source versions log host/CUDA memory trends and checkpoint start/commit duration. |
 | Checkpointing cost | Two 100-update Muon profiles had identical training metrics and final weight-file hash. Disabling activation/reader-chunk checkpointing cut median update time 18% and raised peak CUDA allocation from 2.14 to 2.53 GiB. This applies only to the measured short binding distribution, with existing GPU contention. |
 | Offline bank writes | Native BF16 individual/bulk writes produced byte-identical stored records and identical results for all 88 evaluation rows, with the writer disabled during reads. Atomic batching avoids a durable commit per record. |

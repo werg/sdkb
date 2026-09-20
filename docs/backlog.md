@@ -11,7 +11,9 @@ CPU reference evidence remains in `validation-v0.2.md`.
    Matched 128/1,024-fresh-world Muon continuations preserve 128/128 oracle
    actions but still produce 0/64 exact identifiers, despite improved target NLL.
    A matched endpoint-view continuation also retains 128/128 actions and 0/64
-   exact identifiers. Query-to-answer ambiguity alone did not solve recall; inspect
+   exact identifiers. One identical identifier question across all training targets
+   also yields 0/64 latent recall while both matched models copy 64/64 from selected
+   text; direct permission answers regress to 59/64. Inspect training fit and
    representation/readout learning before spending on another identical curriculum.
 2. **Global address generalization.** Corrected training gets 102/128 free actions
    at 128 records and 78/128 at 4,096 on fixed questions. Wider addresses improve
