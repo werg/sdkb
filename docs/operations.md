@@ -57,9 +57,11 @@ Optional archives expose active/pending copies, last completion and errors in
 not a signal sent to a potentially recycled PID. Training finishes the current microbatch and its complete producer replay, then
 commits model, optimizer, RNG and cache together. If accumulation is incomplete,
 the checkpoint also includes accumulated gradients, microbatch position, sampled
-depth and running loss totals; resume finishes that same optimizer update. Preparation,
-preflight and evaluation stop at the next stage boundary; they are not interrupted
-mid-write. SIGINT/SIGTERM also request a graceful stop. A hard kill resumes the
+depth and running loss totals; resume finishes that same optimizer update. Preparation
+and preflight stop at a safe boundary. The real-trajectory teacher evaluator checks
+between committed offline-bank namespaces and scored conditions, preserving its
+original read plans; it never publishes a partial namespace or stage marker.
+SIGINT/SIGTERM also request a graceful stop. A hard kill resumes the
 last committed checkpoint. Detached runs do not automatically restart failures.
 
 OS file locks reject concurrent writers to a launch or training directory and

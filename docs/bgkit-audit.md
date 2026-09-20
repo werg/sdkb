@@ -301,3 +301,16 @@ path became a symlink. The wrapper now places CUDA/Triton/Torch/XDG/W&B caches a
 temporary files under its configured cache mount. The new argument regression
 failed before the fix; the full suite passes 501 tests. No CUDA/Torch stack was
 replaced. Evidence: `experiments/operations-20260920/cuda-cache-migration.json`.
+
+The real-trajectory teacher evaluator now follows the same recovery discipline.
+Each frozen-writer environment/intervention namespace commits with its input and
+raw-byte digest; completed scopes are verified and reused without writer calls.
+Scoring commits one condition and its captured original read plan at a time, so
+STOP, signal, disk or host pressure does not repeat completed NLL work or reroute
+value interventions. A stable output identity rejects changed checkpoint, data,
+limits or evaluator code, and the launcher does not publish a stopped stage as
+complete. The native LFM evaluation was stopped after 177 of 476 rows and resumed
+to completion with zero writer calls on the resumed attempt. It kept all 119
+original read selections fixed under both payload controls. The 509-test suite
+and Ruff passed. This is frozen-inference progress, separate from training's
+complete optimizer/RNG/partial-gradient checkpoint contract.
