@@ -1,0 +1,36 @@
+{
+  "source": "/archive/runs/binding-fixed-query-detail-20260920/fixed/checkpoints/step-000001600-d8faf965ff8c",
+  "source_manifest_sha256": "907bb9fd5a7b69462274243161b05d6c2d1f23812b6ebe616e60a05fad6928d4",
+  "train_sha256": "ed586aabb57d1a78f7e9314906c78050a5dcc24e23e6574849a3d96669656330",
+  "config_sha256": "d150c732aa604bf21c595564831288885aa820fa2cada12f37ad5eb75d3ba107",
+  "heldout_sha256": "bf7ad0f1fd8dacf7a472f5b895f80fb2821b22486706de5767625316871a30b4",
+  "heldout_split": "copy-fit-heldout-20260920",
+  "steps": 1600,
+  "seed": 113,
+  "training_examples": 64,
+  "training_worlds": 61,
+  "planned_exposure_min": 80,
+  "planned_exposure_max": 135,
+  "planned_identifier_microbatches": 6400,
+  "overlap": {
+    "source_finetuning": {
+      "corpus_sha256": "9bafffd53daba3714cff6b51c2a5a25b7374a94efd69e329ba10ba3deccdf174",
+      "source_ids": 0,
+      "original_targets": 0,
+      "counterfactual_targets": 0
+    },
+    "broad_continuation": {
+      "corpus_sha256": "6c6bb47ad7e30f42992b859316124c795832650542d2f28fcfbb9256a071e389",
+      "source_ids": 0,
+      "original_targets": 0,
+      "counterfactual_targets": 0
+    },
+    "preceding_confirmation": {
+      "corpus_sha256": "9009d9f784335830270b0271c0a384c73b2df7e6fd1b470a0480f6e22b5a6b82",
+      "source_ids": 0,
+      "original_targets": 0,
+      "counterfactual_targets": 0
+    }
+  },
+  "notice": "Deliberate training-fit diagnostic, warm-start with fresh optimizer state. Repeated fixed-query identifiers only; evaluate fresh held-out identifiers and rule/action retention separately. No capacity or retrieval claim."
+}
