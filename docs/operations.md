@@ -289,3 +289,12 @@ still written offline and inference still forbids writers/compactors. The progre
 files retain their original phase resource observations; they are not fresh whole-
 run timing measurements. Historical frozen evaluators retain their earlier restart
 behavior and must be resumed using their own checkout.
+
+
+The bounded compact/paired confirmation controller also watches stop requests at
+its study root and `confirmation-queue` directory, both while waiting for training
+and while children are running. It stops launching pending arms and sends SIGTERM
+to active evaluators, whose current implementation flushes generation progress.
+This controller stop does not stop a separately running training process; target
+that training stage explicitly when needed. Clear the requested stop before
+restarting the same frozen controller.

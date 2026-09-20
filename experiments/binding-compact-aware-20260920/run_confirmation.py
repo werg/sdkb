@@ -17,6 +17,10 @@ def stop(signum, _frame):
 
 
 def main(root):
+    def check_stop():
+        if stop_requested(root) or stop_requested(root/'confirmation-queue'):
+            raise RuntimeError('Confirmation stop requested')
+    check_stop()
     inputs = json.loads((root/'inputs.json').read_text())
     if file_sha256(root/'heldout.jsonl') != inputs['heldout_sha256']:
         raise ValueError('Held-out corpus changed')
@@ -24,6 +28,7 @@ def main(root):
         if file_sha256(root/(name+'.yaml')) != arm['config_sha256']:
             raise ValueError(f'Arm config changed: {name}')
     while True:
+        check_stop()
         ready = True
         for name in inputs['arms']:
             stage = root/name
@@ -46,7 +51,9 @@ def main(root):
     children = {}
     try:
         while pending or children:
+            check_stop()
             while pending and len(children) < 2:
+                check_stop()
                 name, method = pending.pop(0)
                 label = name+'-'+method
                 with (root/('confirmation-'+label+'-console.log')).open('a') as log:
