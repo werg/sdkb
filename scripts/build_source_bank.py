@@ -1,0 +1,109 @@
+"""Resumably encode a standalone source manifest with one frozen writer snapshot."""
+from __future__ import annotations
+
+import argparse
+from dataclasses import asdict, replace
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+import torch
+from safetensors.torch import load_model
+
+from sdkb.agent import SDKBAgent
+from sdkb.archiving import ensure_free
+from sdkb.checkpoints import resolve_checkpoint
+from sdkb.data import Source
+from sdkb.offline_bank import canonical_json, ensure_offline_shard, publish_offline_generation
+from sdkb.operations import atomic_json
+from sdkb.store import DiskStore
+from sdkb.training import autocast_context, config_from_run, output_records, stored_channel
+from sdkb.trajectories import file_sha256
+
+
+def build(run: Path, sources: Path, output: Path, *, max_sources: int,
+          shard_size: int = 64) -> dict:
+    if min(max_sources, shard_size) < 1 or not sources.is_file() or not output.parent.is_dir():
+        raise ValueError('Positive budgets, source file and existing output parent required')
+    if output.parent.stat().st_dev == Path(__file__).resolve().parents[1].stat().st_dev:
+        raise ValueError('Bank output must live on the external disk')
+    if shutil.disk_usage(output.parent).free < 10 * 1024**3:
+        raise OSError('Bank build requires a 10 GiB disk reserve')
+    checkpoint = resolve_checkpoint(run, verify=True)
+    config = config_from_run(run)
+    if config.train.arm != 'memory':
+        raise ValueError('Bank writer checkpoint must use the memory interface')
+    rows = []
+    with sources.open(encoding='utf-8') as handle:
+        for line in handle:
+            if len(rows) >= max_sources:
+                break
+            rows.append(json.loads(line))
+    if len(rows) != max_sources or len({r['record_id'] for r in rows}) != len(rows):
+        raise ValueError('Source manifest has too few or duplicate records')
+    model_sha = file_sha256(checkpoint / 'model.safetensors')
+    identity = {'format': 1, 'writer_checkpoint_sha256': model_sha,
+                'writer_checkpoint_step': json.loads((checkpoint / 'manifest.json').read_text())['step'],
+                'source_manifest_sha256': file_sha256(sources), 'source_count': max_sources,
+                'source_order_sha256': hashlib.sha256(canonical_json(
+                    [row['record_id'] for row in rows]).encode()).hexdigest(),
+                'model': asdict(config.model), 'memory': asdict(config.memory),
+                'compute_precision': config.train.precision,
+                'max_source_tokens': config.train.max_source_tokens}
+    generation = hashlib.sha256(canonical_json(identity).encode()).hexdigest()[:24]
+    lock = output / 'identity.json'
+    output.mkdir(exist_ok=True)
+    if lock.exists():
+        if json.loads(lock.read_text()) != identity:
+            raise ValueError('Existing bank identity changed')
+    else:
+        atomic_json(lock, identity)
+    ensure_free(output, reserve_bytes=10 * 1024**3)
+    torch.set_num_threads(config.train.threads)
+    agent = SDKBAgent(config).to(config.train.device)
+    if agent.resolved_revision != config.model.revision:
+        raise ValueError('Resolved writer model revision changed')
+    load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
+    agent.eval()
+    store = DiskStore(output / 'bank.sqlite')
+    spaces = tuple(f's{i}' for i in range(len(config.memory.payload_dims)))
+    shard_ids = []
+    newly_encoded = 0
+    for start in range(0, len(rows), shard_size):
+        chunk = rows[start:start + shard_size]
+        shard_id = f'{start // shard_size:06d}'
+        shard_ids.append(shard_id)
+        def records():
+            with torch.no_grad(), autocast_context(config):
+                for row in chunk:
+                    source = Source(**{key: row[key] for key in
+                                       ('record_id', 'text', 'created_at', 'kind')})
+                    payloads = stored_channel(agent, agent.produce(agent.text_ids(source.text, source=True)))
+                    for record in output_records(agent, source, payloads, 'corpus', generation):
+                        yield replace(record, domain=row.get('domain', 'research'))
+        made = ensure_offline_shard(store, records, identity=identity, namespace='corpus',
+                                    generation=generation, spaces=spaces, shard_id=shard_id,
+                                    source_ids=tuple(row['record_id'] for row in chunk))
+        newly_encoded += len(chunk) if made else 0
+        atomic_json(output / 'progress.json', {'generation': generation,
+                    'completed_shards': len(shard_ids), 'total_shards': (len(rows) + shard_size - 1) // shard_size,
+                    'newly_encoded_sources_this_attempt': newly_encoded})
+    manifest = publish_offline_generation(store, identity=identity, namespace='corpus',
+                                          generation=generation, spaces=spaces,
+                                          shard_ids=tuple(shard_ids), source_count=len(rows))
+    atomic_json(output / 'manifest.json', manifest | {'sizes': store.sizes()})
+    return manifest | {'newly_encoded_sources_this_attempt': newly_encoded,
+                       'sizes': store.sizes()}
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--run', type=Path, required=True)
+    parser.add_argument('--sources', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--max-sources', type=int, required=True)
+    parser.add_argument('--shard-size', type=int, default=64)
+    args = parser.parse_args()
+    print(json.dumps(build(args.run, args.sources, args.output,
+                           max_sources=args.max_sources, shard_size=args.shard_size), indent=2))

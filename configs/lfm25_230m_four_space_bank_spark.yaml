@@ -1,0 +1,59 @@
+# New stage, explicitly warm-started from the frozen writer snapshot that built
+# /archive/banks/four-space-squad-v2-10k. This is not an ordinary resume.
+model:
+  backend: hf
+  model_id: LiquidAI/LFM2.5-230M
+  revision: 40cb2ad3b3044d5a41eee083a6103c8b523afa45
+  loops: 2
+  recurrence_mode: middle_block
+  recurrent_start: 4
+  recurrent_end: 10
+  writer_loops: 1
+  gradient_checkpointing: true
+  freeze_backbone: true
+memory:
+  key_dim: 64
+  write_slots: 8
+  read_slots: 8
+  payload_dims: [256, 512, 1024, 2048]
+  neighbors: [128, 64, 32, 16]
+  reader_width: 256
+  reader_rounds: 3
+  reader: mlp
+  chunk_size: 16
+  checkpoint_chunks: true
+  storage_dtype: bfloat16
+  compaction: none
+  read_timing: loop_boundary
+  read_steps: 1
+train:
+  seed: 29
+  steps: 1024
+  learning_rate: 0.0001
+  backbone_learning_rate: 0.000005
+  optimizer: muon
+  gradient_accumulation: 2
+  sampling_policy: shuffled_passes
+  precision: bf16
+  device: cuda
+  replay: true
+  live_fraction: 0.0
+  arm: memory
+  retrieval: learned
+  routing_weight: 0.1
+  bank_dir: /archive/banks/four-space-squad-v2-10k
+  bank_read_limits: [8, 4, 2, 1]
+  episodes_file: /archive/corpora/squad-four-space-pilot-v2-20260920/train.jsonl
+  max_source_tokens: 512
+  max_prompt_tokens: 1024
+  max_target_tokens: 128
+  threads: 8
+  log_every: 10
+  checkpoint_every: 10000
+  keep_checkpoints: 2
+  min_free_disk_bytes: 10737418240
+  cuda_memory_fraction: 0.35
+  min_system_available_bytes: 8589934592
+  stall_timeout_seconds: 300
+  wandb_mode: offline
+  wandb_group: four-space-curriculum

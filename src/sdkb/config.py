@@ -73,6 +73,9 @@ class TrainConfig:
     muon_momentum: float = .95
     muon_ns_steps: int = 5
     gradient_accumulation: int = 4
+    sampling_policy: str = 'random_with_replacement'  # or deterministic shuffled_passes
+    bank_dir: str | None = None  # published immutable frozen-writer corpus generation
+    bank_read_limits: list[int] = field(default_factory=list)  # per-space selected records, <= neighbors
     clip_grad_norm: float = 1.0
     precision: str = "bf16"
     device: str = "cuda"
@@ -131,6 +134,21 @@ class Config:
             raise ValueError('Invalid runtime resource limits')
         if t.optimizer not in {'adamw', 'muon'}:
             raise ValueError('Optimizer must be adamw or muon')
+        if t.sampling_policy not in {'random_with_replacement', 'shuffled_passes'}:
+            raise ValueError('Unknown episode sampling policy')
+        if t.bank_dir is not None:
+            if (not t.bank_dir or t.arm != 'memory' or t.retrieval != 'learned'
+                    or not m.freeze_backbone or m.recurrence_mode != 'middle_block'
+                    or m.loops != 2 or r.read_timing != 'loop_boundary' or r.read_steps != 1
+                    or r.compaction != 'none' or t.live_fraction != 0
+                    or t.selected_producers_only or t.routing_weight <= 0
+                    or t.oracle_anchor_weight or t.oracle_alignment_weight
+                    or t.oracle_distillation_weight or t.loop_counts):
+                raise ValueError('Bank training requires frozen-writer R=2 learned routing and stored-only reads')
+            if (len(t.bank_read_limits) != len(r.neighbors) or
+                    any(not isinstance(k, int) or isinstance(k, bool) or k < 1 or k > cap
+                        for k, cap in zip(t.bank_read_limits, r.neighbors, strict=True))):
+                raise ValueError('Bank read limits must be positive per-space counts within neighbor caps')
         if not math.isfinite(t.oracle_alignment_weight) or t.oracle_alignment_weight < 0:
             raise ValueError('Invalid oracle alignment weight')
         if t.oracle_alignment_weight and (t.arm != 'memory' or t.retrieval != 'oracle'

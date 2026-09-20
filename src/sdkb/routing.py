@@ -67,6 +67,6 @@ def validate_routing_dataset(config, episodes) -> None:
         if not 1 <= len(episode.required_ids) <= 4:
             raise ValueError('Learned group routing requires 1..4 verified required records')
         informative += len(episode.supports) > len(episode.required_ids)
-    if not informative:
+    if not informative and not config.train.bank_dir:
         raise ValueError('Learned routing has no competing candidates: every candidate is required. '
                          'Provide causally eligible distractors or use oracle retrieval.')

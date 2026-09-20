@@ -341,3 +341,49 @@ Torch RNG consumption, so this is a recorded training configuration, not a silen
 optimization or an allowed exact-resume override. Full-graph and replay execution
 remain available under either policy. A native numerical/timing profile is recorded
 separately before adopting the policy in future experiments.
+
+## Four-space passage curriculum and frozen corpus bank
+
+`configs/lfm25_230m_four_space_reconstruction_spark.yaml` starts a fresh interface
+around the pinned parent. It uses four MLP spaces with payload widths
+256/512/1024/2048, maximum neighborhoods 128/64/32/16, two consumer passes,
+one writer pass and Muon. A single-space checkpoint is structurally incompatible
+and cannot be resumed into this configuration.
+
+`scripts/prepare_squad_bank.py` writes an external, article-disjoint 10,000-source
+train manifest, 1,024-source validation manifest and verified passage QA episodes.
+The source manifest has no future question or answer. The pinned tokenizer and raw
+corpus checksums are recorded. `scripts/prepare_four_space_pilot.py` makes a bounded
+reconstruction/QA mixture; it checks every complete target against the configured
+token budget, including EOS. Preparation writes to a fresh directory on an external
+disk. The first stage uses supplied one-record evidence in all four spaces and
+shuffled passes with resumable coverage accounting. Its loss is teacher-forced NLL;
+held-out free generation and source interventions are separate evaluations.
+
+`scripts/build_source_bank.py --run RUN --sources SOURCES --output BANK
+--max-sources 10000 --shard-size 64` encodes the standalone manifest with a frozen
+checkpoint. Each SQLite shard commits all space views of its logical records
+atomically. Completed shards are byte-verified and skipped on resume; the complete
+generation is published only after every declared shard and record is verified.
+The manifest binds source order and bytes, writer checkpoint bytes, model and memory
+configuration, storage precision, and the generation. Its values use BF16 while
+keys remain FP32. Raw records and manifests remain outside Git.
+
+For a bank-training fork, set `train.bank_dir` to a published bank,
+`train.bank_read_limits` to explicit counts within the per-space neighbor caps,
+`train.retrieval: learned`, `train.live_fraction: 0`, and keep the backbone frozen.
+Start with `sdkb train --config ... --output ... --init-from RUN` using the exact
+writer checkpoint named by the bank. The current bank path supports the native
+two-pass, single-read model. It searches each space independently over the global
+bank, fixes the eligible read plan before backward, fetches only selected stored
+payloads, and trains query/address routing against verified positives and global
+candidates. During this initial mixed-selection phase, known positives are always
+delivered with retrieved distractors; telemetry reports their supplied status and
+the learned retriever's unaided positive recall separately. The writer and its
+stored transforms are frozen. Resume checks the immutable bank and its data
+fingerprint, restoring optimizer, sampler, RNG and partial-microbatch state.
+
+Search is an exact CPU SQLite key scan. There is no ANN claim or measured million
+record throughput. This path establishes corpus-backed reader/address training;
+joint live-writer replay against a refreshed corpus, learned-only delivery and
+full-budget neighborhood training still need controlled validation.

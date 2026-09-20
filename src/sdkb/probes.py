@@ -5,6 +5,7 @@ import math
 import torch
 
 from .agent import SDKBAgent, answer_distribution_kl
+from .routing import cosine_scores, group_plan_loss
 from .training import autocast_context, environment_report, resource_report
 
 
@@ -50,9 +51,23 @@ def model_probe(config) -> dict:
         if config.memory.independent_routing_query and config.train.retrieval == 'learned':
             records.append(agent.produce(agent.text_ids('Unrelated prior experience: a different task.', source=True)))
         target = agent.target_ids('Restore and retry.')
-        result = agent(agent.prompt_ids('What should happen next?'), target,
+        prompt = agent.prompt_ids('What should happen next?')
+        result = agent(prompt, target,
                        records, [0, 1], arm='memory')
         objective = result.loss
+        routing_loss = None
+        if len(config.memory.payload_dims) > 1:
+            # Oracle delivery does not train addressing. Probe each space with a
+            # separate causal-prefix routing objective and a competing record.
+            distractor = agent.produce(agent.text_ids('Unrelated prior experience: a different task.', source=True))
+            _, routing_query = agent.query_pair(prompt)
+            routing_terms = []
+            for space, query_map in enumerate(agent.query_maps):
+                keys = torch.cat([record[2 * space] for record in (*records[:2], distractor)], dim=0)
+                scores = cosine_scores(query_map(routing_query), keys)[0]
+                routing_terms.append(group_plan_loss(scores, [(0, 1)]))
+            routing_loss = torch.stack(routing_terms).mean()
+            objective = objective + .1 * routing_loss
         if config.train.oracle_distillation_weight:
             with torch.no_grad():
                 teacher_logits = agent.conditioned_logits(
@@ -66,8 +81,19 @@ def model_probe(config) -> dict:
     gradients = {}
     gradient_parameters = [('write_slots', agent.write_slots), ('value_head', agent.value_head[-1].weight),
                             ('reader_output', (agent.reader.local[0] if hasattr(agent.reader, 'local') else agent.reader).output[-1].weight), ('memory_gate', agent.memory_gate)]
+    if len(config.memory.payload_dims) > 1:
+        for space, (codec, reader) in enumerate(zip(agent.codecs, agent.reader.local, strict=True)):
+            if isinstance(codec, torch.nn.Linear):
+                gradient_parameters.append((f'codec_{space}', codec.weight))
+            gradient_parameters.extend((
+                (f'reader_local_{space}', reader.blocks[0].input.weight),
+                (f'address_map_{space}', agent.address_maps[space].weight),
+                (f'query_map_{space}', agent.query_maps[space].weight),
+            ))
+        gradient_parameters.append(('reader_fusion_0', agent.reader.fusion[0].weight))
     if native and config.memory.read_timing == 'loop_boundary':
-        gradient_parameters = gradient_parameters[:-1] + [
+        gradient_parameters = [(name, parameter) for name, parameter in gradient_parameters
+                               if name != 'memory_gate'] + [
             ('bridge_reentry', agent.backbone.bridge.reentry.weight),
             ('bridge_input_gate', agent.backbone.bridge.input_logit),
             ('bridge_update_gate', agent.backbone.bridge.update_logit),
@@ -90,5 +116,6 @@ def model_probe(config) -> dict:
             'zero_gate_two_loop_max_error': None if native else error_two,
             'recurrence': agent.backbone.manifest() if native else {'mode': 'full_stack'},
             'causal_prefix_max_error': causal_error, 'nll': float(result.nll.detach()),
+            'routing_probe_loss': None if routing_loss is None else float(routing_loss.detach()),
             'gradient_norms': gradients, 'resources': resource_report(),
             'notice': 'Numerical preflight only; no capability training or cache-performance claim.'}

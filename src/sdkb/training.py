@@ -24,6 +24,31 @@ from .replay import ReplayTape
 from .store import DiskStore, ReadPlan, Selection, StoredRecord, lookup_record
 
 
+class EpisodeSampler:
+    """Deterministic shuffled passes indexed by completed update and microbatch.
+
+    The index position is derived from the checkpointed step/partial-microbatch
+    cursor. It uses a separate RNG so live/cache, depth and noise draws retain
+    their own exact-resume state. Only one epoch permutation is resident.
+    """
+
+    def __init__(self, count: int, *, seed: int):
+        if count < 1:
+            raise ValueError('Episode sampler needs a nonempty dataset')
+        self.count, self.seed = count, seed
+        self._epoch, self._order = None, None
+
+    def index(self, position: int) -> int:
+        if position < 0:
+            raise ValueError('Episode position must be nonnegative')
+        epoch, offset = divmod(position, self.count)
+        if epoch != self._epoch:
+            self._order = list(range(self.count))
+            random.Random(f'sdkb-pass:{self.seed}:{epoch}').shuffle(self._order)
+            self._epoch = epoch
+        return self._order[offset]
+
+
 def autocast_context(config: Config):
     if config.train.precision == "bf16":
         return torch.autocast(config.train.device, dtype=torch.bfloat16)
@@ -145,6 +170,9 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                 [make_episode(i, split=f"train-{config.train.seed}", distractors=config.train.distractors)
                  for i in range(config.train.train_worlds)])
     validate_routing_dataset(config, episodes)
+    if config.train.bank_dir is not None and any(
+            len(episode.required_ids) > min(config.train.bank_read_limits) for episode in episodes):
+        raise ValueError('Bank read limits must fit every verified sufficient support set')
     if config.train.optimization_scope == 'compactor' and config.train.retrieval == 'oracle' and not any(
             len(evidence_ids(e, config.train.evidence_scope)) > config.memory.compact_records for e in episodes):
         raise ValueError('Compactor-only training cannot reduce any selected group; lower compact_records')
@@ -264,6 +292,35 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         # training flag still honors the configured routing warmup.
         for module in agent.children():
             module.eval()
+    bank = None
+    bank_manifest = None
+    bank_manifest_sha = None
+    if config.train.bank_dir is not None:
+        from .offline_bank import canonical_json, publish_offline_generation
+        from .trajectories import file_sha256
+        directory = Path(config.train.bank_dir)
+        bank_manifest_path = directory / 'manifest.json'
+        if not bank_manifest_path.is_file():
+            raise FileNotFoundError('A fully published bank manifest is required')
+        bank_manifest = json.loads(bank_manifest_path.read_text())
+        bank_manifest_sha = file_sha256(bank_manifest_path)
+        bank = DiskStore(directory / 'bank.sqlite')
+        verified = publish_offline_generation(bank, identity=bank_manifest['identity'],
+                    namespace=bank_manifest['namespace'], generation=bank_manifest['generation'],
+                    spaces=tuple(bank_manifest['spaces']), shard_ids=tuple(bank_manifest['shards']),
+                    source_count=bank_manifest['sources'])
+        if canonical_json(verified) != canonical_json({key: bank_manifest[key] for key in verified}):
+            raise ValueError('Published bank manifest differs from verified stored records')
+        if tuple(bank_manifest['spaces']) != tuple(f's{i}' for i in range(len(config.memory.payload_dims))):
+            raise ValueError('Bank spaces are incompatible with this model')
+        if bank_manifest['identity']['model'] != asdict(config.model) or bank_manifest['identity']['memory'] != asdict(config.memory):
+            raise ValueError('Bank writer architecture or storage transform changed')
+        if not resume:
+            if init_from is None or file_sha256(source_checkpoint / 'model.safetensors') != bank_manifest['identity']['writer_checkpoint_sha256']:
+                raise ValueError('Bank training must initialize from its exact frozen writer snapshot')
+        for name, parameter in agent.named_parameters():
+            if name.startswith(('write_slots', 'key_head.', 'value_head.', 'address_maps.', 'codecs.')):
+                parameter.requires_grad_(False)
     from .optimizers import make_optimizer, optimizer_report
     optimizer = make_optimizer(agent)
     start = 0
@@ -290,6 +347,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     previous_environment.write_text(json.dumps(manifest, indent=2) + "\n")
     fingerprint = (episodes.sha256 if isinstance(episodes, EpisodeIndex) else
                    hashlib.sha256(json.dumps([asdict(e) for e in episodes], sort_keys=True).encode()).hexdigest())
+    if bank_manifest_sha is not None:
+        fingerprint = hashlib.sha256((fingerprint + ':' + bank_manifest_sha).encode()).hexdigest()
     data_manifest = output / "data_manifest.json"
     if resume and data_manifest.exists() and json.loads(data_manifest.read_text())["sha256"] != fingerprint:
         raise ValueError("Episode contents changed since checkpoint; refusing stale-cache reuse")
@@ -323,6 +382,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         last_saved_step = 0
     completed = start
     generation = "mixed-training-v0"  # intentional stale/live training distribution, never evaluation
+    sampler = (EpisodeSampler(len(episodes), seed=config.train.seed)
+               if config.train.sampling_policy == 'shuffled_passes' else None)
     history = []
     start_time = time.perf_counter()
     with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
@@ -347,6 +408,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                 if progress:
                     agent.backbone.loops = progress['loops']
                     totals, anchor_total = progress['totals'], progress['anchor_total']
+                    bank_totals = progress.get('bank_totals')
                     alignment_total = (progress['alignment_total'] if config.train.oracle_alignment_weight else 0.)
                     distillation_total = (progress['distillation_total']
                                           if config.train.oracle_distillation_weight else 0.)
@@ -360,49 +422,61 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                     optimizer.zero_grad(set_to_none=True)
                     totals = {"loss": 0.0, "nll": 0.0, "routing_loss": 0.0, "compaction_loss": 0.0,
                               "raw_nll": 0.0, "compact_nll": 0.0, "behavior_kl": 0.0, "read_count": 0.0, "parent_kl": 0.0}
+                    bank_totals = ({'selected_counts': [0.] * len(config.memory.payload_dims),
+                                    'learned_positive_recall': [0.] * len(config.memory.payload_dims),
+                                    'selected_payload_bytes': 0.} if bank is not None else None)
                     anchor_total, micro_start = 0.0, 0
                     alignment_total = 0.0
                     distillation_total = 0.0
                 for micro in range(micro_start, config.train.gradient_accumulation):
-                    episode = rng.choice(episodes)
+                    episode = (episodes[sampler.index(step * config.train.gradient_accumulation + micro)]
+                               if sampler is not None else rng.choice(episodes))
                     tape = ReplayTape(verify_outputs=config.train.verify_replay)
                     visible = evidence_ids(episode, config.train.evidence_scope)
                     read_indices = [i for i, source in enumerate(episode.supports) if source.record_id in visible]
                     with autocast_context(config):
-                        records = []
-                        if config.train.arm in {"memory", "direct_latent"}:
-                            for source in episode.supports:
-                                if config.train.selected_producers_only and source.record_id not in visible:
-                                    # Preserve the Python sampler schedule, including
-                                    # the live/cache draw for every declared source.
-                                    # The opt-in policy has no cached-value history.
-                                    rng.random()
-                                    continue
-                                ids = agent.text_ids(source.text, source=True)
-                                # Repeated source IDs use genuinely stored old payloads; first encounter populates the cache.
-                                if config.train.live_fraction < 1:
-                                    try:
-                                        cached = read_cached(cache, agent, source, "train", generation)
-                                    except KeyError:
-                                        with torch.no_grad():
-                                            cached = stored_channel(agent, agent.produce(ids))
-                                        persist_outputs(cache, agent, source, cached, "train", generation)
-                                if rng.random() < config.train.live_fraction:
-                                    def producer(ids=ids):
-                                        return stored_channel(agent, agent.produce(ids))
-                                    value = tape.capture(agent, producer) if config.train.replay else producer()
-                                else:
-                                    value = tuple(x.detach() for x in cached)
-                                records.append(value)
-                            if config.train.selected_producers_only:
-                                read_indices = list(range(len(records)))
-                        support_text = "\n".join(s.text for s in episode.supports if s.record_id in visible)
-                        prompt = agent.prompt_ids(episode.query, support_text if config.train.arm == "oracle_text" else "")
-                        compact = (config.train.arm == "memory" and config.memory.compaction != "none"
-                                   and step >= config.memory.compaction_warmup
-                                   and rng.random() < config.memory.compaction_probability)
-                        result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
-                                       step=step, compact=compact)
+                        if bank is not None:
+                            from .corpus_training import stored_corpus_forward
+                            result, bank_info = stored_corpus_forward(
+                                agent, bank, episode, generation=bank_manifest['generation'],
+                                limits=tuple(config.train.bank_read_limits),
+                                namespace=bank_manifest['namespace'])
+                            support_text = ''
+                        else:
+                            records = []
+                            if config.train.arm in {"memory", "direct_latent"}:
+                                for source in episode.supports:
+                                    if config.train.selected_producers_only and source.record_id not in visible:
+                                        # Preserve the Python sampler schedule, including
+                                        # the live/cache draw for every declared source.
+                                        # The opt-in policy has no cached-value history.
+                                        rng.random()
+                                        continue
+                                    ids = agent.text_ids(source.text, source=True)
+                                    # Repeated source IDs use genuinely stored old payloads; first encounter populates the cache.
+                                    if config.train.live_fraction < 1:
+                                        try:
+                                            cached = read_cached(cache, agent, source, "train", generation)
+                                        except KeyError:
+                                            with torch.no_grad():
+                                                cached = stored_channel(agent, agent.produce(ids))
+                                            persist_outputs(cache, agent, source, cached, "train", generation)
+                                    if rng.random() < config.train.live_fraction:
+                                        def producer(ids=ids):
+                                            return stored_channel(agent, agent.produce(ids))
+                                        value = tape.capture(agent, producer) if config.train.replay else producer()
+                                    else:
+                                        value = tuple(x.detach() for x in cached)
+                                    records.append(value)
+                                if config.train.selected_producers_only:
+                                    read_indices = list(range(len(records)))
+                            support_text = "\n".join(s.text for s in episode.supports if s.record_id in visible)
+                            prompt = agent.prompt_ids(episode.query, support_text if config.train.arm == "oracle_text" else "")
+                            compact = (config.train.arm == "memory" and config.memory.compaction != "none"
+                                       and step >= config.memory.compaction_warmup
+                                       and rng.random() < config.memory.compaction_probability)
+                            result = agent(prompt, agent.target_ids(episode.answer), records, read_indices,
+                                           step=step, compact=compact)
                         loss = result.loss
                         if config.train.oracle_anchor_weight and config.train.arm == "memory":
                             oracle_prompt = agent.prompt_ids(episode.query, support_text)
@@ -446,13 +520,20 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                         value = getattr(result, name)
                         totals[name] += (float(value.detach()) if isinstance(value, torch.Tensor) else
                                          float(value or 0)) / config.train.gradient_accumulation
+                    if bank_totals is not None:
+                        for name in ('selected_counts', 'learned_positive_recall'):
+                            for space, value in enumerate(bank_info[name]):
+                                bank_totals[name][space] += value / config.train.gradient_accumulation
+                        bank_totals['selected_payload_bytes'] += (
+                            bank_info['selected_payload_bytes'] / config.train.gradient_accumulation)
                     if want_stop() and micro + 1 < config.train.gradient_accumulation:
                         # Replay has finished for this microbatch. Preserve its complete
                         # cotangents, RNG, sampled depth and cache instead of discarding
                         # partial work or stepping an under-accumulated optimizer.
                         progress = dict(microbatches=micro + 1, loops=agent.backbone.loops,
                                         totals=totals, anchor_total=anchor_total,
-                                        alignment_total=alignment_total, distillation_total=distillation_total)
+                                        alignment_total=alignment_total, distillation_total=distillation_total,
+                                        bank_totals=bank_totals)
                         compute.close()
                         save_checkpoint(agent, optimizer, output, completed, rng, cache, fingerprint,
                                         keep=config.train.keep_checkpoints, archiver=archiver,
@@ -471,6 +552,15 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                          + config.train.oracle_distillation_weight * distillation_total),
                    "grad_norm": float(grad_norm), "loops": agent.backbone.loops,
                    "elapsed_seconds": time.perf_counter() - start_time}
+            if bank_totals is not None:
+                row['bank'] = bank_totals | {'generation': bank_manifest['generation'],
+                                             'supplied_positive': True}
+            if sampler is not None:
+                consumed = (step + 1) * config.train.gradient_accumulation
+                row['sampling'] = {'policy': 'shuffled_passes',
+                                   'completed_passes': consumed // len(episodes),
+                                   'position_in_pass': consumed % len(episodes),
+                                   'unique_episodes_seen': min(consumed, len(episodes))}
             if hasattr(agent.backbone, "manifest"):
                 row["recurrence"] = agent.backbone.manifest()
             if (step + 1) % config.train.log_every == 0 or step == start:

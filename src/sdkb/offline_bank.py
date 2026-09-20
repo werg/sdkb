@@ -66,3 +66,116 @@ def ensure_offline_records(store: DiskStore, factory: Callable[[], Iterable[Stor
         db.execute('INSERT INTO offline_banks VALUES (?,?,?,?,?)',
                    (namespace, generation, serialized, count, digest))
     return True
+
+
+def _shard_schema(db):
+    db.execute('''CREATE TABLE IF NOT EXISTS offline_shards (
+        namespace TEXT NOT NULL, generation TEXT NOT NULL, shard_id TEXT NOT NULL,
+        identity TEXT NOT NULL, source_ids TEXT NOT NULL, records INTEGER NOT NULL,
+        digest TEXT NOT NULL, PRIMARY KEY(namespace,generation,shard_id))''')
+    db.execute('''CREATE TABLE IF NOT EXISTS offline_generations (
+        namespace TEXT NOT NULL, generation TEXT NOT NULL, manifest TEXT NOT NULL,
+        PRIMARY KEY(namespace,generation))''')
+
+
+def _shard_contents(db, namespace, generation, spaces, source_ids):
+    if not source_ids:
+        return 0, hashlib.sha256().hexdigest()
+    query = f'''SELECT * FROM records WHERE namespace=? AND generation=?
+                 AND space IN ({','.join('?' for _ in spaces)})
+                 AND record_id IN ({','.join('?' for _ in source_ids)})
+                 ORDER BY space,record_id'''
+    digest, count = hashlib.sha256(), 0
+    for row in db.execute(query, (namespace, generation, *spaces, *source_ids)):
+        count += 1
+        for value in row:
+            encoded = value if isinstance(value, bytes) else canonical_json(value).encode()
+            digest.update(len(encoded).to_bytes(8, 'big'))
+            digest.update(encoded)
+    return count, digest.hexdigest()
+
+
+def ensure_offline_shard(store: DiskStore, factory: Callable[[], Iterable[StoredRecord]], *,
+                         identity: dict, namespace: str, generation: str,
+                         spaces: tuple[str, ...], shard_id: str,
+                         source_ids: tuple[str, ...]) -> bool:
+    """Atomically publish every space of a bounded immutable source shard.
+
+    A completed shard is byte-verified and never re-encoded on resume. The caller
+    must finish all shards and publish the generation before using it for training.
+    """
+    if (not shard_id or not spaces or len(spaces) != len(set(spaces)) or
+            not source_ids or len(source_ids) != len(set(source_ids))):
+        raise ValueError('Distinct spaces and source IDs plus a shard ID required')
+    serialized, ids_json = canonical_json(identity), canonical_json(source_ids)
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        _shard_schema(db)
+        previous = db.execute('''SELECT identity,source_ids,records,digest FROM offline_shards
+                                WHERE namespace=? AND generation=? AND shard_id=?''',
+                              (namespace, generation, shard_id)).fetchone()
+        count, digest = _shard_contents(db, namespace, generation, spaces, source_ids)
+        if previous is not None:
+            if previous[:2] != (serialized, ids_json):
+                raise ValueError('Offline shard identity or sources changed')
+            if previous[2:] != (count, digest) or count != len(source_ids) * len(spaces):
+                raise ValueError('Offline shard raw contents changed')
+            return False
+        if count:
+            raise ValueError('Offline shard has unmanifested records')
+        seen = set()
+        for record in factory():
+            pair = (record.record_id, record.space)
+            if (record.namespace != namespace or record.generation != generation or
+                    record.record_id not in source_ids or record.space not in spaces or
+                    record.source_id != record.record_id or pair in seen):
+                raise ValueError('Offline shard emitted an unexpected source/space identity')
+            seen.add(pair)
+            store._put(db, record, ())
+        expected = {(source_id, space) for source_id in source_ids for space in spaces}
+        if seen != expected:
+            raise ValueError('Offline shard does not contain every complete source view')
+        count, digest = _shard_contents(db, namespace, generation, spaces, source_ids)
+        db.execute('INSERT INTO offline_shards VALUES (?,?,?,?,?,?,?)',
+                   (namespace, generation, shard_id, serialized, ids_json, count, digest))
+    return True
+
+
+def publish_offline_generation(store: DiskStore, *, identity: dict, namespace: str,
+                               generation: str, spaces: tuple[str, ...],
+                               shard_ids: tuple[str, ...], source_count: int) -> dict:
+    """Verify every declared shard before exposing its immutable generation."""
+    if not shard_ids or len(shard_ids) != len(set(shard_ids)) or source_count < 1:
+        raise ValueError('Distinct shards and positive source count required')
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        _shard_schema(db)
+        rows = db.execute('''SELECT shard_id,identity,source_ids,records,digest FROM offline_shards
+                             WHERE namespace=? AND generation=? ORDER BY shard_id''',
+                          (namespace, generation)).fetchall()
+        if {row[0] for row in rows} != set(shard_ids):
+            raise ValueError('Offline generation shard set is incomplete or changed')
+        ids = set()
+        for shard_id, frozen, encoded_ids, count, digest in rows:
+            members = tuple(json.loads(encoded_ids))
+            if frozen != canonical_json(identity) or ids.intersection(members):
+                raise ValueError('Offline generation identity or shard overlap changed')
+            actual = _shard_contents(db, namespace, generation, spaces, members)
+            if actual != (count, digest) or count != len(members) * len(spaces):
+                raise ValueError(f'Offline shard raw contents changed: {shard_id}')
+            ids.update(members)
+        total, digest = _contents(db, namespace, generation, spaces)
+        if len(ids) != source_count or total != source_count * len(spaces):
+            raise ValueError('Offline generation source or record count changed')
+        manifest = {'identity': identity, 'namespace': namespace, 'generation': generation,
+                    'spaces': spaces, 'shards': shard_ids, 'sources': source_count,
+                    'records': total, 'digest': digest}
+        serialized = canonical_json(manifest)
+        prior = db.execute('SELECT manifest FROM offline_generations WHERE namespace=? AND generation=?',
+                           (namespace, generation)).fetchone()
+        if prior is not None and prior[0] != serialized:
+            raise ValueError('Offline generation publication changed')
+        if prior is None:
+            db.execute('INSERT INTO offline_generations VALUES (?,?,?)',
+                       (namespace, generation, serialized))
+    return manifest

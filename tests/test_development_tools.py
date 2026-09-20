@@ -21,6 +21,11 @@ def test_probe_reports_actual_backend_and_gradients(tiny_config, spaces):
     assert result['zero_gate_two_loop_max_error'] == 0
     assert result['causal_prefix_max_error'] == 0
     assert all(value > 0 for value in result['gradient_norms'].values())
+    if spaces == 2:
+        for name in ('codec_0', 'codec_1', 'reader_local_0', 'reader_local_1',
+                     'reader_fusion_0', 'address_map_0', 'address_map_1',
+                     'query_map_0', 'query_map_1'):
+            assert result['gradient_norms'][name] > 0
 
 
 def test_boolean_counterfactual_preserves_nonpayload_channels():
