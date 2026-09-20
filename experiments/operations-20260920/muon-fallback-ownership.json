@@ -10,5 +10,91 @@
     "Exact complete and partial-accumulation Muon resume remains covered"
   ],
   "test_log": "/archive/profiles/muon-fallback-full-tests.log",
-  "compatibility": "Older Muon runs require their original frozen checkout for exact resume. Explicit warm-starts adopt the corrected policy; no momentum remapping. Active endpoint-freshness runs remain frozen at c58028c."
+  "compatibility": "Older Muon runs require their original frozen checkout for exact resume. Explicit warm-starts adopt the corrected policy; no momentum remapping. Active endpoint-freshness runs remain frozen at c58028c.",
+  "native_model_ownership_audit": {
+    "source_manifest_sha256": "275c3a40b791a36123d5eb3e1eb5e03e9e74276a42f5489911f54fc585807d7b",
+    "optimizer_implementation_sha256": "9eff8e431bf406760a28b26ab79c9471bb9c80e3f3a4f9b49f4995004eeef2ac",
+    "torch": "2.11.0a0+a6c236b9fd.nv26.03.46836102",
+    "model_revision": "40cb2ad3b3044d5a41eee083a6103c8b523afa45",
+    "device": "cpu",
+    "muon_parameters_without_recognized_transform_module": [],
+    "fallback_tables_in_adamw": [
+      "reader.null_tokens"
+    ],
+    "groups": [
+      {
+        "index": 0,
+        "parameters": 69206016,
+        "tensors": 36,
+        "lr": 5e-06,
+        "weight_decay": 0.01,
+        "momentum": 0.95,
+        "nesterov": true,
+        "ns_coefficients": [
+          3.4445,
+          -4.775,
+          2.0315
+        ],
+        "eps": 1e-07,
+        "ns_steps": 5,
+        "adjust_lr_fn": "match_rms_adamw"
+      },
+      {
+        "index": 1,
+        "parameters": 24586688,
+        "tensors": 34,
+        "lr": 0.0001,
+        "weight_decay": 0.01,
+        "momentum": 0.95,
+        "nesterov": true,
+        "ns_coefficients": [
+          3.4445,
+          -4.775,
+          2.0315
+        ],
+        "eps": 1e-07,
+        "ns_steps": 5,
+        "adjust_lr_fn": "match_rms_adamw"
+      },
+      {
+        "index": 2,
+        "parameters": 21888,
+        "tensors": 21,
+        "lr": 5e-06,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0.01,
+        "amsgrad": false,
+        "maximize": false,
+        "foreach": null,
+        "capturable": false,
+        "differentiable": false,
+        "fused": null,
+        "decoupled_weight_decay": true
+      },
+      {
+        "index": 3,
+        "parameters": 51463,
+        "tensors": 43,
+        "lr": 0.0001,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "eps": 1e-08,
+        "weight_decay": 0.01,
+        "amsgrad": false,
+        "maximize": false,
+        "foreach": null,
+        "capturable": false,
+        "differentiable": false,
+        "fused": null,
+        "decoupled_weight_decay": true
+      }
+    ],
+    "notice": "Native ARM64 vendor-Torch construction of actual cached pretrained LFM module topology; CPU ownership audit, not a new CUDA gradient or training-parity result. No checkpoint written."
+  }
 }

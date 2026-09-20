@@ -155,3 +155,8 @@ before model mutation, and complete/partial-accumulation resume still matches ex
 All 434 tests pass. Existing frozen studies retain their original policy and must
 resume with that checkout; future warm-starts adopt corrected ownership. Evidence:
 `experiments/operations-20260920/muon-fallback-ownership.json`.
+
+The actual cached LFM topology was also constructed under native ARM64 vendor Torch
+for a CPU ownership audit. Every Muon-owned tensor belongs to a recognized linear
+transform module, and all 8,192 `reader.null_tokens` entries now belong to AdamW.
+This audit writes no checkpoint and does not claim another CUDA gradient-parity run.
