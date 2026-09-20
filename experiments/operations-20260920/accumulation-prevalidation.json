@@ -1,0 +1,15 @@
+{
+  "missing_fields_reproduced_before_fix": [
+    "alignment_total",
+    "anchor_total",
+    "totals",
+    "loops",
+    "microbatches"
+  ],
+  "rejection_before_model_loading": true,
+  "alignment_total_required_only_when_objective_enabled": true,
+  "complete_partial_muon_resume_still_exact": true,
+  "full_suite": "496 passed, 4 warnings, 50.29 seconds",
+  "ruff": "src tests scripts and alignment helpers passed",
+  "scope": "Earlier rejection of incomplete accumulation metadata. Existing complete checkpoint format and active frozen study code are unchanged."
+}

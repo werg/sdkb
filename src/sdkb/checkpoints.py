@@ -205,11 +205,17 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
         raise ValueError('Optimizer changed; use an explicit warm-start with a new run identity')
     if state['optimizer_parameter_names'] != getattr(optimizer, '_sdkb_parameter_names', None):
         raise ValueError('Optimizer parameter names/order changed; refusing mismatched momentum')
+    if state.get('accumulation'):
+        accumulation_keys = {'microbatches', 'loops', 'totals', 'anchor_total'}
+        if agent.config.train.oracle_alignment_weight:
+            accumulation_keys.add('alignment_total')
+        if accumulation_keys - state['accumulation'].keys():
+            raise ValueError('Checkpoint lacks complete accumulation state; use an explicit warm-start')
+        if progress is None:
+            raise ValueError('Checkpoint has an incomplete optimizer update; restore its accumulation state')
     load_model(agent, str(path / "model.safetensors"), device=agent.config.train.device)
     optimizer.load_state_dict(state["optimizer"])
     if state.get('accumulation'):
-        if progress is None:
-            raise ValueError('Checkpoint has an incomplete optimizer update; restore its accumulation state')
         progress.update(state['accumulation'])
         parameters = dict(agent.named_parameters())
         for name, gradient in state['gradients'].items():

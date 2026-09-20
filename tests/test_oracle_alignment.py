@@ -1,6 +1,8 @@
 """Training-only text-state supervision must preserve causality and recovery."""
 from copy import deepcopy
+import hashlib
 import json
+import random
 
 import pytest
 import torch
@@ -178,3 +180,36 @@ def test_alignment_muon_partial_resume(tmp_path, tiny_config, monkeypatch):
     changed.train.oracle_alignment_weight = .5
     with pytest.raises(ValueError, match='hyperparameters differ'):
         train(changed, partial, resume=True)
+
+
+@pytest.mark.parametrize('missing', ['alignment_total', 'anchor_total', 'totals', 'loops', 'microbatches'])
+def test_partial_alignment_missing_totals_rejected_before_model_mutation(tmp_path, tiny_config, monkeypatch, missing):
+    from sdkb.checkpoints import restore_checkpoint
+    from sdkb.optimizers import make_optimizer
+    import safetensors.torch
+    config = native(tiny_config)
+    config.train.gradient_accumulation = 2
+    output = tmp_path/'run'
+    original = ReplayTape.backward
+    def stop(self, *args, **kwargs):
+        result = original(self, *args, **kwargs)
+        request_stop(output)
+        return result
+    monkeypatch.setattr(ReplayTape, 'backward', stop)
+    assert train(config, output)['saved_microbatches'] == 1
+    checkpoint = resolve_checkpoint(output)
+    state_path = checkpoint/'training_state.pt'
+    state = torch.load(state_path, weights_only=True)
+    del state['accumulation'][missing]
+    torch.save(state, state_path)
+    manifest_path = checkpoint/'manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    manifest['sha256']['training_state.pt'] = hashlib.sha256(state_path.read_bytes()).hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Invalid accumulation must fail before loading model weights')
+    monkeypatch.setattr(safetensors.torch, 'load_model', forbidden)
+    agent = SDKBAgent(config)
+    with pytest.raises(ValueError, match='accumulation state'):
+        restore_checkpoint(agent, make_optimizer(agent), output, random.Random(1),
+                           manifest['dataset_sha256'], progress={})

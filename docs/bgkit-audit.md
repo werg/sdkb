@@ -272,3 +272,11 @@ unequal contention and are not a causal throughput estimate. The option stays
 recorded and opt-in; current capacity jobs are unchanged. One complete final set
 per profile remains external, with another 1,017,349,676 duplicate weight bytes
 removed. See `experiments/selected-producer-profile-20260920/README.md`.
+
+
+Partial-update restoration now verifies the loss totals, microbatch cursor and
+sampled depth fields before loading model weights. The new alignment total is
+required only when that objective is enabled. Five missing-field regressions
+failed before this guard; valid complete and partial Muon resumes remain exact.
+The full suite passes 496 tests. This changes validation order, not valid snapshot
+contents or the active frozen study. Evidence: `experiments/operations-20260920/accumulation-prevalidation.json`.
