@@ -1,0 +1,101 @@
+{
+  "protocol": "Same joint parent and 400 Muon updates; training upper-half text-utility selection vs uniform data",
+  "analyzer_sha256": "0d8bfd139722c010a255e0862785564339b3b64b6843badb9a6bbede43780a4a",
+  "parent_model_sha256": "c73ef6fb8b22f28171eec82de61575802b5d5503e1c40663e853fbb7b661dffe",
+  "validation_sha256": "00f61512a6afb950cb12301735a93514bae1df6f149c553a6299907319364e96",
+  "selected_train_sha256": "27977160863131f5acf42f3f84b905eb5cf17c8c04413149e4c808af62a7cadb",
+  "training_selection": {
+    "selected_episodes": 265,
+    "omitted_episodes": 265,
+    "selected_trajectories": 172,
+    "omitted_trajectories": 185,
+    "mean_text_gain_selected": 0.6193693441079012,
+    "mean_text_gain_omitted": 0.07355086360437489
+  },
+  "arms": {
+    "uniform": {
+      "checkpoint_model_sha256": "02430c79f9c50701d8d4adf47b9bc9123e6652020731054f2b32cc679dc16c68",
+      "report_sha256": "bad5283140fa4623e7e4fbd3ff3ab1b99718cf576fa65f6dc5630ed3ba7edebc",
+      "summary_sha256": "b0685468301d2fa112b18311b189998a31782b6d9491137689d8eaabdfda1a39",
+      "writer_calls": 375,
+      "token_weighted_nll": {
+        "all": 0.9710236656315335,
+        "zero_values": 0.9807144478299529,
+        "wrong_values": 0.982070916788767,
+        "none": 1.0895570608742187
+      }
+    },
+    "selected": {
+      "checkpoint_model_sha256": "cf73bf726e15076579a3ab789c254a25aaabbf042238670ba5a1292a0f669ec7",
+      "report_sha256": "d31082210168fe0680ec4e2303371cc33add0a706aaf4416311c8660e37c6ffc",
+      "summary_sha256": "58298c2994c66dcf1fff65643ac3d81cf0fcd97d22112417038dd43837666c42",
+      "writer_calls": 375,
+      "token_weighted_nll": {
+        "all": 0.9885194843759835,
+        "zero_values": 0.9964387420684256,
+        "wrong_values": 0.9987632419180568,
+        "none": 1.092959304493014
+      }
+    }
+  },
+  "one_pass_text": {
+    "report_sha256": [
+      "27bd803d020d9dce0557306924f4040f732ef52e3dba60d6be9da7cf51001e12",
+      "c82b8af79b91284cc5320f0d7691ffd4159f53038e6fae4b0b8e92265a2e2e12"
+    ],
+    "selected_text_token_weighted_nll": 0.8666495475614205,
+    "no_text_token_weighted_nll": 1.1075686214685552,
+    "all_238_scores_identical": true
+  },
+  "paired": {
+    "uniform_to_selected_all_nll_reduction": {
+      "mean_episode_delta": -0.02742450892204564,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.04190135551682705,
+        -0.018064871128500668
+      ]
+    },
+    "uniform_to_selected_zero_values_nll_reduction": {
+      "mean_episode_delta": -0.026135946014486232,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.03618903118426727,
+        -0.01701487342843538
+      ]
+    },
+    "uniform_to_selected_wrong_values_nll_reduction": {
+      "mean_episode_delta": -0.03793107336959067,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.05168306646907187,
+        -0.02664551060173234
+      ]
+    },
+    "uniform_to_selected_none_nll_reduction": {
+      "mean_episode_delta": -0.0052371222730212465,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.007069140894877396,
+        -0.003450246188912475
+      ]
+    },
+    "curriculum_delta_real_over_zero_values": {
+      "mean_episode_delta": -0.0012885629075594096,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.01365451092916428,
+        0.009403634453095208
+      ]
+    },
+    "curriculum_delta_real_over_wrong_values": {
+      "mean_episode_delta": 0.01050656444754503,
+      "trajectory_groups": 42,
+      "trajectory_bootstrap_interval_95": [
+        -0.00570422433632195,
+        0.026654331696636006
+      ]
+    }
+  },
+  "limits": "Teacher-forced likelihood and descriptive trajectory bootstrap, not task success. Training example distributions differ by design, and both arms share one parent and seed. Oracle selection and fixed plans do not establish learned routing; text and latent paths use different token and compute budgets. No capacity-substitution or cold-storage timing claim."
+}

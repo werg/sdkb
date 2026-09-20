@@ -1,0 +1,14 @@
+{
+  "applied": true,
+  "potential_bytes": 1017349676,
+  "released_bytes": 1017349676,
+  "replacements": [
+    {
+      "source": "/archive/runs/trajectory-output-distillation-20260920/control/checkpoints/step-000000000-58506bdf2039/model.safetensors",
+      "target": "/archive/runs/trajectory-context-curriculum-20260920/selected_context/checkpoints/step-000000000-e29590f343ea/model.safetensors",
+      "sha256": "c73ef6fb8b22f28171eec82de61575802b5d5503e1c40663e853fbb7b661dffe",
+      "bytes": 1017349676
+    }
+  ],
+  "notice": "Checkpoint contents and manifests are unchanged. Byte counts are logical file lengths; open readers may delay physical release. Never edit shared checkpoint files in place."
+}

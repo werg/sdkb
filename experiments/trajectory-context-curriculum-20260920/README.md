@@ -17,6 +17,10 @@ curriculum. They are never inserted into a query, writer input, read plan or
 inference path. The 119 repository-heldout validation episodes do not affect
 selection.
 
+The policy was chosen after inspecting the preceding study's validation
+diagnostic. The held-out episodes remain absent from this fork's training data,
+but this is exploratory reuse of a validation set, not a sealed final test.
+
 The native R=2, writer R=1, backbone-frozen Muon stage warm-starts the same
 completed joint checkpoint as the no-KL uniform-data control. Both use seed 233,
 400 updates, BF16, four-example gradient accumulation, one fully live causal
@@ -34,3 +38,42 @@ selected IDs. Also compare no-memory likelihood and the fixed one-pass text
 teacher. A lower real-value NLL alone does not establish improved payload use.
 This remains teacher-forced next-message likelihood; it does not measure patch
 success, learned routing, semantic source sufficiency or capacity substitution.
+
+## Completed pilot
+
+The fixed parent completed all 1,060 train-only selected/no-text scores; its
+one-pass model and episode bytes are pinned in the external input lock. The
+selected 265 episodes span 172 of 187 training trajectories. The frozen native
+run `1a5610b` passed the actual-LFM preflight and completed 400 Muon updates,
+with one in-loop read at R=2 on every logged update. The normal cadence wrote
+only initial/final complete checkpoints. The frozen evaluation checkout was
+`1eaaef8`. Its held-out bank used 375 writer calls for 375 unique sources under
+the 64-source writer cache cap. `results.json` pins final model, raw report and
+evaluator identities without committing raw data or weights.
+
+| R=2 held-out token-weighted NLL | Uniform 530-episode control | Selected 265-episode curriculum |
+|---|---:|---:|
+| Real stored values | 0.971024 | 0.988519 |
+| Zeroed values, same selected IDs | 0.980714 | 0.996439 |
+| Wrong values, same selected IDs | 0.982071 | 0.998763 |
+| No memory | 1.089557 | 1.092959 |
+
+The paired real-value NLL change was **worse** by 0.02742 mean episode NLL
+(42-trajectory descriptive bootstrap interval −0.04190 to −0.01806 when
+expressed as uniform-minus-selected improvement). Real-over-zero payload
+benefit changed by −0.00129 (−0.01365 to 0.00940); there is no demonstrated
+increase. Real-over-wrong changed by +0.01051 (−0.00570 to 0.02665), also
+uncertain. All 119 validation episode IDs, source selections and target lengths
+matched across arms. The one-pass selected/no-text scores were identical at all
+238 evaluated sequences, confirming a fixed text teacher.
+
+This does not show that high text-context utility is useless as a signal. It
+shows that discarding half the training examples under this single seed and
+400-update budget hurt held-out likelihood and did not improve the primary
+payload-specific contrast. There is no sealed new test set or agent task score.
+
+After both evaluators exited, verified hard-link deduplication reclaimed
+1,017,349,676 external bytes from the identical curriculum-initial model file.
+The parent/control source and both curriculum checkpoint sets reverified
+against their manifests. `dedup.json` records the operation; final optimizer,
+RNG and model state remain intact for exact resume.
