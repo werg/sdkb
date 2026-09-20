@@ -160,3 +160,13 @@ The actual cached LFM topology was also constructed under native ARM64 vendor To
 for a CPU ownership audit. Every Muon-owned tensor belongs to a recognized linear
 transform module, and all 8,192 `reader.null_tokens` entries now belong to AdamW.
 This audit writes no checkpoint and does not claim another CUDA gradient-parity run.
+
+
+Runtime W&B errors are now isolated from optimizer recovery. Injected `log` and
+`finish` failures previously aborted after an optimizer update; the corrected
+tracking helper records error types, disables further logging for that attempt,
+and preserves training and the original exception. A new attempt retries the same
+run ID. A complete training comparison matches final weights, optimizer and RNG
+exactly despite both injected failures. Setup errors remain fatal before training.
+All 441 tests pass. This does not add a timeout to a hung SDK call. Evidence:
+`experiments/operations-20260920/tracking-failure-isolation.json`.

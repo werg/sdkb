@@ -197,6 +197,15 @@ offline history automatically. After a crash, W&B can contain uncheckpointed
 metrics, so each attempt is tagged and local checkpoint-consistent JSONL remains
 authoritative. W&B is telemetry, never a source for optimizer recovery.
 
+A raised runtime `log` error disables W&B logging for that attempt while JSONL,
+training and checkpoints continue. Error types/steps are recorded under
+`tracking/failure-ATTEMPT.json` and announced in the local console; private SDK
+exception text is not copied into that record. A raised `finish` error cannot mask
+an original training failure or invalidate a completed checkpoint. A new explicit
+attempt retries tracking with the same run identity. Requested tracking setup
+errors still fail before training. This handles raised errors; it does not add a
+timeout to an SDK call that never returns.
+
 ## Lessons applied from bgkit
 
 Bgkit's runbook, trainer and checkpoint archiver document failures from writing

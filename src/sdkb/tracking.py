@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 import json
+import sys
 import uuid
 
 from .operations import atomic_json
@@ -20,6 +21,8 @@ class Tracking:
     def __init__(self, config, output):
         self.config, self.output, self.run = config, Path(output), None
         self.attempt = uuid.uuid4().hex[:12]
+        self.errors = []
+        self.logging_disabled = False
 
     def __enter__(self):
         identity = run_identity(self.output)
@@ -40,7 +43,7 @@ class Tracking:
         return self
 
     def log(self, row):
-        if self.run is not None:
+        if self.run is not None and not self.logging_disabled:
             def scalars(values, prefix=''):
                 result = {}
                 for name, value in values.items():
@@ -52,8 +55,35 @@ class Tracking:
                 return result
             scalar = scalars(row)
             scalar.update(optimizer_step=row['step'], resume_attempt=self.attempt)
-            self.run.log(scalar)
+            try:
+                self.run.log(scalar)
+            except Exception as exc:
+                self.logging_disabled = True
+                self._record_failure('log', exc, row['step'])
+
+    def _record_failure(self, operation, error, step=None):
+        # SDK exception text can include private remote diagnostics. Record only
+        # the error type; SDK-owned debug files remain in the external run directory.
+        event = {'operation': operation, 'error_type': type(error).__name__,
+                 'optimizer_step': step}
+        self.errors.append(event)
+        record = {'attempt': self.attempt, 'errors': self.errors,
+                  'notice': 'W&B telemetry failed; JSONL and checkpoints remain authoritative.'}
+        try:
+            atomic_json(self.output/'tracking'/f'failure-{self.attempt}.json', record)
+        except OSError:
+            # Failure to record optional telemetry must not lose optimizer work.
+            pass
+        try:
+            print(json.dumps({'event': 'tracking_failure', **event,
+                              'attempt': self.attempt, 'logging_disabled': self.logging_disabled}),
+                  file=sys.stderr, flush=True)
+        except OSError:
+            pass
 
     def __exit__(self, exc_type, exc, tb):
         if self.run is not None:
-            self.run.finish(exit_code=1 if exc_type else 0)
+            try:
+                self.run.finish(exit_code=1 if exc_type or self.errors else 0)
+            except Exception as error:
+                self._record_failure('finish', error)

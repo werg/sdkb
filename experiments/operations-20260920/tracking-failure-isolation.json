@@ -1,0 +1,15 @@
+{
+  "failed_regressions_before_fix": 3,
+  "full_suite_passed": 441,
+  "ruff": "passed",
+  "test_log": "/archive/profiles/tracking-failure-full-tests.log",
+  "checks": [
+    "Injected W&B log/finish errors preserve final model, optimizer and RNG exactly",
+    "Logging disabled after first failure in one attempt",
+    "Original training exception survives W&B finish failure",
+    "Failure-record filesystem error does not abort training",
+    "A fresh attempt retries the same run identity",
+    "Requested W&B setup failure still prevents training"
+  ],
+  "scope": "Raised telemetry exceptions are isolated; no hung-SDK-call timeout or online-service failure simulation is claimed. Active frozen studies keep their original helper."
+}
