@@ -8,6 +8,11 @@ described in [portable operations](operations.md).
 > `recipes/looped_starter_muon.yaml` and `recipes/looped_causal.yaml`. They add native
 > middle-block recurrence and in-loop reads. See [recurrent conversion](recurrence.md)
 > for the four-stage protocol. The one-pass recipes below remain control experiments.
+>
+> [Trajectory memory v0.5](trajectory-memory-v0.5.md) is the next curriculum:
+> visible memory tool calls, frequent multi-site reads, length-scaled writes, and
+> several immutable read-then-write bank generations. The current support/query
+> trainer is Phase 0 interface pretraining for that program.
 
 ## Foreground staged launcher
 

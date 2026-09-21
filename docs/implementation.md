@@ -5,6 +5,11 @@
 > `recipes/looped_starter_muon.yaml` and `recipes/looped_causal.yaml`. They add native
 > middle-block recurrence and in-loop reads. See [recurrent conversion](recurrence.md)
 > for the four-stage protocol. The one-pass recipes below remain control experiments.
+>
+> The planned multi-site memory-tool interface is specified in
+> [trajectory memory v0.5](trajectory-memory-v0.5.md). The present implementation
+> does not yet generate `memory.search`/`memory.write` calls or execute a sequence of
+> memory tool sites across an agent trajectory.
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.

@@ -95,6 +95,27 @@ The central gap is empirical: the machinery now executes several intended paths,
 but the broad capacity-substitution claim still lacks these outcomes. The current
 positive results should guide tests without being relabeled as that broader proof.
 
+## Next target: trajectory-native memory
+
+The owner has selected [trajectory memory v0.5](trajectory-memory-v0.5.md) as the
+next architecture program. Long agent traces should contain repeated visible
+`memory.search` calls and tool results, plus `memory.write` calls whose item count
+scales with useful input and events. Later immutable bank generations must contain
+substantial contributions authored by trajectories that queried earlier generations.
+
+This is a course extension, not a description of the current HotpotQA curriculum.
+The current run performs one automatic latent read per short episode and writes
+source chunks through the live/offline writer. It has no learned call placement,
+no memory tool-call syntax, no prompted write policy, and no model-authored recursive
+bank content. Its writer/reader/routing learning remains useful Phase 0 preparation.
+
+The target capacity claim also changes the scale requirement. One hundred thousand
+records is an integration tier. The program advances through 1M, 10M, and 100M
+logical records, then requires scale-out storage for full pretraining/posttraining
+corpora. At the current four-space format, array bytes alone are about 8.7 GB, 87 GB,
+and 870 GB at those tiers. Payload width, returned slots, records per source, and
+selected bytes are measured capacity axes rather than assumed sufficient constants.
+
 ## Operational state
 
 The [bgkit audit](bgkit-audit.md) and [operations guide](operations.md) record

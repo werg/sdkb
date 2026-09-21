@@ -5,6 +5,12 @@
 > prelude/shared-core/coda conversion with in-loop reads and a conversion curriculum.
 > [Recurrent conversion specification](recurrence.md) gives the executable v0.4
 > design, rather than treating the looped backbone as a deferred prerequisite.
+>
+> **Target update, 21 September 2026:** [trajectory memory v0.5](trajectory-memory-v0.5.md)
+> specifies frequent transcript-level `memory.search` and `memory.write` tool calls,
+> length-scaled multi-record writes, recursive read-then-write bank generations,
+> and corpus-scale capacity targets. These are planned behaviors, not properties of
+> the current one-read HotpotQA run.
 
 ## Read-time superposition, selective replay, and learned cluster compaction
 
@@ -103,6 +109,13 @@ The resident system contains a decoder/controller, a query head, a writer mode w
 ### 2.3 The soft-token contract
 
 A write operation produces $(k_i,V_i)=W_\phi(\tau_i)$. The key is a single vector, not a vocabulary token. The $m$ value positions are also continuous vectors. A shared writer backbone can expose a key head and $m$ learned output slots; a separate large encoder is not required. A long experience can yield several records through several fixed-shape writes.
+
+In the target agent interface, those operations are visible transcript events.
+The controller emits `memory.search` and `memory.write` tool calls, receives ordinary
+tool-result envelopes, and attaches latent read results at the corresponding causal
+result sites. Native in-loop reads implement composition within a site; repeated tool
+calls distribute sites through a long trajectory. See the v0.5 plan for the protocol,
+site density, recursive generations, and scale budget.
 
 A read operation returns $Z\in\mathbb R^{m\times d_D}$ plus discrete status and provenance metadata. An input projection, normalization, and learned gate place $Z$ at the decoder's expected scale. Empty, pending, failed, and completed reads have distinct states. The API does not silently interpret an unavailable result as useful zero-valued evidence.
 

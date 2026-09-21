@@ -376,12 +376,19 @@ required-source IDs and all 2,349 validation required-source IDs. Every source
 precedes its query; all required IDs exist in the bank manifest; targets are absent
 from query prompts; and required support counts range from one to four.
 
-The sealed run at `/archive/runs/four-space-target-curriculum-v2-20260921`
+The run at `/archive/runs/four-space-target-curriculum-v2-20260921`
 performs two full live-writer passes, publishes and trains against an immutable
 100,000-source bank for two passes, evaluates stored-only heldout transfer, then
 repeats a live writer refresh, bank publication, stored training, and evaluation.
-Each generation uses 39,504 live updates and 39,504 bank updates with accumulation
-two. Stored training ranks 256 exact global candidates per space while fetching
+Each generation uses 39,504 live updates and 39,504 bank updates. It originally
+used two serial accumulated examples, then moved at step 32,419 to a real batch of
+two with one accumulation step; the examples-per-update budget is unchanged.
+Stored training ranks 256 exact global candidates per space while fetching
 only 16/8/4/4 payloads. It uses Muon, BF16, offline W&B, external artifacts,
 10,000-update periodic checkpoints, and emergency full-state recovery. Bank
 generations are never embedded into optimizer checkpoints.
+
+This curriculum is Phase 0 interface and addressing pretraining for the planned
+[trajectory memory v0.5](trajectory-memory-v0.5.md). It does not contain visible
+memory tool calls, frequent sites across a long task, prompted writes, or recursive
+memories authored by read-augmented trajectories.

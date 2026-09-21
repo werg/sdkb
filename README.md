@@ -2,6 +2,10 @@
 
 [Research status](docs/research-status.md) summarizes what is established and what
 remains open, including the completed reader-capacity and real-trajectory studies.
+The next target is the [trajectory memory v0.5 plan](docs/trajectory-memory-v0.5.md):
+frequent visible memory search/write tool calls, length-scaled writes, recursive
+read-augmented bank generations, and corpus-scale storage. Those behaviors are
+planned and are not attributed to the current one-read curriculum.
 
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
