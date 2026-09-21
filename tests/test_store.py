@@ -92,6 +92,22 @@ def test_empty_search(tmp_path):
     assert store.fetch(store.search(torch.randn(4), top_k=0)) == []
 
 
+def test_fetch_many_batches_each_plan_and_preserves_selection_order(tmp_path):
+    store = DiskStore(tmp_path / "bank.sqlite")
+    store.put(record("a", [1, 0], created_at=1))
+    store.put(record("b", [0, 1], created_at=1))
+    plan = ReadPlan("default", "s0", "v0", "research", 2, (
+        Selection("b", 2.0), Selection("a", 1.0), Selection("b", 0.5)))
+    expected = [store.fetch(ReadPlan(
+        plan.namespace, plan.space, plan.generation, plan.domain, plan.query_time,
+        (selection,)))[0] for selection in plan.selections]
+    actual = store.fetch_many((plan, ReadPlan(
+        "default", "s0", "v0", "research", 2, ())))
+    assert len(actual) == 2 and actual[1] == []
+    for value, reference in zip(actual[0], expected, strict=True):
+        torch.testing.assert_close(value, reference)
+
+
 def test_temporal_event_commit_is_atomic_causal_and_idempotent(tmp_path):
     store = DiskStore(tmp_path / "events.sqlite")
     with store.connect() as db:

@@ -265,17 +265,21 @@ class DiskStore:
         result = []
         with self.connect() as db:
             for plan in plans:
-                values = []
-                for selection in plan.selections:
-                    row = db.execute("""SELECT payload FROM records WHERE namespace=? AND record_id=?
-                        AND space=? AND generation=? AND domain=? AND created_at<? AND deleted=0""",
-                        (plan.namespace, selection.record_id, plan.space, plan.generation,
-                         plan.domain, plan.query_time)).fetchone()
-                    if row is None:
-                        raise KeyError(
-                            f"Unavailable, stale or unauthorized record: {selection.record_id}")
-                    values.append(load(row[0])["payload"])
-                result.append(values)
+                ids = [selection.record_id for selection in plan.selections]
+                if not ids:
+                    result.append([])
+                    continue
+                placeholders = ",".join("?" for _ in set(ids))
+                rows = db.execute(f"""SELECT record_id,payload FROM records
+                    WHERE namespace=? AND space=? AND generation=? AND domain=?
+                    AND created_at<? AND deleted=0 AND record_id IN ({placeholders})""",
+                    (plan.namespace, plan.space, plan.generation, plan.domain,
+                     plan.query_time, *set(ids))).fetchall()
+                available = {record_id: payload for record_id, payload in rows}
+                missing = next((record_id for record_id in ids if record_id not in available), None)
+                if missing is not None:
+                    raise KeyError(f"Unavailable, stale or unauthorized record: {missing}")
+                result.append([load(available[record_id])["payload"] for record_id in ids])
         return result
 
     def iter_fetch(self, plan: ReadPlan, chunk_size: int = 32):
