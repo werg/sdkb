@@ -306,3 +306,34 @@ in s0 through s3. Exact learned reads at limits 8/4/2/1 included the verified
 source for 13/128 questions. Their mean NLL was 3.8913 with stored values and
 3.9718 with values zeroed; greedy exact match remained 0/16. This is useful
 retrieval progress, not accurate span generation.
+
+## Sustained target curriculum
+
+The target run now uses the pinned HotpotQA distractor corpus rather than another
+small routing fork. Raw Parquet files and the CC-BY-SA-4.0 dataset card are retained
+under the external archive at dataset revision
+`1908d6afbbead072334abe2965f91bd2709910ab`. The published v2 preparation at
+`/archive/corpora/hotpot-four-space-target-100k-v2-20260921` contains 100,000
+unique source chunks, 29,628 verified multi-hop transfer episodes, 9,876
+reconstruction episodes, and 1,002 validation questions. Reconstruction is
+exactly 25 percent of the 39,504-example training mixture. Its source, training,
+and validation SHA-256 values are respectively
+`05e66177416486db868d3d0b69641e55c7b4a8f11858183c202c8bd8b491b8c0`,
+`2d23a2c1d16efd88cffb3a49acadb1b423d35d4b6ba4dfe674f6baac519961d2`,
+and `fccbcee9b3010f04846adfe7bda4d010ddbbdea6368d5d468a8dec71ea7e1aa3`.
+
+An audit rejected the first preparation before training because reconstruction
+reused 244 validation source IDs. V2 has zero overlap between all 58,122 training
+required-source IDs and all 2,349 validation required-source IDs. Every source
+precedes its query; all required IDs exist in the bank manifest; targets are absent
+from query prompts; and required support counts range from one to four.
+
+The sealed run at `/archive/runs/four-space-target-curriculum-v2-20260921`
+performs two full live-writer passes, publishes and trains against an immutable
+100,000-source bank for two passes, evaluates stored-only heldout transfer, then
+repeats a live writer refresh, bank publication, stored training, and evaluation.
+Each generation uses 39,504 live updates and 39,504 bank updates with accumulation
+two. Stored training ranks 256 exact global candidates per space while fetching
+only 16/8/4/4 payloads. It uses Muon, BF16, offline W&B, external artifacts,
+10,000-update periodic checkpoints, and emergency full-state recovery. Bank
+generations are never embedded into optimizer checkpoints.
