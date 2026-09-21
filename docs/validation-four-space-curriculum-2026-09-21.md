@@ -285,3 +285,24 @@ was 0/16. Unassisted global retrieval was poor: verified-source median
 ranks across the four spaces were 3,119, 2,738, 3,705, and 3,115.5 among
 6,512 eligible records. The stored-value signal supports a corpus-backed
 training pilot, but neither retrieval nor exact generation is established.
+
+The first stored-bank pilot completed one shuffled pass over all 6,000
+training questions. Supplied-source heldout NLL improved after its first
+1,000 updates from 3.8825 to 3.4647, while verified-source top-8 recall
+remained zero in every space. Completing the pass did not fix retrieval;
+heldout median ranks remained between 2,200 and 3,130. A controlled fork
+raising routing weight from 0.1 to 1.0 also produced zero top-8 recall after
+1,000 updates. Reader/query training against fixed poor keys is therefore not
+sufficient for global addressing on this task.
+
+A subsequent live-key stage trained the writer and query addressing paths
+against each verified source plus three distinct-article training-source
+candidates. The bank was then re-encoded as the separate immutable generation
+`4042c6f8f9aef9b01eba627b` at
+`/archive/banks/four-space-short-local-routing-6512`; its manifest SHA-256 is
+`c048cf46979fbe7256bcfea28a2aabd90293af2ca536a8f24f326d666db03322`.
+On 128 heldout sources, median ranks improved to 197.5, 158, 158.5, and 183.5
+in s0 through s3. Exact learned reads at limits 8/4/2/1 included the verified
+source for 13/128 questions. Their mean NLL was 3.8913 with stored values and
+3.9718 with values zeroed; greedy exact match remained 0/16. This is useful
+retrieval progress, not accurate span generation.
