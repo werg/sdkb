@@ -204,6 +204,52 @@ additional local storage or object storage.
 authorization, provenance, and generation rules. It need not be one SQLite file or
 one physical device. Immutable shards and generations remain necessary.
 
+### 5.1 Remote latency and training scheduling
+
+Corpus-scale banks will commonly place search and payload shards behind a network.
+One trajectory cannot cross a search site until its result is available, because the
+following tokens must be causally conditioned on that result. Training should hide
+that wait across trajectories with a bounded wavefront scheduler:
+
+1. Run a trajectory prefix through its visible `memory.search` call and emit an
+   immutable request containing model, bank generation, scope, time, and site IDs.
+2. Dispatch ANN search and payload fetch asynchronously, batching compatible
+   requests by generation, authorization scope, and space.
+3. Park a compact trajectory resume capsule and advance other ready trajectories to
+   their next memory barriers.
+4. Move completed serialized payloads into a ready queue, bucket compatible
+   continuations, and resume their GPU work.
+5. Persist the discrete selection plan and response hash before differentiable
+   replay. Checkpoint recomputation must consume that response and must never issue
+   the remote request again.
+
+Do not retain an unbounded autograd graph while a network request is outstanding.
+The preferred exact-gradient path uses a causal planning pass to issue the request,
+then reproduces RNG and autocast and recomputes the segment after its BF16 payload is
+ready. Backward must still accumulate every query, routing, reader, recurrent, writer,
+gate, and shared-parameter path before the optimizer step. An optional activation
+retention tier is useful only when measured latency and memory make it cheaper.
+
+The ready pool must be sized from measurement. As a lower bound, it needs enough
+independent segments to cover `lookup latency / useful GPU time between barriers`,
+plus margin for length variation and tail latency. Frequent sites shorten the useful
+compute interval and therefore require more concurrent trajectories. Apply bounded
+queues and backpressure so host or unified memory cannot grow with a stalled service.
+Timeout, denial, cancellation, empty result, retry, and late response are explicit
+tool outcomes with idempotent request IDs.
+
+Remote payload bandwidth is not assumed free. At the initial 128 KiB raw value
+budget, 8--32 search sites transfer roughly 1--4 MiB per long trajectory before
+protocol and index overhead. Log request queue time, search time, payload-fetch time,
+bytes, ready-queue depth, parked-state bytes, recompute cost, GPU idle time, and
+end-to-end site latency. Compare synchronous and pipelined throughput using the same
+read plans.
+
+Serving can keep the GPU occupied by interleaving independent users, but every
+causally required lookup still contributes to the latency of its own trajectory.
+Use measured hot caches, co-located shards, request batching, and policy-visible
+latency budgets; do not train against an unrealistically zero-latency store.
+
 ## 6. Recursive bank generations
 
 Each generation has a frozen writer identity and explicit parent generations.
@@ -300,6 +346,8 @@ read-before-write dependency.
 - Attach latent result slots to the tool-result location.
 - Support many calls per trajectory, cancellation, retries, and checkpointable
   session state.
+- Add asynchronous request IDs, bounded pending/ready queues, response hashes,
+  idempotent retries, and batch dispatch across independent trajectories.
 - Keep the stored-only read invariant and make source encoding available only to
   explicit writes or offline builds.
 
@@ -309,8 +357,11 @@ read-before-write dependency.
 - Capture every discrete read/write plan before backward.
 - Accumulate query, key, value, reader, recurrent, gate, and shared-parameter paths
   across all sites before the optimizer step.
+- Recompute parked causal segments after payload arrival rather than retaining an
+  unbounded graph during remote waits; never query storage during recomputation.
 - Batch sites and producers without truncating counts; checkpoint the site cursor,
-  tool state, RNG, optimizer, and partially accumulated gradients.
+  request/response hashes, tool state, RNG, optimizer, and partially accumulated
+  gradients.
 
 ### Release 4 — Corpus-scale bank
 
@@ -355,7 +406,9 @@ Report all of the following by trajectory length and provenance class:
 - bank records, logical source tokens, raw and compact bytes, index bytes, source
   archive bytes, temporary publication bytes, and generation overlap;
 - end-to-end latency, search latency, payload I/O, model compute, and energy where
-  available; distinguish warm cache, cold storage, exact search, and ANN;
+  available; include queue time, parked-state bytes, ready depth, recompute overhead,
+  GPU idle fraction, and synchronous-versus-pipelined throughput; distinguish warm
+  cache, cold storage, exact search, ANN, local disk, and remote service;
 - resident parameters and memory for the small controller plus services.
 
 The capacity-substitution test compares small-controller-plus-bank systems against

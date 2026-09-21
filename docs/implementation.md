@@ -11,6 +11,13 @@
 > does not yet generate `memory.search`/`memory.write` calls or execute a sequence of
 > memory tool sites across an agent trajectory.
 
+`trajectory_memory.py` defines and validates the first canonical transcript contract.
+It requires each memory call to occupy its own assistant event, one logical record
+per write call, paired tool results, monotonic optional timestamps, stored-only
+latent attachment references, and causally earlier completed-read lineage for
+read-dependent writes. It is a data contract; asynchronous execution and multi-site
+model training remain subsequent releases.
+
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
 Operational details are in [development-v0.2.md](development-v0.2.md).
