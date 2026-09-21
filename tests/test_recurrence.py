@@ -9,7 +9,13 @@ from sdkb.agent import SDKBAgent
 from sdkb.backbones import TinyBackbone
 from sdkb.data import make_episode
 from sdkb.evaluation import build_shared_bank
-from sdkb.recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite, LoopWrites
+from sdkb.recurrence import (
+    LoopMemory,
+    LoopWrite,
+    LoopWrites,
+    MiddleBlockBackbone,
+    SpatialReadSite,
+)
 from sdkb.replay import ReplayTape
 from sdkb.sessions import read_session
 from sdkb.store import DiskStore
@@ -248,6 +254,64 @@ def test_spatial_result_workspaces_must_not_overlap():
 
     with pytest.raises(ValueError, match="must not overlap"):
         model.hidden(inputs, torch.ones(1, 12, dtype=torch.long), boundary=boundary)
+
+
+def test_whole_sequence_spatial_queries_are_batched_by_recurrence_level(loop_config):
+    loop_config.model.loops = 3
+    loop_config.memory.read_steps = 2
+    agent = SDKBAgent(loop_config)
+    ids = torch.randint(3, 100, (2, 28))
+    ids[:, 5:7] = -1
+    ids[:, 14:16] = -1
+    ids[:, 23:25] = -1
+    sites = (
+        SpatialReadSite(torch.tensor([3, 3]), torch.tensor([5, 5]), 1),
+        SpatialReadSite(torch.tensor([12, 12]), torch.tensor([14, 14]), 1),
+        SpatialReadSite(torch.tensor([21, 21]), torch.tensor([23, 23]), 2),
+    )
+    calls = []
+
+    def provider(level, active, query, routing_query):
+        calls.append((level, len(active), query.detach().clone(), routing_query.detach().clone()))
+        values = torch.nn.functional.pad(query, (0, agent.width - query.shape[1]))
+        return values[:, None].expand(-1, loop_config.memory.read_slots, -1) * level
+
+    hidden = agent.spatial_recurrent_hidden(ids, torch.ones_like(ids), sites, provider)
+    assert hidden.shape == (2, 28, agent.width)
+    assert [(level, count, query.shape[0]) for level, count, query, _ in calls] == [
+        (1, 2, 4), (2, 1, 2)]
+    hidden.sum().backward()
+    assert agent.loop_workspace.grad is not None
+    assert agent.query_head.weight.grad is not None and agent.query_head.weight.grad.abs().sum() > 0
+
+
+def test_later_level_query_depends_on_earlier_spatial_result(loop_config):
+    loop_config.model.loops = 3
+    loop_config.memory.read_steps = 2
+    agent = SDKBAgent(loop_config).eval()
+    ids = torch.randint(3, 100, (1, 24))
+    ids[:, 4:6] = -1
+    ids[:, 18:20] = -1
+    sites = (
+        SpatialReadSite(torch.tensor([2]), torch.tensor([4]), 1),
+        SpatialReadSite(torch.tensor([16]), torch.tensor([18]), 2),
+    )
+
+    def run(value):
+        later = []
+
+        def provider(level, _active, query, _routing_query):
+            if level == 2:
+                later.append(query.detach().clone())
+            pattern = torch.arange(agent.width, device=query.device, dtype=query.dtype)
+            pattern = pattern[None, None].expand(
+                query.shape[0], loop_config.memory.read_slots, -1)
+            return pattern * (value if level == 1 else 0)
+
+        agent.spatial_recurrent_hidden(ids, torch.ones_like(ids), sites, provider)
+        return later[0]
+
+    assert not torch.allclose(run(0), run(3))
 
 
 def test_depth_schedule_checkpoint_resume_matches_exactly(loop_config, tmp_path):

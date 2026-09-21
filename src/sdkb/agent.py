@@ -11,7 +11,7 @@ from torch.nn import functional as F
 from .backbones import ByteTokenizer, HFBackbone, RecurrentBackbone, TinyBackbone
 from .compaction import SyntheticCompactor, contribution_loss, storage_noise, compact_view
 from .config import Config
-from .recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite
+from .recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite, LoopWrites, SpatialReadSite
 from .readers import MultiSpaceReader, SetReader
 from .routing import cosine_scores, group_plan_loss
 
@@ -423,6 +423,75 @@ class SDKBAgent(nn.Module):
         features = self.loop_query_norm(state[:, index])
         return (F.normalize(self.query_head(features), dim=-1),
                 F.normalize(self.routing_query_head(features), dim=-1))
+
+    def spatial_recurrent_hidden(self, input_ids: Tensor, attention_mask: Tensor,
+                                 sites: tuple[SpatialReadSite, ...], provider) -> Tensor:
+        """Run a whole sequence with batched spatial reads between recurrent passes.
+
+        ``input_ids == -1`` denotes learned blank workspace positions. At each
+        level the provider receives all active reader/routing queries, ordered by
+        site and then batch row, and returns ``[sites * batch, slots, width]``.
+        """
+        if not isinstance(self.backbone, MiddleBlockBackbone) or not sites:
+            raise ValueError("Spatial reads require a middle-block backbone and sites")
+        if (input_ids.ndim != 2 or attention_mask.shape != input_ids.shape
+                or input_ids.shape[0] < 1):
+            raise ValueError("Spatial token IDs and attention mask must be aligned batches")
+        batch, length = input_ids.shape
+        occupied = torch.zeros_like(input_ids, dtype=torch.bool)
+        for site in sites:
+            if (site.query_positions.shape != (batch,) or site.workspace_starts.shape != (batch,)
+                    or site.query_positions.dtype not in (torch.int32, torch.int64)
+                    or site.workspace_starts.dtype not in (torch.int32, torch.int64)
+                    or not 1 <= site.level < self.backbone.loops):
+                raise ValueError("Invalid spatial site batch or recurrence level")
+            query_positions = site.query_positions.to(input_ids.device)
+            starts = site.workspace_starts.to(input_ids.device)
+            indices = starts[:, None] + torch.arange(
+                self.config.memory.read_slots, device=input_ids.device)[None]
+            if (bool((query_positions < 0).any()) or bool((query_positions >= length).any())
+                    or bool((indices < 0).any()) or bool((indices >= length).any())
+                    or bool((query_positions >= starts).any())):
+                raise ValueError("Every spatial workspace must follow its in-range query")
+            if bool((attention_mask[torch.arange(batch, device=input_ids.device), query_positions] == 0).any()):
+                raise ValueError("Spatial query positions must be visible")
+            if bool(occupied.gather(1, indices).any()):
+                raise ValueError("Spatial workspaces must not overlap")
+            occupied.scatter_(1, indices, True)
+        if bool(((input_ids == -1) != occupied).any()) or bool((input_ids < -1).any()):
+            raise ValueError("Blank token positions must exactly match spatial workspaces")
+        if bool((attention_mask[occupied] == 0).any()):
+            raise ValueError("Spatial workspaces must be visible sequence positions")
+
+        embeddings = self.backbone.embed(input_ids.clamp_min(0)).clone()
+        rows = torch.arange(batch, device=input_ids.device)[:, None]
+        slots = torch.arange(self.config.memory.read_slots, device=input_ids.device)[None]
+        for site in sites:
+            indices = site.workspace_starts.to(input_ids.device)[:, None] + slots
+            embeddings[rows, indices] = self.loop_workspace[None]
+
+        def boundary(completed, state, _anchor):
+            active = [site for site in sites if site.level == completed]
+            if not active:
+                return None
+            features = torch.cat([
+                state[torch.arange(batch, device=state.device),
+                      site.query_positions.to(state.device)] for site in active
+            ], 0)
+            features = self.loop_query_norm(features)
+            query = F.normalize(self.query_head(features), dim=-1)
+            routing_query = (query if self.routing_query_head is None else
+                             F.normalize(self.routing_query_head(features), dim=-1))
+            results = provider(completed, tuple(active), query, routing_query)
+            expected = (len(active) * batch, self.config.memory.read_slots, self.width)
+            if not isinstance(results, Tensor) or results.shape != expected:
+                raise ValueError(f"Spatial provider returned {getattr(results, 'shape', None)}; expected {expected}")
+            writes = tuple(LoopWrite(site.workspace_starts.to(state.device),
+                                     results[index * batch:(index + 1) * batch])
+                           for index, site in enumerate(active))
+            return LoopWrites(writes)
+
+        return self.backbone.hidden(embeddings, attention_mask, boundary=boundary)
 
     def plan_loop_memory(self, prompt: Tensor, provider, *, include_routing_query: bool = False) -> LoopMemory:
         """Run ONLY the available prefix, collecting state-conditioned read results.

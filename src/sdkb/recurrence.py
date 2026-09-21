@@ -31,6 +31,14 @@ class LoopWrites:
 
 
 @dataclass(frozen=True)
+class SpatialReadSite:
+    """One query position and blank result span per trajectory in a batch."""
+    query_positions: Tensor
+    workspace_starts: Tensor
+    level: int
+
+
+@dataclass(frozen=True)
 class LoopMemory:
     """Captured prefix-only reads, replayable for any continuation of that prefix.
 

@@ -167,6 +167,11 @@ def run(corpus: Path, output: Path, *, initial: Path,
             build_bank(live_run, source_path, bank,
                        max_sources=plan['bank_sources'], shard_size=64)
         completed.append(f'g{generation}-bank-build')
+        handoff = output / 'HANDOFF_TO_SPATIAL.json'
+        if generation == 1 and handoff.exists():
+            return {'status': 'spatial_handoff', 'completed': completed,
+                    'bank': str(bank), 'parent': str(live_run),
+                    'request': json.loads(handoff.read_text())}
 
         bank_run = output / f'g{generation}-bank-train'
         bank_path = output / f'g{generation}-bank.yaml'
