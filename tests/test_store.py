@@ -90,3 +90,40 @@ def test_empty_search(tmp_path):
     store = DiskStore(tmp_path / "bank.sqlite")
     assert store.search(torch.randn(4)).selections == ()
     assert store.fetch(store.search(torch.randn(4), top_k=0)) == []
+
+
+def test_temporal_event_commit_is_atomic_causal_and_idempotent(tmp_path):
+    store = DiskStore(tmp_path / "events.sqlite")
+    with store.connect() as db:
+        assert db.execute("SELECT 1 FROM sqlite_master WHERE name='event_streams'").fetchone() is None
+    records = [record("lesson", [1, 0], namespace="experience", space=space,
+                      generation="g1", created_at=1, source_id="trajectory-0")
+               for space in ("s0", "s1")]
+    assert store.event_frontier(namespace="experience", stream="tasks", generation="g1") == {
+        "next_position": 0, "visibility_time": -1}
+    assert store.commit_event(
+        records, namespace="experience", stream="tasks", generation="g1", position=0,
+        event_id="task-0", visibility_time=1, expected_spaces=("s0", "s1"))
+    assert store.search(torch.tensor([1., 0]), namespace="experience", space="s0",
+                        generation="g1", query_time=1).selections == ()
+    assert [item.record_id for item in store.search(
+        torch.tensor([1., 0]), namespace="experience", space="s0",
+        generation="g1", query_time=2).selections] == ["lesson"]
+    assert not store.commit_event(
+        records, namespace="experience", stream="tasks", generation="g1", position=0,
+        event_id="task-0", visibility_time=1, expected_spaces=("s0", "s1"))
+    assert store.event_frontier(namespace="experience", stream="tasks", generation="g1") == {
+        "next_position": 1, "visibility_time": 1}
+
+
+def test_temporal_event_rejects_partial_views_without_advancing(tmp_path):
+    store = DiskStore(tmp_path / "events.sqlite")
+    partial = [record("lesson", [1, 0], namespace="experience", space="s0",
+                      generation="g1", created_at=1)]
+    with pytest.raises(ValueError, match="every expected space"):
+        store.commit_event(
+            partial, namespace="experience", stream="tasks", generation="g1", position=0,
+            event_id="task-0", visibility_time=1, expected_spaces=("s0", "s1"))
+    assert store.sizes()["records"] == 0
+    assert store.event_frontier(namespace="experience", stream="tasks", generation="g1")[
+        "next_position"] == 0

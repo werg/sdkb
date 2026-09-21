@@ -9,6 +9,8 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+import hashlib
+import json
 import sqlite3
 from collections.abc import Iterable, Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -100,6 +102,103 @@ class DiskStore:
             db.execute('BEGIN IMMEDIATE')
             for record in records:
                 self._put(db, record, ())
+
+    @staticmethod
+    def _event_digest(records: list[StoredRecord]) -> str:
+        digest = hashlib.sha256()
+        for record in sorted(records, key=lambda item: (item.record_id, item.space)):
+            key = record.key.detach().float().cpu().contiguous().numpy().astype("<f4", copy=False)
+            payload = save({"payload": record.payload.detach().cpu().contiguous()})
+            metadata = (record.namespace, record.record_id, record.space, record.generation,
+                        record.domain, record.created_at, record.source_id)
+            digest.update(json.dumps(metadata, separators=(",", ":")).encode())
+            digest.update(key.tobytes())
+            digest.update(payload)
+        return digest.hexdigest()
+
+    @staticmethod
+    def _ensure_event_tables(db) -> None:
+        db.executescript("""
+            CREATE TABLE IF NOT EXISTS event_streams (
+                namespace TEXT NOT NULL, stream TEXT NOT NULL, generation TEXT NOT NULL,
+                next_position INTEGER NOT NULL, visibility_time INTEGER NOT NULL,
+                PRIMARY KEY(namespace,stream,generation));
+            CREATE TABLE IF NOT EXISTS event_commits (
+                namespace TEXT NOT NULL, stream TEXT NOT NULL, generation TEXT NOT NULL,
+                position INTEGER NOT NULL, event_id TEXT NOT NULL, visibility_time INTEGER NOT NULL,
+                record_ids TEXT NOT NULL, content_sha256 TEXT NOT NULL,
+                PRIMARY KEY(namespace,stream,generation,position),
+                UNIQUE(namespace,stream,generation,event_id));
+        """)
+
+    def commit_event(self, records: Iterable[StoredRecord], *, namespace: str, stream: str,
+                     generation: str, position: int, event_id: str, visibility_time: int,
+                     expected_spaces: tuple[str, ...]) -> bool:
+        """Atomically advance a causal stream and publish all views of its writes.
+
+        Returns false for an exact idempotent retry. The caller finishes event
+        ``position`` before committing it; later searches use a strictly greater
+        ``query_time`` to observe these records.
+        """
+        rows = list(records)
+        if (not namespace or not stream or not generation or not event_id or position < 0
+                or visibility_time < 0 or not expected_spaces
+                or len(expected_spaces) != len(set(expected_spaces))):
+            raise ValueError("Invalid temporal event commit")
+        logical: dict[str, set[str]] = {}
+        for record in rows:
+            if (record.namespace != namespace or record.generation != generation
+                    or record.created_at != visibility_time or record.space not in expected_spaces):
+                raise ValueError("Event records differ from their visibility scope")
+            logical.setdefault(record.record_id, set()).add(record.space)
+        if any(spaces != set(expected_spaces) for spaces in logical.values()):
+            raise ValueError("Every event record needs every expected space view")
+        if len(rows) != len(logical) * len(expected_spaces):
+            raise ValueError("Event contains duplicate record-space views")
+        content_hash = self._event_digest(rows)
+        record_ids = json.dumps(sorted(logical), separators=(",", ":"))
+        with self.connect() as db:
+            self._ensure_event_tables(db)
+            db.execute("BEGIN IMMEDIATE")
+            prior = db.execute("""SELECT position,event_id,visibility_time,record_ids,content_sha256
+                FROM event_commits WHERE namespace=? AND stream=? AND generation=?
+                AND (position=? OR event_id=?)""",
+                (namespace, stream, generation, position, event_id)).fetchall()
+            expected = (position, event_id, visibility_time, record_ids, content_hash)
+            if prior:
+                if len(prior) == 1 and tuple(prior[0]) == expected:
+                    return False
+                raise ValueError("Temporal event position or identity was already committed differently")
+            state = db.execute("""SELECT next_position,visibility_time FROM event_streams
+                WHERE namespace=? AND stream=? AND generation=?""",
+                (namespace, stream, generation)).fetchone()
+            if state is None:
+                if position != 0:
+                    raise ValueError("A temporal stream must begin at position zero")
+            elif state[0] != position or visibility_time < state[1]:
+                raise ValueError("Temporal events must commit once in monotonic order")
+            for record in rows:
+                self._put(db, record, ())
+            db.execute("INSERT INTO event_commits VALUES (?,?,?,?,?,?,?,?)", (
+                namespace, stream, generation, position, event_id, visibility_time,
+                record_ids, content_hash))
+            db.execute("""INSERT INTO event_streams VALUES (?,?,?,?,?)
+                ON CONFLICT(namespace,stream,generation) DO UPDATE SET
+                next_position=excluded.next_position, visibility_time=excluded.visibility_time""",
+                (namespace, stream, generation, position + 1, visibility_time))
+        return True
+
+    def event_frontier(self, *, namespace: str, stream: str, generation: str) -> dict:
+        with self.connect() as db:
+            exists = db.execute("""SELECT 1 FROM sqlite_master
+                WHERE type='table' AND name='event_streams'""").fetchone()
+            if exists is None:
+                return {"next_position": 0, "visibility_time": -1}
+            row = db.execute("""SELECT next_position,visibility_time FROM event_streams
+                WHERE namespace=? AND stream=? AND generation=?""",
+                (namespace, stream, generation)).fetchone()
+        return {"next_position": 0, "visibility_time": -1} if row is None else {
+            "next_position": row[0], "visibility_time": row[1]}
 
     def _put(self, db, record: StoredRecord, children: tuple[str, ...]) -> None:
         key = record.key.detach().float().cpu().contiguous()

@@ -318,6 +318,13 @@ deduplication, or valid compaction; logged historical reads continue to resolve
 against their original immutable frontier. Preserve lineage through collection so a
 recursive summary cannot outlive deletion of evidence it depends on.
 
+The first persistence primitive is implemented in `DiskStore.commit_event`: it
+atomically publishes all configured space views, records a content-addressed event,
+and advances a monotonic resumable frontier. Strict `created_at < query_time`
+visibility excludes same-event writes. The end-to-end executor that runs a
+trajectory, encodes its proposed writes, and calls this commit only after outcome
+completion remains a later release.
+
 ## 7. Training curriculum
 
 ### Phase A — Tool syntax and placement

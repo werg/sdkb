@@ -38,6 +38,15 @@ steps rather than producer replay because every payload is historical and frozen
 Execution and publication of the prompted writes, learned placement, network
 retrieval, and the prequential growing-bank executor are not implemented yet.
 
+`DiskStore.commit_event` supplies the first prequential persistence primitive. In
+one SQLite transaction it verifies that every logical write has all configured space
+views, inserts their immutable payloads, records a content-addressed event commit,
+and advances a monotonic stream frontier. Exact retries are idempotent. Because
+ordinary search requires `created_at < query_time`, a record committed at an event's
+visibility time cannot appear in that event's own reads. Scheduling trajectories,
+turning supervised write arguments into latent records, and versioned collection are
+still responsibilities of the planned growing-bank executor.
+
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
 Operational details are in [development-v0.2.md](development-v0.2.md).
