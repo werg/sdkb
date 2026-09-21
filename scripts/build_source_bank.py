@@ -60,41 +60,49 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
     else:
         atomic_json(lock, identity)
     ensure_free(output, reserve_bytes=10 * 1024**3)
-    torch.set_num_threads(config.train.threads)
-    agent = SDKBAgent(config).to(config.train.device)
-    if agent.resolved_revision != config.model.revision:
-        raise ValueError('Resolved writer model revision changed')
-    load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
-    agent.eval()
     store = DiskStore(output / 'bank.sqlite')
     spaces = tuple(f's{i}' for i in range(len(config.memory.payload_dims)))
-    shard_ids = []
+    total_shards = (len(rows) + shard_size - 1) // shard_size
+    shard_ids = [f'{index:06d}' for index in range(total_shards)]
+    progress_path = output / 'progress.json'
+    progress = json.loads(progress_path.read_text()) if progress_path.exists() else {}
+    completed_hint = (progress.get('generation') == generation
+                      and progress.get('completed_shards') == total_shards
+                      and progress.get('total_shards') == total_shards)
     newly_encoded = 0
-    for start in range(0, len(rows), shard_size):
-        chunk = rows[start:start + shard_size]
-        shard_id = f'{start // shard_size:06d}'
-        shard_ids.append(shard_id)
-        def records():
-            with torch.no_grad(), autocast_context(config):
-                for offset in range(0, len(chunk), writer_batch_size):
-                    mini = chunk[offset:offset + writer_batch_size]
-                    source_batch = [Source(**{key: row[key] for key in
-                                              ('record_id', 'text', 'created_at', 'kind')})
-                                    for row in mini]
-                    encoded = agent.produce_batch([agent.text_ids(source.text, source=True)
-                                                   for source in source_batch])
-                    payloads = stored_channel(agent, encoded)
-                    for index, (row, source) in enumerate(zip(mini, source_batch, strict=True)):
-                        outputs = tuple(value[index:index + 1] for value in payloads)
-                        for record in output_records(agent, source, outputs, 'corpus', generation):
-                            yield replace(record, domain=row.get('domain', 'research'))
-        made = ensure_offline_shard(store, records, identity=identity, namespace='corpus',
-                                    generation=generation, spaces=spaces, shard_id=shard_id,
-                                    source_ids=tuple(row['record_id'] for row in chunk))
-        newly_encoded += len(chunk) if made else 0
-        atomic_json(output / 'progress.json', {'generation': generation,
-                    'completed_shards': len(shard_ids), 'total_shards': (len(rows) + shard_size - 1) // shard_size,
-                    'newly_encoded_sources_this_attempt': newly_encoded})
+    if not completed_hint:
+        torch.set_num_threads(config.train.threads)
+        agent = SDKBAgent(config).to(config.train.device)
+        if agent.resolved_revision != config.model.revision:
+            raise ValueError('Resolved writer model revision changed')
+        load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
+        agent.eval()
+        completed_ids = []
+        for start in range(0, len(rows), shard_size):
+            chunk = rows[start:start + shard_size]
+            shard_id = f'{start // shard_size:06d}'
+            completed_ids.append(shard_id)
+            def records():
+                with torch.no_grad(), autocast_context(config):
+                    for offset in range(0, len(chunk), writer_batch_size):
+                        mini = chunk[offset:offset + writer_batch_size]
+                        source_batch = [Source(**{key: row[key] for key in
+                                                  ('record_id', 'text', 'created_at', 'kind')})
+                                        for row in mini]
+                        encoded = agent.produce_batch([agent.text_ids(source.text, source=True)
+                                                       for source in source_batch])
+                        payloads = stored_channel(agent, encoded)
+                        for index, (row, source) in enumerate(zip(mini, source_batch, strict=True)):
+                            outputs = tuple(value[index:index + 1] for value in payloads)
+                            for record in output_records(agent, source, outputs, 'corpus', generation):
+                                yield replace(record, domain=row.get('domain', 'research'))
+            made = ensure_offline_shard(store, records, identity=identity, namespace='corpus',
+                                        generation=generation, spaces=spaces, shard_id=shard_id,
+                                        source_ids=tuple(row['record_id'] for row in chunk))
+            newly_encoded += len(chunk) if made else 0
+            atomic_json(progress_path, {'generation': generation,
+                        'completed_shards': len(completed_ids), 'total_shards': total_shards,
+                        'newly_encoded_sources_this_attempt': newly_encoded})
     manifest = publish_offline_generation(store, identity=identity, namespace='corpus',
                                           generation=generation, spaces=spaces,
                                           shard_ids=tuple(shard_ids), source_count=len(rows))
