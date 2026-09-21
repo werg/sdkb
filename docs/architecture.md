@@ -620,15 +620,33 @@ Train with the discrete field plan fixed for each forward pass, backpropagate th
 task loss through every temporary compactor level, and later serve immutable
 materialized codes without fetching or re-encoding their descendants.
 
-Raw, fine and coarse views cannot each contribute the full evidence. Within a level,
-overlap responsibilities must sum to one as above. Across levels, use either a
-replacement frontier in which each leaf's contribution is represented at exactly one
-active level, or explicitly trained residual codes whose sum reconstructs the child
-frontier. Do not simply concatenate full summaries from every level. Train a level
-against its raw descendants as well as its immediate child codes so recursive error
-does not become the teacher. Add direct-versus-recursive consistency, downstream task
-loss, and contribution-and-mass losses at every level. Keep raw exceptions where a
-field exceeds its behavioral error budget.
+Representational redundancy is desirable: one raw point may influence many
+overlapping fields, alternative clusterings, and hierarchy levels. The accounting
+constraint concerns their simultaneous contribution to one read, not how many
+representations may store or compute that evidence. Within one overlapping view,
+responsibilities form an overcomplete partition of unity: every field can encode a
+different nonlinear context while the coefficients and masses sum to one per source.
+This preserves distributed and error-correcting representations without silently
+turning repeated views of one observation into several independent observations.
+Additional deliberately redundant views remain possible, but the plan must label
+their shared provenance and train the reader to combine correlated views at a stated
+compute and storage budget.
+
+Across levels, use either a replacement frontier in which each leaf's contribution
+is represented at exactly one active level, or explicitly trained residual codes
+whose sum reconstructs the child frontier. Do not simply concatenate full-mass
+summaries from every level and interpret their mass as independent support. Train a
+level against its raw descendants as well as its immediate child codes so recursive
+error does not become the teacher. Add direct-versus-recursive consistency,
+downstream task loss, and contribution-and-mass losses at every level. Keep raw
+exceptions where a field exceeds its behavioral error budget.
+
+Published codes carry computation forward even though publication detaches their
+historical gradient graph. Train the shared transition on shallow sampled subtrees
+with raw-descendant, task, and consistency targets at every depth, analogous to
+learning local steps of a long iterative process rather than backpropagating through
+its entire history. This makes task-derived computation portable in external state,
+but codes remain versioned against the reader and compactor that interpret them.
 
 The hierarchy is a retrieval structure, not an authorization mechanism. A compact
 node may be used only when its complete support is eligible for the query's scope and
