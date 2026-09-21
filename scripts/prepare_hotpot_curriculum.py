@@ -170,6 +170,14 @@ def _reconstruction(source: Source, title: str) -> Episode | None:
          'span_end_word': start + 8, 'query_locator': 'article-and-passage-prefix-v1'})
 
 
+def _reconstruction_mix(sources, titles, excluded_ids: set[str], count: int):
+    episodes = [episode for rid, source in sources.items()
+                if rid not in excluded_ids
+                and (episode := _reconstruction(source, titles[rid])) is not None]
+    episodes.sort(key=lambda episode: _sha('mix:' + episode.episode_id))
+    return episodes[:count]
+
+
 def prepare(raw: Path, output: Path, tokenizer, *, bank_sources: int = 100_000,
             max_source_tokens: int = 65, max_prompt_tokens: int = 128,
             max_target_tokens: int = 65, max_supports: int = 4,
@@ -234,11 +242,11 @@ def prepare(raw: Path, output: Path, tokenizer, *, bank_sources: int = 100_000,
     transfer_validation = [episode for episode in candidates['validation']
         if set(episode.required_ids) <= sources.keys()
         and not set(episode.required_ids) & train_required][:validation_episodes]
-    reconstruction = [episode for rid, source in sources.items()
-                      if (episode := _reconstruction(source, titles[rid])) is not None]
+    validation_required = {rid for episode in transfer_validation
+                           for rid in episode.required_ids}
     # Twenty-five percent reconstruction by episode count; deterministic ordering.
-    reconstruction.sort(key=lambda episode: _sha('mix:' + episode.episode_id))
-    reconstruction = reconstruction[:len(transfer_train) // 3]
+    reconstruction = _reconstruction_mix(sources, titles, validation_required,
+                                         len(transfer_train) // 3)
     train = transfer_train + reconstruction
     train.sort(key=lambda episode: _sha('train-order:' + episode.episode_id))
 

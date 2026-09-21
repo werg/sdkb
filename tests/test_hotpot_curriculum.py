@@ -1,6 +1,8 @@
 from pathlib import Path
 import runpy
 
+from sdkb.data import Source
+
 
 class WordTokenizer:
     eos_token_id = 0
@@ -62,3 +64,13 @@ def test_hotpot_episode_keeps_only_prior_verified_supports_and_hides_answer():
     assert len(episode.supports) == 3
     assert all(source.created_at < episode.query_time for source in episode.supports)
     assert episode.answer not in episode.query
+
+
+def test_reconstruction_mix_excludes_validation_source_labels():
+    mix = helpers()['_reconstruction_mix']
+    sources = {name: Source(
+        name, f'Title: {name}\nPassage: ' + ' '.join(f'w{i}' for i in range(20)),
+        1, 'passage') for name in ('train-a', 'heldout', 'train-b')}
+    episodes = mix(sources, {name: name for name in sources}, {'heldout'}, 3)
+    required = {rid for episode in episodes for rid in episode.required_ids}
+    assert required == {'train-a', 'train-b'}

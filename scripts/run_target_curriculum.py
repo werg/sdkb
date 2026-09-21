@@ -6,6 +6,7 @@ from dataclasses import asdict
 import json
 import math
 from pathlib import Path
+import sys
 
 import yaml
 
@@ -15,8 +16,12 @@ from sdkb.operations import atomic_json
 from sdkb.training import train
 from sdkb.trajectories import file_sha256
 
-from scripts.build_source_bank import build as build_bank
-from scripts.evaluate_published_bank import evaluate as evaluate_bank
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from build_source_bank import build as build_bank  # noqa: E402
+from evaluate_published_bank import evaluate as evaluate_bank  # noqa: E402
 
 
 def _episode_count(path: Path) -> int:
