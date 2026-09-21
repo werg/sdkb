@@ -125,7 +125,8 @@ def _shard_schema(db):
 def _shard_contents(db, namespace, generation, spaces, source_ids):
     if not source_ids:
         return 0, hashlib.sha256().hexdigest()
-    query = f'''SELECT * FROM records WHERE namespace=? AND generation=?
+    query = f'''SELECT * FROM records INDEXED BY offline_record_scope
+                 WHERE namespace=? AND generation=?
                  AND space IN ({','.join('?' for _ in spaces)})
                  AND record_id IN ({','.join('?' for _ in source_ids)})
                  ORDER BY space,record_id'''
