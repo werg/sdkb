@@ -131,8 +131,12 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
         return agent._read_padded_batch(payloads, weights, query)
 
     hidden = agent.spatial_recurrent_hidden(input_ids, attention, sites, provider)
-    logits = agent.backbone.logits(hidden).float()
-    nll = F.cross_entropy(logits.reshape(-1, logits.shape[-1]), labels.reshape(-1))
+    supervised = labels >= 0
+    # The tied vocabulary projection is large. Blank workspaces, prompts, tool
+    # results and padding have no target, so projecting them wastes both memory and
+    # compute without changing the objective.
+    logits = agent.backbone.logits(hidden[supervised]).float()
+    nll = F.cross_entropy(logits, labels[supervised])
     if not routing_terms or read_sites != batch * site_count:
         raise ValueError("Every spatial site must execute exactly one bank read")
     routing = torch.stack(routing_terms).mean()
@@ -146,6 +150,6 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
         "selected_payload_bytes": sum(count * width * 2 for count, width in
                                       zip(selected_counts, memory.payload_dims, strict=True))
                                   / batch,
-        "supervised_tokens": int((labels >= 0).sum()),
+        "supervised_tokens": int(supervised.sum()),
     }
     return SpatialForwardResult(loss, nll, routing, metrics)

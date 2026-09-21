@@ -57,3 +57,34 @@ def test_spatial_bank_forward_reads_all_sites_without_writer(tiny_config, tmp_pa
     assert agent.query_maps[0].weight.grad is not None
     assert agent.query_maps[0].weight.grad.abs().sum() > 0
     assert next(agent.reader.parameters()).grad is not None
+
+
+def test_spatial_forward_projects_only_supervised_positions(tiny_config, tmp_path, monkeypatch):
+    tiny_config.model.loops = 2
+    tiny_config.model.recurrence_mode = "middle_block"
+    tiny_config.model.recurrent_start = 0
+    tiny_config.model.recurrent_end = 1
+    tiny_config.memory.read_timing = "loop_boundary"
+    agent = SDKBAgent(tiny_config)
+    episode = make_episode(0, distractors=0)
+    row = pack_spatial_trajectory(StableChatTokenizer(), [episode], read_slots=2,
+                                  generation="g1")
+    store = DiskStore(tmp_path / "bank.sqlite")
+    store.put_many(StoredRecord(
+        source.record_id, torch.randn(tiny_config.memory.key_dim),
+        torch.randn(tiny_config.memory.payload_dims[0], dtype=torch.bfloat16),
+        namespace="corpus", space="s0", generation="g1", created_at=source.created_at,
+    ) for source in episode.supports)
+    index = PublishedKeyIndex(store, namespace="corpus", generation="g1", spaces=("s0",),
+                              expected_sources=len(episode.supports))
+    original, projected = agent.backbone.logits, []
+
+    def observe(hidden):
+        projected.append(hidden.shape)
+        return original(hidden)
+
+    monkeypatch.setattr(agent.backbone, "logits", observe)
+    result = spatial_bank_forward(agent, store, index, [row], limits=(2,),
+                                  routing_candidates=2)
+    assert projected == [(row["supervised_tokens"], agent.width)]
+    assert result.metrics["supervised_tokens"] == row["supervised_tokens"]
