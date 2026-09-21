@@ -23,7 +23,7 @@ from sdkb.offline_bank import canonical_json, publish_offline_generation
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.optimizers import make_optimizer, optimizer_report
 from sdkb.spatial_data import SpatialTrajectoryIndex
-from sdkb.spatial_training import spatial_bank_forward
+from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
 from sdkb.store import DiskStore
 from sdkb.tracking import Tracking
 from sdkb.training import EpisodeSampler, autocast_context, environment_report, resource_report
@@ -38,9 +38,17 @@ def _fingerprint(data: SpatialTrajectoryIndex, manifest_path: Path, settings: di
 def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           init_from: Path | None, *, resume: bool, steps: int, batch_size: int,
           loops: int, limits: tuple[int, ...], routing_candidates: int,
-          checkpoint_every: int, train_recurrent_core: bool = False) -> dict:
+          checkpoint_every: int, train_recurrent_core: bool = False,
+          microbatch_size: int | None = None, inflight: int = 1) -> dict:
     if steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1:
         raise ValueError("Invalid spatial training schedule")
+    pipeline = microbatch_size is not None or inflight != 1
+    if pipeline:
+        microbatch_size = microbatch_size or 1
+        if microbatch_size < 1 or microbatch_size >= batch_size or inflight < 2:
+            raise ValueError(
+                "Pipelining needs a microbatch smaller than the optimizer batch "
+                "and at least two batches in flight")
     config = deepcopy(load_config(config_path))
     config.model.loops = loops
     if train_recurrent_core:
@@ -86,6 +94,11 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 "routing_candidates": routing_candidates, "batch_size": batch_size,
                 "steps": steps, "sampler": "deterministic_shuffled_passes",
                 "train_recurrent_core": train_recurrent_core}
+    if pipeline:
+        settings["pipeline"] = {
+            "microbatch_size": microbatch_size, "inflight": inflight,
+            "ordering": "deterministic_round_robin",
+        }
     fingerprint = _fingerprint(data, bank_manifest_path, settings)
 
     if resume:
@@ -178,11 +191,19 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 optimizer.zero_grad(set_to_none=True)
                 tick = time.perf_counter()
                 with autocast_context(config):
-                    result = spatial_bank_forward(
-                        agent, store, index, rows, limits=limits,
-                        routing_candidates=routing_candidates,
-                        pad_token_id=agent.tokenizer.pad_token_id or 0,
-                    )
+                    if pipeline:
+                        result = spatial_bank_pipeline_forward(
+                            agent, store, index, rows, limits=limits,
+                            routing_candidates=routing_candidates,
+                            microbatch_size=microbatch_size, inflight=inflight,
+                            pad_token_id=agent.tokenizer.pad_token_id or 0,
+                        )
+                    else:
+                        result = spatial_bank_forward(
+                            agent, store, index, rows, limits=limits,
+                            routing_candidates=routing_candidates,
+                            pad_token_id=agent.tokenizer.pad_token_id or 0,
+                        )
                 result.loss.backward()
                 gradient_norm = torch.nn.utils.clip_grad_norm_(
                     [parameter for parameter in agent.parameters() if parameter.requires_grad],
@@ -238,6 +259,8 @@ if __name__ == "__main__":
     parser.add_argument("--routing-candidates", type=int, default=256)
     parser.add_argument("--checkpoint-every", type=int, default=5000)
     parser.add_argument("--train-recurrent-core", action="store_true")
+    parser.add_argument("--microbatch-size", type=int)
+    parser.add_argument("--inflight", type=int, default=1)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -246,4 +269,5 @@ if __name__ == "__main__":
         routing_candidates=args.routing_candidates,
         checkpoint_every=args.checkpoint_every,
         train_recurrent_core=args.train_recurrent_core,
+        microbatch_size=args.microbatch_size, inflight=args.inflight,
     ), indent=2))

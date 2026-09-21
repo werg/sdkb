@@ -11,7 +11,14 @@ from torch.nn import functional as F
 from .backbones import ByteTokenizer, HFBackbone, RecurrentBackbone, TinyBackbone
 from .compaction import SyntheticCompactor, contribution_loss, storage_noise, compact_view
 from .config import Config
-from .recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite, LoopWrites, SpatialReadSite
+from .recurrence import (
+    MiddleBlockBackbone,
+    MiddleBlockState,
+    LoopMemory,
+    LoopWrite,
+    LoopWrites,
+    SpatialReadSite,
+)
 from .readers import MultiSpaceReader, SetReader
 from .routing import cosine_scores, group_plan_loss
 
@@ -44,6 +51,14 @@ class ForwardResult:
     read_count: int = 1
     parent_kl: Tensor | None = None
     answer_states: Tensor | None = None
+
+
+@dataclass(frozen=True)
+class SpatialExecution:
+    """One whole-sequence graph paused at a recurrent retrieval boundary."""
+    recurrent: MiddleBlockState
+    sites: tuple[SpatialReadSite, ...]
+    batch: int
 
 
 class SDKBAgent(nn.Module):
@@ -424,14 +439,9 @@ class SDKBAgent(nn.Module):
         return (F.normalize(self.query_head(features), dim=-1),
                 F.normalize(self.routing_query_head(features), dim=-1))
 
-    def spatial_recurrent_hidden(self, input_ids: Tensor, attention_mask: Tensor,
-                                 sites: tuple[SpatialReadSite, ...], provider) -> Tensor:
-        """Run a whole sequence with batched spatial reads between recurrent passes.
-
-        ``input_ids == -1`` denotes learned blank workspace positions. At each
-        level the provider receives all active reader/routing queries, ordered by
-        site and then batch row, and returns ``[sites * batch, slots, width]``.
-        """
+    def begin_spatial_recurrent(self, input_ids: Tensor, attention_mask: Tensor,
+                                sites: tuple[SpatialReadSite, ...]) -> SpatialExecution:
+        """Run through the first core pass and retain its differentiable state."""
         if not isinstance(self.backbone, MiddleBlockBackbone) or not sites:
             raise ValueError("Spatial reads require a middle-block backbone and sites")
         if (input_ids.ndim != 2 or attention_mask.shape != input_ids.shape
@@ -470,28 +480,75 @@ class SDKBAgent(nn.Module):
             indices = site.workspace_starts.to(input_ids.device)[:, None] + slots
             embeddings[rows, indices] = self.loop_workspace[None]
 
-        def boundary(completed, state, _anchor):
-            active = [site for site in sites if site.level == completed]
-            if not active:
-                return None
-            features = torch.cat([
-                state[torch.arange(batch, device=state.device),
-                      site.query_positions.to(state.device)] for site in active
-            ], 0)
-            features = self.loop_query_norm(features)
-            query = F.normalize(self.query_head(features), dim=-1)
-            routing_query = (query if self.routing_query_head is None else
-                             F.normalize(self.routing_query_head(features), dim=-1))
-            results = provider(completed, tuple(active), query, routing_query)
-            expected = (len(active) * batch, self.config.memory.read_slots, self.width)
-            if not isinstance(results, Tensor) or results.shape != expected:
-                raise ValueError(f"Spatial provider returned {getattr(results, 'shape', None)}; expected {expected}")
-            writes = tuple(LoopWrite(site.workspace_starts.to(state.device),
-                                     results[index * batch:(index + 1) * batch])
-                           for index, site in enumerate(active))
-            return LoopWrites(writes)
+        recurrent = self.backbone.begin(embeddings, attention_mask)
+        return SpatialExecution(recurrent, sites, batch)
 
-        return self.backbone.hidden(embeddings, attention_mask, boundary=boundary)
+    def spatial_recurrent_query(self, execution: SpatialExecution):
+        """Return all queries at the current level, or ``None`` for an empty level."""
+        recurrent, batch = execution.recurrent, execution.batch
+        if recurrent.completed >= recurrent.loops:
+            raise ValueError("A completed spatial execution has no pending query")
+        active = tuple(site for site in execution.sites
+                       if site.level == recurrent.completed)
+        if not active:
+            return None
+        state = recurrent.state
+        features = torch.cat([
+            state[torch.arange(batch, device=state.device),
+                  site.query_positions.to(state.device)] for site in active
+        ], 0)
+        features = self.loop_query_norm(features)
+        query = F.normalize(self.query_head(features), dim=-1)
+        routing_query = (query if self.routing_query_head is None else
+                         F.normalize(self.routing_query_head(features), dim=-1))
+        return active, query, routing_query
+
+    def advance_spatial_recurrent(self, execution: SpatialExecution,
+                                  active: tuple[SpatialReadSite, ...],
+                                  results: Tensor) -> SpatialExecution:
+        """Consume one complete same-level result wave and run the next core pass."""
+        expected_active = tuple(site for site in execution.sites
+                                if site.level == execution.recurrent.completed)
+        if (not active or len(active) != len(expected_active)
+                or any(got is not expected for got, expected in
+                       zip(active, expected_active, strict=True))):
+            raise ValueError("Spatial results differ from the pending recurrence level")
+        expected = (len(active) * execution.batch,
+                    self.config.memory.read_slots, self.width)
+        if not isinstance(results, Tensor) or results.shape != expected:
+            raise ValueError(
+                f"Spatial provider returned {getattr(results, 'shape', None)}; "
+                f"expected {expected}")
+        writes = tuple(LoopWrite(
+            site.workspace_starts.to(execution.recurrent.state.device),
+            results[index * execution.batch:(index + 1) * execution.batch],
+        ) for index, site in enumerate(active))
+        recurrent = self.backbone.advance(execution.recurrent, LoopWrites(writes))
+        return SpatialExecution(recurrent, execution.sites, execution.batch)
+
+    def advance_empty_spatial_level(self, execution: SpatialExecution) -> SpatialExecution:
+        """Advance a recurrence level that has no read sites."""
+        if any(site.level == execution.recurrent.completed for site in execution.sites):
+            raise ValueError("A spatial level with active reads needs their results")
+        recurrent = self.backbone.advance(execution.recurrent)
+        return SpatialExecution(recurrent, execution.sites, execution.batch)
+
+    def finish_spatial_recurrent(self, execution: SpatialExecution) -> Tensor:
+        return self.backbone.finish(execution.recurrent)
+
+    def spatial_recurrent_hidden(self, input_ids: Tensor, attention_mask: Tensor,
+                                 sites: tuple[SpatialReadSite, ...], provider) -> Tensor:
+        """Run a whole sequence with synchronous batched reads as the reference path."""
+        execution = self.begin_spatial_recurrent(input_ids, attention_mask, sites)
+        while execution.recurrent.completed < execution.recurrent.loops:
+            pending = self.spatial_recurrent_query(execution)
+            if pending is None:
+                execution = self.advance_empty_spatial_level(execution)
+                continue
+            active, query, routing_query = pending
+            results = provider(execution.recurrent.completed, active, query, routing_query)
+            execution = self.advance_spatial_recurrent(execution, active, results)
+        return self.finish_spatial_recurrent(execution)
 
     def plan_loop_memory(self, prompt: Tensor, provider, *, include_routing_query: bool = False) -> LoopMemory:
         """Run ONLY the available prefix, collecting state-conditioned read results.

@@ -39,6 +39,21 @@ class SpatialReadSite:
 
 
 @dataclass(frozen=True)
+class MiddleBlockState:
+    """A retained recurrent boundary that can wait for an external read.
+
+    ``completed`` is the number of core passes already executed.  The context,
+    anchor and state remain part of the live autograd graph; advancing this object
+    never recomputes an earlier pass or repeats a retrieval callback.
+    """
+    context: object
+    anchor: Tensor
+    state: Tensor
+    completed: int
+    loops: int
+
+
+@dataclass(frozen=True)
 class LoopMemory:
     """Captured prefix-only reads, replayable for any continuation of that prefix.
 
@@ -177,36 +192,61 @@ class MiddleBlockBackbone(nn.Module):
     def embed(self, ids: Tensor) -> Tensor:
         return self.base.embed(ids)
 
+    def begin(self, embeddings: Tensor, mask: Tensor,
+              loops: int | None = None) -> MiddleBlockState:
+        """Run the prelude and first shared-core pass, then retain the boundary."""
+        count = self.loops if loops is None else loops
+        if count < 1:
+            raise ValueError("At least one core pass is required")
+        hidden, context = self.base.prepare_layers(embeddings, mask)
+        anchor = self.base.run_layers(hidden, context, 0, self.start)
+        state = self.base.run_layers(anchor, context, self.start, self.end)
+        return MiddleBlockState(context, anchor, state, 1, count)
+
+    def advance(self, execution: MiddleBlockState,
+                write: LoopWrite | LoopWrites | None = None) -> MiddleBlockState:
+        """Inject one completed retrieval wave and execute the next core pass."""
+        if execution.completed >= execution.loops:
+            raise ValueError("A completed recurrent execution cannot advance")
+        inputs = self.bridge(execution.state, execution.anchor)
+        if isinstance(write, LoopWrites):
+            inputs = self.bridge.inject_many(inputs, execution.anchor, write)
+        elif write is not None:
+            inputs = self.bridge.inject(inputs, execution.anchor, write)
+        proposal = self.base.run_layers(inputs, execution.context, self.start, self.end)
+        state = self.bridge.update(execution.state, proposal)
+        return MiddleBlockState(execution.context, execution.anchor, state,
+                                execution.completed + 1, execution.loops)
+
+    def finish(self, execution: MiddleBlockState) -> Tensor:
+        """Run the coda after every configured core pass has completed."""
+        if execution.completed != execution.loops:
+            raise ValueError("Cannot finish before every recurrent pass completes")
+        hidden = self.base.run_layers(
+            execution.state, execution.context, self.end, self.base.layer_count)
+        return self.base.finish_layers(hidden)
+
     def hidden(self, embeddings: Tensor, mask: Tensor, loops: int | None = None, *,
                boundary: Callable[[int, Tensor, Tensor], LoopWrite | LoopWrites | None] | None = None,
                plan_only: bool = False, trace: list[Tensor] | None = None) -> Tensor:
         count = self.loops if loops is None else loops
-        if count < 1:
-            raise ValueError("At least one core pass is required")
         if plan_only and boundary is None:
             raise ValueError("Planning requires a read callback")
-        hidden, context = self.base.prepare_layers(embeddings, mask)
-        anchor = self.base.run_layers(hidden, context, 0, self.start)
-        state = self.base.run_layers(anchor, context, self.start, self.end)
+        execution = self.begin(embeddings, mask, count)
         if trace is not None:
-            trace.append(state)
+            trace.append(execution.state)
         for completed in range(1, count):
-            write = boundary(completed, state, anchor) if boundary is not None else None
+            write = (boundary(completed, execution.state, execution.anchor)
+                     if boundary is not None else None)
             # A prefix-only read plan does not need an unused last proposal or coda.
             if plan_only and completed == count - 1:
-                return state
-            inputs = self.bridge(state, anchor)
-            if isinstance(write, LoopWrites):
-                inputs = self.bridge.inject_many(inputs, anchor, write)
-            elif write is not None:
-                inputs = self.bridge.inject(inputs, anchor, write)
-            proposal = self.base.run_layers(inputs, context, self.start, self.end)
-            state = self.bridge.update(state, proposal)
+                return execution.state
+            execution = self.advance(execution, write)
             if trace is not None:
-                trace.append(state)
+                trace.append(execution.state)
         if plan_only:
-            return state
-        return self.base.finish_layers(self.base.run_layers(state, context, self.end, self.base.layer_count))
+            return execution.state
+        return self.finish(execution)
 
     def logits(self, hidden: Tensor) -> Tensor:
         return self.base.logits(hidden)

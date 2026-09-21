@@ -1,20 +1,21 @@
-# External artifact cleanup candidates (deferred)
+# External artifact cleanup record
 
-Recorded on the DGX Spark on 2026-09-21. This is an inventory only; no action
-is authorized by this file. Sizes are `du -sh` approximations. All paths are
-under the external `/mnt/external/sdkb-archive` disk.
+Recorded and completed on the DGX Spark on 2026-09-21. Sizes are `du -sh`
+approximations. All external paths are under `/mnt/external/sdkb-archive`.
 
-| Candidate | Approximate size | Why it may be retired later |
+| Artifact | Previous size | Cleanup result |
 | --- | ---: | --- |
-| `runs/four-space-squad-gate-fork-20260920` | 2.3 GB | Its heldout gate-only control did not improve payload use. |
-| `runs/four-space-squad-contrast-20260921` | 2.5 GB | The live source-swap result reversed by step 1,078. |
-| `runs/four-space-bank10k-qa-novel-20260921` | 2.2 GB | The 512-step frozen-bank QA run did not retrieve verified sources. |
-| `runs/four-space-bank10k-value-contrast-20260921` | 2.2 GB | The step-1,500 stored-value result reversed on 64 heldout questions. |
-| `banks/four-space-squad-v2-10k` | 105 MB | Older published writer generation, retained as a retrieval reference. |
-| `corpora/squad-short-bank-queries-20260921` | 11 MB | Superseded by the v2 source manifest that includes explicit provenance; no bank was built from this first version. |
-| `corpora/hotpot-four-space-target-100k-20260921` | inspect later | Rejected before training: 244 validation source IDs appeared in reconstruction training labels. Superseded by the source-disjoint v2 corpus. |
+| `runs/four-space-squad-gate-fork-20260920` | 2.3 GB | Removed checkpoints; retained 9.7 MB of metrics, manifests and environment records. |
+| `runs/four-space-squad-contrast-20260921` | 2.5 GB | Removed checkpoints; retained 9.0 MB of scientific records. |
+| `runs/four-space-bank10k-qa-novel-20260921` | 2.2 GB | Removed checkpoints; retained 3.8 MB of scientific records. |
+| `runs/four-space-bank10k-value-contrast-20260921` | 2.2 GB | Removed checkpoints; retained 9.4 MB of scientific records. |
+| `banks/four-space-squad-v2-10k` | 105 MB | Retained because three committed reference configurations still use this bank. |
+| `corpora/squad-short-bank-queries-20260921` | 11 MB | Removed; superseded before bank publication. |
+| `corpora/hotpot-four-space-target-100k-20260921` | 147 MB | Removed; rejected for validation contamination and superseded by the source-disjoint corpus. |
 
-Preserve the validation records and any checkpoint needed for direct
-comparisons before deciding whether to remove an item. The current short
-reconstruction run, its source corpus, and the local-routing bank are active
-inputs and are not cleanup candidates.
+The cleanup also removed one superseded 1.3 GB G1 checkpoint and two superseded
+1.1 GB R2 recovery checkpoints. The final G1 writer checkpoint, current R2 recovery
+checkpoint, active 100,000-source bank, current corpora and queued-stage inputs were
+preserved. Host test caches, the stray lockfile and the accidentally created host
+virtual environment were removed. Approximately 12.8 GB was reclaimed externally;
+compact validation records remain available for the documented comparisons.

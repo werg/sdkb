@@ -15,8 +15,9 @@
 It requires each memory call to occupy its own assistant event, one logical record
 per write call, paired tool results, monotonic optional timestamps, stored-only
 latent attachment references, and causally earlier completed-read lineage for
-read-dependent writes. It is a data contract; asynchronous execution and multi-site
-model training remain subsequent releases.
+read-dependent writes. Multi-site stored-read training and its bounded asynchronous
+microbatch scheduler are implemented. Learned call placement and execution of
+prompted writes remain subsequent releases.
 
 The legacy recurrent consumer is spatially single-site. The new
 `spatial_recurrent_hidden` path processes a complete teacher-forced trajectory in
@@ -34,7 +35,11 @@ with causal lineage to that segment's completed read. `spatial_training.py` batc
 queries into one resident exact key scan per space, fetches immutable stored payloads,
 trains global routing against verified positives, and supervises assistant tokens.
 The latent writer is forbidden on this stored-read path. The current runner uses complete optimizer
-steps rather than producer replay because every payload is historical and frozen.
+steps rather than producer replay because every payload is historical and frozen. An
+optional pipeline splits an optimizer batch into several retained microbatch graphs,
+runs their search and serialized payload reads on CPU workers, and resumes their
+recurrent boundaries in a deterministic order. Its microbatch size and in-flight
+limit are recorded in the run fingerprint.
 Execution and publication of the prompted writes, learned placement, network
 retrieval, and the prequential growing-bank executor are not implemented yet.
 
@@ -71,11 +76,12 @@ context state, then each next token from preceding context. Only answer position
 contribute to the supervised loss. Greedy reference decoding recomputes prefixes;
 it is not an optimized serving engine.
 
-The runner supports scheduled causal multi-read tasks. Each follow-up query uses
+The legacy runner supports scheduled causal multi-read tasks. Each follow-up query uses
 the previous soft working state; newly retrieved records are added to cumulative
 evidence and recomposed into fixed slots. Complete-group supervision updates the
 remaining-support target. The schedule is not an adaptive invocation policy or a
-replay memory cap. Early asynchronous model scheduling remains unimplemented.
+replay memory cap. Its single-site path remains synchronous; the spatial curriculum
+runner provides the implemented asynchronous training path described above.
 
 ## Reader equations
 
@@ -240,9 +246,11 @@ authentication: a production service must bind caller identity to permitted doma
 Do not compact incompatible domains. Deletion is logical invalidation, not certified
 physical erasure from WAL, backups or previous experiment artifacts.
 
-AsyncRetriever uses CPU threads to overlap disk retrieval with caller work. The
-model runner does not yet submit early-layer requests or manage delayed-result loops.
-This narrow API is intentionally separate from claims about overlap performance.
+AsyncRetriever provides a narrow CPU future API. Separately, the spatial curriculum
+runner now pauses whole-sequence graphs at recurrent boundaries and overlaps several
+CPU search and payload-read waves with GPU work. It uses deterministic bounded local
+workers; remote request handling, failure injection and asynchronous inference remain
+unimplemented.
 
 ## Run artifacts
 

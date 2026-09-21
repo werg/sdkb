@@ -18,9 +18,12 @@ positions can consume it. Complete all sites' neighborhood aggregates before the
 next shared-state update.
 
 The initial provider uses resident contiguous exact key arrays and immutable SQLite
-payloads. It batches searches by space and recurrent level. It does not yet overlap a
-pending retrieval wave with another GPU batch or represent a remote database latency
-measurement.
+payloads. It batches searches by space and recurrent level. The spatial curriculum
+runner can retain a bounded number of differentiable microbatch boundary states,
+issue their CPU search and SQLite reads on worker threads, and continue the states in
+deterministic round-robin order as results become available. This overlaps local
+retrieval waves with useful GPU work; it is not yet a remote database latency
+measurement or a general asynchronous inference scheduler.
 
 Autoregressive post-training may use a faster schedule: after a generated call has a
 result, inject its workspace after the fixed prelude before the recurrent core. This
