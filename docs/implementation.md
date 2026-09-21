@@ -27,6 +27,12 @@ target generalizes that correct timing to many query positions and many disjoint
 workspace spans in the same full trajectory. Current `read_steps` count depth
 boundaries; they do not count distinct transcript sites.
 
+The recurrent bridge now accepts a `LoopWrites` bundle and atomically validates and
+scatters several non-overlapping result spans before one shared core update. This is
+the first spatial execution primitive. No current `SDKBAgent` training path constructs
+that bundle yet; transcript layout, site-query gathering, retrieval batching, and
+site-aware replay remain unimplemented.
+
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
 Operational details are in [development-v0.2.md](development-v0.2.md).

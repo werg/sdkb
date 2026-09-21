@@ -21,6 +21,16 @@ class LoopWrite:
 
 
 @dataclass(frozen=True)
+class LoopWrites:
+    """All spatial result-site writes completed for one recurrence level."""
+    writes: tuple[LoopWrite, ...]
+
+    def __post_init__(self):
+        if not self.writes:
+            raise ValueError("A multi-site recurrence event must contain writes")
+
+
+@dataclass(frozen=True)
 class LoopMemory:
     """Captured prefix-only reads, replayable for any continuation of that prefix.
 
@@ -111,6 +121,30 @@ class AnchoredBridge(nn.Module):
         middle = inputs[:, start:stop] + self.memory_logit.sigmoid().to(inputs.dtype) * delta
         return torch.cat((inputs[:, :start], middle, inputs[:, stop:]), 1)
 
+    def inject_many(self, inputs: Tensor, anchor: Tensor, event: LoopWrites) -> Tensor:
+        """Scatter disjoint same-level site results before one shared core update."""
+        occupied = torch.zeros(inputs.shape[:2], dtype=torch.bool, device=inputs.device)
+        for write in event.writes:
+            if write.tokens.ndim != 3 or write.tokens.shape[0] != inputs.shape[0]:
+                raise ValueError("Every spatial result must match the trajectory batch")
+            if isinstance(write.start, Tensor):
+                starts = write.start.to(device=inputs.device)
+                if starts.shape != (inputs.shape[0],) or starts.dtype not in (torch.int32, torch.int64):
+                    raise ValueError("Spatial result starts must be one integer per trajectory")
+            else:
+                starts = torch.full((inputs.shape[0],), write.start,
+                                    dtype=torch.long, device=inputs.device)
+            indices = starts[:, None] + torch.arange(write.tokens.shape[1], device=inputs.device)[None]
+            if bool((indices < 0).any()) or bool((indices >= inputs.shape[1]).any()):
+                raise ValueError("Spatial result lies outside its trajectory")
+            if bool(occupied.gather(1, indices).any()):
+                raise ValueError("Spatial result workspaces must not overlap")
+            occupied.scatter_(1, indices, True)
+        result = inputs
+        for write in event.writes:
+            result = self.inject(result, anchor, write)
+        return result
+
     def update(self, state: Tensor, proposal: Tensor) -> Tensor:
         return state + self.update_logit.sigmoid().to(state.dtype) * (proposal - state)
 
@@ -136,7 +170,7 @@ class MiddleBlockBackbone(nn.Module):
         return self.base.embed(ids)
 
     def hidden(self, embeddings: Tensor, mask: Tensor, loops: int | None = None, *,
-               boundary: Callable[[int, Tensor, Tensor], LoopWrite | None] | None = None,
+               boundary: Callable[[int, Tensor, Tensor], LoopWrite | LoopWrites | None] | None = None,
                plan_only: bool = False, trace: list[Tensor] | None = None) -> Tensor:
         count = self.loops if loops is None else loops
         if count < 1:
@@ -154,7 +188,9 @@ class MiddleBlockBackbone(nn.Module):
             if plan_only and completed == count - 1:
                 return state
             inputs = self.bridge(state, anchor)
-            if write is not None:
+            if isinstance(write, LoopWrites):
+                inputs = self.bridge.inject_many(inputs, anchor, write)
+            elif write is not None:
                 inputs = self.bridge.inject(inputs, anchor, write)
             proposal = self.base.run_layers(inputs, context, self.start, self.end)
             state = self.bridge.update(state, proposal)

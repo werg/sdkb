@@ -9,7 +9,7 @@ from sdkb.agent import SDKBAgent
 from sdkb.backbones import TinyBackbone
 from sdkb.data import make_episode
 from sdkb.evaluation import build_shared_bank
-from sdkb.recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite
+from sdkb.recurrence import MiddleBlockBackbone, LoopMemory, LoopWrite, LoopWrites
 from sdkb.replay import ReplayTape
 from sdkb.sessions import read_session
 from sdkb.store import DiskStore
@@ -212,6 +212,42 @@ def test_checkpoint_chunking_does_not_repeat_retrieval(loop_config):
     a.backbone.hidden(x, torch.ones(1, 15, dtype=torch.long), boundary=callback)[..., 0].sum().backward()
     assert calls == [1, 2]
     assert memory.grad.abs().sum() > 0
+
+
+def test_same_level_spatial_results_scatter_before_one_core_update():
+    torch.manual_seed(4)
+    model = MiddleBlockBackbone(TinyBackbone(32, 4, 4), loops=2, start=1, end=3).eval()
+    inputs = torch.randn(1, 14, 32)
+    first = torch.randn(1, 2, 32, requires_grad=True)
+    second = torch.randn(1, 3, 32, requires_grad=True)
+
+    def boundary(_completed, _state, _anchor):
+        return LoopWrites((LoopWrite(3, first), LoopWrite(9, second)))
+
+    output = model.hidden(inputs, torch.ones(1, 14, dtype=torch.long), boundary=boundary)
+    changed_second = second.detach().clone().add_(1.0)
+
+    def intervention(_completed, _state, _anchor):
+        return LoopWrites((LoopWrite(3, first), LoopWrite(9, changed_second)))
+
+    intervened = model.hidden(inputs, torch.ones(1, 14, dtype=torch.long), boundary=intervention)
+    torch.testing.assert_close(output[:, :9], intervened[:, :9], atol=1e-6, rtol=1e-6)
+    assert not torch.allclose(output[:, 9:], intervened[:, 9:])
+    output.sum().backward()
+    assert first.grad is not None and first.grad.abs().sum() > 0
+    assert second.grad is not None and second.grad.abs().sum() > 0
+
+
+def test_spatial_result_workspaces_must_not_overlap():
+    model = MiddleBlockBackbone(TinyBackbone(32, 4, 4), loops=2, start=1, end=3)
+    inputs = torch.randn(1, 12, 32)
+    memory = torch.randn(1, 3, 32)
+
+    def boundary(_completed, _state, _anchor):
+        return LoopWrites((LoopWrite(3, memory), LoopWrite(5, memory)))
+
+    with pytest.raises(ValueError, match="must not overlap"):
+        model.hidden(inputs, torch.ones(1, 12, dtype=torch.long), boundary=boundary)
 
 
 def test_depth_schedule_checkpoint_resume_matches_exactly(loop_config, tmp_path):
