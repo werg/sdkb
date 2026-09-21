@@ -644,22 +644,21 @@ change the model. A conservative first implementation can normalize within each
 local compaction and then fuse several redundant views; it does not need to expose
 source provenance to the neural reader.
 
-Condition the shared compactor on its geometric role. Each positioned input can
-carry its payload, normalized offset from the field center, membership strength, and
-optional local density; the field carries its center or region descriptor, radius or
-covariance, hierarchy level, descendant mass, and code-slot identity. Compacting the
-set of these tuples remains permutation invariant. Neighbor-relative descriptors or
-joint training of overlapping fields let one field specialize in central/common
-structure while another retains boundary or directional distinctions. These are
-structural coordinates, not source provenance and not claims of independence.
+Condition the shared compactor on simple local geometry. Each positioned input can
+carry its payload and normalized offset from the overlapping neighborhood's center.
+The neighborhood can carry its radius or density and hierarchy level. Compacting the
+set of these tuples remains permutation invariant. Begin with this information only;
+do not prescribe roles for neighboring summaries or add specialization losses unless
+measured collapse makes them necessary. Different centers and overlapping input sets
+already provide the basic asymmetry.
 
 Prefer relative coordinates in a versioned learned metric over raw absolute key
 coordinates. The present keys are normalized cosine addresses and can drift between
 writer generations; a hierarchy must pin its coordinate transform or rebuild its
-fields. A compact node needs its own learned/versioned region key rather than
-borrowing an arbitrary child's key. Train positional fields jointly under task and
-raw-descendant objectives, with field or neighbor dropout so useful specialization
-does not become a brittle assumption that every adjacent code is always retrieved.
+neighborhoods. A compact record needs its own learned/versioned region key rather
+than borrowing an arbitrary child's key. Train the retrieved set of positional
+summaries under task and raw-descendant objectives. Add dropout, neighbor context, or
+explicit diversity pressure only in response to a demonstrated failure.
 
 Train every level against raw descendants as well as immediate child codes so
 recursive error does not become the teacher. Add direct-versus-recursive consistency,
