@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 import torch
 from torch import Tensor
@@ -36,6 +36,10 @@ class _SpatialBatchState:
     routing_terms: list[Tensor]
     selected_counts: list[int]
     learned_hits: list[int]
+    positive_labels: list[int]
+    positive_hits: list[int]
+    candidate_positive_hits: list[int]
+    candidate_reciprocal_rank: list[float]
     read_sites: int = 0
 
 
@@ -109,6 +113,10 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
         rows, labels, execution, sites, site_indices, [],
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
+        [0] * len(agent.config.memory.payload_dims),
+        [0] * len(agent.config.memory.payload_dims),
+        [0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
     )
 
 
@@ -189,6 +197,14 @@ def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBat
             positive_indices = tuple(candidate_ids.index(record_id) for record_id in required)
             state.routing_terms.append(group_plan_loss(scores, [positive_indices]))
             state.learned_hits[space] += int(set(required) <= set(found[:limit]))
+            state.positive_labels[space] += len(required)
+            state.positive_hits[space] += sum(record_id in found[:limit]
+                                              for record_id in required)
+            state.candidate_positive_hits[space] += sum(record_id in found
+                                                        for record_id in required)
+            state.candidate_reciprocal_rank[space] += sum(
+                1 / (found.index(record_id) + 1) if record_id in found else 0
+                for record_id in required)
             state.selected_counts[space] += len(values)
             device_rows.append(torch.stack([
                 value.to(agent.device).float() for value in values
@@ -226,6 +242,19 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
         "write_sites": sum(len(row.get("write_sites", ())) for row in state.rows),
         "selected_counts": [count / denominator for count in state.selected_counts],
         "learned_positive_recall": [hits / denominator for hits in state.learned_hits],
+        "learned_positive_item_recall": [
+            hits / labels for hits, labels in
+            zip(state.positive_hits, state.positive_labels, strict=True)
+        ],
+        "candidate_positive_item_recall": [
+            hits / labels for hits, labels in
+            zip(state.candidate_positive_hits, state.positive_labels, strict=True)
+        ],
+        "candidate_positive_mrr": [
+            total / labels for total, labels in
+            zip(state.candidate_reciprocal_rank, state.positive_labels, strict=True)
+        ],
+        "positive_labels": state.positive_labels,
         "selected_payload_bytes": sum(
             count * width * 2 for count, width in
             zip(state.selected_counts, agent.config.memory.payload_dims, strict=True)
@@ -237,7 +266,9 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
 
 def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKeyIndex,
                          rows: list[dict[str, Any]], *, limits: tuple[int, ...],
-                         routing_candidates: int, pad_token_id: int = 0) -> SpatialForwardResult:
+                         routing_candidates: int, pad_token_id: int = 0,
+                         plan_observer: Callable[[str, str, ReadPlan], None] | None = None,
+                         ) -> SpatialForwardResult:
     """Train many causal sites; same-level bank searches execute as one matrix scan.
 
     Supplied verified positives keep the reader useful while the address projections
@@ -286,6 +317,10 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
     routing_terms: list[Tensor] = []
     selected_counts = [0] * len(memory.payload_dims)
     learned_hits = [0] * len(memory.payload_dims)
+    positive_labels = [0] * len(memory.payload_dims)
+    positive_hits = [0] * len(memory.payload_dims)
+    candidate_positive_hits = [0] * len(memory.payload_dims)
+    candidate_reciprocal_rank = [0.0] * len(memory.payload_dims)
     read_sites = 0
 
     def provider(level, active, query, routing_query):
@@ -321,12 +356,22 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
                                      if record_id not in required]
                 chosen = chosen[:limit]
                 learned_hits[space] += int(set(required) <= set(found[:limit]))
+                positive_labels[space] += len(required)
+                positive_hits[space] += sum(record_id in found[:limit]
+                                            for record_id in required)
+                candidate_positive_hits[space] += sum(record_id in found
+                                                      for record_id in required)
+                candidate_reciprocal_rank[space] += sum(
+                    1 / (found.index(record_id) + 1) if record_id in found else 0
+                    for record_id in required)
                 selected_counts[space] += len(chosen)
                 chosen_plans.append(ReadPlan(
                     index.namespace, name, index.generation, item["domain"],
                     item["query_time"], tuple(Selection(record_id, 0.0)
                                               for record_id in chosen),
                 ))
+                if plan_observer is not None:
+                    plan_observer(item["call_id"], name, chosen_plans[-1])
             values = store.fetch_many(chosen_plans)
             count = max(map(len, values))
             device_rows = [torch.stack([value.to(agent.device).float() for value in row])
@@ -358,6 +403,19 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
         "write_sites": sum(len(row.get("write_sites", ())) for row in rows),
         "selected_counts": [count / denominator for count in selected_counts],
         "learned_positive_recall": [hits / denominator for hits in learned_hits],
+        "learned_positive_item_recall": [
+            hits / labels for hits, labels in
+            zip(positive_hits, positive_labels, strict=True)
+        ],
+        "candidate_positive_item_recall": [
+            hits / labels for hits, labels in
+            zip(candidate_positive_hits, positive_labels, strict=True)
+        ],
+        "candidate_positive_mrr": [
+            total / labels for total, labels in
+            zip(candidate_reciprocal_rank, positive_labels, strict=True)
+        ],
+        "positive_labels": positive_labels,
         "selected_payload_bytes": sum(count * width * 2 for count, width in
                                       zip(selected_counts, memory.payload_dims, strict=True))
                                   / batch,
@@ -444,6 +502,28 @@ def spatial_bank_pipeline_forward(
         "learned_positive_recall": [
             sum(result.metrics["learned_positive_recall"][space]
                 * result.metrics["read_sites"] for result in ordered) / read_sites
+            for space in range(spaces)
+        ],
+        "learned_positive_item_recall": [
+            sum(result.metrics["learned_positive_item_recall"][space]
+                * result.metrics["positive_labels"][space] for result in ordered)
+            / sum(result.metrics["positive_labels"][space] for result in ordered)
+            for space in range(spaces)
+        ],
+        "candidate_positive_item_recall": [
+            sum(result.metrics["candidate_positive_item_recall"][space]
+                * result.metrics["positive_labels"][space] for result in ordered)
+            / sum(result.metrics["positive_labels"][space] for result in ordered)
+            for space in range(spaces)
+        ],
+        "candidate_positive_mrr": [
+            sum(result.metrics["candidate_positive_mrr"][space]
+                * result.metrics["positive_labels"][space] for result in ordered)
+            / sum(result.metrics["positive_labels"][space] for result in ordered)
+            for space in range(spaces)
+        ],
+        "positive_labels": [
+            sum(result.metrics["positive_labels"][space] for result in ordered)
             for space in range(spaces)
         ],
         "selected_payload_bytes": sum(

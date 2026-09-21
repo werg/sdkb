@@ -441,3 +441,27 @@ and the same supervised-token total. Both alternate sites across two retrieval
 levels and retain explicit read-before-write lineage. Their R3 continuations are
 armed behind clean completion of the active stage; they have not yet produced
 training results.
+
+### Pre-R3 growing-bank preparation
+
+R3 now has complete-support recall plus per-positive selected recall, 256-candidate
+recall, and candidate reciprocal rank telemetry. Published-bank evaluators accept a
+later recurrent consumer only when its immutable `spatial-inputs.json` proves it was
+trained against the exact manifest; they record that relationship without claiming
+the adapted checkpoint wrote the parent payloads.
+
+The prequential executor keeps the 100,000-record parent and authored records in
+separate immutable generations. Its composite exact index searches both, payload
+fetches resolve each opaque ID back to its physical generation, and each event reads
+only records with `created_at < query_time`. After the full trajectory finishes, all
+space views, selected-read lineage, and write metadata commit in one transaction.
+The database frontier is the resume cursor. A separate supervisor waits in five
+minute intervals, resumes both R3 stages, runs rank and stored-only transfer checks,
+then starts the external-disk prequential build.
+
+The pre-R3 validation ran 589 tests and Ruff successfully in the Spark container.
+An actual LFM/CUDA one-event smoke replayed four read sites against the 100,000-source
+parent, wrote four logical records (16 views), and then reopened the completed stream
+without changing its generation digest. This validates execution, transactional
+publication, and exact resume mechanics; it is not a recursive-memory capability
+result.

@@ -51,10 +51,17 @@ def test_spatial_bank_forward_reads_all_sites_without_writer(tiny_config, tmp_pa
     agent.produce = lambda *_args, **_kwargs: (_ for _ in ()).throw(
         AssertionError("spatial stored reads must not call the writer"))
 
-    result = spatial_bank_forward(agent, store, index, [row], limits=(3,),
-                                  routing_candidates=3)
+    observed = []
+    result = spatial_bank_forward(
+        agent, store, index, [row], limits=(3,), routing_candidates=3,
+        plan_observer=lambda call_id, space, plan: observed.append(
+            (call_id, space, tuple(item.record_id for item in plan.selections))),
+    )
     assert result.loss.isfinite() and result.metrics["read_sites"] == 2
     assert result.metrics["selected_counts"] == [3]
+    assert len(observed) == 2
+    assert {item[0] for item in observed} == {site["call_id"] for site in row["sites"]}
+    assert all(item[1] == "s0" and len(item[2]) == 3 for item in observed)
     result.loss.backward()
     assert agent.query_maps[0].weight.grad is not None
     assert agent.query_maps[0].weight.grad.abs().sum() > 0

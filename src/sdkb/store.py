@@ -129,11 +129,21 @@ class DiskStore:
                 record_ids TEXT NOT NULL, content_sha256 TEXT NOT NULL,
                 PRIMARY KEY(namespace,stream,generation,position),
                 UNIQUE(namespace,stream,generation,event_id));
+            CREATE TABLE IF NOT EXISTS event_lineage (
+                namespace TEXT NOT NULL, generation TEXT NOT NULL,
+                record_id TEXT NOT NULL, parent_ref TEXT NOT NULL,
+                PRIMARY KEY(namespace,generation,record_id,parent_ref));
+            CREATE TABLE IF NOT EXISTS event_record_metadata (
+                namespace TEXT NOT NULL, generation TEXT NOT NULL,
+                record_id TEXT NOT NULL, metadata TEXT NOT NULL,
+                PRIMARY KEY(namespace,generation,record_id));
         """)
 
     def commit_event(self, records: Iterable[StoredRecord], *, namespace: str, stream: str,
                      generation: str, position: int, event_id: str, visibility_time: int,
-                     expected_spaces: tuple[str, ...]) -> bool:
+                     expected_spaces: tuple[str, ...],
+                     lineage: dict[str, tuple[str, ...]] | None = None,
+                     record_metadata: dict[str, dict] | None = None) -> bool:
         """Atomically advance a causal stream and publish all views of its writes.
 
         Returns false for an exact idempotent retry. The caller finishes event
@@ -155,7 +165,22 @@ class DiskStore:
             raise ValueError("Every event record needs every expected space view")
         if len(rows) != len(logical) * len(expected_spaces):
             raise ValueError("Event contains duplicate record-space views")
+        lineage = lineage or {record_id: () for record_id in logical}
+        record_metadata = record_metadata or {record_id: {} for record_id in logical}
+        if (set(lineage) != set(logical) or set(record_metadata) != set(logical)
+                or any(not isinstance(parent, str) or not parent
+                       for parents in lineage.values() for parent in parents)
+                or any(len(parents) != len(set(parents)) for parents in lineage.values())
+                or any(not isinstance(metadata, dict) for metadata in record_metadata.values())):
+            raise ValueError("Event lineage and metadata must cover every logical record")
         content_hash = self._event_digest(rows)
+        annotations = json.dumps({
+            record_id: {"lineage": sorted(lineage[record_id]),
+                        "metadata": record_metadata[record_id]}
+            for record_id in sorted(logical)
+        }, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        if any(lineage.values()) or any(record_metadata.values()):
+            content_hash = hashlib.sha256((content_hash + annotations).encode()).hexdigest()
         record_ids = json.dumps(sorted(logical), separators=(",", ":"))
         with self.connect() as db:
             self._ensure_event_tables(db)
@@ -179,6 +204,14 @@ class DiskStore:
                 raise ValueError("Temporal events must commit once in monotonic order")
             for record in rows:
                 self._put(db, record, ())
+            for record_id in sorted(logical):
+                for parent_ref in lineage[record_id]:
+                    db.execute("INSERT INTO event_lineage VALUES (?,?,?,?)", (
+                        namespace, generation, record_id, parent_ref))
+                db.execute("INSERT INTO event_record_metadata VALUES (?,?,?,?)", (
+                    namespace, generation, record_id,
+                    json.dumps(record_metadata[record_id], sort_keys=True,
+                               separators=(",", ":"), ensure_ascii=False)))
             db.execute("INSERT INTO event_commits VALUES (?,?,?,?,?,?,?,?)", (
                 namespace, stream, generation, position, event_id, visibility_time,
                 record_ids, content_hash))
@@ -199,6 +232,30 @@ class DiskStore:
                 (namespace, stream, generation)).fetchone()
         return {"next_position": 0, "visibility_time": -1} if row is None else {
             "next_position": row[0], "visibility_time": row[1]}
+
+    def generation_summary(self, *, namespace: str, generation: str,
+                           spaces: tuple[str, ...]) -> dict:
+        """Return a deterministic integrity summary for one complete generation."""
+        if not namespace or not generation or not spaces or len(spaces) != len(set(spaces)):
+            raise ValueError("Generation summary needs an identity and distinct spaces")
+        placeholders = ",".join("?" for _ in spaces)
+        digest, rows, logical_ids = hashlib.sha256(), 0, set()
+        with self.connect() as db:
+            result = db.execute(
+                f"""SELECT record_id,space,domain,created_at,key,key_dim,payload,source_id,deleted
+                    FROM records WHERE namespace=? AND generation=?
+                    AND space IN ({placeholders}) ORDER BY record_id,space""",
+                (namespace, generation, *spaces),
+            )
+            for row in result:
+                rows += 1
+                logical_ids.add(row[0])
+                for value in row:
+                    encoded = value if isinstance(value, bytes) else str(value).encode()
+                    digest.update(len(encoded).to_bytes(8, "big"))
+                    digest.update(encoded)
+        return {"logical_records": len(logical_ids), "views": rows,
+                "sha256": digest.hexdigest()}
 
     def _put(self, db, record: StoredRecord, children: tuple[str, ...]) -> None:
         key = record.key.detach().float().cpu().contiguous()

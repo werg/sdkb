@@ -155,6 +155,34 @@ def test_temporal_event_commit_is_atomic_causal_and_idempotent(tmp_path):
         "next_position": 1, "visibility_time": 1}
 
 
+def test_temporal_event_persists_external_lineage_and_metadata_atomically(tmp_path):
+    store = DiskStore(tmp_path / "events.sqlite")
+    records = [record("lesson", [1, 0], namespace="experience", space=space,
+                      generation="g1", created_at=4, source_id="trajectory-0")
+               for space in ("s0", "s1")]
+    kwargs = dict(
+        namespace="experience", stream="tasks", generation="g1", position=0,
+        event_id="task-0", visibility_time=4, expected_spaces=("s0", "s1"),
+        lineage={"lesson": ("g0/source-a", "g0/source-b")},
+        record_metadata={"lesson": {"call_id": "write-0", "parents": ["read-0"]}},
+    )
+    assert store.commit_event(records, **kwargs)
+    summary = store.generation_summary(
+        namespace="experience", generation="g1", spaces=("s0", "s1"))
+    assert summary["logical_records"] == 1 and summary["views"] == 2
+    assert len(summary["sha256"]) == 64
+    assert not store.commit_event(records, **kwargs)
+    with store.connect() as db:
+        assert db.execute("SELECT parent_ref FROM event_lineage ORDER BY parent_ref").fetchall() == [
+            ("g0/source-a",), ("g0/source-b",)]
+        assert db.execute("SELECT metadata FROM event_record_metadata").fetchone()[0] == (
+            '{"call_id":"write-0","parents":["read-0"]}')
+    changed = dict(kwargs)
+    changed["lineage"] = {"lesson": ("g0/source-a",)}
+    with pytest.raises(ValueError, match="already committed differently"):
+        store.commit_event(records, **changed)
+
+
 def test_temporal_event_rejects_partial_views_without_advancing(tmp_path):
     store = DiskStore(tmp_path / "events.sqlite")
     partial = [record("lesson", [1, 0], namespace="experience", space="s0",

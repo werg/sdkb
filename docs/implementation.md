@@ -8,8 +8,8 @@
 >
 > The multi-site memory-tool interface is specified in
 > [trajectory memory v0.5](trajectory-memory-v0.5.md). The first stored-read training
-> slice is implemented; learned call placement and prompted `memory.write` execution
-> remain later releases.
+> slice and fixed-trajectory `memory.write` execution are implemented; learned call
+> placement and generated write arguments remain later releases.
 
 `trajectory_memory.py` defines and validates the first canonical transcript contract.
 It requires each memory call to occupy its own assistant event, one logical record
@@ -40,17 +40,25 @@ optional pipeline splits an optimizer batch into several retained microbatch gra
 runs their search and serialized payload reads on CPU workers, and resumes their
 recurrent boundaries in a deterministic order. Its microbatch size and in-flight
 limit are recorded in the run fingerprint.
-Execution and publication of the prompted writes, learned placement, network
-retrieval, and the prequential growing-bank executor are not implemented yet.
+Execution and publication of the already prompted write sites is implemented by
+`build_prequential_bank.py`. Learned placement and network retrieval remain later
+work; this executor does not claim that the model chose the calls or generated their
+visible arguments.
 
-`DiskStore.commit_event` supplies the first prequential persistence primitive. In
+`DiskStore.commit_event` supplies the prequential persistence primitive. In
 one SQLite transaction it verifies that every logical write has all configured space
 views, inserts their immutable payloads, records a content-addressed event commit,
-and advances a monotonic stream frontier. Exact retries are idempotent. Because
+persists external evidence lineage and write metadata, and advances a monotonic
+stream frontier. Exact retries are idempotent. Because
 ordinary search requires `created_at < query_time`, a record committed at an event's
-visibility time cannot appear in that event's own reads. Scheduling trajectories,
-turning supervised write arguments into latent records, and versioned collection are
-still responsibilities of the planned growing-bank executor.
+visibility time cannot appear in that event's own reads. `GrowingCatalogIndex`
+merges the immutable parent generation with an append-only authored generation while
+retaining each payload's physical generation identity. The executor follows file
+order, resumes from the transactional frontier, runs every trajectory against the
+current catalog, encodes all prompted write arguments with the final writer, and
+publishes those writes only after the trajectory finishes. It records selected-read
+lineage and bank size after every event. Versioned garbage collection, remote search,
+learned call placement, and training sampled from logged size bands remain planned.
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.

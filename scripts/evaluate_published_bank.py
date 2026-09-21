@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
 import json
 from pathlib import Path
 
@@ -14,7 +13,7 @@ from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes
 from sdkb.evaluation import stored_transfer_evaluation
 from sdkb.key_index import PublishedKeyIndex
-from sdkb.offline_bank import (assert_bank_writer_compatible, canonical_json,
+from sdkb.offline_bank import (assert_bank_reader_compatible, canonical_json,
                                publish_offline_generation)
 from sdkb.operations import atomic_json
 from sdkb.sessions import read_session
@@ -114,7 +113,6 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     if generate_episodes < 0 or generate_episodes > max_episodes or generate_max_tokens < 1:
         raise ValueError('Generation needs a bounded episode count and positive token budget')
     config = config_from_run(run)
-    training_bank_dir = config.train.bank_dir
     if len(limits) != len(config.memory.payload_dims):
         raise ValueError('One retrieval limit per active space required')
     if any(k < 1 or k > cap for k, cap in zip(limits, config.memory.neighbors, strict=True)):
@@ -128,10 +126,9 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
         source_count=bank_manifest['sources'], verify_only=True)
     if canonical_json(verified) != canonical_json({key: bank_manifest[key] for key in verified}):
         raise ValueError('Published bank failed byte verification')
-    if bank_manifest['identity']['model'] != asdict(config.model):
-        raise ValueError('Bank model architecture differs from the evaluator')
-    if bank_manifest['identity']['memory'] != asdict(config.memory):
-        raise ValueError('Bank writer or stored-memory transform differs')
+    checkpoint = resolve_checkpoint(run, verify=True)
+    compatibility = assert_bank_reader_compatible(
+        run, checkpoint, bank_dir, bank_manifest, config)
     config.train.retrieval = 'oracle' if selection == 'supplied_mixed' else selection
     config.train.selected_producers_only = False  # training-only producer policy
     config.train.bank_dir = None
@@ -142,9 +139,6 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     config.validate()
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device).eval()
-    checkpoint = resolve_checkpoint(run, verify=True)
-    assert_bank_writer_compatible(run, checkpoint, bank_dir, bank_manifest,
-                                  training_bank_dir=training_bank_dir)
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     def forbidden_writer(*_args, **_kwargs):
         raise AssertionError('Published-bank evaluation must not re-encode a source')
@@ -188,6 +182,7 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
                 'bank_manifest_sha256': file_sha256(bank_manifest_path),
                 'episodes_sha256': file_sha256(episodes_file),
                 'max_episodes': max_episodes, 'read_limits': limits,
+                'bank_compatibility': compatibility,
                 'generate_episodes': generate_episodes,
                 'generate_max_tokens': generate_max_tokens if generate_episodes else None,
                 'selection': ('learned exact scan; supplied support is never used for retrieval'

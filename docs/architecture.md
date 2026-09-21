@@ -283,7 +283,9 @@ one level. A site assigned to a later level can use earlier-position results inj
 at a prior level, producing read-after-read composition through the causal mask. The
 legacy Phase 0 path is the one-site special case: one workspace after the prompt and
 one query per boundary. The spatial Phase 0 path now executes many sites and batched
-stored reads; prompted writes and learned call placement remain later work.
+stored reads. A prequential executor can encode and publish the packer's fixed
+prompted writes after each completed trajectory. Learned call placement and generated
+write arguments remain later work.
 
 ### 5.2 Query timing and causality
 

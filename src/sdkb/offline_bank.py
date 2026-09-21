@@ -44,6 +44,46 @@ def assert_bank_writer_compatible(run: Path, checkpoint: Path, bank_dir: Path,
                 raise ValueError(f'Bank-stage writer parameters changed: {key}')
 
 
+def assert_bank_reader_compatible(run: Path, checkpoint: Path, bank_dir: Path,
+                                  manifest: dict, config) -> dict:
+    """Prove that a checkpoint can consume a bank without claiming writer identity.
+
+    Spatial stages may adapt recurrent decoder weights after a frozen generation
+    was written. Their immutable launch record ties the consumer to that bank;
+    read evaluation needs that relationship and the stored interface, while a
+    fresh generic evaluator still needs exact writer compatibility.
+    """
+    from dataclasses import asdict
+
+    from .trajectories import file_sha256
+
+    current_memory = asdict(config.memory)
+    bank_memory = dict(manifest['identity']['memory'])
+    current_memory.pop('read_steps', None)
+    bank_memory.pop('read_steps', None)
+    bank_model = manifest['identity']['model']
+    if current_memory != bank_memory or any(
+            bank_model[name] != getattr(config.model, name)
+            for name in ('model_id', 'revision', 'writer_loops')):
+        raise ValueError('Bank stored interface differs from the reader checkpoint')
+    spatial = run / 'spatial-inputs.json'
+    if spatial.is_file():
+        inputs = json.loads(spatial.read_text())
+        if (Path(inputs['bank']).resolve() != bank_dir.resolve()
+                or inputs['bank_manifest_sha256'] != file_sha256(bank_dir / 'manifest.json')
+                or inputs['generation'] != manifest['generation']):
+            raise ValueError('Spatial consumer was trained against another bank generation')
+        return {'relationship': 'trained_spatial_consumer', 'checkpoint_is_bank_writer_snapshot':
+                file_sha256(checkpoint / 'model.safetensors') ==
+                manifest['identity']['writer_checkpoint_sha256']}
+    assert_bank_writer_compatible(
+        run, checkpoint, bank_dir, manifest, training_bank_dir=config.train.bank_dir)
+    return {'relationship': 'writer_compatible',
+            'checkpoint_is_bank_writer_snapshot':
+            file_sha256(checkpoint / 'model.safetensors') ==
+            manifest['identity']['writer_checkpoint_sha256']}
+
+
 def canonical_json(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
