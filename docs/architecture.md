@@ -608,6 +608,37 @@ A fixed two-nearest-center soft assignment in a normalized address or response-f
 
 Use authorization-homogeneous fields. Record any multi-membership lineage so deletion invalidates every affected field. At first these can be simple structural invariants in a single-domain prototype rather than a separate security infrastructure project.
 
+#### Hierarchical halo reads
+
+The corpus-scale design should also evaluate a multiresolution read: a small raw
+core near the query plus a bounded halo of overlapping compact fields. Coarser halo
+levels cover more logical descendants while exposing only a fixed number of
+synthetic records to the main reader. Construct fields with density-adaptive centers
+or a metric cover in the learned address/response space; a uniform grid is only a
+low-dimensional control because its cell count grows exponentially with dimension.
+Train with the discrete field plan fixed for each forward pass, backpropagate the
+task loss through every temporary compactor level, and later serve immutable
+materialized codes without fetching or re-encoding their descendants.
+
+Raw, fine and coarse views cannot each contribute the full evidence. Within a level,
+overlap responsibilities must sum to one as above. Across levels, use either a
+replacement frontier in which each leaf's contribution is represented at exactly one
+active level, or explicitly trained residual codes whose sum reconstructs the child
+frontier. Do not simply concatenate full summaries from every level. Train a level
+against its raw descendants as well as its immediate child codes so recursive error
+does not become the teacher. Add direct-versus-recursive consistency, downstream task
+loss, and contribution-and-mass losses at every level. Keep raw exceptions where a
+field exceeds its behavioral error budget.
+
+The hierarchy is a retrieval structure, not an authorization mechanism. A compact
+node may be used only when its complete support is eligible for the query's scope and
+time, unless an explicitly selection-conditioned representation has been trained and
+validated. Keys or region descriptors for compact nodes need their own versioned
+index and routing evaluation. At training time, dynamic descendant graphs are bounded
+samples; at inference time, the stored code is the read payload. Report logical
+descendant fan-in, physical payload count, reader and compactor compute, total bytes,
+and quality by level so a larger receptive field is not mistaken for free capacity.
+
 ### 8.8 A mechanical reason locality can help
 
 For fixed query and state, consider a field with static nonnegative weights $a_i$, total mass $A=\sum_i a_i$, and continuous record coordinates with weighted mean

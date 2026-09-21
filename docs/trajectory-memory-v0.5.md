@@ -455,6 +455,13 @@ read-before-write dependency.
 - Extend contribution-and-mass preserving compaction to multi-space, multi-site
   trajectory reads.
 - Train against the same reader states and selection opportunities as raw records.
+- Add density-adaptive overlapping halo fields and recursive compact levels. Use a
+  replacement frontier or trained residuals so raw/fine/coarse evidence is counted
+  once, and supervise every level against raw descendants rather than only its
+  already compacted children.
+- Train temporary hierarchy graphs end to end under downstream task loss, then
+  publish immutable query-independent codes and versioned compact-node indices for
+  stored-only inference. Track descendant fan-in separately from physical read cost.
 - Account for exceptions, raw fallback, indices, rewrite work, and total retained
   bytes. Do not serve a subset from a full-cluster code.
 
