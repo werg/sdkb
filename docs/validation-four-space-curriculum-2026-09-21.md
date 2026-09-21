@@ -400,3 +400,44 @@ are retained. Two externally stored immutable layouts now contain 9,876 trajecto
 one activates four sites at recurrent level one, while the other alternates sites
 across levels one and two. This is a compatibility bridge with eight read slots; it
 does not yet satisfy the later eight-search/four-write milestone.
+
+### Spatial handoff execution
+
+The retained G1 writer published generation `af7ff9d2053e17c5aae33f76` with
+100,000 logical sources and 400,000 space-local records. Its SQLite file is
+1,122,054,144 bytes; serialized payloads account for 800,000,000 bytes and FP32 keys
+for 102,400,000 bytes. The manifest digest is
+`aa1d0e198ab7f0d04017e0bea63938281c3d7f7e96c0d83a22f9eb2bbb62f82f`.
+
+Publication exposed an offline-verification query-plan defect. Before correction,
+`/proc` accounting reached about 4.23 TB of logical reads while validating the
+1.1 GB bank: SQLite selected the serving eligibility index and repeatedly scanned
+the generation. Offline banks now create an index on namespace, generation, record
+ID, and space; shard verification explicitly selects it. A completed-shard resume
+also skips redundant writer loading and per-shard commits and proceeds directly to
+the strict generation verifier. Publication then completed without re-encoding any
+source.
+
+The active R2 compatibility run is
+`spatial-r2-g1-20260921`. It trains batches of two whole trajectories, four distinct
+search sites per trajectory at recurrence level one, stored-only neighborhoods of
+16/8/4/4 records, and 256 exact global routing candidates per space. Step 1 took
+2.58 seconds including cold setup; an early warm step took 0.67 seconds. The first
+learned selections had zero verified-positive recall, while supplied positives kept
+the consumer path usable. This is an initial condition, not a retrieval result.
+
+Payload fetch batching initially triggered the same planner preference and made
+steps 90 and 100 take 15.86 and 13.99 seconds. The run checkpointed cleanly at step
+102. Published-bank batched fetches now explicitly use the record-ID index while
+preserving captured order and causal/authorization revalidation; after resume, steps
+110--130 took 1.71--2.79 seconds. The GPU snapshot during compute was 94--96% at
+about 5 GiB reported process memory. Snapshot utilization is not a duty-cycle
+measurement.
+
+Two later external artifacts are ready. The four-read/four-write layout contains
+9,876 trajectories, 18,489,080 tokens, and 10,521,326 supervised tokens. The
+eight-read/eight-write layout contains 4,938 longer trajectories, 18,321,877 tokens,
+and the same supervised-token total. Both alternate sites across two retrieval
+levels and retain explicit read-before-write lineage. Their R3 continuations are
+armed behind clean completion of the active stage; they have not yet produced
+training results.
