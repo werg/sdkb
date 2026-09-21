@@ -1,4 +1,4 @@
-"""Add prior, distinct-article source distractors to title-located QA episodes."""
+"""Add prior, distinct-article distractors to verified located-source episodes."""
 from __future__ import annotations
 
 import argparse
@@ -37,10 +37,13 @@ def prepare(episodes_file: Path, sources_file: Path, output: Path, *,
     prepared = []
     for line in episodes_file.open():
         episode = episode_from_dict(json.loads(line))
-        if (episode.task_family != 'passage_qa' or episode.support_annotation != 'verified'
+        located = {('passage_qa', 'source_article_title'),
+                   ('located_passage_span', 'article-and-passage-prefix-v1')}
+        if ((episode.task_family, episode.provenance.get('query_locator')) not in located
+                or episode.support_annotation != 'verified'
                 or len(episode.required_ids) != 1
-                or episode.provenance.get('query_locator') != 'source_article_title'):
-            raise ValueError('Expected one verified title-located QA support')
+                or len(episode.supports) != 1):
+            raise ValueError('Expected one verified title- or content-located support')
         required = episode.required_ids[0]
         if required not in by_id or episode.supports[0].record_id != required:
             raise ValueError('Required source differs from the source manifest')

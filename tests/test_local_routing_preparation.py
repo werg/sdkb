@@ -1,10 +1,16 @@
 from dataclasses import asdict
 import json
+import pytest
 
 from sdkb.data import Episode, Source, load_episodes
 
 
-def test_local_routing_prep_retains_verified_causal_source_and_deterministic_distractors(tmp_path):
+@pytest.mark.parametrize(('family', 'locator'), [
+    ('passage_qa', 'source_article_title'),
+    ('located_passage_span', 'article-and-passage-prefix-v1'),
+])
+def test_local_routing_prep_retains_verified_causal_source_and_deterministic_distractors(
+        tmp_path, family, locator):
     from scripts.prepare_local_routing import prepare
     sources = [Source(f's{i}', f'Title: Article_{i}\nPassage: fact {i}', 1, 'passage')
                for i in range(4)]
@@ -14,9 +20,9 @@ def test_local_routing_prep_retains_verified_causal_source_and_deterministic_dis
         for i, source in enumerate(sources)))
     episode = Episode('q', 'squad-train', (sources[0],),
                       'Article: Article_0\nQuestion: Which fact?', 'fact 0',
-                      ('s0',), False, 0, 0, 2, 'passage_qa', (), (('s0',),),
+                      ('s0',), False, 0, 0, 2, family, (), (('s0',),),
                       'verified', {'article_title': 'Article_0',
-                                   'query_locator': 'source_article_title'})
+                                   'query_locator': locator})
     episodes_path = tmp_path / 'input.jsonl'
     episodes_path.write_text(json.dumps(asdict(episode)) + '\n')
     first = prepare(episodes_path, source_path, tmp_path / 'out1',
