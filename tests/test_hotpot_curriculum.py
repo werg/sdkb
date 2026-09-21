@@ -31,6 +31,19 @@ def test_hotpot_chunks_preserve_sentence_support_mapping_and_budget():
                for source in sources)
 
 
+def test_hotpot_chunks_split_a_single_oversized_token():
+    chunk = helpers()['paragraph_chunks']
+    tokenizer = WordTokenizer()
+    # The real tokenizer may split one whitespace token into many subwords.
+    tokenizer.encode = lambda text, add_special_tokens=False: list(range(
+        len(text) // 4 + int(add_special_tokens)))
+    sources, mapping = chunk('Title', ['x' * 100], tokenizer, 12)
+    assert len(sources) > 1
+    assert mapping[0] == [source.record_id for source in sources]
+    assert all(len(tokenizer.encode(source.text, add_special_tokens=True)) <= 12
+               for source in sources)
+
+
 def test_hotpot_episode_keeps_only_prior_verified_supports_and_hides_answer():
     module = helpers()
     tokenizer = WordTokenizer()

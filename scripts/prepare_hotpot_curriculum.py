@@ -60,7 +60,23 @@ def paragraph_chunks(title: str, sentences: list[str], tokenizer,
                 else:
                     hi = mid - 1
             if best is None:
-                raise ValueError('Title leaves no room for one source word')
+                word = sentence[words[start].start():words[start].end()]
+                offset = 0
+                while offset < len(word):
+                    lo, hi, char_best = offset + 1, len(word), None
+                    while lo <= hi:
+                        mid = (lo + hi) // 2
+                        if len(tokenizer.encode(prefix + word[offset:mid],
+                                                add_special_tokens=True)) <= max_source_tokens:
+                            char_best, lo = mid, mid + 1
+                        else:
+                            hi = mid - 1
+                    if char_best is None:
+                        raise ValueError('Source prefix leaves no room for content')
+                    pieces.append((sentence_index, word[offset:char_best]))
+                    offset = char_best
+                start += 1
+                continue
             text = sentence[words[start].start():words[best - 1].end()]
             pieces.append((sentence_index, text))
             start = best
