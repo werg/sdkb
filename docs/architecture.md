@@ -621,25 +621,50 @@ task loss through every temporary compactor level, and later serve immutable
 materialized codes without fetching or re-encoding their descendants.
 
 Representational redundancy is desirable: one raw point may influence many
-overlapping fields, alternative clusterings, and hierarchy levels. The accounting
-constraint concerns their simultaneous contribution to one read, not how many
-representations may store or compute that evidence. Within one overlapping view,
-responsibilities form an overcomplete partition of unity: every field can encode a
-different nonlinear context while the coefficients and masses sum to one per source.
-This preserves distributed and error-correcting representations without silently
-turning repeated views of one observation into several independent observations.
-Additional deliberately redundant views remain possible, but the plan must label
-their shared provenance and train the reader to combine correlated views at a stated
-compute and storage budget.
+overlapping fields, alternative clusterings, and hierarchy levels. The reader does
+not receive provenance or decide whether records are statistically independent;
+dependence is pervasive. Provenance remains operational metadata for deletion,
+authorization, contamination analysis, and rebuilding descendants.
 
-Across levels, use either a replacement frontier in which each leaf's contribution
-is represented at exactly one active level, or explicitly trained residual codes
-whose sum reconstructs the child frontier. Do not simply concatenate full-mass
-summaries from every level and interpret their mass as independent support. Train a
-level against its raw descendants as well as its immediate child codes so recursive
-error does not become the teacher. Add direct-versus-recursive consistency,
-downstream task loss, and contribution-and-mass losses at every level. Keep raw
-exceptions where a field exceeds its behavioral error budget.
+There are two different experimental semantics. In **equivalence compaction**, an
+overlapping construction is trained to approximate one declared raw aggregation.
+Partition-of-unity responsibilities and mass preservation make the approximation
+invariant to an arbitrary refinement of that construction. These coefficients are
+numerical aggregation weights, not epistemic confidence or independence estimates.
+Across levels, equivalence compaction uses a replacement frontier or residual codes
+so its target remains well defined.
+
+In **computational expansion**, many overlapping compact records deliberately enter
+the downstream computation. They need not sum to one globally or pretend to be
+independent evidence. Their multiplicity, hierarchy level, and retrieval schedule
+are part of the learned architecture, and downstream task training determines how
+the reader uses the redundant states. Compare this against a matched-compute control
+and keep the schedule stable enough that changes in database density do not silently
+change the model. A conservative first implementation can normalize within each
+local compaction and then fuse several redundant views; it does not need to expose
+source provenance to the neural reader.
+
+Condition the shared compactor on its geometric role. Each positioned input can
+carry its payload, normalized offset from the field center, membership strength, and
+optional local density; the field carries its center or region descriptor, radius or
+covariance, hierarchy level, descendant mass, and code-slot identity. Compacting the
+set of these tuples remains permutation invariant. Neighbor-relative descriptors or
+joint training of overlapping fields let one field specialize in central/common
+structure while another retains boundary or directional distinctions. These are
+structural coordinates, not source provenance and not claims of independence.
+
+Prefer relative coordinates in a versioned learned metric over raw absolute key
+coordinates. The present keys are normalized cosine addresses and can drift between
+writer generations; a hierarchy must pin its coordinate transform or rebuild its
+fields. A compact node needs its own learned/versioned region key rather than
+borrowing an arbitrary child's key. Train positional fields jointly under task and
+raw-descendant objectives, with field or neighbor dropout so useful specialization
+does not become a brittle assumption that every adjacent code is always retrieved.
+
+Train every level against raw descendants as well as immediate child codes so
+recursive error does not become the teacher. Add direct-versus-recursive consistency,
+downstream task loss, and contribution-and-mass losses when an equivalence target is
+used. Keep raw exceptions where a field exceeds its behavioral error budget.
 
 Published codes carry computation forward even though publication detaches their
 historical gradient graph. Train the shared transition on shallow sampled subtrees
