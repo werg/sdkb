@@ -224,7 +224,7 @@ values. These generated passages still contain substantial hallucinated
 content. The result establishes useful payload-dependent token probabilities
 under oracle delivery, but not accurate passage reconstruction.
 
-The prepared full-passage/indexed-span mixture is now running from the
+The full-passage/indexed-span mixture started from the
 step-3,000 writer as a new training stage at
 `/archive/runs/four-space-short-span-20260921`. Its first stop is at 1,000
 updates for a source-disjoint span and full-passage check; the bank writer
@@ -239,8 +239,8 @@ On the same 64 full-passage sources, correct-value NLL was 3.159 before the
 mixed stage and 3.189 after it; the corresponding zero-value scores were
 3.555 and 3.589. The mixed objective improved span token probabilities
 while approximately preserving the earlier full-passage payload signal.
-Neither task yet has convincing exact free generation. Training resumed
-toward one complete pass over the 12,000 mixed episodes.
+Neither task yet has convincing exact free generation. Training then
+completed one deterministic pass over the 12,000 mixed episodes at step 6,000.
 
 For the subsequent published-bank stage, a source-oriented manifest and
 content-located span queries are prepared at
@@ -254,7 +254,34 @@ the standalone source-manifest SHA-256 is
 `6c1f8e28a39e9c260197a2f8fce2f1d3314d8cbb17bc3dab27879e915bb10d58`.
 Each source row retains its original source ID, article title, context hash,
 short-corpus identity, and text hash in provenance bound to this bank manifest.
-The bank is not yet built; it must use a frozen writer snapshot after the
-active span run, so stored keys and values are not silently mixed across
-writer versions. Validation source text will be in the bank without its
-question/answer labels, preserving source-disjoint training labels.
+The bank was built only after the step-6,000 writer was frozen, so stored keys
+and values are not silently mixed across writer versions. Validation source
+text is in the bank without its question/answer labels, preserving
+source-disjoint training labels.
+
+At step 6,000, all 512 source-disjoint indexed-span episodes scored 3.6575
+teacher NLL with reopened correct BF16 payloads, 4.5099 with values zeroed,
+and 6.6572 with no memory. On 32 greedy generations, exact match was 0/32;
+mean generated-word overlap was 0.0865 with correct values and 0.1045 with
+zero values. The NLL gain has not translated into useful exact span
+generation. On all 512 full-passage episodes, the corresponding NLL values
+were 3.0610, 3.5765, and 4.1853. Full-passage greedy exact match was also
+0/32, with generated-word overlap 0.2033 versus 0.1511 for zero values.
+
+The frozen bank at `/archive/banks/four-space-short-span-6512` published 102
+verified shards, 6,512 logical sources, and 26,048 space-local records. Its
+manifest SHA-256 is
+`c45f17bc8e9ca2f9ed892990681e951418bb66fd2bec06bf2b09d14d07edb1a0`;
+the writer model SHA-256 is
+`73e42bd31dac87446a40f98ba202b2fc73493fa1eb4a79400e353ea114d96383`.
+The SQLite file occupies about 71 MB on the external disk. This generation
+is immutable and distinct from the earlier QA banks.
+
+Before bank training, 128 heldout content-located span questions with a
+supplied verified source plus exact-search distractors scored 3.8825 NLL
+with correct stored values, 4.2199 with values zeroed, and 4.5753 when the
+verified source was swapped out under the same plans. Greedy exact match
+was 0/16. Unassisted global retrieval was poor: verified-source median
+ranks across the four spaces were 3,119, 2,738, 3,705, and 3,115.5 among
+6,512 eligible records. The stored-value signal supports a corpus-backed
+training pilot, but neither retrieval nor exact generation is established.
