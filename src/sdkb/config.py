@@ -73,6 +73,8 @@ class TrainConfig:
     muon_momentum: float = .95
     muon_ns_steps: int = 5
     gradient_accumulation: int = 4
+    batch_size: int = 1  # examples executed together per accumulation microbatch
+    tokenized_episodes_file: str | None = None
     sampling_policy: str = 'random_with_replacement'  # or deterministic shuffled_passes
     bank_dir: str | None = None  # published immutable frozen-writer corpus generation
     bank_read_limits: list[int] = field(default_factory=list)  # per-space selected records, <= neighbors
@@ -196,6 +198,8 @@ class Config:
             raise ValueError('Warm-start memory gate must be a probability for native recurrence')
         if t.selected_producers_only and (t.arm != 'memory' or t.retrieval != 'oracle' or t.live_fraction != 1.):
             raise ValueError('Selected-only producers require fully live oracle memory training')
+        if (t.batch_size < 1 or not isinstance(t.batch_size, int) or isinstance(t.batch_size, bool)):
+            raise ValueError('Training batch size must be a positive integer')
         if (t.weight_decay < 0 or t.adam_eps <= 0 or len(t.adam_betas) != 2
                 or any(not 0 <= b < 1 for b in t.adam_betas)
                 or not 0 <= t.muon_momentum < 1 or t.muon_ns_steps < 1):

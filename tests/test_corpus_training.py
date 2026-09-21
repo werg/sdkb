@@ -13,7 +13,7 @@ from sdkb.trajectories import file_sha256
 
 
 def test_stored_corpus_forward_uses_only_prefix_and_frozen_payloads(tmp_path, tiny_config):
-    from sdkb.corpus_training import stored_corpus_forward
+    from sdkb.corpus_training import stored_corpus_forward, stored_corpus_forward_batch
     tiny_config.model.tiny_layers = 3
     tiny_config.model.recurrence_mode = 'middle_block'
     tiny_config.model.recurrent_start = 1
@@ -48,6 +48,16 @@ def test_stored_corpus_forward_uses_only_prefix_and_frozen_payloads(tmp_path, ti
                                                limits=(2, 1), searcher=Searcher())
     second, second_plan = stored_corpus_forward(agent, store, episode.__class__(
         **(episode.__dict__ | {'answer': 'different target'})), generation='g1', limits=(2, 1))
+    other = episode.__class__(**(episode.__dict__ | {
+        'episode_id': 'query-two', 'supports': (sources[1],),
+        'required_ids': ('s1',), 'sufficient_groups': (('s1',),), 'answer': '1x'}))
+    other_result, _ = stored_corpus_forward(agent, store, other,
+                                             generation='g1', limits=(2, 1))
+    batched, batched_info = stored_corpus_forward_batch(
+        agent, store, [episode, other], generation='g1', limits=(2, 1))
+    torch.testing.assert_close(batched.nll, torch.stack((first.nll, other_result.nll)).mean(),
+                               atol=3e-6, rtol=3e-5)
+    assert batched_info['selected_counts'] == [2, 1]
     assert first_plan['selected_ids'] == second_plan['selected_ids']
     assert all('s0' in ids for ids in first_plan['selected_ids'])
     assert first_plan['selected_counts'] == [2, 1]

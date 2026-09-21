@@ -63,6 +63,41 @@ def test_agent_full_graph_vs_selective_replay(tiny_config):
             torch.testing.assert_close(p.grad, pb.grad, atol=2e-5, rtol=2e-4, msg=name)
 
 
+def test_batched_writer_matches_serial_with_variable_lengths(tiny_config):
+    agent = SDKBAgent(tiny_config).eval()
+    ids = [agent.text_ids(text, source=True) for text in ('short', 'a substantially longer source')]
+    serial = [agent.produce(item) for item in ids]
+    batched = agent.produce_batch(ids)
+    for row, expected in enumerate(serial):
+        for actual, reference in zip(batched, expected, strict=True):
+            torch.testing.assert_close(actual[row:row + 1], reference, atol=2e-6, rtol=2e-5)
+
+
+def test_batched_native_consumer_matches_mean_serial_objective(tiny_config):
+    tiny_config.model.recurrence_mode = 'middle_block'
+    tiny_config.model.recurrent_start = 0
+    tiny_config.model.recurrent_end = 1
+    tiny_config.model.loops = 2
+    tiny_config.model.writer_loops = 1
+    tiny_config.memory.read_timing = 'loop_boundary'
+    tiny_config.train.retrieval = 'oracle'
+    tiny_config.train.live_fraction = 1.0
+    agent = SDKBAgent(tiny_config).eval()
+    episodes = [make_episode(11, distractors=0), make_episode(12, distractors=0)]
+    records, prompts, targets, required = [], [], [], []
+    for episode in episodes:
+        records.append([agent.produce(agent.text_ids(source.text, source=True))
+                        for source in episode.supports])
+        prompts.append(agent.prompt_ids(episode.query))
+        targets.append(agent.target_ids(episode.answer))
+        required.append(list(range(len(episode.supports))))
+    serial = torch.stack([agent(prompt, target, record, need).loss
+                          for prompt, target, record, need in
+                          zip(prompts, targets, records, required, strict=True)]).mean()
+    batched = agent.forward_loop_memory_batch(prompts, targets, records, required)
+    torch.testing.assert_close(batched.loss, serial, atol=3e-6, rtol=3e-5)
+
+
 def test_query_is_independent_of_teacher_target(tiny_config):
     a = SDKBAgent(tiny_config).eval()
     episode = make_episode(2, distractors=0)

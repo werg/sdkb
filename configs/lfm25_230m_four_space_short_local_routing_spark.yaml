@@ -11,7 +11,7 @@ model:
   recurrent_start: 4
   recurrent_end: 10
   writer_loops: 1
-  gradient_checkpointing: true
+  gradient_checkpointing: false
   freeze_backbone: true
 memory:
   key_dim: 64
@@ -23,7 +23,7 @@ memory:
   reader_rounds: 3
   reader: mlp
   chunk_size: 16
-  checkpoint_chunks: true
+  checkpoint_chunks: false
   storage_dtype: bfloat16
   compaction: none
   read_timing: loop_boundary

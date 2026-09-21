@@ -155,6 +155,49 @@ class SDKBAgent(nn.Module):
             output.extend((F.normalize(address(key), dim=-1), codec(canonical)))
         return tuple(output)
 
+    def produce_batch(self, source_ids: list[Tensor], *,
+                      payload_rows: Tensor | None = None) -> tuple[Tensor, ...]:
+        """Write variable-length sources in one padded native-backbone call.
+
+        Padding follows every source's write slots, so causal source and slot
+        positions match the corresponding unpadded writer execution.  Keys are
+        always produced.  ``payload_rows`` may omit payload projection for rows
+        that cannot be selected by the fixed oracle plan.
+        """
+        if not source_ids or any(ids.ndim != 2 or ids.shape[0] != 1 for ids in source_ids):
+            raise ValueError('produce_batch expects nonempty single-row token tensors')
+        width, slots = self.width, self.config.memory.write_slots + 1
+        lengths = torch.tensor([ids.shape[1] for ids in source_ids], device=self.device)
+        rows = []
+        for ids in source_ids:
+            tokens = self.backbone.embed(ids)
+            row = torch.cat((tokens, self.write_slots[None]), 1)
+            rows.append(F.pad(row, (0, 0, 0, int(lengths.max()) + slots - row.shape[1])))
+        embeddings = torch.cat(rows, 0)
+        positions = torch.arange(embeddings.shape[1], device=self.device)[None]
+        mask = positions < (lengths + slots)[:, None]
+        hidden = self.backbone.hidden(embeddings, mask.long(),
+                                      loops=self.config.model.writer_loops)
+        indices = lengths[:, None] + torch.arange(slots, device=self.device)[None]
+        tail = hidden.gather(1, indices[..., None].expand(-1, -1, width))
+        key = F.normalize(self.key_head(tail[:, 0]), dim=-1)
+        if payload_rows is None:
+            payload_rows = torch.ones(len(source_ids), dtype=torch.bool, device=self.device)
+        if payload_rows.shape != (len(source_ids),) or payload_rows.dtype != torch.bool:
+            raise ValueError('payload_rows must be one boolean per source')
+        canonical = self.value_head(tail[payload_rows, 1:]).flatten(1)
+        output = []
+        for address, codec, dim in zip(self.address_maps, self.codecs,
+                                       self.config.memory.payload_dims, strict=True):
+            if canonical.shape[0]:
+                encoded = codec(canonical)
+                payload = encoded.new_zeros(len(source_ids), dim).index_copy(
+                    0, payload_rows.nonzero().flatten(), encoded)
+            else:
+                payload = canonical.new_zeros(len(source_ids), dim)
+            output.extend((F.normalize(address(key), dim=-1), payload))
+        return tuple(output)
+
     def _query_features(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
         embeddings = self._context(prompt_ids, memory)
         # Query uses ONLY the prompt, never teacher-forced target tokens.
@@ -211,6 +254,91 @@ class SDKBAgent(nn.Module):
             view = compact_view(values[0], weights[0], grouping="local", group_size=r.compaction_group_size)
             auxiliary = contribution_loss(self.reader, values[0], weights[0], view.values, view.weights, query)
         return self.reader(values[0], query, weights[0]).tokens, auxiliary
+
+    def _read_padded_batch(self, payloads: list[Tensor], weights: list[Tensor],
+                           query: Tensor) -> Tensor:
+        if isinstance(self.reader, MultiSpaceReader):
+            return self.reader(payloads, query, weights)
+        return self.reader(payloads[0], query, weights[0]).tokens
+
+    def forward_loop_memory_batch(self, prompts: list[Tensor], targets: list[Tensor],
+                                  records: list[list[tuple[Tensor, ...]]],
+                                  required: list[list[int]], *, step: int = 0) -> ForwardResult:
+        """Padded multi-example form of the native R=2, one-read training path."""
+        r, t = self.config.memory, self.config.train
+        batch = len(prompts)
+        if (batch < 1 or len(targets) != batch or len(records) != batch or len(required) != batch
+                or self.backbone.loops != 2 or r.read_steps != 1 or r.compaction != 'none'):
+            raise ValueError('Batched native training requires aligned inputs, R=2, one raw read')
+        prompt_lengths = torch.tensor([x.shape[1] for x in prompts], device=self.device)
+        target_lengths = torch.tensor([x.shape[1] for x in targets], device=self.device)
+        slot_count = r.read_slots
+        sequences = []
+        for prompt, target in zip(prompts, targets, strict=True):
+            sequences.append(torch.cat((self.backbone.embed(prompt),
+                                        self.loop_workspace[None],
+                                        self.backbone.embed(target[:, :-1])), 1))
+        total_lengths = prompt_lengths + slot_count + target_lengths - 1
+        maximum = int(total_lengths.max())
+        embeddings = torch.cat([F.pad(row, (0, 0, 0, maximum - row.shape[1]))
+                                for row in sequences], 0)
+        mask = torch.arange(maximum, device=self.device)[None] < total_lengths[:, None]
+        selected = [[[] for _ in r.payload_dims] for _ in range(batch)]
+        routing = self.memory_gate * 0
+        oracle = t.retrieval == 'oracle' or (self.training and step < t.routing_warmup)
+        read_count = 0
+
+        def boundary(completed, state, _anchor):
+            nonlocal routing, read_count
+            query_positions = prompt_lengths + slot_count - 1
+            query_state = state[torch.arange(batch, device=self.device), query_positions]
+            features = self.loop_query_norm(query_state)
+            query = F.normalize(self.query_head(features), dim=-1)
+            routing_query = (query if self.routing_query_head is None else
+                             F.normalize(self.routing_query_head(features), dim=-1))
+            payloads, weights = [], []
+            for space, dim in enumerate(r.payload_dims):
+                chosen_rows = []
+                local_routing = routing * 0
+                for row in range(batch):
+                    keys = (torch.cat([item[2 * space] for item in records[row]], 0)
+                            if records[row] else query.new_empty(0, r.key_dim))
+                    scores = cosine_scores(self.query_maps[space](routing_query[row:row + 1]), keys)[0]
+                    if t.retrieval == 'learned' and required[row]:
+                        local_routing = local_routing + group_plan_loss(scores, [tuple(required[row])])
+                    choice = (required[row] if oracle else
+                              scores.argsort(descending=True, stable=True)[:self.requested_records(
+                                  query[row:row + 1], r.neighbors[space])].tolist())
+                    selected[row][space].extend(choice)
+                    chosen_rows.append(torch.cat([records[row][i][2 * space + 1] for i in choice], 0)
+                                       if choice else query.new_empty(0, dim))
+                routing = routing + local_routing / (batch * len(r.payload_dims))
+                count = max((x.shape[0] for x in chosen_rows), default=0)
+                payloads.append(torch.cat([F.pad(x, (0, 0, 0, count - x.shape[0]))[None]
+                                           for x in chosen_rows], 0))
+                weights.append(torch.cat([torch.cat((query.new_ones(x.shape[0]),
+                                                     query.new_zeros(count - x.shape[0])))[None]
+                                          for x in chosen_rows], 0))
+            read_count += 1
+            memory = self._read_padded_batch(payloads, weights, query)
+            return LoopWrite(prompt_lengths, memory)
+
+        hidden = self.backbone.hidden(embeddings, mask.long(), boundary=boundary)
+        max_target = int(target_lengths.max())
+        logits_rows, label_rows = [], []
+        for row, target in enumerate(targets):
+            start = int(prompt_lengths[row]) + slot_count - 1
+            logits = self.backbone.logits(hidden[row:row + 1, start:start + target.shape[1]]).float()
+            logits_rows.append(F.pad(logits, (0, 0, 0, max_target - target.shape[1])))
+            label_rows.append(F.pad(target, (0, max_target - target.shape[1]), value=-100))
+        logits = torch.cat(logits_rows, 0)
+        labels = torch.cat(label_rows, 0)
+        token_loss = F.cross_entropy(logits.transpose(1, 2), labels, reduction='none')
+        nll = (token_loss.sum(1) / target_lengths).mean()
+        routing = routing / max(1, read_count)
+        return ForwardResult(nll + t.routing_weight * routing, nll, routing,
+                             self.memory_gate * 0, selected[0], raw_nll=nll,
+                             read_count=read_count)
 
     def read_pair(self, payloads: list[Tensor], query: Tensor, *, ablate_values: bool = False):
         """Raw and compact paths see exactly the same noisy values and selection."""

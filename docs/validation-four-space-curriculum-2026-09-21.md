@@ -259,6 +259,54 @@ and values are not silently mixed across writer versions. Validation source
 text is in the bank without its question/answer labels, preserving
 source-disjoint training labels.
 
+## Target-curriculum execution upgrade
+
+The sustained two-generation HotpotQA curriculum runs under
+`/archive/runs/four-space-target-curriculum-v2-20260921`. Its scientific
+budget remains two live and two stored-bank passes per generation over 39,504
+episodes, with 100,000 source records per published bank generation. At step
+32,419 of the first live stage it was cooperatively stopped and checkpointed
+to replace serial execution with `padded-batch-v1`.
+
+The upgrade executes two examples in one padded recurrent consumer graph,
+batches all variable-length source writers for those examples, and projects
+stored values only for records in the fixed oracle read plan while retaining
+keys for every routing candidate. Source padding follows each source's write
+slots; consumer padding follows each complete prompt/workspace/target row.
+Per-row memory insertion positions and target losses preserve causal
+boundaries. Backbone and MLP-reader activation checkpointing are disabled.
+The effective batch remains two examples per optimizer update.
+
+Training token IDs are materialized at
+`/archive/corpora/hotpot-four-space-target-100k-v2-20260921/train.tokens.jsonl`.
+Its 39,504 rows occupy 64 MB and are bound to episode SHA-256
+`2d23a2c1d16efd88cffb3a49acadb1b423d35d4b6ba4dfe674f6baac519961d2`,
+the pinned LFM revision, memory-only prompt contract, and configured token
+limits. The raw source/query records remain authoritative.
+
+The stop arrived after one serial microbatch of an unfinished update. The
+upgrade restored model and Muon optimizer state from completed step 32,419,
+discarded that uncommitted partial gradient, and replayed the corresponding
+two-example position as a batch. This is an explicit learned-state resume,
+not a bitwise continuation of the former execution schedule.
+
+On the actual pinned HF model, steps 32,420 through 32,517 averaged 0.425
+seconds per optimizer update while another process occupied most of the GPU,
+compared with about 0.99 seconds per update for the earlier uncontended serial
+path. Peak CUDA allocation was 2.39 GB after the upgrade versus 2.22 GB before
+it. These are warm live-stage measurements and are not bank-build, stored-read,
+or cold-NVMe throughput claims. The full suite passed 567 tests and Ruff was
+clean before the actual-model restart; the actual BF16 run then exposed and
+validated one codec-buffer dtype correction before any optimizer update.
+An actual-model serial-versus-batched writer check on unequal source lengths
+gave key cosine similarities of at least 0.9999993. Payload cosine similarities
+were at least 0.9999995; the largest payload RMS difference was 0.00492 against
+an RMS scale of 6.13. These are expected BF16 kernel-shape differences rather
+than bitwise equality.
+The subsequent 100,000-source bank build retains 64-source atomic recovery
+shards and now executes each shard as four writer batches of 16; publication
+still occurs only after all four space views in every shard are verified.
+
 At step 6,000, all 512 source-disjoint indexed-span episodes scored 3.6575
 teacher NLL with reopened correct BF16 payloads, 4.5099 with values zeroed,
 and 6.6572 with no memory. On 32 greedy generations, exact match was 0/32;

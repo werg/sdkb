@@ -45,6 +45,26 @@ def test_train_smoke_save_resume(tmp_path, tiny_config):
     assert resumed["last"]["step"] == 3
 
 
+def test_native_training_executes_two_examples_as_one_batch(tmp_path, tiny_config):
+    tiny_config.model.recurrence_mode = 'middle_block'
+    tiny_config.model.recurrent_start = 0
+    tiny_config.model.recurrent_end = 1
+    tiny_config.model.loops = 2
+    tiny_config.model.writer_loops = 1
+    tiny_config.memory.read_timing = 'loop_boundary'
+    tiny_config.memory.compaction = 'none'
+    tiny_config.train.retrieval = 'learned'
+    tiny_config.train.routing_warmup = 2
+    tiny_config.train.live_fraction = 1.0
+    tiny_config.train.gradient_accumulation = 1
+    tiny_config.train.batch_size = 2
+    tiny_config.train.sampling_policy = 'shuffled_passes'
+    tiny_config.train.steps = 1
+    result = train(tiny_config, tmp_path / 'batched')
+    assert result['steps'] == 1
+    assert result['last']['sampling']['position_in_pass'] == 0
+
+
 def test_stored_only_eval_never_calls_writer(tmp_path, tiny_config, monkeypatch):
     agent = SDKBAgent(tiny_config).eval()
     episodes = [make_episode(0, split="unseen", distractors=1)]

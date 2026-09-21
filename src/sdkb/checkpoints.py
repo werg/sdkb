@@ -180,7 +180,8 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
 
 
 def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
-                       fingerprint: str, *, progress: dict | None = None) -> int:
+                       fingerprint: str, *, progress: dict | None = None,
+                       discard_accumulation: bool = False) -> int:
     import torch
     from safetensors.torch import load_model
     run = Path(run)
@@ -196,7 +197,7 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
     state = torch.load(path / "training_state.pt", map_location="cpu", weights_only=True)
     required = {'optimizer', 'step', 'optimizer_type', 'optimizer_parameter_names',
                 'python_rng', 'global_python_rng', 'torch_rng', 'cuda_rng'}
-    if state.get('accumulation'):
+    if state.get('accumulation') and not discard_accumulation:
         required.add('gradients')
     if required - state.keys() or state.get('optimizer_parameter_names') is None:
         raise ValueError('Checkpoint lacks complete resume state; '
@@ -205,7 +206,7 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
         raise ValueError('Optimizer changed; use an explicit warm-start with a new run identity')
     if state['optimizer_parameter_names'] != getattr(optimizer, '_sdkb_parameter_names', None):
         raise ValueError('Optimizer parameter names/order changed; refusing mismatched momentum')
-    if state.get('accumulation'):
+    if state.get('accumulation') and not discard_accumulation:
         accumulation_keys = {'microbatches', 'loops', 'totals', 'anchor_total'}
         if agent.config.train.oracle_alignment_weight:
             accumulation_keys.add('alignment_total')
@@ -217,7 +218,7 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
             raise ValueError('Checkpoint has an incomplete optimizer update; restore its accumulation state')
     load_model(agent, str(path / "model.safetensors"), device=agent.config.train.device)
     optimizer.load_state_dict(state["optimizer"])
-    if state.get('accumulation'):
+    if state.get('accumulation') and not discard_accumulation:
         progress.update(state['accumulation'])
         parameters = dict(agent.named_parameters())
         for name, gradient in state['gradients'].items():

@@ -23,8 +23,8 @@ from sdkb.trajectories import file_sha256
 
 
 def build(run: Path, sources: Path, output: Path, *, max_sources: int,
-          shard_size: int = 64) -> dict:
-    if min(max_sources, shard_size) < 1 or not sources.is_file() or not output.parent.is_dir():
+          shard_size: int = 64, writer_batch_size: int = 16) -> dict:
+    if min(max_sources, shard_size, writer_batch_size) < 1 or not sources.is_file() or not output.parent.is_dir():
         raise ValueError('Positive budgets, source file and existing output parent required')
     if output.parent.stat().st_dev == Path(__file__).resolve().parents[1].stat().st_dev:
         raise ValueError('Bank output must live on the external disk')
@@ -76,12 +76,18 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
         shard_ids.append(shard_id)
         def records():
             with torch.no_grad(), autocast_context(config):
-                for row in chunk:
-                    source = Source(**{key: row[key] for key in
-                                       ('record_id', 'text', 'created_at', 'kind')})
-                    payloads = stored_channel(agent, agent.produce(agent.text_ids(source.text, source=True)))
-                    for record in output_records(agent, source, payloads, 'corpus', generation):
-                        yield replace(record, domain=row.get('domain', 'research'))
+                for offset in range(0, len(chunk), writer_batch_size):
+                    mini = chunk[offset:offset + writer_batch_size]
+                    source_batch = [Source(**{key: row[key] for key in
+                                              ('record_id', 'text', 'created_at', 'kind')})
+                                    for row in mini]
+                    encoded = agent.produce_batch([agent.text_ids(source.text, source=True)
+                                                   for source in source_batch])
+                    payloads = stored_channel(agent, encoded)
+                    for index, (row, source) in enumerate(zip(mini, source_batch, strict=True)):
+                        outputs = tuple(value[index:index + 1] for value in payloads)
+                        for record in output_records(agent, source, outputs, 'corpus', generation):
+                            yield replace(record, domain=row.get('domain', 'research'))
         made = ensure_offline_shard(store, records, identity=identity, namespace='corpus',
                                     generation=generation, spaces=spaces, shard_id=shard_id,
                                     source_ids=tuple(row['record_id'] for row in chunk))
@@ -104,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-sources', type=int, required=True)
     parser.add_argument('--shard-size', type=int, default=64)
+    parser.add_argument('--writer-batch-size', type=int, default=16)
     args = parser.parse_args()
     print(json.dumps(build(args.run, args.sources, args.output,
-                           max_sources=args.max_sources, shard_size=args.shard_size), indent=2))
+                           max_sources=args.max_sources, shard_size=args.shard_size,
+                           writer_batch_size=args.writer_batch_size), indent=2))

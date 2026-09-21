@@ -179,6 +179,16 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     episodes = (EpisodeIndex(config.train.episodes_file) if config.train.episodes_file else
                 [make_episode(i, split=f"train-{config.train.seed}", distractors=config.train.distractors)
                  for i in range(config.train.train_worlds)])
+    token_index = None
+    if config.train.tokenized_episodes_file:
+        if not isinstance(episodes, EpisodeIndex):
+            raise ValueError('Pretokenized training requires an immutable episode file')
+        from .token_index import TokenIndex
+        token_index = TokenIndex(config.train.tokenized_episodes_file,
+            episode_sha256=episodes.sha256, model_id=config.model.model_id,
+            revision=config.model.revision, arm=config.train.arm)
+        if len(token_index) != len(episodes):
+            raise ValueError('Tokenized episode row count differs from episode data')
     validate_routing_dataset(config, episodes)
     if config.train.bank_dir is not None and any(
             len(episode.required_ids) > min(config.train.bank_read_limits) for episode in episodes):
@@ -195,14 +205,33 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     output = Path(output)
     if config.train.device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA requested but unavailable. Use configs/tiny_cpu.yaml for offline tests.")
+    execution_upgrade = False
     if not resume:
         output.mkdir(parents=True, exist_ok=False)
     else:
         resolve_checkpoint(output)
         old_config = asdict(config_from_run(output))
         current = asdict(config)
+        old_effective_batch = (old_config['train']['gradient_accumulation'] *
+                               old_config['train'].get('batch_size', 1))
+        current_effective_batch = (current['train']['gradient_accumulation'] *
+                                   current['train']['batch_size'])
+        if old_effective_batch != current_effective_batch:
+            raise ValueError('Resume execution upgrade must preserve examples per optimizer update')
+        execution_upgrade = any((
+            old_config['train']['gradient_accumulation'] != current['train']['gradient_accumulation'],
+            old_config['train'].get('batch_size', 1) != current['train']['batch_size'],
+            old_config['model']['gradient_checkpointing'] != current['model']['gradient_checkpointing'],
+            old_config['memory']['checkpoint_chunks'] != current['memory']['checkpoint_chunks'],
+        ))
         old_config['train']['steps'] = current['train']['steps']
         for name in CHECKPOINT_POLICY_FIELDS:
+            old_config['train'][name] = current['train'][name]
+        # These alter execution/storage of derived IDs, not learned parameters,
+        # optimizer ownership, corpus identity, or examples per update.
+        old_config['model']['gradient_checkpointing'] = current['model']['gradient_checkpointing']
+        old_config['memory']['checkpoint_chunks'] = current['memory']['checkpoint_chunks']
+        for name in ('gradient_accumulation', 'batch_size', 'tokenized_episodes_file'):
             old_config['train'][name] = current['train'][name]
         if old_config != current:
             raise ValueError('Resume training hyperparameters differ; only steps/checkpoint policy may change')
@@ -384,7 +413,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     data_manifest.write_text(json.dumps({"sha256": fingerprint, "episodes": len(episodes)}, indent=2) + "\n")
     save_episodes(output / "train.jsonl", episodes)
     if resume:
-        start = restore_checkpoint(agent, optimizer, output, rng, fingerprint, progress=progress)
+        start = restore_checkpoint(agent, optimizer, output, rng, fingerprint, progress=progress,
+                                   discard_accumulation=execution_upgrade)
         if config.train.steps < start:
             raise ValueError("Requested total steps precede the saved checkpoint")
     resolved_optimizer = dict(kind=config.train.optimizer, groups=optimizer_report(optimizer),
@@ -463,13 +493,79 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                     contrast_total = 0.0
                     wrong_nll_total = 0.0
                 for micro in range(micro_start, config.train.gradient_accumulation):
-                    episode = (episodes[sampler.index(step * config.train.gradient_accumulation + micro)]
-                               if sampler is not None else rng.choice(episodes))
+                    position = ((step * config.train.gradient_accumulation + micro) *
+                                config.train.batch_size)
+                    indices = ([sampler.index(position + row) for row in range(config.train.batch_size)]
+                               if sampler is not None else
+                               [rng.randrange(len(episodes)) for _ in range(config.train.batch_size)])
+                    episode_batch = [episodes[index] for index in indices]
+                    episode = episode_batch[0]
                     tape = ReplayTape(verify_outputs=config.train.verify_replay)
                     visible = evidence_ids(episode, config.train.evidence_scope)
                     read_indices = [i for i, source in enumerate(episode.supports) if source.record_id in visible]
                     with autocast_context(config):
-                        if bank is not None:
+                        if config.train.batch_size > 1 and bank is None:
+                            if (config.train.arm != 'memory' or config.train.live_fraction != 1.0
+                                    or config.memory.compaction != 'none'
+                                    or config.train.payload_contrast_weight
+                                    or config.train.oracle_anchor_weight
+                                    or config.train.oracle_alignment_weight
+                                    or config.train.oracle_distillation_weight):
+                                raise ValueError('Batched live training currently requires the raw all-live memory objective')
+                            visible_batch = [evidence_ids(item, config.train.evidence_scope)
+                                             for item in episode_batch]
+                            required_batch = [[i for i, source in enumerate(item.supports)
+                                               if source.record_id in visible_ids]
+                                              for item, visible_ids in zip(episode_batch, visible_batch, strict=True)]
+                            token_rows = ([token_index[index] for index in indices]
+                                          if token_index is not None else [None] * len(indices))
+                            source_ids, payload_flags, counts = [], [], []
+                            for item, ids_row, needed in zip(episode_batch, token_rows,
+                                                             required_batch, strict=True):
+                                if ids_row is not None and (ids_row['episode_id'] != item.episode_id or
+                                        ids_row['source_record_ids'] != [s.record_id for s in item.supports]):
+                                    raise ValueError('Pretokenized row identity/order differs from episode data')
+                                counts.append(len(item.supports))
+                                oracle = (config.train.retrieval == 'oracle' or
+                                          step < config.train.routing_warmup)
+                                for source_index, source in enumerate(item.supports):
+                                    rng.random()  # preserve one live/cache draw per declared source
+                                    ids = (torch.tensor([ids_row['source_ids'][source_index]],
+                                                        dtype=torch.long, device=agent.device)
+                                           if ids_row is not None else agent.text_ids(source.text, source=True))
+                                    source_ids.append(ids)
+                                    payload_flags.append(not oracle or source_index in needed)
+                            flags = torch.tensor(payload_flags, dtype=torch.bool, device=agent.device)
+                            def producer():
+                                return stored_channel(agent, agent.produce_batch(source_ids,
+                                                                                payload_rows=flags))
+                            packed = tape.capture(agent, producer) if config.train.replay else producer()
+                            records_batch, offset = [], 0
+                            for count in counts:
+                                records_batch.append([tuple(value[row:row + 1] for value in packed)
+                                                      for row in range(offset, offset + count)])
+                                offset += count
+                            prompts = [(torch.tensor([row['prompt_ids']], dtype=torch.long,
+                                                     device=agent.device) if row is not None else
+                                        agent.prompt_ids(item.query))
+                                       for item, row in zip(episode_batch, token_rows, strict=True)]
+                            targets = [(torch.tensor([row['target_ids']], dtype=torch.long,
+                                                     device=agent.device) if row is not None else
+                                        agent.target_ids(item.answer))
+                                       for item, row in zip(episode_batch, token_rows, strict=True)]
+                            result = agent.forward_loop_memory_batch(prompts, targets, records_batch,
+                                                                     required_batch, step=step)
+                            support_text = ''
+                        elif config.train.batch_size > 1:
+                            from .corpus_training import stored_corpus_forward_batch
+                            result, bank_info = stored_corpus_forward_batch(
+                                agent, bank, episode_batch, generation=bank_manifest['generation'],
+                                limits=tuple(config.train.bank_read_limits),
+                                namespace=bank_manifest['namespace'], searcher=bank_index,
+                                token_rows=([token_index[index] for index in indices]
+                                            if token_index is not None else None))
+                            support_text = ''
+                        elif bank is not None:
                             from .corpus_training import stored_corpus_forward
                             result, bank_info = stored_corpus_forward(
                                 agent, bank, episode, generation=bank_manifest['generation'],
@@ -616,7 +712,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                 row['bank'] = bank_totals | {'generation': bank_manifest['generation'],
                                              'supplied_positive': True}
             if sampler is not None:
-                consumed = (step + 1) * config.train.gradient_accumulation
+                consumed = ((step + 1) * config.train.gradient_accumulation *
+                            config.train.batch_size)
                 row['sampling'] = {'policy': 'shuffled_passes',
                                    'completed_passes': consumed // len(episodes),
                                    'position_in_pass': consumed % len(episodes),

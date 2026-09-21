@@ -32,7 +32,14 @@ def _episode_count(path: Path) -> int:
 def _write_config(path: Path, config) -> None:
     rendered = yaml.safe_dump(asdict(config), sort_keys=False)
     if path.exists() and path.read_text() != rendered:
-        raise ValueError(f'Existing stage configuration changed: {path}')
+        old, new = yaml.safe_load(path.read_text()), yaml.safe_load(rendered)
+        allowed = {('model', 'gradient_checkpointing'), ('memory', 'checkpoint_chunks'),
+                   ('train', 'gradient_accumulation'), ('train', 'batch_size'),
+                   ('train', 'tokenized_episodes_file')}
+        differences = {(section, key) for section in new for key in new[section]
+                       if old.get(section, {}).get(key) != new[section][key]}
+        if differences - allowed:
+            raise ValueError(f'Existing stage configuration changed outside execution policy: {path}')
     path.write_text(rendered)
 
 
@@ -42,7 +49,10 @@ def _live_config(base, episodes: Path, *, steps: int, seed: int):
     config.train.seed = seed
     config.train.steps = steps
     config.train.optimizer = 'muon'
-    config.train.gradient_accumulation = 2
+    config.model.gradient_checkpointing = False
+    config.memory.checkpoint_chunks = False
+    config.train.gradient_accumulation = 1
+    config.train.batch_size = 2
     config.train.sampling_policy = 'shuffled_passes'
     config.train.live_fraction = 1.0
     config.train.selected_producers_only = False
@@ -54,6 +64,7 @@ def _live_config(base, episodes: Path, *, steps: int, seed: int):
     config.train.bank_read_limits = []
     config.train.bank_payload_contrast_weight = 0.0
     config.train.episodes_file = str(episodes)
+    config.train.tokenized_episodes_file = str(episodes.with_suffix('.tokens.jsonl'))
     config.train.max_source_tokens = 65
     config.train.max_prompt_tokens = 128
     config.train.max_target_tokens = 65
@@ -112,21 +123,31 @@ def run(corpus: Path, output: Path, *, initial: Path,
             raise ValueError(f'Curriculum input changed: {path.name}')
     count = _episode_count(episodes)
     microbatches_per_pass = count
-    live_steps = math.ceil(microbatches_per_pass * live_passes / 2)
-    bank_steps = math.ceil(microbatches_per_pass * bank_passes / 2)
+    examples_per_update = 2
+    live_steps = math.ceil(microbatches_per_pass * live_passes / examples_per_update)
+    bank_steps = math.ceil(microbatches_per_pass * bank_passes / examples_per_update)
     output.mkdir(exist_ok=True)
     (output / 'banks').mkdir(exist_ok=True)
-    plan = {'format': 1, 'corpus_manifest_sha256': file_sha256(manifest_path),
+    plan = {'format': 2, 'corpus_manifest_sha256': file_sha256(manifest_path),
             'initial_checkpoint': str(resolve_checkpoint(initial, verify=True)),
             'base_config_sha256': file_sha256(base_config), 'episodes': count,
-            'gradient_accumulation': 2, 'live_passes_per_generation': live_passes,
+            'gradient_accumulation': 1, 'batch_size': 2,
+            'examples_per_update': examples_per_update,
+            'execution_upgrade': 'padded-batch-v1',
+            'live_passes_per_generation': live_passes,
             'bank_passes_per_generation': bank_passes, 'live_steps': live_steps,
             'bank_steps': bank_steps, 'generations': 2,
             'bank_sources': manifest['files']['sources-all.jsonl']['rows'],
             'read_limits': [16, 8, 4, 4], 'routing_candidates': 256}
     plan_path = output / 'plan.json'
     if plan_path.exists() and json.loads(plan_path.read_text()) != plan:
-        raise ValueError('Sealed target curriculum plan changed')
+        previous = json.loads(plan_path.read_text())
+        immutable = ('corpus_manifest_sha256', 'initial_checkpoint', 'episodes',
+                     'live_passes_per_generation', 'bank_passes_per_generation',
+                     'live_steps', 'bank_steps', 'generations', 'bank_sources',
+                     'read_limits', 'routing_candidates')
+        if any(previous.get(key) != plan.get(key) for key in immutable):
+            raise ValueError('Target curriculum data or scientific budget changed')
     atomic_json(plan_path, plan)
 
     parent = initial

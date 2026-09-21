@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 from .agent import ForwardResult, SDKBAgent
 from .data import Episode
-from .recurrence import LoopMemory
+from .recurrence import LoopMemory, LoopWrite
 from .routing import cosine_scores, group_plan_loss
 from .store import DiskStore, ReadPlan, Selection, lookup_record
 
@@ -112,3 +112,102 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
                     'selected_payload_bytes': sum(len(ids) * dim * 2 for ids, dim in
                                                   zip(selected_ids, agent.config.memory.payload_dims, strict=True)),
                     'supplied_positive': True} | contrast_info
+
+
+def stored_corpus_forward_batch(agent: SDKBAgent, store: DiskStore,
+                                episodes: list[Episode], *, generation: str,
+                                limits: tuple[int, ...], namespace: str = 'corpus',
+                                searcher=None, token_rows: list[dict] | None = None):
+    """Batched consumer compute with per-example exact bank search and fetching."""
+    if (not episodes or agent.backbone.loops != 2 or agent.config.memory.read_steps != 1
+            or agent.config.memory.compaction != 'none'
+            or agent.config.train.bank_payload_contrast_weight):
+        raise ValueError('Batched bank training requires R=2, one raw read and no contrast')
+    searcher = searcher or store
+    batch, r = len(episodes), agent.config.memory
+    if token_rows is not None and len(token_rows) != batch:
+        raise ValueError('Token row batch differs from episode batch')
+    prompts, targets = [], []
+    for index, episode in enumerate(episodes):
+        row = token_rows[index] if token_rows is not None else None
+        if row is not None and row['episode_id'] != episode.episode_id:
+            raise ValueError('Pretokenized bank row differs from episode data')
+        prompts.append(torch.tensor([row['prompt_ids']], dtype=torch.long, device=agent.device)
+                       if row is not None else agent.prompt_ids(episode.query))
+        targets.append(torch.tensor([row['target_ids']], dtype=torch.long, device=agent.device)
+                       if row is not None else agent.target_ids(episode.answer))
+    prompt_lengths = torch.tensor([x.shape[1] for x in prompts], device=agent.device)
+    target_lengths = torch.tensor([x.shape[1] for x in targets], device=agent.device)
+    sequences = [torch.cat((agent.backbone.embed(prompt), agent.loop_workspace[None],
+                            agent.backbone.embed(target[:, :-1])), 1)
+                 for prompt, target in zip(prompts, targets, strict=True)]
+    totals = prompt_lengths + r.read_slots + target_lengths - 1
+    maximum = int(totals.max())
+    embeddings = torch.cat([F.pad(row, (0, 0, 0, maximum - row.shape[1]))[None]
+                            if row.ndim == 2 else F.pad(row, (0, 0, 0, maximum-row.shape[1]))
+                            for row in sequences], 0)
+    mask = torch.arange(maximum, device=agent.device)[None] < totals[:, None]
+    routing_terms, selected_ids = [], [[[] for _ in r.payload_dims] for _ in episodes]
+    recalls = [[0. for _ in r.payload_dims] for _ in episodes]
+
+    def boundary(completed, state, _anchor):
+        positions = prompt_lengths + r.read_slots - 1
+        features = agent.loop_query_norm(state[torch.arange(batch, device=agent.device), positions])
+        query = F.normalize(agent.query_head(features), dim=-1)
+        routing_query = (query if agent.routing_query_head is None else
+                         F.normalize(agent.routing_query_head(features), dim=-1))
+        payloads, weights = [], []
+        for space, (dim, limit) in enumerate(zip(r.payload_dims, limits, strict=True)):
+            rows = []
+            for row_index, episode in enumerate(episodes):
+                domain = episode.provenance.get('domain', 'research')
+                address = agent.query_maps[space](routing_query[row_index:row_index + 1])
+                found = [item.record_id for item in searcher.search(
+                    address[0], top_k=max(limit, agent.config.train.bank_routing_candidates),
+                    namespace=namespace, space=f's{space}', generation=generation,
+                    domain=domain, query_time=episode.query_time).selections]
+                candidate_ids = list(dict.fromkeys(found + list(episode.required_ids)))
+                keys = torch.stack([lookup_record(store, record_id, namespace=namespace,
+                    space=f's{space}', generation=generation, domain=domain,
+                    query_time=episode.query_time).key for record_id in candidate_ids]).to(agent.device)
+                scores = cosine_scores(address, keys)[0]
+                positives = tuple(candidate_ids.index(record_id) for record_id in episode.required_ids)
+                routing_terms.append(group_plan_loss(scores, [positives]))
+                chosen = list(episode.required_ids)
+                chosen.extend(record_id for record_id in found if record_id not in chosen)
+                chosen = chosen[:limit]
+                plan = ReadPlan(namespace, f's{space}', generation, domain, episode.query_time,
+                                tuple(Selection(record_id, 0.0) for record_id in chosen))
+                rows.append(torch.stack([value.to(agent.device).float()
+                                         for value in store.fetch(plan)]))
+                selected_ids[row_index][space] = chosen
+                recalls[row_index][space] = float(set(episode.required_ids) <= set(found[:limit]))
+            count = max(value.shape[0] for value in rows)
+            payloads.append(torch.cat([F.pad(value, (0, 0, 0, count-value.shape[0]))[None]
+                                       for value in rows], 0))
+            weights.append(torch.cat([torch.cat((query.new_ones(value.shape[0]),
+                                                 query.new_zeros(count-value.shape[0])))[None]
+                                      for value in rows], 0))
+        memory = agent._read_padded_batch(payloads, weights, query)
+        return LoopWrite(prompt_lengths, memory)
+
+    hidden = agent.backbone.hidden(embeddings, mask.long(), boundary=boundary)
+    losses = []
+    for row, target in enumerate(targets):
+        start = int(prompt_lengths[row]) + r.read_slots - 1
+        logits = agent.backbone.logits(hidden[row:row + 1, start:start+target.shape[1]]).float()
+        losses.append(F.cross_entropy(logits.reshape(-1, logits.shape[-1]), target.reshape(-1)))
+    nll = torch.stack(losses).mean()
+    routing = torch.stack(routing_terms).mean()
+    result = ForwardResult(nll + agent.config.train.routing_weight * routing,
+                           nll, routing, nll * 0, selected_ids[0], raw_nll=nll, read_count=1)
+    counts = [sum(len(selected_ids[row][space]) for row in range(batch)) / batch
+              for space in range(len(r.payload_dims))]
+    mean_recalls = [sum(recalls[row][space] for row in range(batch)) / batch
+                    for space in range(len(r.payload_dims))]
+    payload_bytes = sum(len(selected_ids[row][space]) * dim * 2
+                        for row in range(batch) for space, dim in enumerate(r.payload_dims)) / batch
+    return result, {'selected_ids': selected_ids, 'selected_counts': counts,
+                    'learned_positive_recall': mean_recalls,
+                    'selected_payload_bytes': payload_bytes,
+                    'supplied_positive': True}

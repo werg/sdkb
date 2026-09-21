@@ -16,7 +16,7 @@ from torch import Tensor, nn
 @dataclass(frozen=True)
 class LoopWrite:
     """A causally located fixed-size soft-memory result, not a sequence append."""
-    start: int
+    start: int | Tensor
     tokens: Tensor
 
 
@@ -89,11 +89,23 @@ class AnchoredBridge(nn.Module):
         start, tokens = write.start, write.tokens
         if tokens.ndim != 3:
             raise ValueError("Soft result must be a batch of token vectors")
+        if tokens.shape[0] != inputs.shape[0] or tokens.shape[-1] != inputs.shape[-1]:
+            raise ValueError("Soft-result batch/width mismatch")
+        if isinstance(start, Tensor):
+            if start.shape != (inputs.shape[0],) or start.dtype not in (torch.int32, torch.int64):
+                raise ValueError("Batched soft-result starts must be one integer per row")
+            indices = start[:, None] + torch.arange(tokens.shape[1], device=inputs.device)[None]
+            if bool((indices < 0).any()) or bool((indices >= inputs.shape[1]).any()):
+                raise ValueError("Soft result lies outside reserved memory slots")
+            gather = indices[..., None].expand(-1, -1, inputs.shape[-1])
+            anchors = anchor.gather(1, gather)
+            delta = self.memory_projection(self.memory_norm(tokens)).to(inputs.dtype)
+            delta = delta * self.scale(anchors).to(inputs.dtype)
+            update = torch.zeros_like(inputs).scatter(1, gather, delta)
+            return inputs + self.memory_logit.sigmoid().to(inputs.dtype) * update
         stop = start + tokens.shape[1]
         if start < 0 or stop > inputs.shape[1]:
             raise ValueError("Soft result lies outside reserved memory slots")
-        if tokens.shape[0] != inputs.shape[0] or tokens.shape[-1] != inputs.shape[-1]:
-            raise ValueError("Soft-result batch/width mismatch")
         delta = self.memory_projection(self.memory_norm(tokens)).to(inputs.dtype)
         delta = delta * self.scale(anchor[:, start:stop]).to(inputs.dtype)
         middle = inputs[:, start:stop] + self.memory_logit.sigmoid().to(inputs.dtype) * delta
