@@ -281,8 +281,9 @@ recurrent-depth language-model work provides a relevant implementation precedent
 Spatial site count and recurrent depth are independent. Many sites can activate in
 one level. A site assigned to a later level can use earlier-position results injected
 at a prior level, producing read-after-read composition through the causal mask. The
-implemented Phase 0 path is the one-site special case: one workspace after the prompt
-and one query per boundary. It does not yet implement the spatial generalization.
+legacy Phase 0 path is the one-site special case: one workspace after the prompt and
+one query per boundary. The spatial Phase 0 path now executes many sites and batched
+stored reads; prompted writes and learned call placement remain later work.
 
 ### 5.2 Query timing and causality
 
@@ -720,6 +721,28 @@ With weights frozen, the trained writer can encode a newly completed experience 
 Treat proposed lessons, observed facts, and verifier-supported procedures differently. Preserve applicability conditions and failures. Confidence should derive from evidence and measured performance, not from how assertively a source trajectory states its conclusion. Repetition of an unverified lesson should not silently become independent corroboration.
 
 Regeneration and compaction are maintenance operations, not the inference read path. Prioritize them using age, utility, drift, and storage pressure, with some exploration of low-traffic records. Preserve rare useful exceptions rather than deleting solely by read frequency.
+
+The corpus-scale curriculum uses a **prequential event stream**, not a bank that is
+fully populated before every training example. For event (t), retrieval is limited
+to an explicitly committed visibility frontier strictly before (t). The trajectory
+and its loss complete against that prefix; only then may its atomic set of authored
+records become visible to later events. This exposes the controller to growing bank
+sizes and prevents the current target or its derived memory from contaminating its
+own evaluation.
+
+Event time, ingestion time, and original source availability time are separate
+fields. Visibility uses the earliest admissible causal boundary and retains the
+source snapshot, authorization scope, writer version, and parent-read lineage.
+Curriculum reports stratify performance by bank-size band and include stale,
+redundant, conflicting, low-value, and subsequently invalidated records. A small
+versioned core bank may seed a stream, but heldout target material cannot enter it
+before its evaluation event.
+
+Garbage collection publishes a new view through tombstones, provenance-preserving
+deduplication, or contribution-and-mass preserving compaction. It never mutates the
+historical snapshot associated with a logged read. Training retains raw evidence
+links and samples both retained and collected material so deletion by popularity
+does not silently erase rare useful cases.
 
 ### 9.4 Trust boundaries
 

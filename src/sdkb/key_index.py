@@ -6,6 +6,7 @@ fetch revalidates namespace, domain, generation, time and deletion status.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Sequence
 
 import numpy as np
 import torch
@@ -59,26 +60,60 @@ class PublishedKeyIndex:
             raise ValueError('Published spaces must be distinct')
         self.key_bytes = sum(array.keys.nbytes for array in self.spaces.values())
 
+    def keys_for_ids(self, space: str, record_ids: Sequence[str], *, domain: str,
+                     query_time: int) -> Tensor:
+        """Return fixed candidate keys while enforcing the index visibility snapshot."""
+        if space not in self.spaces or not record_ids:
+            raise ValueError('Published key lookup needs a known space and record IDs')
+        array = self.spaces[space]
+        positions = np.searchsorted(array.ids, np.asarray(record_ids))
+        if any(position >= len(array.ids) or array.ids[position] != record_id
+               for position, record_id in zip(positions, record_ids, strict=True)):
+            raise KeyError('Record ID is absent from the published generation')
+        if any(array.domains[position] != domain or array.times[position] >= query_time
+               or array.deleted[position] for position in positions):
+            raise PermissionError('Record key is outside its causal authorization scope')
+        return torch.from_numpy(array.keys[positions].copy())
+
     def search(self, query: Tensor, *, top_k: int = 16, namespace: str = 'corpus',
                space: str = 's0', generation: str = '', domain: str = 'research',
                query_time: int = 2**62, exclude_ids: frozenset[str] = frozenset()) -> ReadPlan:
+        return self.search_batch(
+            query[None], top_k=top_k, namespace=namespace, space=space,
+            generation=generation, domains=(domain,), query_times=(query_time,),
+            exclude_ids=(exclude_ids,),
+        )[0]
+
+    def search_batch(self, queries: Tensor, *, top_k: int = 16,
+                     namespace: str = 'corpus', space: str = 's0', generation: str = '',
+                     domains: Sequence[str], query_times: Sequence[int],
+                     exclude_ids: Sequence[frozenset[str]] | None = None) -> tuple[ReadPlan, ...]:
+        """Search several site queries with one dense key matrix operation."""
         if namespace != self.namespace or generation != self.generation or space not in self.spaces:
             raise ValueError('Key index scope differs from its published generation')
-        if query.ndim != 1 or not torch.isfinite(query).all() or top_k < 0:
-            raise ValueError('Invalid published key search request')
-        if top_k == 0:
-            return ReadPlan(namespace, space, generation, domain, query_time, ())
+        if (queries.ndim != 2 or not torch.isfinite(queries).all() or top_k < 0
+                or len(domains) != queries.shape[0] or len(query_times) != queries.shape[0]):
+            raise ValueError('Invalid published batched key search request')
+        excluded = tuple(exclude_ids or (frozenset(),) * queries.shape[0])
+        if len(excluded) != queries.shape[0]:
+            raise ValueError('One exclusion set is required per published query')
         array = self.spaces[space]
-        q = query.detach().float().cpu().numpy().copy()
-        if q.size != array.keys.shape[1]:
+        q = queries.detach().float().cpu().numpy().copy()
+        if q.shape[1] != array.keys.shape[1]:
             raise ValueError('Key dimensions incompatible with query generation')
-        q /= max(float(np.linalg.norm(q)), 1e-12)
-        eligible = (array.domains == domain) & (array.times < query_time) & ~array.deleted
-        if exclude_ids:
-            eligible &= ~np.isin(array.ids, tuple(exclude_ids))
-        scores = array.keys @ q
-        indices = np.flatnonzero(eligible)
-        order = np.lexsort((array.ids[indices], -scores[indices]))[:top_k]
-        chosen = indices[order]
-        return ReadPlan(namespace, space, generation, domain, query_time,
-                        tuple(Selection(str(array.ids[i]), float(scores[i])) for i in chosen))
+        q /= np.maximum(np.linalg.norm(q, axis=1, keepdims=True), 1e-12)
+        scores = q @ array.keys.T
+        plans = []
+        for row, (domain, query_time, omitted) in enumerate(
+                zip(domains, query_times, excluded, strict=True)):
+            eligible = (array.domains == domain) & (array.times < query_time) & ~array.deleted
+            if omitted:
+                eligible &= ~np.isin(array.ids, tuple(omitted))
+            indices = np.flatnonzero(eligible)
+            order = np.lexsort((array.ids[indices], -scores[row, indices]))[:top_k]
+            chosen = indices[order]
+            plans.append(ReadPlan(
+                namespace, space, generation, domain, query_time,
+                tuple(Selection(str(array.ids[i]), float(scores[row, i])) for i in chosen),
+            ))
+        return tuple(plans)

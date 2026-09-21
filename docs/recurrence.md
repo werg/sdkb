@@ -1,14 +1,13 @@
 # SDKB recurrent decoder conversion
 
-> **v0.5 spatial extension:** the implementation described below has one workspace
-> and one query position. The trajectory-memory target keeps the same whole-sequence
-> recurrent timing while adding many site-aligned blank workspaces. After each core
-> pass, all active site queries are gathered together; their results are scattered
-> into their respective positions before the next pass. Spatial site count and
-> recurrent depth are separate axes. This extension is planned and must not be
-> inferred from the current `read_steps` setting.
+> **v0.5 spatial extension:** the legacy path described below has one workspace and
+> one query position. The first spatial path now adds many site-aligned blank
+> workspaces to the same whole-sequence recurrent timing. After each core pass, all
+> active site queries are gathered together; their stored results are scattered into
+> their respective positions before the next pass. Spatial site count and recurrent
+> depth are separate axes and must not be inferred from `read_steps`.
 
-The planned batched boundary representation has query positions
+The implemented batched boundary representation has query positions
 $P\in\mathbb N^{B\times K}$, workspace starts
 $S\in\mathbb N^{B\times K}$, an active mask for each recurrence level, and returned
 tokens $Z\in\mathbb R^{B\times K\times m\times d}$. The boundary gathers every
@@ -17,6 +16,11 @@ then scatters each $Z_{b,k}$ into its non-overlapping span beginning at $S_{b,k}
 Every span follows its query position, and the causal mask controls which later
 positions can consume it. Complete all sites' neighborhood aggregates before the
 next shared-state update.
+
+The initial provider uses resident contiguous exact key arrays and immutable SQLite
+payloads. It batches searches by space and recurrent level. It does not yet overlap a
+pending retrieval wave with another GPU batch or represent a remote database latency
+measurement.
 
 Autoregressive post-training may use a faster schedule: after a generated call has a
 result, inject its workspace after the fixed prelude before the recurrent core. This

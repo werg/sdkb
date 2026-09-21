@@ -108,9 +108,11 @@ queried earlier generations.
 Its training computation is whole-sequence and recurrent. Each pass processes all
 teacher-forced positions in parallel; all query sites active at that level retrieve
 together; and latent results are scattered into site-aligned blank workspaces before
-the next pass. The present implementation has the correct between-pass timing for
-one centralized workspace, but does not yet have multiple spatial sites. Current
-`read_steps` are depth boundaries and must not be reported as trajectory site count.
+the next pass. The first implementation now packs multiple structured search sites,
+batches their global exact searches by space and level, fetches stored payloads, and
+scatters them into their own workspaces. Current `read_steps` are depth boundaries
+and must not be reported as trajectory site count. Learned site placement, write-call
+execution, and growing-bank recursive rounds remain planned.
 
 This is a course extension, not a description of the current HotpotQA curriculum.
 The current run performs one automatic latent read per short episode and writes

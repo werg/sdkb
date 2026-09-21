@@ -6,10 +6,10 @@
 > middle-block recurrence and in-loop reads. See [recurrent conversion](recurrence.md)
 > for the four-stage protocol. The one-pass recipes below remain control experiments.
 >
-> The planned multi-site memory-tool interface is specified in
-> [trajectory memory v0.5](trajectory-memory-v0.5.md). The present implementation
-> does not yet generate `memory.search`/`memory.write` calls or execute a sequence of
-> memory tool sites across an agent trajectory.
+> The multi-site memory-tool interface is specified in
+> [trajectory memory v0.5](trajectory-memory-v0.5.md). The first stored-read training
+> slice is implemented; learned call placement and prompted `memory.write` execution
+> remain later releases.
 
 `trajectory_memory.py` defines and validates the first canonical transcript contract.
 It requires each memory call to occupy its own assistant event, one logical record
@@ -18,20 +18,23 @@ latent attachment references, and causally earlier completed-read lineage for
 read-dependent writes. It is a data contract; asynchronous execution and multi-site
 model training remain subsequent releases.
 
-The implemented recurrent consumer is still spatially single-site. It appends one
-contiguous learned workspace after the prompt, takes one query from its last position
-at each configured depth boundary, and injects one `LoopWrite` into that workspace.
-The entire prompt/workspace/teacher-forced target sequence does execute in parallel
-through each core pass, and retrieved values first enter between passes. The v0.5
-target generalizes that correct timing to many query positions and many disjoint
-workspace spans in the same full trajectory. Current `read_steps` count depth
-boundaries; they do not count distinct transcript sites.
+The legacy recurrent consumer is spatially single-site. The new
+`spatial_recurrent_hidden` path processes a complete teacher-forced trajectory in
+parallel, gathers all query positions active at one recurrent boundary, calls one
+provider batch, and injects the returned values into distinct blank workspace spans
+before the next shared-core pass. `read_steps` still count depth boundaries; the
+packed row manifest records the separate number of transcript sites.
 
-The recurrent bridge now accepts a `LoopWrites` bundle and atomically validates and
-scatters several non-overlapping result spans before one shared core update. This is
-the first spatial execution primitive. No current `SDKBAgent` training path constructs
-that bundle yet; transcript layout, site-query gathering, retrieval batching, and
-site-aware replay remain unimplemented.
+The recurrent bridge accepts a `LoopWrites` bundle and atomically validates and
+scatters several non-overlapping result spans before one shared core update.
+`spatial_data.py` packs structured `memory.search` calls, result envelopes, and blank
+workspaces using the real chat template. `spatial_training.py` batches all same-level
+queries into one resident exact key scan per space, fetches immutable stored payloads,
+trains global routing against verified positives, and supervises assistant tokens.
+The writer is forbidden on this path. The current runner uses complete optimizer
+steps rather than producer replay because every payload is historical and frozen.
+Prompted multi-site writes, learned placement, network retrieval, and the prequential
+growing-bank executor are not implemented yet.
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.

@@ -392,3 +392,11 @@ This curriculum is Phase 0 interface and addressing pretraining for the planned
 [trajectory memory v0.5](trajectory-memory-v0.5.md). It does not contain visible
 memory tool calls, frequent sites across a long task, prompted writes, or recursive
 memories authored by read-augmented trajectories.
+
+The owner subsequently redirected the unstarted stored-bank stages to the v0.5
+spatial path. The completed `g1-live` weights and its in-progress 100,000-source bank
+are retained. Two externally stored immutable layouts now contain 9,876 trajectories,
+39,504 visible search calls, 8,337,388 tokens, and 3,246,518 supervised tokens each:
+one activates four sites at recurrent level one, while the other alternates sites
+across levels one and two. This is a compatibility bridge with eight read slots; it
+does not yet satisfy the later eight-search/four-write milestone.

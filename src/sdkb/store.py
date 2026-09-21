@@ -159,17 +159,25 @@ class DiskStore:
 
     def fetch(self, plan: ReadPlan) -> list[Tensor]:
         """Revalidate visibility at use time; deletion invalidates outstanding plans."""
-        values = []
+        return self.fetch_many((plan,))[0]
+
+    def fetch_many(self, plans: Iterable[ReadPlan]) -> list[list[Tensor]]:
+        """Revalidate and load several captured plans through one connection."""
+        result = []
         with self.connect() as db:
-            for selection in plan.selections:
-                row = db.execute("""SELECT payload FROM records WHERE namespace=? AND record_id=?
-                    AND space=? AND generation=? AND domain=? AND created_at<? AND deleted=0""",
-                    (plan.namespace, selection.record_id, plan.space, plan.generation,
-                     plan.domain, plan.query_time)).fetchone()
-                if row is None:
-                    raise KeyError(f"Unavailable, stale or unauthorized record: {selection.record_id}")
-                values.append(load(row[0])["payload"])
-        return values
+            for plan in plans:
+                values = []
+                for selection in plan.selections:
+                    row = db.execute("""SELECT payload FROM records WHERE namespace=? AND record_id=?
+                        AND space=? AND generation=? AND domain=? AND created_at<? AND deleted=0""",
+                        (plan.namespace, selection.record_id, plan.space, plan.generation,
+                         plan.domain, plan.query_time)).fetchone()
+                    if row is None:
+                        raise KeyError(
+                            f"Unavailable, stale or unauthorized record: {selection.record_id}")
+                    values.append(load(row[0])["payload"])
+                result.append(values)
+        return result
 
     def iter_fetch(self, plan: ReadPlan, chunk_size: int = 32):
         """Reload and revalidate at most one selected chunk at a time on the host."""

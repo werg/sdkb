@@ -293,6 +293,31 @@ their contribution separately. Recursive content must become a substantial fract
 of later training, while raw/verified anchors remain present to limit self-reinforcing
 drift.
 
+### 6.1 Prequential growth within a generation
+
+Large-corpus work begins from an empty bank or a small immutable core and consumes a
+time-ordered event stream. For each event, the system records the current visibility
+frontier, performs all reads against records committed before that frontier, finishes
+the trajectory and outcome, and atomically publishes its eligible write calls only
+afterward. A target therefore cannot retrieve itself or a memory derived from its
+future answer. Resume state includes the event cursor, bank generation/frontier,
+pending atomic write set, sampler state, and model checkpoint reference.
+
+Training samples multiple logged bank-size bands instead of observing only the final
+bank. Later recursive slices run against a bank containing many earlier
+read-augmented trajectories. The mixture deliberately includes fresh and stale
+records, duplicates, conflicts, failures, corrections, and records with uncertain
+future utility, matching a developing experiential store rather than a clean static
+encyclopedia.
+
+Use three clocks: original evidence availability, ingestion, and trajectory event
+time. Authorization and causality are checked before learned selection. Heldout
+targets and their derivatives remain unavailable until their evaluation event has
+finished. Garbage collection creates a versioned successor view using tombstones,
+deduplication, or valid compaction; logged historical reads continue to resolve
+against their original immutable frontier. Preserve lineage through collection so a
+recursive summary cannot outlive deletion of evidence it depends on.
+
 ## 7. Training curriculum
 
 ### Phase A — Tool syntax and placement
@@ -392,7 +417,7 @@ read-before-write dependency.
   request/response hashes, tool state, RNG, optimizer, and partially accumulated
   gradients.
 
-### Release 4 — Corpus-scale bank
+### Release 4 — Corpus-scale growing bank
 
 - Replace a single SQLite scan with sharded contiguous keys and measured exact or
   approximate search, while SQLite remains the correctness reference.
@@ -400,6 +425,11 @@ read-before-write dependency.
   interfaces that support local NVMe, external disk, and object storage.
 - Publish logical records only after every required space view and manifest hash
   is complete. Support incremental shard resume and generation-level rollback.
+- Add an event-stream builder with atomic post-trajectory writes, immutable
+  visibility frontiers, resumable cursors, and coverage by bank-size band. Keep
+  heldout targets and their derivatives beyond the active frontier.
+- Add versioned garbage collection with provenance/deletion propagation and evaluate
+  stale, conflicting, redundant, corrected, and rare retained records.
 
 ### Release 5 — Recursive generations
 
@@ -450,17 +480,21 @@ not establish parameter substitution.
 
 ## 10. Immediate course decision
 
-Let the current 100,000-source curriculum complete. Treat it as Phase 0 interface
-and addressing pretraining, not the final trajectory program. In parallel, implement
-Releases 1–3 and prepare a v0.5 dataset with multi-site tool traces. Start v0.5 as a
-fresh 16-read-slot interface initialized from compatible backbone weights; do not
-disguise the shape change as an ordinary resume.
+Retain the completed live-writer phase and its 100,000-source bank as Phase 0
+interface and addressing pretraining. Replace the unstarted one-query bank-training
+stages with whole-trajectory spatial stages containing several visible search calls.
+This compatibility stage keeps eight read slots so it can initialize from the frozen
+bank writer exactly. Start the later v0.5 capacity run as a fresh 16-read-slot
+interface initialized from compatible backbone weights; do not disguise that shape
+change as an ordinary resume.
 
 The first v0.5 milestone is a stored-only long trajectory with at least eight visible
 search calls and four write calls, each at distinct causal positions separated by
 other trajectory events. At least two writes must causally depend on earlier latent
 results, and a later heldout task must change correctly when one authored memory is
-removed under a fixed read plan. The first scale milestone is 1 million logical
+removed under a fixed read plan. Corpus ingestion for that milestone is prequential:
+start empty or from a small core, retrieve against each prior frontier, and publish
+writes only after the event completes. The first scale milestone is 1 million logical
 records, followed by 10 million after search, ingestion, and recovery measurements
 pass. Do not schedule the 100 million tier on the present external disk until source,
 index, scratch, retained-generation, and free-space budgets prove that publication

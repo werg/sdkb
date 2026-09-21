@@ -36,6 +36,15 @@ def test_published_exact_keys_match_sqlite_selection_and_visibility(tmp_path):
             for actual, expected in zip(fast.selections, reference.selections, strict=True):
                 assert abs(actual.score - expected.score) < 1e-6
     assert index.key_bytes == 4 * 2 * 2 * 4
+    batched = index.search_batch(
+        torch.stack((q, torch.tensor([0., 1.]))), namespace='corpus', generation='g1',
+        space='s0', top_k=3, domains=('research', 'private'), query_times=(2, 2),
+        exclude_ids=(frozenset(), frozenset()),
+    )
+    assert [[item.record_id for item in plan.selections] for plan in batched] == [
+        ['a', 'b'], ['d']]
+    fetched = store.fetch_many(batched)
+    assert [len(values) for values in fetched] == [2, 1]
     selected_before_delete = index.search(q, namespace='corpus', generation='g1',
                                           space='s0', domain='research', query_time=2,
                                           top_k=1)
