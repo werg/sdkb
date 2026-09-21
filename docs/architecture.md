@@ -113,9 +113,11 @@ A write operation produces $(k_i,V_i)=W_\phi(\tau_i)$. The key is a single vecto
 In the target agent interface, those operations are visible transcript events.
 The controller emits `memory.search` and `memory.write` tool calls, receives ordinary
 tool-result envelopes, and attaches latent read results at the corresponding causal
-result sites. Native in-loop reads implement composition within a site; repeated tool
-calls distribute sites through a long trajectory. See the v0.5 plan for the protocol,
-site density, recursive generations, and scale budget.
+result sites. Each result site has blank learned workspace positions on the initial
+pass. After a recurrent core pass, all active same-level queries are retrieved
+together and their results are scattered into their respective workspaces for the
+next pass. Repeated tool calls distribute sites through a long trajectory. See the
+v0.5 plan for the protocol, site density, recursive generations, and scale budget.
 
 One site is one visible tool call at one causal position. Multiple records batched
 inside a call or multiple recurrent reads used to compute one result do not create
@@ -265,35 +267,76 @@ Chunked replay need not imply rereading disk at every round. Small retrieved pay
 
 ### 5.1 The role of recurrence
 
-The decoder attempts the task while exposing query states, then incorporates returned memory in subsequent computation. Shared-weight depth provides a way to spend more computation without proportionally increasing resident backbone weights. Public recurrent-depth language-model work provides a relevant implementation precedent [^12]. The project should adopt an available, validated recurrent implementation where practical, rather than depend on unverified claims about proprietary architectures.
+The decoder processes the complete available training trajectory at every recurrent
+level. Tool-result locations contain learned blank workspace embeddings until memory
+is available. After a shared core pass, query heads gather states at every active
+tool-call position, retrieval and reader composition run for all those sites, and
+their fixed-size results are scattered into the corresponding blank positions. The
+next core pass processes the complete trajectory again with those latent results.
+Shared-weight depth therefore supplies both additional computation and ordered
+memory-dependency levels without adding decoder parameter copies. Public
+recurrent-depth language-model work provides a relevant implementation precedent
+[^12].
 
-A draft–retrieve–revise wrapper is useful for validating memory learning before deeper integration. The intended recurrent interface can then query during an initial loop and consume results on a later loop, with further reads allowed as the task evolves. Initial-loop auxiliary supervision can maintain basic task competence, but the final task loss should reward effective use of memory rather than force an unsupported first-loop answer.
+Spatial site count and recurrent depth are independent. Many sites can activate in
+one level. A site assigned to a later level can use earlier-position results injected
+at a prior level, producing read-after-read composition through the causal mask. The
+implemented Phase 0 path is the one-site special case: one workspace after the prompt
+and one query per boundary. It does not yet implement the spatial generalization.
 
 ### 5.2 Query timing and causality
 
-An early query head extracts $q$ from a state in the first half of the decoder, giving retrieval time to overlap with later layers or useful additional loops. An optional later head can supervise its retrieval distribution, but both heads must see the same causally available input prefix. A teacher query computed after seeing the target answer is not a valid inference-time query target without an explicit privileged-training formulation.
+For site $j$ at token position $p_j$ and recurrent level $r_j$, the query head reads
+$H^{(r_j)}_{p_j}$. The normal causal mask permits positions at or before $p_j$ and
+excludes later positions even though all positions in the pass execute in parallel.
+Its result workspace lies after the call position. A same-level result cannot affect
+another query from that level; a dependency must be assigned to a later recurrent
+level. Teacher-forced targets and future observations never enter an earlier query.
 
-Each request carries a unique handle, the issuing step and loop, the model/index generation, and a causally valid memory snapshot. A result is consumed only at an agreed future boundary. It may be ignored or revalidated if the task state has moved on. Follow-up queries depend only on information actually available at their issue point.
-
-A compact state machine is sufficient: issued, pending, ready, consumed, failed, or cancelled. Train with variable retrieval delays and failures. A bounded number of in-flight requests is operational backpressure, not a bound on the total number of reads in a trajectory.
+Each request carries a unique site handle, issuing level, model/index generation,
+authorization scope, time boundary, and causally valid state identity. Results are
+consumed only by the declared site workspace on the following pass. The request
+state machine is issued, pending, ready, consumed, failed, or cancelled. Train with
+variable delays and failures. A bounded number of in-flight requests is operational
+backpressure, not a bound on spatial sites or total reads.
 
 ### 5.3 Overlap and cache semantics
 
-An idealized step latency is
+Without inter-batch overlap, an idealized recurrent trajectory latency is
 
 $$
-T_{\mathrm{step}}\approx T_{\mathrm{pre}}+\max(T_{\mathrm{retrieval}},T_{\mathrm{independent}})+T_{\mathrm{post}}.
+T_{\mathrm{trajectory}}\approx T_{\mathrm{prelude}}+T_{\mathrm{coda}}+
+\sum_r\left(T_{\mathrm{core},r}+\max_{j:r_j=r}T_{\mathrm{retrieve},j}
++T_{\mathrm{compose/scatter},r}\right).
 $$
 
-Only computation independent of the missing result can hide retrieval latency. Extra loops while waiting may improve quality, but they can also consume serving capacity without helping the current request. Evaluate latency and throughput under concurrency rather than treating overlap as free computation. Engram demonstrates a related prefetching opportunity using deterministic token-derived addressing; hidden-state-dependent semantic queries do not inherit its predictability automatically [^14].
+Same-level sites overlap with one another. Across training batches, retain the
+differentiable whole-sequence boundary state and run another batch while a retrieval
+wave is pending. Level-boundary checkpoint/recomputation is the lower-memory fallback.
+Evaluate latency and throughput under concurrency rather than treating overlap as
+free computation. Engram demonstrates a related prefetching opportunity using
+deterministic token-derived addressing; hidden-state-dependent semantic queries do
+not inherit its predictability automatically [^14].
 
-The default integration appends or exposes soft results at a new causal boundary. It does not retroactively change the context of cached states. If a design revises earlier states, it must invalidate or recompute all dependent caches. Shared recurrent weights also do not automatically imply a single valid KV cache for all loop depths; use the cache semantics of the chosen backbone and measure their cost.
+Injection deliberately revises the next recurrent computation of the whole sequence.
+No attention or convolution cache is shared across loop depths. A retained state or
+recomputed boundary must reproduce the uninterrupted graph, RNG, autocast, selected
+plans, and serialized payload precision. Retrieval callbacks never run during
+checkpoint recomputation.
 
 ### 5.4 Frequent reads without conflating memory budgets
 
 The total number of reads, the number of outstanding requests, the number of retained read tokens, and the number of resident producer graphs are distinct quantities. Selective replay targets the last one. It does not require a small value for the first.
 
-For inference, append-only soft results have a simple causal interpretation but grow the decoder's context and KV cache. Alternative runtime policies include offloading older caches, reusing a replaceable external memory bank, or learned consolidation of working context. These policies can preserve frequent reads while changing retention, but each changes costs or model semantics and must be evaluated separately. The first research result should not rely on silently evicting information and describing the result as equivalent execution.
+For autoregressive inference, only the generated prefix is available, so it cannot
+use training's parallel access to future positions. Once the model emits a call and
+retrieval completes, an optimized path can populate that site's workspace after the
+fixed prelude and enter the recurrent core with the result already present. This
+avoids spending a blank recurrent pass on a query already produced by generation.
+Post-training or policy optimization should mix this immediate-result schedule with
+the blank-first-pass reference and measure whether behavior transfers. Serving can
+overlap independent requests. Offloading or consolidation policies may change
+retention costs, but each changes model semantics and must be evaluated separately.
 
 ## 6. Learning from experience and teacher trajectories
 

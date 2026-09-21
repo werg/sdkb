@@ -37,20 +37,23 @@ operation.
 
 | Requirement | Current state | v0.5 change |
 | --- | --- | --- |
-| Frequent reads through a long trajectory | Native recurrence supports scheduled state-dependent reads, but the target run uses R=2 and one read per episode. | Add transcript-level sites after observations and between actions; each site may use one or more native recurrent reads. |
+| Frequent reads through a long trajectory | Native recurrence supports one workspace queried at depth boundaries, but the target run uses R=2 and one read per episode. | Add many transcript-level query positions and blank result workspaces; activate same-level sites together and scatter their results before the next pass. |
 | Queries as tool calls | Query vectors are extracted automatically from hidden state. No memory call appears in the transcript. | Train and execute `memory.search` calls with textual arguments, then derive the latent search key from the causal call state. |
-| Results as tool results | Latent tokens are inserted into reserved workspace slots without a visible tool event. | Return an ordinary tool-result envelope plus aligned latent result tokens. The deployment result contains handles and status, not source text. |
+| Results as tool results | Latent tokens are inserted into one reserved workspace without a visible tool event. | Give every result event its own blank workspace span, then replace or update that span with aligned latent result tokens between recurrent passes. The visible envelope contains handles and status, not source text. |
 | Prompted write behavior | Sources are passed directly to the writer or offline bank builder. | Put a memory-use policy in the system prompt and supervise `memory.write` calls whose arguments contain the learned reusable content. |
 | Several writes for long input | Dataset preparation can chunk trajectories into several fixed producers, but the model does not decide or emit those writes. | Supervise distinct write calls at distinct causal positions, normally one logical record per call, with optional later synthesis calls. |
 | Read-before-write recursive memory | The current two-generation bank refresh trains against a bank, but bank contents are source chunks, not memories authored by read-augmented trajectories. | Publish immutable generations containing outputs of trajectories that queried an earlier generation, retaining complete lineage. |
 | Pretraining/posttraining corpus scale | The target bank contains 100,000 sources. | Build a sharded logical bank that can grow through 1M, 10M, and 100M records before scale-out corpus ingestion. |
 | Capacity substitution evidence | No matched result yet. | Compare a small controller plus bank with larger resident models under equal information and declared byte, latency, and compute budgets. |
 
-The visible tool protocol and native recurrent read are complementary. A tool call
-chooses **when and why** to access memory in the agent trajectory. Native recurrence
-controls how a single result is composed into latent working state. Increasing
-`read_steps` alone does not teach the agent to place calls throughout a multi-turn
-task.
+The visible tool protocol and native recurrent read are complementary. Tool-call
+positions choose **where, when, and why** memory is accessed. At one recurrence
+level, the model processes the complete teacher-forced trajectory in parallel,
+extracts every active site's query from its causally masked position, and dispatches
+those searches together. Their latent results are scattered into separate blank
+site workspaces before the next recurrent pass. A later level can issue new queries
+whose positions causally see results injected at earlier positions and levels.
+Increasing the current `read_steps` alone does not create spatial sites.
 
 ## 3. Tool protocol
 
@@ -204,39 +207,47 @@ additional local storage or object storage.
 authorization, provenance, and generation rules. It need not be one SQLite file or
 one physical device. Immutable shards and generations remain necessary.
 
-### 5.1 Remote latency and training scheduling
+### 5.1 Remote latency and depth-wave scheduling
 
 Corpus-scale banks will commonly place search and payload shards behind a network.
-One trajectory cannot cross a search site until its result is available, because the
-following tokens must be causally conditioned on that result. Training should hide
-that wait across trajectories with a bounded wavefront scheduler:
+Training does not stop separately at every spatial site. For recurrent level
+$r$, it should:
 
-1. Run a trajectory prefix through its visible `memory.search` call and emit an
-   immutable request containing model, bank generation, scope, time, and site IDs.
-2. Dispatch ANN search and payload fetch asynchronously, batching compatible
-   requests by generation, authorization scope, and space.
-3. Park a compact trajectory resume capsule and advance other ready trajectories to
-   their next memory barriers.
-4. Move completed serialized payloads into a ready queue, bucket compatible
-   continuations, and resume their GPU work.
-5. Persist the discrete selection plan and response hash before differentiable
-   replay. Checkpoint recomputation must consume that response and must never issue
-   the remote request again.
+1. Run the complete teacher-forced trajectory through the prelude and current core
+   pass, with all sequence positions computed in the transformer's normal parallel
+   causal execution. Learned Perceiver-style site workspaces contain no retrieved
+   information on their first pass.
+2. Gather queries from every `memory.search` position active at level $r$. Causal
+   masking prevents a site from using later tokens even though positions execute in
+   parallel.
+3. Dispatch all site/space searches asynchronously, batching compatible requests by
+   bank generation and authorization scope. Each request records model, time, site,
+   and level identity.
+4. Park that pass's differentiable full-trajectory state and run other trajectory
+   batches while network requests are outstanding.
+5. When the required response set is ready, compose each site's latent result and
+   scatter it only into that site's workspace. Run the next shared core pass over
+   the whole trajectory.
 
-Do not retain an unbounded autograd graph while a network request is outstanding.
-The preferred exact-gradient path uses a causal planning pass to issue the request,
-then reproduces RNG and autocast and recomputes the segment after its BF16 payload is
-ready. Backward must still accumulate every query, routing, reader, recurrent, writer,
-gate, and shared-parameter path before the optimizer step. An optional activation
-retention tier is useful only when measured latency and memory make it cheaper.
+Thus lookup latency is paid by **recurrence depth waves**, not once per spatial site.
+Eight or thirty-two same-level sites can overlap; the wave waits for its required tail
+response. Later-level queries may depend on earlier-position results from prior
+levels, so dependent levels cannot be collapsed into one retrieval wave. This depth
+structure is the intended within-trajectory recursion.
 
-The ready pool must be sized from measurement. As a lower bound, it needs enough
-independent segments to cover `lookup latency / useful GPU time between barriers`,
-plus margin for length variation and tail latency. Frequent sites shorten the useful
-compute interval and therefore require more concurrent trajectories. Apply bounded
-queues and backpressure so host or unified memory cannot grow with a stalled service.
-Timeout, denial, cancellation, empty result, retry, and late response are explicit
-tool outcomes with idempotent request IDs.
+The highest-throughput path retains the differentiable full-sequence state and graph
+across the wait. Bound the number and bytes of parked batches so network stalls cannot
+exhaust host or unified memory. When a graph does not fit, a fallback may checkpoint
+the level boundary and reproduce RNG and autocast to recompute it after payloads
+arrive. In either mode, backward accumulates every site and level's query, routing,
+reader, recurrent, writer, gate, and shared-parameter paths before the optimizer
+step. Checkpoint recomputation consumes captured responses and never issues a search.
+
+The ready pool must contain enough independent full-trajectory passes to cover
+`lookup latency / GPU time per recurrent pass`, plus margin for tail latency and
+length variation. Apply bounded queues and backpressure. Timeout, denial,
+cancellation, empty result, retry, and late response remain explicit per-site tool
+outcomes with idempotent request IDs.
 
 Remote payload bandwidth is not assumed free. At the initial 128 KiB raw value
 budget, 8--32 search sites transfer roughly 1--4 MiB per long trajectory before
@@ -245,10 +256,16 @@ bytes, ready-queue depth, parked-state bytes, recompute cost, GPU idle time, and
 end-to-end site latency. Compare synchronous and pipelined throughput using the same
 read plans.
 
-Serving can keep the GPU occupied by interleaving independent users, but every
-causally required lookup still contributes to the latency of its own trajectory.
-Use measured hot caches, co-located shards, request batching, and policy-visible
-latency budgets; do not train against an unrealistically zero-latency store.
+Autoregressive serving cannot process future, ungenerated positions in the same way
+as teacher-forced training. Once it emits a search call and receives the result, a
+fast path can populate that site's workspace immediately after the fixed prelude and
+enter the recurrent core with memory already present. It need not reproduce the
+training-only blank pass for a query it has just generated. A post-training or policy
+optimization phase should expose both blank-first-pass and immediate-result schedules
+and measure transfer between them; they are not silently assumed equivalent. Serving
+can batch available calls and interleave independent users, but required retrieval
+waves still contribute to request latency. Use measured hot caches, co-located
+shards, request batching, and policy-visible latency budgets.
 
 ## 6. Recursive bank generations
 
@@ -325,6 +342,12 @@ write selection, and item count using future-task reward and explicit read/write
 costs. Reinforcement learning must operate through the same tool protocol and
 immutable bank generations; it must not gain hidden source access.
 
+Include the autoregressive fast path in this phase. After the model emits a search
+call, retrieve its payload and inject the result after the fixed prelude on the
+continuing prefix, without requiring a blank recurrent pass. Mix this schedule with
+the full-trajectory blank-first-pass schedule during post-training and measure task
+success, query placement, payload dependence, latency, and calibration separately.
+
 Retain reconstruction and short multi-hop examples throughout as interface anchors,
 but the majority of later updates should contain multiple sites and at least one
 read-before-write dependency.
@@ -341,24 +364,30 @@ read-before-write dependency.
 
 ### Release 2 — Stateful memory tool executor
 
-- Pause generation on a memory tool call, execute stored retrieval/write, append
-  the tool result, and continue generation.
-- Attach latent result slots to the tool-result location.
+- Represent every visible search call with a site-aligned blank latent workspace and
+  an activation recurrence level.
+- Gather all active site queries after a whole-trajectory core pass, execute their
+  stored retrievals, and scatter results into their respective workspaces for the
+  next pass.
 - Support many calls per trajectory, cancellation, retries, and checkpointable
   session state.
 - Add asynchronous request IDs, bounded pending/ready queues, response hashes,
-  idempotent retries, and batch dispatch across independent trajectories.
+  idempotent retries, and batch dispatch across sites and independent trajectories.
+- Support the autoregressive immediate-result path that injects a completed call's
+  workspace after the fixed prelude, while retaining the blank-first-pass training
+  path as the reference computation.
 - Keep the stored-only read invariant and make source encoding available only to
   explicit writes or offline builds.
 
 ### Release 3 — Multi-site training and replay
 
 - Train over complete edited trajectories rather than one support/query answer.
-- Capture every discrete read/write plan before backward.
+- Capture every site/level discrete read/write plan before backward.
 - Accumulate query, key, value, reader, recurrent, gate, and shared-parameter paths
   across all sites before the optimizer step.
-- Recompute parked causal segments after payload arrival rather than retaining an
-  unbounded graph during remote waits; never query storage during recomputation.
+- Retain bounded differentiable full-sequence states across remote waits; support
+  level-boundary recomputation as a lower-memory fallback and never query storage
+  during recomputation.
 - Batch sites and producers without truncating counts; checkpoint the site cursor,
   request/response hashes, tool state, RNG, optimizer, and partially accumulated
   gradients.
@@ -398,6 +427,8 @@ Report all of the following by trajectory length and provenance class:
 - query-to-required-source recall, precision, rank, and cross-space overlap;
 - selected records and bytes per site and per completed task;
 - downstream task success and teacher NLL under real, zero, wrong, and dropped values;
+- blank-first-pass versus immediate-result task quality, payload dependence,
+  recurrent compute, and latency after post-training;
 - write opportunities, distinct calls, unique causal positions, records written,
   useful-token/evidence coverage, duplication, contradiction, factual fidelity,
   terminal-call concentration, and future-task utility;

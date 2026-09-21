@@ -18,6 +18,15 @@ latent attachment references, and causally earlier completed-read lineage for
 read-dependent writes. It is a data contract; asynchronous execution and multi-site
 model training remain subsequent releases.
 
+The implemented recurrent consumer is still spatially single-site. It appends one
+contiguous learned workspace after the prompt, takes one query from its last position
+at each configured depth boundary, and injects one `LoopWrite` into that workspace.
+The entire prompt/workspace/teacher-forced target sequence does execute in parallel
+through each core pass, and retrieved values first enter between passes. The v0.5
+target generalizes that correct timing to many query positions and many disjoint
+workspace spans in the same full trajectory. Current `read_steps` count depth
+boundaries; they do not count distinct transcript sites.
+
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
 Operational details are in [development-v0.2.md](development-v0.2.md).

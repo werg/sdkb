@@ -1,5 +1,28 @@
 # SDKB recurrent decoder conversion
 
+> **v0.5 spatial extension:** the implementation described below has one workspace
+> and one query position. The trajectory-memory target keeps the same whole-sequence
+> recurrent timing while adding many site-aligned blank workspaces. After each core
+> pass, all active site queries are gathered together; their results are scattered
+> into their respective positions before the next pass. Spatial site count and
+> recurrent depth are separate axes. This extension is planned and must not be
+> inferred from the current `read_steps` setting.
+
+The planned batched boundary representation has query positions
+$P\in\mathbb N^{B\times K}$, workspace starts
+$S\in\mathbb N^{B\times K}$, an active mask for each recurrence level, and returned
+tokens $Z\in\mathbb R^{B\times K\times m\times d}$. The boundary gathers every
+active $H_{b,P_{b,k}}$, flattens active sites for batched search and reader work,
+then scatters each $Z_{b,k}$ into its non-overlapping span beginning at $S_{b,k}$.
+Every span follows its query position, and the causal mask controls which later
+positions can consume it. Complete all sites' neighborhood aggregates before the
+next shared-state update.
+
+Autoregressive post-training may use a faster schedule: after a generated call has a
+result, inject its workspace after the fixed prelude before the recurrent core. This
+is a distinct measured schedule, not evidence that blank-first-pass training and
+immediate-result inference are automatically equivalent.
+
 **Decision and implementation note · 19 September 2026 · SDKB 0.4**
 
 ## Decision

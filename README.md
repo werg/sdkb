@@ -7,6 +7,9 @@ frequent visible memory search/write tool calls at distinct causal positions,
 length-scaled write-call counts, recursive read-augmented bank generations, and
 corpus-scale storage. Those behaviors are
 planned and are not attributed to the current one-read curriculum.
+The multi-site target runs the whole teacher-forced trajectory at each recurrent
+level, retrieves all active spatial sites together, and scatters results into blank
+site workspaces for the following level.
 
 Run ownership, detached start/stop/resume, optional W&B and verified external-disk
 archives are documented in [portable training operations](docs/operations.md).
