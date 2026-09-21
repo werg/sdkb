@@ -212,3 +212,49 @@ episodes over 512 separate sources. Each source receives one full-passage
 target and one exact eight-word span target; the span query contains word
 positions rather than passage content. Its training data SHA-256 is
 `c3c20e513ff70572c11bf242d8f21d131234a029e3a605de8f53f7d6d1e8981f`.
+
+The whole-passage stage completed exactly one deterministic pass over all
+6,000 sources at step 3,000. Mean training NLL declined from 3.401 in the
+first 750 updates to 3.179 in the last 750. On all 512 source-disjoint
+validation passages, the frozen writer's reopened stored payloads scored
+3.1428 teacher NLL, versus 3.5138 with values zeroed. On 32 greedy
+generations, exact match remained 0/32; correct-value outputs changed under
+ablation, and mean generated-word overlap was 0.201 versus 0.136 for zero
+values. These generated passages still contain substantial hallucinated
+content. The result establishes useful payload-dependent token probabilities
+under oracle delivery, but not accurate passage reconstruction.
+
+The prepared full-passage/indexed-span mixture is now running from the
+step-3,000 writer as a new training stage at
+`/archive/runs/four-space-short-span-20260921`. Its first stop is at 1,000
+updates for a source-disjoint span and full-passage check; the bank writer
+from the earlier 10,000-source QA experiments is a separate frozen
+generation and is not silently relabeled with these new weights.
+
+Before indexed-span training, 64 source-disjoint span requests scored 5.219
+teacher NLL with correct stored values and 5.736 with zeroed values; greedy
+exact span generation was 0/16. The mixed stage's step-1,000 checkpoint
+scored 4.066 and 4.812 on the same requests, with 0/16 exact generations.
+On the same 64 full-passage sources, correct-value NLL was 3.159 before the
+mixed stage and 3.189 after it; the corresponding zero-value scores were
+3.555 and 3.589. The mixed objective improved span token probabilities
+while approximately preserving the earlier full-passage payload signal.
+Neither task yet has convincing exact free generation. Training resumed
+toward one complete pass over the 12,000 mixed episodes.
+
+For the subsequent published-bank stage, a source-oriented manifest and
+content-located span queries are prepared at
+`/archive/corpora/squad-short-bank-queries-v2-20260921`. The manifest contains
+6,512 distinct source versions: 6,000 training and 512 heldout sources.
+Each query names its article and the first six passage words, then requests
+an eight-word span starting at word seven or later. No target span appears
+in its query, and source IDs are disjoint across the splits. Training query
+SHA-256 is `3b63102844e8fbe6b4b1ce666aff89792678a5a199141bd3a297cc56f297cf2c`;
+the standalone source-manifest SHA-256 is
+`6c1f8e28a39e9c260197a2f8fce2f1d3314d8cbb17bc3dab27879e915bb10d58`.
+Each source row retains its original source ID, article title, context hash,
+short-corpus identity, and text hash in provenance bound to this bank manifest.
+The bank is not yet built; it must use a frozen writer snapshot after the
+active span run, so stored keys and values are not silently mixed across
+writer versions. Validation source text will be in the bank without its
+question/answer labels, preserving source-disjoint training labels.

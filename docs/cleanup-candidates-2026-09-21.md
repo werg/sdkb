@@ -11,6 +11,7 @@ under the external `/mnt/external/sdkb-archive` disk.
 | `runs/four-space-bank10k-qa-novel-20260921` | 2.2 GB | The 512-step frozen-bank QA run did not retrieve verified sources. |
 | `runs/four-space-bank10k-value-contrast-20260921` | 2.2 GB | The step-1,500 stored-value result reversed on 64 heldout questions. |
 | `banks/four-space-squad-v2-10k` | 105 MB | Older published writer generation, retained as a retrieval reference. |
+| `corpora/squad-short-bank-queries-20260921` | 11 MB | Superseded by the v2 source manifest that includes explicit provenance; no bank was built from this first version. |
 
 Preserve the validation records and any checkpoint needed for direct
 comparisons before deciding whether to remove an item. The current short

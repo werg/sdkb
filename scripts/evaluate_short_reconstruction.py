@@ -39,6 +39,9 @@ def evaluate(run: Path, episodes_file: Path, output: Path, *,
     if not episodes or any(e.task_family not in {'passage_reconstruction', 'passage_span'}
                            or len(e.required_ids) != 1 for e in episodes):
         raise ValueError('Evaluation needs one-source passage reconstruction episodes')
+    if any(agent.target_ids(e.answer).shape[-1] > max_new_tokens
+           for e in episodes[:generate_episodes]):
+        raise ValueError('Generation token budget cannot fit every exact target')
     output.mkdir()
     writer_sha = file_sha256(checkpoint / 'model.safetensors')
     generation = writer_sha[:20]
