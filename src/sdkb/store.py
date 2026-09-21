@@ -264,13 +264,16 @@ class DiskStore:
         """Revalidate and load several captured plans through one connection."""
         result = []
         with self.connect() as db:
+            has_offline_index = db.execute("""SELECT 1 FROM sqlite_master
+                WHERE type='index' AND name='offline_record_scope'""").fetchone() is not None
+            indexed = " INDEXED BY offline_record_scope" if has_offline_index else ""
             for plan in plans:
                 ids = [selection.record_id for selection in plan.selections]
                 if not ids:
                     result.append([])
                     continue
                 placeholders = ",".join("?" for _ in set(ids))
-                rows = db.execute(f"""SELECT record_id,payload FROM records
+                rows = db.execute(f"""SELECT record_id,payload FROM records{indexed}
                     WHERE namespace=? AND space=? AND generation=? AND domain=?
                     AND created_at<? AND deleted=0 AND record_id IN ({placeholders})""",
                     (plan.namespace, plan.space, plan.generation, plan.domain,

@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import pytest
 import torch
 
@@ -106,6 +108,27 @@ def test_fetch_many_batches_each_plan_and_preserves_selection_order(tmp_path):
     assert len(actual) == 2 and actual[1] == []
     for value, reference in zip(actual[0], expected, strict=True):
         torch.testing.assert_close(value, reference)
+
+
+def test_fetch_many_uses_offline_record_index_when_present(tmp_path):
+    store = DiskStore(tmp_path / "bank.sqlite")
+    store.put(record("a", [1, 0], created_at=1))
+    with store.connect() as db:
+        db.execute("CREATE INDEX offline_record_scope ON records "
+                   "(namespace,generation,record_id,space)")
+    statements = []
+    original = store.connect
+
+    @contextmanager
+    def traced():
+        with original() as db:
+            db.set_trace_callback(statements.append)
+            yield db
+
+    store.connect = traced
+    store.fetch_many((ReadPlan("default", "s0", "v0", "research", 2,
+                               (Selection("a", 1.0),)),))
+    assert any("INDEXED BY offline_record_scope" in statement for statement in statements)
 
 
 def test_temporal_event_commit_is_atomic_causal_and_idempotent(tmp_path):
