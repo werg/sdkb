@@ -27,6 +27,7 @@ def test_stored_corpus_forward_uses_only_prefix_and_frozen_payloads(tmp_path, ti
     tiny_config.train.retrieval = 'learned'
     tiny_config.train.routing_warmup = 0
     tiny_config.train.routing_weight = .1
+    tiny_config.train.bank_routing_candidates = 3
     agent = SDKBAgent(tiny_config)
     store = DiskStore(tmp_path / 'bank.sqlite')
     sources = [Source(f's{i}', f'Passage {i}: the private marker is {i}x.', 1, 'passage')
@@ -38,12 +39,19 @@ def test_stored_corpus_forward_uses_only_prefix_and_frozen_payloads(tmp_path, ti
     episode = Episode('query', 'corpus', (sources[0],), 'What is the marker?', '0x',
                       ('s0',), False, 0, 0, 2, 'passage_qa', (), (('s0',),), 'verified')
     agent.produce = lambda *_: (_ for _ in ()).throw(AssertionError('writer called on read path'))
-    first, first_plan = stored_corpus_forward(agent, store, episode, generation='g1', limits=(2, 1))
+    searched = []
+    class Searcher:
+        def search(self, *args, **kwargs):
+            searched.append(kwargs['top_k'])
+            return store.search(*args, **kwargs)
+    first, first_plan = stored_corpus_forward(agent, store, episode, generation='g1',
+                                               limits=(2, 1), searcher=Searcher())
     second, second_plan = stored_corpus_forward(agent, store, episode.__class__(
         **(episode.__dict__ | {'answer': 'different target'})), generation='g1', limits=(2, 1))
     assert first_plan['selected_ids'] == second_plan['selected_ids']
     assert all('s0' in ids for ids in first_plan['selected_ids'])
     assert first_plan['selected_counts'] == [2, 1]
+    assert searched == [3, 3]
     assert torch.isfinite(first.loss) and torch.isfinite(second.loss)
     first.loss.backward()
     assert agent.reader.local[0].blocks[0].input.weight.grad.norm() > 0

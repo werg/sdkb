@@ -76,6 +76,7 @@ class TrainConfig:
     sampling_policy: str = 'random_with_replacement'  # or deterministic shuffled_passes
     bank_dir: str | None = None  # published immutable frozen-writer corpus generation
     bank_read_limits: list[int] = field(default_factory=list)  # per-space selected records, <= neighbors
+    bank_routing_candidates: int = 8  # exact hard-negative pool per space, before supplied positives
     payload_contrast_weight: float = 0.0  # source-swap ranking on verified one-source episodes
     payload_contrast_margin: float = 0.5
     bank_payload_contrast_weight: float = 0.0  # stored-value source swap under a fixed bank plan
@@ -149,7 +150,10 @@ class Config:
                     or t.oracle_anchor_weight or t.oracle_alignment_weight
                     or t.oracle_distillation_weight or t.loop_counts):
                 raise ValueError('Bank training requires frozen-writer R=2 learned routing and stored-only reads')
-            if (len(t.bank_read_limits) != len(r.neighbors) or
+            if (len(t.bank_read_limits) != len(r.neighbors)
+                    or not isinstance(t.bank_routing_candidates, int)
+                    or isinstance(t.bank_routing_candidates, bool)
+                    or t.bank_routing_candidates < 1 or
                     any(not isinstance(k, int) or isinstance(k, bool) or k < 1 or k > cap
                         for k, cap in zip(t.bank_read_limits, r.neighbors, strict=True))):
                 raise ValueError('Bank read limits must be positive per-space counts within neighbor caps')

@@ -47,7 +47,9 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
         for space, (dim, limit) in enumerate(zip(agent.config.memory.payload_dims, limits, strict=True)):
             space_name = f's{space}'
             address = agent.query_maps[space](routing_query)
-            candidates = searcher.search(address[0], top_k=max(limit + int(contrast), 8), namespace=namespace,
+            candidates = searcher.search(address[0], top_k=max(
+                                      limit + int(contrast),
+                                      agent.config.train.bank_routing_candidates), namespace=namespace,
                                       space=space_name, generation=generation, domain=domain,
                                       query_time=episode.query_time)
             found = [selection.record_id for selection in candidates.selections]
