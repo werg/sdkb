@@ -107,6 +107,12 @@ def ensure_offline_records(store: DiskStore, factory: Callable[[], Iterable[Stor
 
 
 def _shard_schema(db):
+    # Shard verification filters generation plus bounded record-ID sets. The
+    # records primary key orders generation last, while the serving eligibility
+    # index orders record ID last; either can devolve into repeated generation
+    # scans as a bank grows. Build this before publication and bulk ingestion.
+    db.execute('''CREATE INDEX IF NOT EXISTS offline_record_scope ON records
+                  (namespace,generation,record_id,space)''')
     db.execute('''CREATE TABLE IF NOT EXISTS offline_shards (
         namespace TEXT NOT NULL, generation TEXT NOT NULL, shard_id TEXT NOT NULL,
         identity TEXT NOT NULL, source_ids TEXT NOT NULL, records INTEGER NOT NULL,

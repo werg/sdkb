@@ -19,6 +19,9 @@ def test_shards_commit_complete_records_and_resume_without_reencoding(tmp_path):
                   spaces=('s0', 's1'))
     assert ensure_offline_shard(store, lambda: _records(('a', 'b')),
                                 shard_id='000', source_ids=('a', 'b'), **kwargs)
+    with store.connect() as db:
+        assert "offline_record_scope" in {row[1] for row in db.execute(
+            "PRAGMA index_list('records')")}
     assert not ensure_offline_shard(store, lambda: (_ for _ in ()).throw(AssertionError('reencoded')),
                                     shard_id='000', source_ids=('a', 'b'), **kwargs)
     assert ensure_offline_shard(store, lambda: _records(('c',)),
