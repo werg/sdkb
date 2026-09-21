@@ -652,6 +652,14 @@ do not prescribe roles for neighboring summaries or add specialization losses un
 measured collapse makes them necessary. Different centers and overlapping input sets
 already provide the basic asymmetry.
 
+The initial payload compactor does not receive the absolute center coordinate. Its
+published summary receives a separate absolute retrieval key, but summary formation
+uses payload content and relative geometry. This avoids coupling one shared local
+operator to an arbitrary coordinate gauge or writer-generation drift. Compare an
+explicit center-conditioned arm only if the invariant baseline shows that different
+semantic regions need different compression behavior; pin the key-space generation
+for that comparison.
+
 Prefer relative coordinates in a versioned learned metric over raw absolute key
 coordinates. The present keys are normalized cosine addresses and can drift between
 writer generations; a hierarchy must pin its coordinate transform or rebuild its
