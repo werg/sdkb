@@ -117,6 +117,11 @@ result sites. Native in-loop reads implement composition within a site; repeated
 calls distribute sites through a long trajectory. See the v0.5 plan for the protocol,
 site density, recursive generations, and scale budget.
 
+One site is one visible tool call at one causal position. Multiple records batched
+inside a call or multiple recurrent reads used to compute one result do not create
+multiple trajectory sites. Recursive generations add repeated read-author-write
+cycles across banks; they do not replace repeated calls within each trajectory.
+
 A read operation returns $Z\in\mathbb R^{m\times d_D}$ plus discrete status and provenance metadata. An input projection, normalization, and learned gate place $Z$ at the decoder's expected scale. Empty, pending, failed, and completed reads have distinct states. The API does not silently interpret an unavailable result as useful zero-valued evidence.
 
 Record order is exchangeable inside a neighborhood. Positions within each stored value sequence and positions in the returned sequence are not exchangeable. They need explicit positional or slot identity. Read handles, source identifiers, and timestamps are not additional semantic query tokens; they are operational metadata.

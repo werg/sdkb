@@ -99,9 +99,11 @@ positive results should guide tests without being relabeled as that broader proo
 
 The owner has selected [trajectory memory v0.5](trajectory-memory-v0.5.md) as the
 next architecture program. Long agent traces should contain repeated visible
-`memory.search` calls and tool results, plus `memory.write` calls whose item count
-scales with useful input and events. Later immutable bank generations must contain
-substantial contributions authored by trajectories that queried earlier generations.
+`memory.search` calls and tool results at distinct causal positions, plus distinct
+`memory.write` calls whose site count scales with useful input and events. Batching
+several items into one call does not meet that requirement. Later immutable bank
+generations must contain substantial contributions authored by trajectories that
+queried earlier generations.
 
 This is a course extension, not a description of the current HotpotQA curriculum.
 The current run performs one automatic latent read per short episode and writes

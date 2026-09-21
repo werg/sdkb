@@ -21,6 +21,13 @@ read before one short answer. A long trajectory may contain dozens of read and w
 sites. The number of writes scales with useful input content rather than collapsing
 an arbitrarily long input into one fixed record.
 
+A **site** means one distinct tool call at one causal token/event position. Several
+items submitted in one call count as one write site. Several native recurrent reads
+used to compose one returned result count as one search site. Recursive bank
+generations are a third, independent axis: the target requires repeated sites within
+each trajectory *and* repeated generations whose new records were authored after
+reading earlier generations.
+
 Normal inference never re-encodes source trajectories during a read. A write is an
 explicit new operation that encodes the content supplied to `memory.write`. Offline
 encoding of an immutable corpus by a frozen writer remains a separate bank-building
@@ -34,7 +41,7 @@ operation.
 | Queries as tool calls | Query vectors are extracted automatically from hidden state. No memory call appears in the transcript. | Train and execute `memory.search` calls with textual arguments, then derive the latent search key from the causal call state. |
 | Results as tool results | Latent tokens are inserted into reserved workspace slots without a visible tool event. | Return an ordinary tool-result envelope plus aligned latent result tokens. The deployment result contains handles and status, not source text. |
 | Prompted write behavior | Sources are passed directly to the writer or offline bank builder. | Put a memory-use policy in the system prompt and supervise `memory.write` calls whose arguments contain the learned reusable content. |
-| Several writes for long input | Dataset preparation can chunk trajectories into several fixed producers, but the model does not decide or emit those writes. | Supervise a length- and event-scaled sequence of write calls, with one logical record per item and optional higher-level synthesis records. |
+| Several writes for long input | Dataset preparation can chunk trajectories into several fixed producers, but the model does not decide or emit those writes. | Supervise distinct write calls at distinct causal positions, normally one logical record per call, with optional later synthesis calls. |
 | Read-before-write recursive memory | The current two-generation bank refresh trains against a bank, but bank contents are source chunks, not memories authored by read-augmented trajectories. | Publish immutable generations containing outputs of trajectories that queried an earlier generation, retaining complete lineage. |
 | Pretraining/posttraining corpus scale | The target bank contains 100,000 sources. | Build a sharded logical bank that can grow through 1M, 10M, and 100M records before scale-out corpus ingestion. |
 | Capacity substitution evidence | No matched result yet. | Compare a small controller plus bank with larger resident models under equal information and declared byte, latency, and compute budgets. |
@@ -96,22 +103,21 @@ identifiers. A call is structurally equivalent to:
 {
   "name": "memory.write",
   "arguments": {
-    "items": [
-      {
-        "content": "After error E17, restore snapshot S before retrying when capability C is present.",
-        "kind": "procedural_lesson",
-        "applies_when": "service uses protocol version v3",
-        "evidence_refs": ["opaque-observation-id"],
-        "confidence": "observed"
-      }
-    ]
+    "content": "After error E17, restore snapshot S before retrying when capability C is present.",
+    "kind": "procedural_lesson",
+    "applies_when": "service uses protocol version v3",
+    "evidence_refs": ["opaque-observation-id"],
+    "confidence": "observed"
   }
 }
 ```
 
-The result returns one committed logical record ID per item. Each item is encoded
-into all configured spaces. A multi-item call is transport batching, not one fused
-record. Source commands remain inert text and the write tool cannot execute them.
+The result returns one committed logical record ID. It is encoded into all configured
+spaces. The behavior curriculum uses one logical record per call so that several
+records require several visible calls at separate causal positions. A future bulk
+transport extension may accept several items, but that still counts as one site and
+cannot satisfy a multi-site training target. Source commands remain inert text and
+the write tool cannot execute them.
 
 Writes retain raw/teacher/model-authored provenance, the producing model and writer
 versions, trajectory ID, causal timestamp, evidence references, parent read IDs,
@@ -128,14 +134,20 @@ targets, not measured optima:
   tokens, subject to the event boundaries above.
 - Short tasks should contain 1–2 search sites; medium tasks 3–8; long tool tasks
   8–32. The executor must not impose these as a hard architectural ceiling.
+- Place write calls immediately after durable discoveries, resolved failures, or
+  completed subgoals, with optional synthesis calls after later evidence. Short
+  tasks should contain 0–2 write sites, medium tasks 2–8, and long tool tasks 4–32
+  when the trace contains that many independently reusable lessons.
 - Create one detail memory per roughly 96–192 useful source tokens or one coherent
   event, plus optional cross-item lessons after a successful or failed task.
 - A pure knowledge-injection example first performs context/deduplication searches
-  distributed across the input, then writes `ceil(useful_tokens / target_chunk)`
-  detail items and any justified synthesis items.
+  at distinct positions across the input, then makes approximately
+  `ceil(useful_tokens / target_chunk)` distinct detail write calls and any justified
+  synthesis calls. It must not batch all details into one terminal call.
 - A long agent trajectory writes after meaningful discoveries and at task closure.
-  Write count, retained source coverage, and evidence coverage are logged. A single
-  end-of-task summary cannot satisfy a many-item target.
+  Search and write calls may interleave as new evidence changes the task. Call count,
+  call positions, retained source coverage, and evidence coverage are logged. A
+  burst of calls at task closure cannot satisfy a distributed-site target.
 
 Training examples include fewer and more sites than the nominal schedule so the
 model learns placement rather than a mechanical interval. Every inserted site is
@@ -223,9 +235,10 @@ drift.
 ### Phase A — Tool syntax and placement
 
 Edit recorded tool trajectories to include `memory.search` opportunities and
-`memory.write` targets. Train call/no-call decisions, query text, item count, and
-valid arguments. Use negative examples where searching or writing would add no
-value. This phase may use selected text in tool results as a teacher arm.
+`memory.write` targets at separate causal positions. Train call/no-call decisions,
+query text, call count, placement, and valid arguments. Use negative examples where
+searching or writing would add no value. This phase may use selected text in tool
+results as a teacher arm.
 
 ### Phase B — Latent result use
 
@@ -237,10 +250,11 @@ zero, wrong, dropped, and source-counterfactual payload interventions.
 ### Phase C — Scaled write extraction
 
 Give documents and trajectories of varied length. Require multiple `memory.write`
-items proportional to useful content. Supervise factual fidelity, provenance links,
-coverage, applicability conditions, deduplication, and separation of observations
-from interpretations. Reopen the stored payloads and test reconstruction, extraction,
-and future-task utility.
+calls at different context positions, proportional to useful content. One call per
+record is the default curriculum contract. Supervise factual fidelity, provenance
+links, coverage, applicability conditions, deduplication, and separation of
+observations from interpretations. Reopen the stored payloads and test
+reconstruction, extraction, and future-task utility.
 
 ### Phase D — Read-then-write trajectories
 
@@ -252,9 +266,11 @@ under a fixed-plan intervention.
 ### Phase E — Long agent tasks
 
 Use tool-rich software, browsing, research, and multi-document tasks with 8–32
-search sites and several writes. Start with edited successful teacher trajectories,
-then add self-distillation and bounded-environment execution. Teacher likelihood,
-tool-call validity, and actual task success remain separate metrics.
+search sites and 4–32 write sites where supported by the trace. Both kinds of calls
+must occupy multiple causal positions rather than one batched location. Start with
+edited successful teacher trajectories, then add self-distillation and
+bounded-environment execution. Teacher likelihood, tool-call validity, and actual
+task success remain separate metrics.
 
 ### Phase F — Policy optimization
 
@@ -325,12 +341,15 @@ read-before-write dependency.
 
 Report all of the following by trajectory length and provenance class:
 
-- search opportunities, calls made, calls per 1,000 visible tokens, and trigger type;
+- search opportunities, distinct calls made, unique causal positions, calls per
+  1,000 visible tokens, inter-call distance, terminal-call concentration, and trigger
+  type;
 - query-to-required-source recall, precision, rank, and cross-space overlap;
 - selected records and bytes per site and per completed task;
 - downstream task success and teacher NLL under real, zero, wrong, and dropped values;
-- write opportunities, items written, useful-token/evidence coverage, duplication,
-  contradiction, factual fidelity, and future-task utility;
+- write opportunities, distinct calls, unique causal positions, records written,
+  useful-token/evidence coverage, duplication, contradiction, factual fidelity,
+  terminal-call concentration, and future-task utility;
 - fraction of writes whose lineage includes earlier reads, recursion depth, and
   marginal utility by generation;
 - bank records, logical source tokens, raw and compact bytes, index bytes, source
@@ -354,8 +373,9 @@ fresh 16-read-slot interface initialized from compatible backbone weights; do no
 disguise the shape change as an ordinary resume.
 
 The first v0.5 milestone is a stored-only long trajectory with at least eight visible
-search calls, four write calls, two writes causally dependent on earlier latent
-results, and a later heldout task that changes correctly when one authored memory is
+search calls and four write calls, each at distinct causal positions separated by
+other trajectory events. At least two writes must causally depend on earlier latent
+results, and a later heldout task must change correctly when one authored memory is
 removed under a fixed read plan. The first scale milestone is 1 million logical
 records, followed by 10 million after search, ingestion, and recovery measurements
 pass. Do not schedule the 100 million tier on the present external disk until source,
