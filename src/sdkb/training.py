@@ -100,9 +100,9 @@ def resource_report() -> dict:
     return report
 
 
-def reset_resource_peaks():
+def reset_resource_peaks(device: str | None = None):
     """Phase-local CUDA peaks; host ru_maxrss cannot be reset portably."""
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and (device is None or device == "cuda"):
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats()
 
@@ -254,7 +254,7 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     torch.manual_seed(config.train.seed)
     from .runtime import configure_memory, compute_watchdog, available_host_memory, memory_metrics
     runtime_limits = configure_memory(config.train)
-    reset_resource_peaks()
+    reset_resource_peaks(config.train.device)
     rng = random.Random(config.train.seed)
     agent = SDKBAgent(config).to(config.train.device)
     agent.train()

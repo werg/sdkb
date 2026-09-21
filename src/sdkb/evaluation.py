@@ -168,7 +168,7 @@ def evaluate_transfer_run(run: str | Path, episodes_path: str | Path, *,
         raise ValueError('Choose one counterfactual family per evaluation')
     run = Path(run)
     config = config_from_run(run)
-    reset_resource_peaks()
+    reset_resource_peaks(config.train.device)
     if (compact or persistent_compact) and config.memory.compaction == 'none':
         raise ValueError('Run was not configured with a compactor')
     torch.set_num_threads(config.train.threads)

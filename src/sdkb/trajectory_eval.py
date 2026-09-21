@@ -278,7 +278,7 @@ def evaluate_teacher_run(run, episodes_file, *, max_episodes=64, generate_tokens
         if want_stop():
             save_progress(rows, plans)
             return {'status': 'checkpointed', 'directory': str(directory)}
-        reset_resource_peaks()
+        reset_resource_peaks(config.train.device)
         torch.set_num_threads(config.train.threads)
         agent = SDKBAgent(config).to(config.train.device).eval()
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .data import Episode
+from .trajectory_memory import validate_memory_transcript, write_call, write_result
 
 
 SYSTEM_PROMPT = (
@@ -66,7 +67,9 @@ def _tokens(tokenizer, messages: list[dict[str, Any]]) -> dict[str, list[int]]:
 
 
 def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slots: int,
-                            generation: str, levels: Sequence[int] | None = None) -> dict[str, Any]:
+                            generation: str, levels: Sequence[int] | None = None,
+                            include_writes: bool = False,
+                            write_generation: str = "pending-authored") -> dict[str, Any]:
     """Pack several visible calls into one sequence with blank result spans."""
     if not episodes or read_slots < 1:
         raise ValueError("Spatial packing needs episodes and positive read slots")
@@ -74,7 +77,7 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
     if len(levels) != len(episodes) or any(level < 1 for level in levels):
         raise ValueError("Supply one positive recurrence level per site")
     messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_PROMPT}]
-    boundaries = []
+    boundaries, write_boundaries = [], []
     for index, (episode, level) in enumerate(zip(episodes, levels, strict=True)):
         call_id = f"memory-search-{index}-{episode.episode_id[:12]}"
         messages.append({"role": "user", "content": episode.query})
@@ -95,12 +98,42 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
             "domain": episode.provenance.get("domain", "research"),
             "episode_id": episode.episode_id,
         })
+        if include_writes:
+            messages.append({
+                "role": "user",
+                "content": ("Store one reusable memory from the completed task. Preserve its "
+                            "scope, evidence, and applicability conditions."),
+            })
+            write_id = f"memory-write-{index}-{episode.episode_id[:12]}"
+            content = f"For the task '{episode.query}', the verified outcome was '{episode.answer}'."
+            messages.append(write_call(
+                call_id=write_id, content=content, kind="verified_task_outcome",
+                scope={"environment": episode.environment},
+                applies_when=f"A later task concerns {episode.environment} and the same facts.",
+                evidence_refs=episode.required_ids, confidence="verified_training_record",
+                parent_read_call_ids=(call_id,),
+            ))
+            write_prefix = _tokens(tokenizer, messages)["input_ids"]
+            record_id = hashlib.sha256(
+                f"{write_generation}:{episode.episode_id}".encode()).hexdigest()[:32]
+            messages.append(write_result(call_id=write_id, status="ok",
+                                         generation=write_generation, record_id=record_id))
+            write_boundaries.append({
+                "call_id": write_id, "base_call_position": len(write_prefix) - 1,
+                "episode_id": episode.episode_id, "record_id": record_id,
+                "parent_read_call_ids": [call_id], "content": content,
+                "_call_prefix": write_prefix,
+            })
+    validate_memory_transcript(messages)
     encoded = _tokens(tokenizer, messages)
     base_ids, base_mask = encoded["input_ids"], encoded["assistant_mask"]
     for boundary in boundaries:
         if (base_ids[:len(boundary["_call_prefix"])] != boundary["_call_prefix"]
                 or base_ids[:len(boundary["_result_prefix"])] != boundary["_result_prefix"]):
             raise ValueError("Chat template changed an earlier site when later messages were appended")
+    for boundary in write_boundaries:
+        if base_ids[:len(boundary["_call_prefix"])] != boundary["_call_prefix"]:
+            raise ValueError("Chat template changed an earlier write when later messages were appended")
 
     insertions = {boundary["base_workspace_start"]: boundary for boundary in boundaries}
     if len(insertions) != len(boundaries):
@@ -124,8 +157,12 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
         sites.append({key: boundary[key] for key in (
             "call_id", "workspace_start", "level", "required_ids", "query_time",
             "domain", "episode_id")} | {
-                "query_position": base_to_expanded[boundary["base_query_position"]],
+            "query_position": base_to_expanded[boundary["base_query_position"]],
             })
+    write_sites = [{key: boundary[key] for key in (
+        "call_id", "episode_id", "record_id", "parent_read_call_ids", "content")} | {
+        "call_position": base_to_expanded[boundary["base_call_position"]],
+    } for boundary in write_boundaries]
     if not any(label >= 0 for label in labels):
         raise ValueError("Packed trajectory has no supervised assistant tokens")
     identity = [episode.episode_id for episode in episodes]
@@ -135,6 +172,7 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
         "input_ids": expanded_ids,
         "labels": labels,
         "sites": sites,
+        "write_sites": write_sites,
         "read_slots": read_slots,
         "tokens": len(expanded_ids),
         "supervised_tokens": sum(label >= 0 for label in labels),
@@ -182,6 +220,9 @@ def validate_spatial_row(row: dict[str, Any]) -> None:
         raise ValueError("Spatial IDs and labels differ in length")
     if len(row["episode_ids"]) != len(row["sites"]):
         raise ValueError("Spatial episodes and sites differ in length")
+    write_sites = row.get("write_sites", [])
+    if write_sites and len(write_sites) != len(row["episode_ids"]):
+        raise ValueError("Spatial episodes and writes differ in length")
     blanks = {index for index, token in enumerate(row["input_ids"]) if token == -1}
     read_slots = row["read_slots"]
     if not isinstance(read_slots, int) or isinstance(read_slots, bool) or read_slots < 1:
@@ -209,3 +250,12 @@ def validate_spatial_row(row: dict[str, Any]) -> None:
             raise ValueError("Spatial site needs verified positive IDs")
     if any(token < -1 for token in row["input_ids"]) or not blanks or covered != blanks:
         raise ValueError("Spatial rows require only -1 blank sentinels")
+    read_calls = calls
+    for write in write_sites:
+        if (not {"call_id", "call_position", "episode_id", "record_id",
+                 "parent_read_call_ids", "content"} <= set(write)
+                or not 0 <= write["call_position"] < len(row["input_ids"])
+                or row["input_ids"][write["call_position"]] < 0
+                or not write["record_id"] or not write["content"]
+                or not set(write["parent_read_call_ids"]) <= read_calls):
+            raise ValueError("Invalid spatial write site or read lineage")

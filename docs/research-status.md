@@ -111,8 +111,9 @@ together; and latent results are scattered into site-aligned blank workspaces be
 the next pass. The first implementation now packs multiple structured search sites,
 batches their global exact searches by space and level, fetches stored payloads, and
 scatters them into their own workspaces. Current `read_steps` are depth boundaries
-and must not be reported as trajectory site count. Learned site placement, write-call
-execution, and growing-bank recursive rounds remain planned.
+and must not be reported as trajectory site count. The packer also emits distinct
+prompted write-call targets with read lineage. Learned site placement, execution and
+publication of those writes, and growing-bank recursive rounds remain planned.
 
 This is a course extension, not a description of the current HotpotQA curriculum.
 The current run performs one automatic latent read per short episode and writes

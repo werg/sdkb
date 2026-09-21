@@ -140,6 +140,7 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
     denominator = read_sites
     metrics = {
         "read_sites": read_sites,
+        "write_sites": sum(len(row.get("write_sites", ())) for row in rows),
         "selected_counts": [count / denominator for count in selected_counts],
         "learned_positive_recall": [hits / denominator for hits in learned_hits],
         "selected_payload_bytes": sum(count * width * 2 for count, width in

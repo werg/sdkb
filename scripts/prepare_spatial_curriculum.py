@@ -16,7 +16,8 @@ from sdkb.trajectories import file_sha256
 
 def build(episodes_path: Path, output: Path, *, model_id: str, revision: str,
           sites_per_trajectory: int, read_slots: int, mode: str,
-          generation: str) -> dict:
+          generation: str, include_writes: bool = False,
+          write_generation: str = "pending-authored") -> dict:
     if sites_per_trajectory < 1 or read_slots < 1 or mode not in {"same_level", "two_level"}:
         raise ValueError("Invalid spatial packing settings")
     episodes = EpisodeIndex(episodes_path)
@@ -31,7 +32,9 @@ def build(episodes_path: Path, output: Path, *, model_id: str, revision: str,
             levels = ([1] * sites_per_trajectory if mode == "same_level" else
                       [1 if index % 2 == 0 else 2 for index in range(sites_per_trajectory)])
             row = pack_spatial_trajectory(tokenizer, group, read_slots=read_slots,
-                                          generation=generation, levels=levels)
+                                          generation=generation, levels=levels,
+                                          include_writes=include_writes,
+                                          write_generation=write_generation)
             line = (json.dumps(row, separators=(",", ":")) + "\n").encode()
             handle.write(line)
             digest.update(line)
@@ -58,6 +61,8 @@ def build(episodes_path: Path, output: Path, *, model_id: str, revision: str,
         "model_id": model_id,
         "revision": revision,
         "generation": generation,
+        "include_writes": include_writes,
+        "write_generation": write_generation if include_writes else None,
     }
     manifest_path = output.with_suffix(output.suffix + ".manifest.json")
     pending_manifest = manifest_path.with_suffix(manifest_path.suffix + ".pending")
@@ -76,8 +81,11 @@ if __name__ == "__main__":
     parser.add_argument("--read-slots", type=int, default=8)
     parser.add_argument("--mode", choices=("same_level", "two_level"), default="same_level")
     parser.add_argument("--generation", required=True)
+    parser.add_argument("--include-writes", action="store_true")
+    parser.add_argument("--write-generation", default="pending-authored")
     args = parser.parse_args()
     print(json.dumps(build(args.episodes, args.output, model_id=args.model_id,
                            revision=args.revision, sites_per_trajectory=args.sites_per_trajectory,
                            read_slots=args.read_slots, mode=args.mode,
-                           generation=args.generation), indent=2))
+                           generation=args.generation, include_writes=args.include_writes,
+                           write_generation=args.write_generation), indent=2))

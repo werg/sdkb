@@ -52,3 +52,18 @@ def test_spatial_index_validates_identity_and_complete_workspaces(tmp_path):
     broken["input_ids"][row["sites"][0]["workspace_start"]] = 3
     with pytest.raises(ValueError, match="incomplete"):
         validate_spatial_row(broken)
+
+
+def test_packed_writes_are_distinct_visible_sites_with_read_lineage():
+    episodes = [make_episode(index, distractors=0) for index in range(3)]
+    row = pack_spatial_trajectory(
+        StableChatTokenizer(), episodes, read_slots=2, generation="g0",
+        levels=(1, 1, 2), include_writes=True, write_generation="g1",
+    )
+    validate_spatial_row(row)
+    assert len(row["write_sites"]) == 3
+    assert len({site["call_position"] for site in row["write_sites"]}) == 3
+    assert all(write["parent_read_call_ids"] == [read["call_id"]]
+               for write, read in zip(row["write_sites"], row["sites"], strict=True))
+    assert all(write["call_position"] > read["workspace_start"]
+               for write, read in zip(row["write_sites"], row["sites"], strict=True))

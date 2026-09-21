@@ -39,3 +39,13 @@ def test_watchdog_does_not_add_unrequested_device_wait(monkeypatch, seconds, dev
     monkeypatch.setattr(runtime.torch.cuda, 'synchronize', lambda *_: pytest.fail('Unexpected CUDA wait'))
     with runtime.compute_watchdog(seconds, device=device):
         pass
+
+
+def test_cpu_resource_reset_never_initializes_cuda(monkeypatch):
+    from sdkb import training
+    monkeypatch.setattr(training.torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(training.torch.cuda, "synchronize",
+                        lambda: pytest.fail("CPU training synchronized CUDA"))
+    monkeypatch.setattr(training.torch.cuda, "reset_peak_memory_stats",
+                        lambda: pytest.fail("CPU training initialized CUDA metrics"))
+    training.reset_resource_peaks("cpu")

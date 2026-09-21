@@ -28,13 +28,15 @@ packed row manifest records the separate number of transcript sites.
 The recurrent bridge accepts a `LoopWrites` bundle and atomically validates and
 scatters several non-overlapping result spans before one shared core update.
 `spatial_data.py` packs structured `memory.search` calls, result envelopes, and blank
-workspaces using the real chat template. `spatial_training.py` batches all same-level
+workspaces using the real chat template. It can also pack a separately prompted,
+supervised `memory.write` call after each task segment, one logical record per call,
+with causal lineage to that segment's completed read. `spatial_training.py` batches all same-level
 queries into one resident exact key scan per space, fetches immutable stored payloads,
 trains global routing against verified positives, and supervises assistant tokens.
-The writer is forbidden on this path. The current runner uses complete optimizer
+The latent writer is forbidden on this stored-read path. The current runner uses complete optimizer
 steps rather than producer replay because every payload is historical and frozen.
-Prompted multi-site writes, learned placement, network retrieval, and the prequential
-growing-bank executor are not implemented yet.
+Execution and publication of the prompted writes, learned placement, network
+retrieval, and the prequential growing-bank executor are not implemented yet.
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.

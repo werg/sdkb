@@ -54,7 +54,7 @@ def evaluate(run, episodes_file, output, *, learned_world=False, read_budget=2,
     checkpoint = resolve_checkpoint(run, verify=True)
     torch.set_num_threads(config.train.threads)
     torch.manual_seed(config.train.seed)
-    reset_resource_peaks()
+    reset_resource_peaks(config.train.device)
     adapter = None
     if routing_probe is not None:
         agent, adapter = load_frozen_agent(config, checkpoint, routing_probe=routing_probe,

@@ -38,11 +38,14 @@ def _fingerprint(data: SpatialTrajectoryIndex, manifest_path: Path, settings: di
 def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           init_from: Path | None, *, resume: bool, steps: int, batch_size: int,
           loops: int, limits: tuple[int, ...], routing_candidates: int,
-          checkpoint_every: int) -> dict:
+          checkpoint_every: int, train_recurrent_core: bool = False) -> dict:
     if steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1:
         raise ValueError("Invalid spatial training schedule")
     config = deepcopy(load_config(config_path))
     config.model.loops = loops
+    if train_recurrent_core:
+        config.model.freeze_backbone = False
+        config.model.backbone_train_scope = "recurrent_core"
     config.memory.read_steps = loops - 1
     config.train.steps = steps
     config.train.batch_size = batch_size
@@ -70,12 +73,19 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     )
     if canonical_json(verified) != canonical_json({key: bank_manifest[key] for key in verified}):
         raise ValueError("Published bank differs from its verified manifest")
+    bank_memory = dict(bank_manifest["identity"]["memory"])
+    current_memory = asdict(config.memory)
+    # Recurrent read depth is a consumer schedule, not part of stored key/payload
+    # encoding. Every other memory field remains pinned to the bank generation.
+    bank_memory.pop("read_steps", None)
+    current_memory.pop("read_steps", None)
     if (tuple(bank_manifest["spaces"]) != tuple(f"s{i}" for i in range(len(limits)))
-            or bank_manifest["identity"]["memory"] != asdict(config.memory)):
+            or bank_memory != current_memory):
         raise ValueError("Spatial model and published bank interfaces differ")
     settings = {"format": 1, "loops": loops, "limits": limits,
                 "routing_candidates": routing_candidates, "batch_size": batch_size,
-                "steps": steps, "sampler": "deterministic_shuffled_passes"}
+                "steps": steps, "sampler": "deterministic_shuffled_passes",
+                "train_recurrent_core": train_recurrent_core}
     fingerprint = _fingerprint(data, bank_manifest_path, settings)
 
     if resume:
@@ -111,6 +121,12 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         if loops == 2 and file_sha256(checkpoint / "model.safetensors") != \
                 bank_manifest["identity"]["writer_checkpoint_sha256"]:
             raise ValueError("Initial spatial stage must start from the bank writer snapshot")
+        if loops > 2:
+            parent_inputs = init_from / "spatial-inputs.json"
+            if (not parent_inputs.is_file()
+                    or json.loads(parent_inputs.read_text())["bank_manifest_sha256"]
+                    != file_sha256(bank_manifest_path)):
+                raise ValueError("Deeper spatial stages require a parent trained on this bank")
         initialization = {"checkpoint": str(checkpoint),
                           "checkpoint_sha256": file_sha256(checkpoint / "model.safetensors"),
                           "optimizer_reset": True, "bank_writer_exact": loops == 2}
@@ -221,6 +237,7 @@ if __name__ == "__main__":
     parser.add_argument("--limits", nargs="+", type=int, default=[16, 8, 4, 4])
     parser.add_argument("--routing-candidates", type=int, default=256)
     parser.add_argument("--checkpoint-every", type=int, default=5000)
+    parser.add_argument("--train-recurrent-core", action="store_true")
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -228,4 +245,5 @@ if __name__ == "__main__":
         loops=args.loops, limits=tuple(args.limits),
         routing_candidates=args.routing_candidates,
         checkpoint_every=args.checkpoint_every,
+        train_recurrent_core=args.train_recurrent_core,
     ), indent=2))
