@@ -1,7 +1,8 @@
-"""Resident exact key arrays for an immutable published bank generation.
+"""Resident exact key arrays for a verified physical bank snapshot.
 
 This is a CPU exact scan, not ANN. Stored payloads remain in DiskStore and every
-fetch revalidates namespace, domain, generation, time and deletion status.
+fetch revalidates namespace, domain, physical revision, time and deletion status.
+Spatial training may patch these arrays from its checkpointed mutable overlay.
 """
 from __future__ import annotations
 

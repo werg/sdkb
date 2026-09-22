@@ -1,8 +1,9 @@
-"""Build an append-only authored bank while replaying causal memory trajectories.
+"""Build a transitional authored overlay by replaying causal memory trajectories.
 
-Every event reads the immutable parent plus earlier authored events. Its writes
+Every event reads a frozen base snapshot plus earlier authored events. Its writes
 become visible atomically only after the trajectory completes. The SQLite event
 frontier is the recovery cursor, so a restart never republishes partial events.
+Later training updates are not yet applied through the target mutable-bank journal.
 """
 from __future__ import annotations
 

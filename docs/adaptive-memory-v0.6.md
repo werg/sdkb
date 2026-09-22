@@ -65,10 +65,15 @@ RNG and autocast state and applies every accumulated key and payload cotangent.
 
 After the optimizer step, touched records are regenerated and committed to a
 mutable training overlay. The overlay contains both keys and payloads. Subsequent
-searches and reads consult it before the immutable published generation. The overlay
+searches and reads consult it before the frozen physical base snapshot. The overlay
 lives in `training_cache.sqlite`, so model, optimizer, RNG, sampler position, and
 mutable bank state share one checkpoint commit point. Inference reads stored base or
 overlay tensors and never regenerates source trajectories.
+
+The base-plus-overlay layout is the implemented transition, not the desired
+long-term lifecycle. [Mutable bank v0.8](mutable-bank-v0.8.md) defines one logically
+evolving bank backed by append-only physical revisions, a mutation journal, pinned
+read epochs, and garbage collection of revisions no longer needed for recovery.
 
 Untouched records retain their prior stored version. This is expected bounded
 staleness: the task supplied no gradient for them. Background generation refreshes
@@ -117,8 +122,9 @@ overlap, ordinal, and policy.
 
 Some trajectories then query the newly committed detailed records and emit later
 synthesis writes. This creates within-trajectory read-before-write recursion while
-retaining the underlying detailed records. Later bank generations repeat the same
-pattern over earlier authored memories.
+retaining the underlying detailed records. Later trajectories repeat the pattern
+over the current bank; subsequent learning can revise both older and newer keys,
+payloads, indices, and derived compact records.
 
 ## 5. Compaction
 

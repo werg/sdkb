@@ -1,4 +1,4 @@
-"""Whole-trajectory recurrent training from an immutable stored latent bank."""
+"""Whole-trajectory recurrent training from pinned stored latent revisions."""
 from __future__ import annotations
 
 from collections import deque
@@ -365,7 +365,8 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
     """Train many causal sites; same-level bank searches execute as one matrix scan.
 
     Supplied verified positives keep the reader useful while the address projections
-    learn against global candidates. Only immutable stored payloads enter the read path.
+    learn against global candidates. Only pinned serialized payload revisions enter
+    the read path; a TrainingBank may publish refreshed revisions after the step.
     """
     if not rows or routing_candidates < 1:
         raise ValueError("Spatial bank training needs rows and routing candidates")

@@ -1,5 +1,11 @@
 # Trajectory memory program — v0.5 plan
 
+> **Lifecycle revised, 22 September 2026:** the original immutable parent-generation
+> model is superseded by `mutable-bank-v0.8.md`. Source and trajectory events remain
+> immutable evidence; logical-record keys, payloads, index entries, utility state,
+> and compactions change continuously. Snapshot language below describes a controlled
+> experiment or the current transitional implementation.
+
 **Status:** target design and implementation plan. The current HotpotQA curriculum
 does not implement this behavior. It remains useful interface pretraining for the
 writer, reader, recurrence, and global addressing.
@@ -31,14 +37,14 @@ an arbitrarily long input into one fixed record.
 A **site** means one distinct tool call at one causal token/event position. Several
 items submitted in one call count as one write site. Several native recurrent reads
 used to compose one returned result count as one search site. Recursive bank
-generations are a third, independent axis: the target requires repeated sites within
-each trajectory *and* repeated generations whose new records were authored after
-reading earlier generations.
+evolution is a third, independent axis: the target requires repeated sites within
+each trajectory and repeated writes authored after reading earlier bank states.
+Existing and new logical records can both be updated later.
 
 Normal inference never re-encodes source trajectories during a read. A write is an
 explicit new operation that encodes the content supplied to `memory.write`. Offline
-encoding of an immutable corpus by a frozen writer remains a separate bank-building
-operation.
+initialization from a fixed source corpus remains separate from reads, but the
+resulting logical records are subsequently mutable learned state.
 
 ## 2. Current fit and gaps
 
@@ -49,7 +55,7 @@ operation.
 | Results as tool results | Latent tokens are inserted into one reserved workspace without a visible tool event. | Give every result event its own blank workspace span, then replace or update that span with aligned latent result tokens between recurrent passes. The visible envelope contains handles and status, not source text. |
 | Prompted write behavior | Sources are passed directly to the writer or offline bank builder. | Put a memory-use policy in the system prompt and supervise `memory.write` calls whose arguments contain the learned reusable content. |
 | Several writes for long input | Dataset preparation can chunk trajectories into several fixed producers, but the model does not decide or emit those writes. | Supervise distinct write calls at distinct causal positions, normally one logical record per call, with optional later synthesis calls. |
-| Read-before-write recursive memory | The current two-generation bank refresh trains against a bank, but bank contents are source chunks, not memories authored by read-augmented trajectories. | Publish immutable generations containing outputs of trajectories that queried an earlier generation, retaining complete lineage. |
+| Read-before-write recursive memory | The current snapshot-plus-overlay curriculum trains against a bank, but its initial contents are source chunks rather than memories authored by read-augmented trajectories. | Commit read-dependent writes into one evolving bank, retain complete lineage, and continue updating old and new logical records. |
 | Pretraining/posttraining corpus scale | The target bank contains 100,000 sources. | Build a sharded logical bank that can grow through 1M, 10M, and 100M records before scale-out corpus ingestion. |
 | Capacity substitution evidence | No matched result yet. | Compare a small controller plus bank with larger resident models under equal information and declared byte, latency, and compute budgets. |
 
@@ -199,14 +205,15 @@ At 8,704 array bytes per record, lower-bound storage is:
 | 100 million | 870 GB | 12.8 billion |
 | 1 billion | 8.7 TB | 128 billion |
 
-Two immutable generations, source text, indices, metadata, compaction workspaces,
-and publication scratch space increase these totals. A trillion-token corpus at
+Retained physical revisions, source text, indices, metadata, compaction workspaces,
+journal history, and publication scratch space increase these totals. A trillion-token corpus at
 128 tokens per record would require about 7.8 billion records and 68 TB of arrays
 before overhead. At 256 tokens per record it would still require about 34 TB. The
 current 3.6 TB external disk comfortably supports the 10M-record tier. One 100M
-generation may fit after explicit accounting, but two raw generations already need
-at least 1.74 TB of arrays; existing artifacts, sources, indices, metadata, and build
-scratch make that an unsafe default on this machine. The 100M tier and the full
+active plus rollback revisions may fit only after explicit accounting; two complete
+raw revisions would already need at least 1.74 TB of arrays. Existing artifacts,
+sources, indices, metadata, and build scratch make that an unsafe default on this
+machine. The 100M tier and the full
 pretraining/posttraining objective require a platform-agnostic sharded store across
 additional local storage or object storage.
 
@@ -274,25 +281,28 @@ can batch available calls and interleave independent users, but required retriev
 waves still contribute to request latency. Use measured hot caches, co-located
 shards, request batching, and policy-visible latency budgets.
 
-## 6. Recursive bank generations
+## 6. Recursive evolution of one logical bank
 
-Each generation has a frozen writer identity and explicit parent generations.
+The curriculum uses named stages for measurement, but they update one logical bank.
+They are not frozen semantic parent generations. Every training step pins a physical
+revision for replay and recovery, then may publish revised keys, payloads, index
+entries, and compact codes for old or new logical records.
 
-1. **G0 corpus bank:** encode raw pretraining-like documents, documentation,
+1. **Corpus bootstrap:** ingest raw pretraining-like documents, documentation,
    structured knowledge, and verified posttraining trajectories. Keep provenance
-   classes separate inside one logical catalog.
-2. **G1 read-augmented experience bank:** run supervised/teacher trajectories that
-   query G0 repeatedly, then commit their `memory.write` items. Train later tasks
-   against both G0 and G1.
-3. **G2 utility-trained bank:** run longer tasks against G0+G1. Credit writes by
-   their measured utility on future heldout tasks, not merely by similarity to a
-   teacher summary. Publish accepted writes as G2.
-4. **G3 and later refreshes:** repeat read → act → observe → write → freeze → publish
-   for several generations. Retain raw evidence links and measure whether recursive
-   memories add utility or amplify errors.
-5. **Compacted generations:** after raw recursive banks work, train compact codes
-   against fixed queries and reader states. Publish them as new immutable views;
-   never relabel old raw records as if the writer or compactor had not changed.
+   classes distinguishable inside one logical catalog.
+2. **Read-augmented experience:** run supervised or teacher trajectories that query
+   the current bank repeatedly, then commit their `memory.write` items. Train later
+   tasks against both corpus and experience records and continue updating both.
+3. **Utility training:** run longer tasks against the evolving bank. Credit writes
+   and existing records by measured utility on future heldout tasks, not merely by
+   similarity to a teacher summary.
+4. **Repeated recursive learning:** continue read → act → observe → write for several
+   curriculum waves. Retain raw evidence links and measure whether recursive memories
+   add utility or amplify errors while older representations continue to learn.
+5. **Integrated compaction:** train mutable compact codes against fixed per-step
+   queries and reader states. Record exact child revisions and invalidate descendants
+   when children change; do not treat a stale code as current.
 
 Each training mixture must include direct raw records, teacher-authored memories,
 model-authored read-free memories, and model-authored read-augmented memories. Log
@@ -300,15 +310,15 @@ their contribution separately. Recursive content must become a substantial fract
 of later training, while raw/verified anchors remain present to limit self-reinforcing
 drift.
 
-### 6.1 Prequential growth within a generation
+### 6.1 Prequential growth and mutation
 
-Large-corpus work begins from an empty bank or a small immutable core and consumes a
+Large-corpus work begins from an empty bank or a small declared core and consumes a
 time-ordered event stream. For each event, the system records the current visibility
 frontier, performs all reads against records committed before that frontier, finishes
 the trajectory and outcome, and atomically publishes its eligible write calls only
 afterward. A target therefore cannot retrieve itself or a memory derived from its
-future answer. Resume state includes the event cursor, bank generation/frontier,
-pending atomic write set, sampler state, and model checkpoint reference.
+future answer. Resume state includes the event cursor, visibility frontier, bank
+journal cursor, pending atomic write set, maintenance sampler, and model checkpoint.
 
 Training samples multiple logged bank-size bands instead of observing only the final
 bank. Later recursive slices run against a bank containing many earlier
@@ -320,21 +330,22 @@ encyclopedia.
 Use three clocks: original evidence availability, ingestion, and trajectory event
 time. Authorization and causality are checked before learned selection. Heldout
 targets and their derivatives remain unavailable until their evaluation event has
-finished. Garbage collection creates a versioned successor view using tombstones,
-deduplication, or valid compaction; logged historical reads continue to resolve
-against their original immutable frontier. Preserve lineage through collection so a
-recursive summary cannot outlive deletion of evidence it depends on.
+finished. Garbage collection commits tombstone, supersession, deduplication, or valid
+compaction revisions; logged historical reads continue to resolve their pinned
+physical revisions and visibility frontier. Preserve lineage through collection so
+a recursive summary cannot outlive deletion of evidence it depends on.
 
 `DiskStore.commit_event` atomically publishes all configured space views, records a
 content-addressed event plus evidence lineage, and advances a monotonic resumable
 frontier. Strict `created_at < query_time` visibility excludes same-event writes.
-`build_prequential_bank.py` now executes the supervised event stream against an
-immutable parent plus earlier authored events, encodes every prompted write, and
-commits it only after that trajectory completes. It resumes from the database
+`build_prequential_bank.py` currently executes the supervised event stream against
+a frozen base snapshot plus earlier authored events, encodes every prompted write,
+and commits it only after that trajectory completes. It resumes from the database
 frontier and records the growing logical-record count per event. This is the fixed
 trajectory executor for Release 4 preparation. It does not yet provide learned tool
 placement, generated write arguments, size-band training, garbage collection, ANN,
-or a network store.
+or a network store. Its base-plus-append layout is transitional; mutable bank v0.8
+defines the target unified mutation journal.
 
 ## 7. Training curriculum
 
@@ -383,7 +394,7 @@ task success remain separate metrics.
 Once supervised behavior is stable, optimize search placement, query quality,
 write selection, and item count using future-task reward and explicit read/write
 costs. Reinforcement learning must operate through the same tool protocol and
-immutable bank generations; it must not gain hidden source access.
+pinned per-step bank revisions; it must not gain hidden source access.
 
 Include the autoregressive fast path in this phase. After the model emits a search
 call, retrieve its payload and inject the result after the fixed prelude on the
@@ -441,19 +452,20 @@ read-before-write dependency.
   approximate search, while SQLite remains the correctness reference.
 - Separate payload shards, source archive, metadata, and indices behind storage
   interfaces that support local NVMe, external disk, and object storage.
-- Publish logical records only after every required space view and manifest hash
-  is complete. Support incremental shard resume and generation-level rollback.
+- Publish a logical-record revision only after every required space view and
+  manifest hash is complete. Support incremental shard resume and journal rollback.
 - Add an event-stream builder with atomic post-trajectory writes, immutable
   visibility frontiers, resumable cursors, and coverage by bank-size band. Keep
   heldout targets and their derivatives beyond the active frontier.
-- Add versioned garbage collection with provenance/deletion propagation and evaluate
+- Add revision-aware garbage collection with provenance/deletion propagation and evaluate
   stale, conflicting, redundant, corrected, and rare retained records.
 
-### Release 5 — Recursive generations
+### Release 5 — Recursive bank evolution
 
-- Produce G1 from read-augmented trajectories, then train against G0+G1.
-- Repeat through at least three authored generations before making recursive-memory
-  claims.
+- Add read-augmented trajectories to the current bank, then continue training against
+  corpus, experience, and recursively authored records together.
+- Repeat through at least three measured curriculum waves before making
+  recursive-memory claims; wave boundaries are evaluation snapshots, not frozen banks.
 - Add trust/provenance sampling, duplicate/conflict handling, and error-amplification
   evaluations.
 
@@ -469,8 +481,9 @@ read-before-write dependency.
   computation without an independence interpretation. Supervise every level against
   raw descendants rather than only its already compacted children.
 - Train temporary hierarchy graphs end to end under downstream task loss, then
-  publish immutable query-independent codes and versioned compact-node indices for
-  stored-only inference. Track descendant fan-in separately from physical read cost.
+  publish revisioned query-independent codes and compact-node index updates for
+  stored-only inference. Invalidate them when a child revision changes. Track
+  descendant fan-in separately from physical read cost.
 - Account for exceptions, raw fallback, indices, rewrite work, and total retained
   bytes. Do not serve a subset from a full-cluster code.
 

@@ -54,7 +54,7 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
                                       query_time=episode.query_time)
             found = [selection.record_id for selection in candidates.selections]
             # Every candidate, including supplied positives, is fetched under
-            # the same immutable generation, authorization and time scope.
+            # the same pinned physical snapshot, authorization and time scope.
             candidate_ids = list(dict.fromkeys(found + list(episode.required_ids)))
             keys = torch.stack([lookup_record(store, record_id, namespace=namespace,
                                 space=space_name, generation=generation, domain=domain,

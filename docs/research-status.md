@@ -109,12 +109,14 @@ positive results should guide tests without being relabeled as that broader proo
 ## Next target: trajectory-native memory
 
 The owner has selected [trajectory memory v0.5](trajectory-memory-v0.5.md) as the
-next architecture program. Long agent traces should contain repeated visible
+next architecture program, with its older immutable-generation lifecycle
+superseded by [the mutable-bank v0.8 contract](mutable-bank-v0.8.md). Long agent traces should contain repeated visible
 `memory.search` calls and tool results at distinct causal positions, plus distinct
 `memory.write` calls whose site count scales with useful input and events. Batching
-several items into one call does not meet that requirement. Later immutable bank
-generations must contain substantial contributions authored by trajectories that
-queried earlier generations.
+several items into one call does not meet that requirement. The evolving bank must
+contain substantial contributions authored by trajectories that queried earlier
+bank states, while later learning may update the keys, payloads, and compactions of
+both old and new logical records.
 
 Its training computation is whole-sequence and recurrent. Each pass processes all
 teacher-forced positions in parallel; all query sites active at that level retrieve
@@ -126,7 +128,7 @@ and must not be reported as trajectory site count. The packer also emits distinc
 prompted write-call targets with read lineage. The first growing-bank executor now
 runs those fixed trajectories against a parent-plus-authored catalog and atomically
 publishes their writes. Learned site placement, generated write arguments,
-size-band training, collection, and later recursive generations remain planned.
+size-band training, collection, and the durable mutable-bank journal remain planned.
 
 This is a course extension, not a description of the current HotpotQA curriculum.
 The current run performs one automatic latent read per short episode and writes

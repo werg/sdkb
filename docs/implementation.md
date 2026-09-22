@@ -38,10 +38,11 @@ scatters several non-overlapping result spans before one shared core update.
 workspaces using the real chat template. It can also pack a separately prompted,
 supervised `memory.write` call after each task segment, one logical record per call,
 with causal lineage to that segment's completed read. `spatial_training.py` batches all same-level
-queries into one resident exact key scan per space, fetches immutable stored payloads,
-trains global routing against verified positives, and supervises assistant tokens.
-The latent writer is forbidden on this stored-read path. The current runner uses complete optimizer
-steps rather than producer replay because every payload is historical and frozen. An
+queries into one resident exact key scan per space, fetches pinned serialized payload
+revisions, trains global routing against verified positives, and supervises assistant
+tokens. The latent writer is absent from ordinary inference reads. During spatial
+training, selected producers are replayed and touched keys and payloads are regenerated
+after the optimizer step into the checkpointed training overlay. An
 optional pipeline splits an optimizer batch into several retained microbatch graphs,
 runs their search and serialized payload reads on CPU workers, and resumes their
 recurrent boundaries in a deterministic order. Its microbatch size and in-flight
@@ -69,18 +70,22 @@ visible arguments.
 
 `DiskStore.commit_event` supplies the prequential persistence primitive. In
 one SQLite transaction it verifies that every logical write has all configured space
-views, inserts their immutable payloads, records a content-addressed event commit,
+views, inserts their physical payload revisions, records a content-addressed event
+commit,
 persists external evidence lineage and write metadata, and advances a monotonic
 stream frontier. Exact retries are idempotent. Because
 ordinary search requires `created_at < query_time`, a record committed at an event's
 visibility time cannot appear in that event's own reads. `GrowingCatalogIndex`
-merges the immutable parent generation with an append-only authored generation while
-retaining each payload's physical generation identity. The executor follows file
+currently merges a frozen base snapshot with an append-only authored overlay while
+retaining each payload's physical revision identity. The executor follows file
 order, resumes from the transactional frontier, runs every trajectory against the
 current catalog, encodes all prompted write arguments with the final writer, and
 publishes those writes only after the trajectory finishes. It records selected-read
-lineage and bank size after every event. Versioned garbage collection, remote search,
-learned call placement, and training sampled from logged size bands remain planned.
+lineage and bank size after every event. This is a transitional physical layout.
+The target is one logically mutable bank with append-only revisions and a mutation
+journal as specified in `mutable-bank-v0.8.md`. Revision-aware garbage collection,
+remote search, learned call placement, and training sampled from logged size bands
+remain planned.
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
@@ -194,7 +199,8 @@ are implied by the first-order tests.
 
 ## Training cache and stored-only evaluation
 
-The training cache stores the first payload produced for an immutable source ID.
+The legacy episode training cache stores the first payload produced for a stable
+source ID.
 A fully live run (`live_fraction: 1`) skips unused cache reads, writes and the
 extra population forward. Mixed cached/live runs retain the original stale-cache
 semantics and checkpointed recovery behavior.
@@ -260,8 +266,10 @@ partial cluster selections retain exact raw fallback.
 
 ## Persistence and concurrency
 
-SQLite records are immutable within namespace/ID/space/generation. A read plan
-captures IDs and scores; values are rechecked for visibility when fetched. Tombstones
+SQLite rows are immutable physical revisions within namespace/ID/space/generation;
+this is an MVCC/storage property, not a requirement that a logical record remain
+unchanged. A read plan captures IDs and scores; values are rechecked for visibility
+when fetched. Tombstones
 prevent resurrection under the same logical ID, and deletion invalidates transitive
 compact parents. Regeneration needs a new logical record ID after deletion.
 

@@ -2,11 +2,13 @@
 
 [Research status](docs/research-status.md) summarizes what is established and what
 remains open, including the completed reader-capacity and real-trajectory studies.
-The next target is the [trajectory memory v0.5 plan](docs/trajectory-memory-v0.5.md):
+The next target combines the [trajectory memory v0.5 plan](docs/trajectory-memory-v0.5.md)
+with the [mutable-bank v0.8 contract](docs/mutable-bank-v0.8.md):
 frequent visible memory search/write tool calls at distinct causal positions,
-length-scaled write-call counts, recursive read-augmented bank generations, and
+length-scaled write-call counts, recursive read-augmented writes into one
+continuously learned bank, and
 corpus-scale storage. The first compatibility stage now implements multi-site stored
-reads; learned call placement, multi-site writes, recursive authored generations,
+reads; learned call placement, multi-site writes, recursive authored bank evolution,
 and corpus scale remain planned and are not attributed to it.
 The multi-site target runs the whole teacher-forced trajectory at each recurrent
 level, retrieves all active spatial sites together, and scatters results into blank

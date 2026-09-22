@@ -1,8 +1,9 @@
 """Checkpointed mutable key/payload overlays for continuous bank learning.
 
-The published generation remains an immutable recovery base.  Training updates
-only materialized records in this overlay; the ordinary inference API sees the
-overlay as stored tensors and never re-encodes a source trajectory.
+The published snapshot is currently a frozen physical recovery base. Training
+updates materialized logical records in the overlay; the ordinary inference API
+sees the newest stored tensors and never re-encodes a source trajectory. This is a
+transition toward a durable mutation journal rather than the target bank lifecycle.
 """
 from __future__ import annotations
 

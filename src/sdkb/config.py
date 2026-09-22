@@ -83,7 +83,7 @@ class TrainConfig:
     batch_size: int = 1  # examples executed together per accumulation microbatch
     tokenized_episodes_file: str | None = None
     sampling_policy: str = 'random_with_replacement'  # or deterministic shuffled_passes
-    bank_dir: str | None = None  # published immutable frozen-writer corpus generation
+    bank_dir: str | None = None  # verified base snapshot; spatial training adds a mutable overlay
     bank_read_limits: list[int] = field(default_factory=list)  # per-space selected records, <= neighbors
     bank_routing_candidates: int = 8  # exact hard-negative pool per space, before supplied positives
     payload_contrast_weight: float = 0.0  # source-swap ranking on verified one-source episodes

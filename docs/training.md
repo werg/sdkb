@@ -43,7 +43,8 @@ falls below its reserve. This applies to both unified and discrete-memory hosts;
 checkpoint boundaries always force release. The Spark target supervisor uses a
 28 GiB unused-cache ceiling and a 16 GiB host reserve based on measured peaks.
 
-The source manifest digest must equal the digest recorded by the immutable bank.
+The source manifest digest must equal the digest recorded by the verified base
+snapshot and its logical-record catalog.
 The overlay is restored from `training_cache.sqlite`; deleting or omitting it changes
 the next retrieval plan and is not an exact resume. Hard search still uses a bounded
 candidate field. `train.routing_weight` controls the gentle support anchor, while
@@ -62,8 +63,11 @@ chunk policy, call IDs, and parent read IDs in the prepared artifact.
 >
 > [Trajectory memory v0.5](trajectory-memory-v0.5.md) is the next curriculum:
 > visible memory tool calls, frequent multi-site reads, length-scaled writes, and
-> several immutable read-then-write bank generations. The current support/query
-> trainer is Phase 0 interface pretraining for that program.
+> repeated read-then-write evolution of one logical bank. Source events and causal
+> frontiers are immutable, while stored keys, payloads, indices, and compact codes
+> continue to learn. [Mutable bank v0.8](mutable-bank-v0.8.md) is the canonical
+> lifecycle contract. The current support/query trainer is Phase 0 interface
+> pretraining for that program.
 
 ## Foreground staged launcher
 
@@ -406,7 +410,7 @@ optimization or an allowed exact-resume override. Full-graph and replay executio
 remain available under either policy. A native numerical/timing profile is recorded
 separately before adopting the policy in future experiments.
 
-## Four-space passage curriculum and frozen corpus bank
+## Four-space passage curriculum and snapshot-backed mutable training bank
 
 `configs/lfm25_230m_four_space_reconstruction_spark.yaml` starts a fresh interface
 around the pinned parent. It uses four MLP spaces with payload widths
@@ -433,7 +437,7 @@ The manifest binds source order and bytes, writer checkpoint bytes, model and me
 configuration, storage precision, and the generation. Its values use BF16 while
 keys remain FP32. Raw records and manifests remain outside Git.
 
-For a bank-training fork, set `train.bank_dir` to a published bank,
+For a bank-training fork, set `train.bank_dir` to a verified base snapshot,
 `train.bank_read_limits` to explicit counts within the per-space neighbor caps,
 `train.retrieval: learned`, `train.live_fraction: 0`, and keep the backbone frozen.
 Start with `sdkb train --config ... --output ... --init-from RUN` using the exact
@@ -443,26 +447,32 @@ bank, fixes the eligible read plan before backward, fetches only selected stored
 payloads, and trains query/address routing against verified positives and global
 candidates. During this initial mixed-selection phase, known positives are always
 delivered with retrieved distractors; telemetry reports their supplied status and
-the learned retriever's unaided positive recall separately. The writer and its
-stored transforms are frozen. Resume checks the immutable bank and its data
-fingerprint, restoring optimizer, sampler, RNG and partial-microbatch state.
+the learned retriever's unaided positive recall separately. The generic
+corpus-training path freezes the writer and its stored transforms for that controlled
+fork. The spatial trainer instead layers a checkpointed mutable
+key/payload overlay over the same verified base and regenerates touched records
+after optimizer steps. Resume checks the base fingerprint and restores optimizer,
+sampler, RNG, partial-microbatch state, and overlay. This base-plus-overlay design is
+a transition toward the mutation journal specified by mutable bank v0.8.
 
 Published bank training loads a resident, contiguous FP32 key array for each
 space (10.24 MB at 10,000 sources and four 64-dimensional keys). It performs an
 exact CPU scan with the same domain/time/exclusion ordering as the SQLite
 reference at index load; selected payloads still come from SQLite with fresh
 visibility checks. A later deletion therefore fails closed at fetch time.
-The resident array is rebuilt from the verified immutable generation on each
-start and is never copied into optimizer checkpoints. A warm-cache Spark probe
+The resident array is rebuilt from the verified base snapshot on each start and
+then patched from the restored mutable key overlay. It is never copied into optimizer
+checkpoints. A warm-cache Spark probe
 measured about 0.05–0.06 seconds per space for the SQLite scan and about
 0.0006–0.0007 seconds per space for the resident array on the 10,000-source bank.
 These timings exclude cold NVMe behavior and do not claim ANN or million-record
 throughput. This path establishes corpus-backed reader/address training;
 joint live-writer replay against a refreshed corpus, learned-only delivery and
 full-budget neighborhood training still need controlled validation.
-Published-bank readers verify shard bytes under a shared SQLite read
-transaction, so concurrent trainers and evaluations do not contend for a
-write lock merely to recheck an immutable generation.
+Snapshot readers verify shard bytes under a shared SQLite read transaction, so
+concurrent trainers and evaluations do not contend for a write lock merely to
+recheck the base. The target mutable store uses pinned read epochs and atomic
+post-step revision publication rather than a permanently frozen semantic bank.
 
 The optional `train.payload_contrast_weight` fork uses episodes with one verified
 source and an earlier independent distractor (`--with-distractor` in
@@ -498,7 +508,7 @@ from the same causal native prefix, without fetching payloads. It reports
 median rank, reciprocal rank and recall cutoffs for each space. This makes
 addressing progress visible before a positive enters the small read budget.
 
-When a frozen published bank has near-chance addressing, the controlled
+When a frozen physical base snapshot has near-chance addressing, the controlled
 `configs/lfm25_230m_four_space_local_routing_spark.yaml` stage trains source
 keys and query maps together before any bank refresh. Its input comes from
 `scripts/prepare_local_routing.py`: one verified earlier passage and three

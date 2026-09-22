@@ -1,4 +1,4 @@
-"""Train whole-trajectory spatial reads against one immutable published bank."""
+"""Train spatial reads against a base snapshot plus checkpointed mutable revisions."""
 from __future__ import annotations
 
 import argparse

@@ -8,7 +8,7 @@
 >
 > **Target update, 21 September 2026:** [trajectory memory v0.5](trajectory-memory-v0.5.md)
 > specifies frequent transcript-level `memory.search` and `memory.write` tool calls,
-> length-scaled multi-record writes, recursive read-then-write bank generations,
+> length-scaled multi-record writes, recursive read-then-write bank evolution,
 > and corpus-scale capacity targets. These are planned behaviors, not properties of
 > the current one-read HotpotQA run.
 >
@@ -17,6 +17,12 @@
 > selective key-and-payload writer replay, a checkpointed mutable training overlay,
 > and holistic plus streaming document-ingestion trajectories. Its status table
 > distinguishes implemented primitives from curriculum and compaction work still pending.
+>
+> **Lifecycle update, 22 September 2026:** [mutable bank v0.8](mutable-bank-v0.8.md)
+> supersedes the earlier immutable-generation target. Source trajectories, event
+> order, provenance, and historical physical revisions remain immutable. The logical
+> records they ground have continuously trainable keys, payloads, index membership,
+> utility state, and compact representations.
 
 ## Read-time superposition, selective replay, and learned cluster compaction
 
@@ -123,12 +129,12 @@ result sites. Each result site has blank learned workspace positions on the init
 pass. After a recurrent core pass, all active same-level queries are retrieved
 together and their results are scattered into their respective workspaces for the
 next pass. Repeated tool calls distribute sites through a long trajectory. See the
-v0.5 plan for the protocol, site density, recursive generations, and scale budget.
+v0.5 plan for the protocol, site density, recursive bank evolution, and scale budget.
 
 One site is one visible tool call at one causal position. Multiple records batched
 inside a call or multiple recurrent reads used to compute one result do not create
-multiple trajectory sites. Recursive generations add repeated read-author-write
-cycles across banks; they do not replace repeated calls within each trajectory.
+multiple trajectory sites. Recursive evolution adds repeated read-author-write
+cycles through bank time; it does not replace repeated calls within each trajectory.
 
 A read operation returns $Z\in\mathbb R^{m\times d_D}$ plus discrete status and provenance metadata. An input projection, normalization, and learned gate place $Z$ at the decoder's expected scale. Empty, pending, failed, and completed reads have distinct states. The API does not silently interpret an unavailable result as useful zero-valued evidence.
 
@@ -797,11 +803,20 @@ Writes become visible through an atomic commit after their payloads and index en
 
 Key staleness, value staleness, and reader compatibility are distinct. Freshly generating a selected value during training does not repair an address that can no longer be found. A new reader may also interpret an old latent code incorrectly even when its key remains useful.
 
-Start with stable addressing or a slowly updated address encoder plus learned reranking. Later maintain versioned index generations, use a compatible reranker to compare their candidates, and rebuild according to measured degradation. Raw scores from different generations need not be calibrated. Reader/value versions should be pinned for deployment or connected through explicitly trained compatibility adapters.
+The target continuously trains query and write keys. Each optimizer step pins one
+bank epoch, then publishes touched key revisions and corresponding index deltas only
+after replay and the optimizer update complete. Representation versions and adapters
+remain explicit so a reader never silently interprets incompatible stored bytes.
+Background audits regenerate stale and low-traffic records; raw scores across
+incompatible revisions are not assumed calibrated.
 
 At training time, regenerate sampled keys and compare retrieval against a fresh reference subset. Include random audits of records not currently retrieved: refresh-on-hit alone cannot discover entries that have become unreachable. Measure stale-index recall, downstream utility, and key displacement, not just mean embedding similarity.
 
-“Stable addressing” means stabilizing the complete mapping into the indexed key space. Freezing only the final key projection does not prevent drift when its upstream writer features change. An initial implementation can use a separate frozen source-address encoder for indexing and a trainable query adapter/reranker, or pin the full writer-to-key path for an index generation. The eventual jointly learned address space remains an experimental objective, not something a frozen final matrix provides automatically.
+For a controlled bootstrap experiment, “stable addressing” means stabilizing the
+complete mapping into the indexed key space. Freezing only the final key projection
+does not prevent drift when its upstream writer features change. That bootstrap is
+not the lifecycle target: jointly learned query and record keys, revisioned index
+updates, drift audits, and scheduled regeneration are.
 
 ### 9.3 Memory growth versus online weight updates
 
@@ -824,14 +839,15 @@ fields. Visibility uses the earliest admissible causal boundary and retains the
 source snapshot, authorization scope, writer version, and parent-read lineage.
 Curriculum reports stratify performance by bank-size band and include stale,
 redundant, conflicting, low-value, and subsequently invalidated records. A small
-versioned core bank may seed a stream, but heldout target material cannot enter it
-before its evaluation event.
+declared core may seed a stream, but heldout target material cannot enter it
+before its evaluation event. Its learned representations can subsequently change
+under the same revision and causality rules as other logical records.
 
-Garbage collection publishes a new view through tombstones, provenance-preserving
-deduplication, or contribution-and-mass preserving compaction. It never mutates the
-historical snapshot associated with a logged read. Training retains raw evidence
-links and samples both retained and collected material so deletion by popularity
-does not silently erase rare useful cases.
+Garbage collection publishes tombstone, supersession, deduplication, or
+contribution-and-mass preserving compaction revisions to the mutable bank. It never
+changes immutable event history or the physical revisions pinned by a logged read.
+Training retains raw evidence links and samples both retained and collected material
+so deletion by popularity does not silently erase rare useful cases.
 
 ### 9.4 Trust boundaries
 
@@ -867,7 +883,12 @@ An early storage-only harness can already test the intended record sizes. In the
 
 Disk-backed approximate search is a viable systems starting point; DiskANN provides a published SSD-oriented precedent [^15]. Its benchmark results are not latency forecasts for learned keys, frequent updates, multiscale payloads, or this reader. Use a simple exact index first for model debugging, then introduce approximate search and storage with a measured recall/latency curve.
 
-A practical layout separates a mutable recent-write index from more stable generations and groups payloads for efficient fetches. Cache keys must include representation version. Query coalescing and shared payload fetches can reduce repeated I/O, but must preserve each request's selection plan and authorization filters.
+A practical layout shards the mutable index and groups payload revisions for
+efficient fetches. A hot delta can sit over compacted base arrays, but both are
+physical parts of one logical bank and consolidation must preserve revision history.
+Cache keys must include representation version. Query coalescing and shared payload
+fetches can reduce repeated I/O, but must preserve each request's selection plan and
+authorization filters.
 
 Report warm-cache and cold-cache tests, storage hardware, page-cache state, batch size, concurrency, and queue depth. Include p50/p95 latency and throughput, not only single-query averages. Maintenance traffic competes with reads and should be included in sustained-load experiments.
 
@@ -957,7 +978,12 @@ Use a recurrent implementation as a replaceable backbone dependency. Validate a 
 
 ### 12.3 Implementation boundaries
 
-Separate modules for the controller, writer, transforms, retriever, read planner, pooled reader, replay scheduler, persistent store, and compactor. A training checkpoint should record model and index generations, payload versions, optimizer state, random state, and data/split recipes. Deterministic test fixtures should work without disk search or asynchronous scheduling.
+Separate modules for the controller, writer, transforms, retriever, read planner,
+pooled reader, replay scheduler, persistent store, and compactor. A training
+checkpoint should record the model state, bank journal cursor, pinned index revision,
+payload compatibility versions, maintenance-sampler state, optimizer state, random
+state, and data/split recipes. Deterministic test fixtures should work without disk
+search or asynchronous scheduling.
 
 The first end-to-end implementation should be small enough to compare against a fully differentiable reference. Optimization comes after numerical and causal parity. In particular, custom backward implementations must include query/state gradients through local contributions and gates, not only gradients to stored values.
 

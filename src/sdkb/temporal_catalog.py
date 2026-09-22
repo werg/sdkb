@@ -1,4 +1,4 @@
-"""Exact composite retrieval over an immutable parent and a growing generation."""
+"""Transitional retrieval over a frozen base and append-only authored records."""
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
@@ -24,11 +24,12 @@ class _GrowingSpace:
 
 
 class GrowingCatalogIndex:
-    """Merge exact parent-bank results with append-only temporal records.
+    """Merge base-snapshot results with append-only temporal records.
 
-    Parent and authored payloads retain their own immutable generations. Returned
-    plans use a virtual catalog scope; :class:`CatalogStore` resolves every selected
-    opaque ID back to its originating generation before fetching bytes.
+    This preserves the current physical snapshot implementation while the unified
+    mutable-record journal is pending. Returned plans use a virtual catalog scope;
+    :class:`CatalogStore` resolves every selected opaque ID back to its physical
+    revision before fetching bytes.
     """
 
     def __init__(self, parent: PublishedKeyIndex, authored: DiskStore, *,
