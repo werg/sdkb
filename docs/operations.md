@@ -296,6 +296,13 @@ Spark includes CUDA-side use that ordinary process RSS and Docker memory account
 omit; identify the PID from the container process tree before assigning it to a
 co-tenant.
 
+The spatial trainer also bounds unused cached blocks at completed optimizer
+boundaries (4 GiB by default) and force-reclaims them before checkpoint
+serialization. It clears completed-step gradients first. This prevents variable
+shapes from retaining tens of GiB and prevents checkpoint CPU staging from
+temporarily stacking on top of that unused CUDA cache. Metrics record the
+pre-reclaim reservation, post-reclaim reservation, and bytes returned.
+
 Optional `cuda_memory_fraction` limits this process's CUDA allocator;
 `min_system_available_bytes` checks host `MemAvailable` before allocation and
 between updates, requesting a checkpointed stop under pressure. Neither adds host

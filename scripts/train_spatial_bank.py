@@ -27,6 +27,7 @@ from sdkb.offline_bank import (canonical_json, publish_offline_generation,
                                stored_memory_identity)
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.optimizers import make_optimizer, optimizer_report
+from sdkb.runtime import reclaim_cuda_cache
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
 from sdkb.store import DiskStore
@@ -46,9 +47,12 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           loops: int, limits: tuple[int, ...], routing_candidates: int,
           checkpoint_every: int, train_recurrent_core: bool = False,
           microbatch_size: int | None = None, inflight: int = 1,
-          sources_path: Path | None = None) -> dict:
-    if steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1:
+          sources_path: Path | None = None,
+          max_unused_cuda_gib: float = 4.0) -> dict:
+    if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
+            or max_unused_cuda_gib < 0):
         raise ValueError("Invalid spatial training schedule")
+    max_unused_cuda_bytes = int(max_unused_cuda_gib * 1024 ** 3)
     pipeline = microbatch_size is not None or inflight != 1
     if pipeline:
         microbatch_size = microbatch_size or 1
@@ -224,12 +228,16 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 "maximum_parts_per_group": 4,
             },
             "spatial": settings,
+            "max_unused_cuda_gib": max_unused_cuda_gib,
         }
         atomic_json(output / "environment.json", environment)
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
             for step in range(start, steps):
                 if signal_state["signal"] is not None or stop_requested(output):
                     if last_saved != completed:
+                        optimizer.zero_grad(set_to_none=True)
+                        reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
+                                           force=True)
                         save_checkpoint(agent, optimizer, output, completed, rng, cache,
                                         fingerprint, keep=config.train.keep_checkpoints)
                     break
@@ -263,24 +271,32 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 )
                 optimizer.step()
                 refreshed_views = replay.refresh(training_bank) if replay is not None else 0
+                loss_value = float(result.loss.detach())
+                nll_value = float(result.nll.detach())
+                routing_value = float(result.routing.detach())
+                gradient_norm_value = float(gradient_norm)
+                result_metrics = result.metrics
+                replayed_records = len(set(replay.record_ids)) if replay is not None else 0
+                del result, replay, gradient_norm
+                optimizer.zero_grad(set_to_none=True)
+                cache_metrics = reclaim_cuda_cache(
+                    config.train.device, max_unused_cuda_bytes)
                 completed = step + 1
                 elapsed = time.perf_counter() - tick
                 row = {
-                    "step": completed, "loss": float(result.loss.detach()),
-                    "nll": float(result.nll.detach()),
-                    "routing": float(result.routing.detach()),
-                    "gradient_norm": float(gradient_norm), "step_seconds": elapsed,
+                    "step": completed, "loss": loss_value,
+                    "nll": nll_value, "routing": routing_value,
+                    "gradient_norm": gradient_norm_value, "step_seconds": elapsed,
                     "tokens": sum(item["tokens"] for item in rows),
                     "tokens_per_second": sum(item["tokens"] for item in rows) / elapsed,
-                    "trajectory_rows": batch_size, **result.metrics,
-                    "replayed_records": len(set(replay.record_ids)) if replay is not None else 0,
+                    "trajectory_rows": batch_size, **result_metrics,
+                    "replayed_records": replayed_records,
                     "refreshed_record_views": refreshed_views,
                     "training_overlay_views": training_bank.sizes()['views'],
+                    **cache_metrics,
                 }
                 if torch.cuda.is_available() and str(config.train.device).startswith('cuda'):
                     row.update(
-                        cuda_allocated_bytes=torch.cuda.memory_allocated(config.train.device),
-                        cuda_reserved_bytes=torch.cuda.memory_reserved(config.train.device),
                         cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(
                             config.train.device),
                         cuda_peak_reserved_bytes=torch.cuda.max_memory_reserved(
@@ -292,10 +308,14 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     tracker.log(row)
                     print(json.dumps(row), flush=True)
                 if completed % checkpoint_every == 0:
+                    reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
+                                       force=True)
                     save_checkpoint(agent, optimizer, output, completed, rng, cache,
                                     fingerprint, keep=config.train.keep_checkpoints)
                     last_saved = completed
             if completed == steps and last_saved != completed:
+                reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
+                                   force=True)
                 save_checkpoint(agent, optimizer, output, completed, rng, cache,
                                 fingerprint, keep=config.train.keep_checkpoints)
                 last_saved = completed
@@ -327,6 +347,7 @@ if __name__ == "__main__":
     parser.add_argument("--microbatch-size", type=int)
     parser.add_argument("--inflight", type=int, default=1)
     parser.add_argument("--sources", type=Path)
+    parser.add_argument("--max-unused-cuda-gib", type=float, default=4.0)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -337,4 +358,5 @@ if __name__ == "__main__":
         train_recurrent_core=args.train_recurrent_core,
         microbatch_size=args.microbatch_size, inflight=args.inflight,
         sources_path=args.sources,
+        max_unused_cuda_gib=args.max_unused_cuda_gib,
     ), indent=2))

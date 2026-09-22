@@ -40,6 +40,30 @@ def memory_metrics(device):
     return result
 
 
+def reclaim_cuda_cache(device, max_unused_bytes: int, *, force: bool = False):
+    """Return unused allocator blocks after a completed optimizer boundary.
+
+    The caller must not use this inside a forward/backward graph. On unified
+    memory, cached CUDA blocks consume the same physical pool as checkpoint
+    staging and CPU work even though no live tensor owns them.
+    """
+    if max_unused_bytes < 0:
+        raise ValueError('CUDA cache allowance must be nonnegative')
+    if torch.device(device).type != 'cuda':
+        return {}
+    allocated = torch.cuda.memory_allocated(device)
+    reserved_before = torch.cuda.memory_reserved(device)
+    if force or reserved_before - allocated > max_unused_bytes:
+        torch.cuda.empty_cache()
+    reserved_after = torch.cuda.memory_reserved(device)
+    return {
+        'cuda_allocated_bytes': allocated,
+        'cuda_reserved_before_reclaim_bytes': reserved_before,
+        'cuda_reserved_bytes': reserved_after,
+        'cuda_cache_reclaimed_bytes': max(0, reserved_before - reserved_after),
+    }
+
+
 @contextmanager
 def compute_watchdog(seconds, *, device=None):
     """Dump stacks on a stall; never hard-kill a process with unsaved work.

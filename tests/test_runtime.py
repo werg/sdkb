@@ -49,3 +49,26 @@ def test_cpu_resource_reset_never_initializes_cuda(monkeypatch):
     monkeypatch.setattr(training.torch.cuda, "reset_peak_memory_stats",
                         lambda: pytest.fail("CPU training initialized CUDA metrics"))
     training.reset_resource_peaks("cpu")
+
+
+def test_cuda_cache_reclaimed_only_above_allowance(monkeypatch):
+    calls = []
+    monkeypatch.setattr(runtime.torch.cuda, 'memory_allocated', lambda _device: 2)
+    monkeypatch.setattr(runtime.torch.cuda, 'memory_reserved', lambda _device: 12 - 6 * len(calls))
+    monkeypatch.setattr(runtime.torch.cuda, 'empty_cache', lambda: calls.append('reclaimed'))
+    metrics = runtime.reclaim_cuda_cache('cuda', 4)
+    assert calls == ['reclaimed']
+    assert metrics == {
+        'cuda_allocated_bytes': 2,
+        'cuda_reserved_before_reclaim_bytes': 12,
+        'cuda_reserved_bytes': 6,
+        'cuda_cache_reclaimed_bytes': 6,
+    }
+
+
+def test_cuda_cache_below_allowance_is_retained(monkeypatch):
+    monkeypatch.setattr(runtime.torch.cuda, 'memory_allocated', lambda _device: 8)
+    monkeypatch.setattr(runtime.torch.cuda, 'memory_reserved', lambda _device: 10)
+    monkeypatch.setattr(runtime.torch.cuda, 'empty_cache',
+                        lambda: pytest.fail('cache below allowance was reclaimed'))
+    assert runtime.reclaim_cuda_cache('cuda', 4)['cuda_reserved_bytes'] == 10
