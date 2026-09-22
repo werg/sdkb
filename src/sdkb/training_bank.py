@@ -134,22 +134,74 @@ class TrainingBank:
                 if not ids:
                     break
                 placeholders = ','.join('?' for _ in ids)
-                rows = db.execute(f'''SELECT space,record_id,key,key_dim,payload
+                rows = db.execute(f'''SELECT space,record_id,key,key_dim
                     FROM training_bank_overlay WHERE record_id IN ({placeholders})
                     ORDER BY record_id,space''', ids).fetchall()
-            records = []
-            for space, record_id, key, key_dim, payload in rows:
-                vector = np.frombuffer(key, dtype='<f4').copy()
-                if vector.shape != (key_dim,):
-                    raise ValueError('Legacy mutable overlay has an invalid key')
-                records.append(StoredRecord(
-                    record_id, torch.from_numpy(vector), load(payload)['payload'],
-                    namespace=self.index.namespace, space=space,
-                    generation=self.index.generation,
-                ))
-            self.update(records)
+            if (len(rows) != len(ids) * len(self._spaces)
+                    or any(space not in self._spaces
+                           or len(key) != key_dim * 4 for space, _record_id, key,
+                           key_dim in rows)):
+                raise ValueError('Legacy overlay lacks complete compatible space views')
+            self._migrate_batch(ids)
         with self.cache.connect() as db:
             db.execute('DROP TABLE training_bank_overlay')
+
+    def _migrate_batch(self, record_ids: list[str]) -> None:
+        """Copy already serialized legacy tensors without decoding their payloads."""
+        placeholders = ','.join('?' for _ in record_ids)
+        with self.cache.connect() as db:
+            db.execute('ATTACH DATABASE ? AS bootstrap', (str(self.base.path),))
+            db.execute('BEGIN IMMEDIATE')
+            cursor = int(self._meta(db, 'cursor')) + 1
+            expected = len(record_ids) * len(self._spaces)
+            matched = db.execute(f'''SELECT COUNT(*) FROM training_bank_overlay o
+                JOIN bootstrap.records b ON b.namespace=? AND b.generation=?
+                 AND b.record_id=o.record_id AND b.space=o.space AND b.deleted=0
+                WHERE o.record_id IN ({placeholders})''',
+                (self.index.namespace, self.index.generation, *record_ids)).fetchone()[0]
+            if matched != expected:
+                raise ValueError('Legacy overlay differs from its bootstrap catalog')
+            digest = hashlib.sha256(json.dumps(
+                {'legacy_migration': cursor, 'record_ids': record_ids,
+                 'spaces': self._spaces}, sort_keys=True,
+                separators=(',', ':')).encode()).hexdigest()
+            db.execute('INSERT INTO mutable_bank_commits VALUES (?,?,?,?,?,?)',
+                       (cursor, None, digest, len(record_ids), expected, time.time_ns()))
+            db.execute(f'''INSERT INTO mutable_bank_revisions
+                SELECT ?,b.namespace,o.record_id,o.space,b.generation,b.domain,
+                       b.created_at,b.source_id,o.key,o.key_dim,o.payload
+                FROM training_bank_overlay o JOIN bootstrap.records b
+                  ON b.namespace=? AND b.generation=? AND b.record_id=o.record_id
+                 AND b.space=o.space AND b.deleted=0
+                WHERE o.record_id IN ({placeholders})''',
+                (cursor, self.index.namespace, self.index.generation, *record_ids))
+            db.execute(f'''INSERT INTO mutable_bank_heads
+                SELECT ?,record_id,space,? FROM training_bank_overlay
+                WHERE record_id IN ({placeholders})
+                ON CONFLICT(namespace,record_id,space) DO UPDATE SET
+                cursor=excluded.cursor''',
+                (self.index.namespace, cursor, *record_ids))
+            db.executemany('INSERT INTO mutable_bank_status VALUES (?,?,?,?,?)',
+                           ((cursor, self.index.namespace, record_id, 0, '')
+                            for record_id in record_ids))
+            descendants = db.execute(f'''WITH RECURSIVE affected(id,cause) AS (
+                SELECT parent_id,child_id FROM mutable_bank_dependencies
+                 WHERE namespace=? AND child_id IN ({placeholders})
+                   AND introduced_cursor<=? AND
+                       (retired_cursor IS NULL OR retired_cursor>?)
+                UNION SELECT d.parent_id,a.cause FROM mutable_bank_dependencies d
+                 JOIN affected a ON d.child_id=a.id WHERE d.namespace=?
+                   AND d.introduced_cursor<=? AND
+                       (d.retired_cursor IS NULL OR d.retired_cursor>?))
+                SELECT DISTINCT id,cause FROM affected''',
+                (self.index.namespace, *record_ids, cursor - 1, cursor - 1,
+                 self.index.namespace, cursor - 1, cursor - 1)).fetchall()
+            db.executemany('INSERT OR REPLACE INTO mutable_bank_status VALUES (?,?,?,?,?)',
+                           ((cursor, self.index.namespace, parent, 1, cause)
+                            for parent, cause in descendants
+                            if parent not in record_ids))
+            db.execute("UPDATE mutable_bank_meta SET value=? WHERE key='cursor'",
+                       (str(cursor),))
 
     def _invalidated(self, db, cursor: int) -> set[str]:
         rows = db.execute('''SELECT s.record_id,s.invalidated FROM mutable_bank_status s
