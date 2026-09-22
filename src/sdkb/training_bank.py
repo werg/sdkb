@@ -129,7 +129,7 @@ class TrainingBank:
                 ids = [row[0] for row in db.execute('''SELECT DISTINCT o.record_id
                     FROM training_bank_overlay o WHERE NOT EXISTS (
                         SELECT 1 FROM mutable_bank_heads h WHERE h.namespace=?
-                        AND h.record_id=o.record_id) ORDER BY o.record_id LIMIT 256''',
+                        AND h.record_id=o.record_id) ORDER BY o.record_id LIMIT 4096''',
                     (self.index.namespace,)).fetchall()]
                 if not ids:
                     break
