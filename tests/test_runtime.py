@@ -63,6 +63,7 @@ def test_cuda_cache_reclaimed_only_above_allowance(monkeypatch):
         'cuda_reserved_before_reclaim_bytes': 12,
         'cuda_reserved_bytes': 6,
         'cuda_cache_reclaimed_bytes': 6,
+        'cuda_cache_host_pressure': False,
     }
 
 
@@ -72,3 +73,16 @@ def test_cuda_cache_below_allowance_is_retained(monkeypatch):
     monkeypatch.setattr(runtime.torch.cuda, 'empty_cache',
                         lambda: pytest.fail('cache below allowance was reclaimed'))
     assert runtime.reclaim_cuda_cache('cuda', 4)['cuda_reserved_bytes'] == 10
+
+
+def test_cuda_cache_reclaimed_under_host_pressure(monkeypatch):
+    calls = []
+    monkeypatch.setattr(runtime.torch.cuda, 'memory_allocated', lambda _device: 4)
+    monkeypatch.setattr(runtime.torch.cuda, 'memory_reserved',
+                        lambda _device: 10 - 6 * len(calls))
+    monkeypatch.setattr(runtime.torch.cuda, 'empty_cache', lambda: calls.append('reclaimed'))
+    monkeypatch.setattr(runtime, 'available_host_memory', lambda: 7)
+    metrics = runtime.reclaim_cuda_cache(
+        'cuda', 100, min_host_available_bytes=8)
+    assert calls == ['reclaimed']
+    assert metrics['cuda_cache_host_pressure'] is True

@@ -36,6 +36,12 @@ their configured checkpointing policy, and the writer policy is restored afterwa
 This is a platform-neutral throughput option for machines with measured activation
 headroom; it does not change selected records, stored precision, gradients, or refresh.
 
+The spatial trainer may retain bounded unused CUDA allocator blocks between steps to
+avoid repeated native allocations. `--max-unused-cuda-gib` sets that cache allowance,
+while `--cache-reclaim-host-reserve-gib` forces release when host-available memory
+falls below its reserve. This applies to both unified and discrete-memory hosts;
+checkpoint boundaries always force release.
+
 The source manifest digest must equal the digest recorded by the immutable bank.
 The overlay is restored from `training_cache.sqlite`; deleting or omitting it changes
 the next retrieval plan and is not an exact resume. Hard search still uses a bounded

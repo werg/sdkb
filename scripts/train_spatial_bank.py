@@ -51,11 +51,14 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           max_unused_cuda_gib: float = 4.0,
           gradient_checkpointing: bool = False,
           profile_steps: int = 0,
-          retain_writer_replay_activations: bool = False) -> dict:
+          retain_writer_replay_activations: bool = False,
+          cache_reclaim_host_reserve_gib: float = 16.0) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
-            or max_unused_cuda_gib < 0 or profile_steps < 0):
+            or max_unused_cuda_gib < 0 or profile_steps < 0
+            or cache_reclaim_host_reserve_gib < 0):
         raise ValueError("Invalid spatial training schedule")
     max_unused_cuda_bytes = int(max_unused_cuda_gib * 1024 ** 3)
+    cache_reclaim_host_reserve_bytes = int(cache_reclaim_host_reserve_gib * 1024 ** 3)
     pipeline = microbatch_size is not None or inflight != 1
     if pipeline:
         microbatch_size = microbatch_size or 1
@@ -240,6 +243,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             "max_unused_cuda_gib": max_unused_cuda_gib,
             "gradient_checkpointing": config.model.gradient_checkpointing,
             "retain_writer_replay_activations": retain_writer_replay_activations,
+            "cache_reclaim_host_reserve_gib": cache_reclaim_host_reserve_gib,
         }
         atomic_json(output / "environment.json", environment)
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
@@ -313,7 +317,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 del result, replay, gradient_norm
                 optimizer.zero_grad(set_to_none=True)
                 cache_metrics = reclaim_cuda_cache(
-                    config.train.device, max_unused_cuda_bytes)
+                    config.train.device, max_unused_cuda_bytes,
+                    min_host_available_bytes=cache_reclaim_host_reserve_bytes)
                 finish_phase('cache_reclaim')
                 completed = step + 1
                 elapsed = time.perf_counter() - tick
@@ -385,6 +390,7 @@ if __name__ == "__main__":
     parser.add_argument("--gradient-checkpointing", action="store_true")
     parser.add_argument("--profile-steps", type=int, default=0)
     parser.add_argument("--retain-writer-replay-activations", action="store_true")
+    parser.add_argument("--cache-reclaim-host-reserve-gib", type=float, default=16.0)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -399,4 +405,5 @@ if __name__ == "__main__":
         gradient_checkpointing=args.gradient_checkpointing,
         profile_steps=args.profile_steps,
         retain_writer_replay_activations=args.retain_writer_replay_activations,
+        cache_reclaim_host_reserve_gib=args.cache_reclaim_host_reserve_gib,
     ), indent=2))
