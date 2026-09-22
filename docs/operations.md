@@ -303,6 +303,13 @@ shapes from retaining tens of GiB and prevents checkpoint CPU staging from
 temporarily stacking on top of that unused CUDA cache. Metrics record the
 pre-reclaim reservation, post-reclaim reservation, and bytes returned.
 
+The target spatial supervisor enables native decoder-layer activation
+checkpointing. Retrieval and payload I/O remain between recurrent core passes and
+outside checkpoint closures, so recomputation cannot repeat a read. This is an
+execution-only resume setting, recorded in the run environment and each subsequent
+checkpoint configuration; it reduces the active activation peak at additional
+compute cost.
+
 Optional `cuda_memory_fraction` limits this process's CUDA allocator;
 `min_system_available_bytes` checks host `MemAvailable` before allocation and
 between updates, requesting a checkpointed stop under pressure. Neither adds host

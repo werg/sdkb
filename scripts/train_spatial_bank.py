@@ -48,7 +48,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           checkpoint_every: int, train_recurrent_core: bool = False,
           microbatch_size: int | None = None, inflight: int = 1,
           sources_path: Path | None = None,
-          max_unused_cuda_gib: float = 4.0) -> dict:
+          max_unused_cuda_gib: float = 4.0,
+          gradient_checkpointing: bool = False) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0):
         raise ValueError("Invalid spatial training schedule")
@@ -61,6 +62,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 "Pipelining needs a microbatch smaller than the optimizer batch "
                 "and at least two batches in flight")
     config = deepcopy(load_config(config_path))
+    if gradient_checkpointing:
+        config.model.gradient_checkpointing = True
     config.model.loops = loops
     if train_recurrent_core:
         config.model.freeze_backbone = False
@@ -229,6 +232,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             },
             "spatial": settings,
             "max_unused_cuda_gib": max_unused_cuda_gib,
+            "gradient_checkpointing": config.model.gradient_checkpointing,
         }
         atomic_json(output / "environment.json", environment)
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
@@ -348,6 +352,7 @@ if __name__ == "__main__":
     parser.add_argument("--inflight", type=int, default=1)
     parser.add_argument("--sources", type=Path)
     parser.add_argument("--max-unused-cuda-gib", type=float, default=4.0)
+    parser.add_argument("--gradient-checkpointing", action="store_true")
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -359,4 +364,5 @@ if __name__ == "__main__":
         microbatch_size=args.microbatch_size, inflight=args.inflight,
         sources_path=args.sources,
         max_unused_cuda_gib=args.max_unused_cuda_gib,
+        gradient_checkpointing=args.gradient_checkpointing,
     ), indent=2))
