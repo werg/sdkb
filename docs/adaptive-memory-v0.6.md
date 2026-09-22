@@ -170,9 +170,10 @@ live gate. The old eight-slot subpath therefore supplies a useful starting funct
 while every new path receives gradient.
 
 Warm up reconstruction, extraction, and stored-payload dependence before resuming
-the transfer curriculum. Rebuild every bank with the 32-slot writer. Also reconsider
-the per-space stored payload widths: squeezing four times as many canonical states
-through the existing widths increases computation but not stored capacity. Start by
-profiling a four-times-wider `[1024, 2048, 4096, 8192]` BF16 payload schedule against
-a smaller storage control. Run 16/32/64-slot information-matched controls later, but
-do not delay the 32-slot generation on that sweep.
+the transfer curriculum. Rebuild every bank with the 32-slot writer. Phase 2 also
+widens the four stored payload spaces from `[256, 512, 1024, 2048]` to
+**`[1024, 2048, 4096, 8192]` BF16 scalars per record**. Squeezing four times as many
+canonical states through the old widths would increase computation without increasing
+stored capacity and does not satisfy the Phase 2 objective. Run 16/32/64-slot and
+smaller-storage controls later; do not delay the 32-slot, widened-payload generation
+on those comparisons.

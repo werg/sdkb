@@ -121,10 +121,12 @@ storage independently.
 
 The active v0.6 compatibility generation has eight canonical writer value slots and
 eight returned reader slots. Phase 2 warm-starts from it and expands both counts to
-32. Preserve an initially dominant eight-slot subpath, give all additional slots a
-small live contribution, run an interface warmup, and then rebuild the bank. Because
-writer workspace, codec, reader, and trajectory shapes change, never label that
-transition an exact resume.
+32 while widening stored payload spaces from `[256, 512, 1024, 2048]` to
+`[1024, 2048, 4096, 8192]`. Preserve an initially dominant eight-slot subpath, give
+all additional slots and payload dimensions a small live contribution, run an
+interface warmup, and then rebuild the bank. Because writer workspace, codec,
+reader, stored payload, and trajectory shapes change, never label that transition
+an exact resume.
 
 Gradient accumulation is four examples per optimizer update. Parameters/optimizer
 state remain FP32, forward operations use BF16 autocast, and stored values use BF16.
