@@ -8,10 +8,11 @@ from .agent import ForwardResult, SDKBAgent
 from .data import Episode
 from .recurrence import LoopMemory, LoopWrite
 from .routing import cosine_scores, cosine_similarities, group_plan_loss
-from .store import DiskStore, ReadPlan, Selection, lookup_record
+from .store import ReadPlan, Selection, lookup_record
+from .storage_contract import KeySearchBackend
 
 
-def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, *,
+def stored_corpus_forward(agent: SDKBAgent, store: KeySearchBackend, episode: Episode, *,
                           generation: str, limits: tuple[int, ...],
                           namespace: str = 'corpus', searcher=None) -> tuple[ForwardResult, dict]:
     """Plan each space from a causal native prefix, then train on fetched values.
@@ -131,7 +132,7 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
                     'supplied_positive': True} | contrast_info
 
 
-def stored_corpus_forward_batch(agent: SDKBAgent, store: DiskStore,
+def stored_corpus_forward_batch(agent: SDKBAgent, store: KeySearchBackend,
                                 episodes: list[Episode], *, generation: str,
                                 limits: tuple[int, ...], namespace: str = 'corpus',
                                 searcher=None, token_rows: list[dict] | None = None):

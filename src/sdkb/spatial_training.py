@@ -5,6 +5,7 @@ from collections import deque
 from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
+import time
 from typing import Any, Callable
 
 import torch
@@ -13,11 +14,11 @@ from torch.nn import functional as F
 
 from .agent import SDKBAgent
 from .bank_replay import BankWriterReplay
-from .key_index import PublishedKeyIndex
 from .recurrence import SpatialReadSite
 from .routing import cosine_scores, cosine_similarities, union_support_loss
 from .spatial_data import validate_spatial_row
-from .store import DiskStore, ReadPlan, Selection
+from .store import ReadPlan, Selection
+from .storage_contract import BatchKeyIndexBackend, StoredReadBackend
 
 
 @dataclass
@@ -168,7 +169,7 @@ def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None
     return None
 
 
-def _load_wave(store: DiskStore, index: PublishedKeyIndex, wave: _ReadWave, *,
+def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _ReadWave, *,
                limits: tuple[int, ...], routing_candidates: int) -> tuple[_LoadedSpace, ...]:
     """Perform selection and serialized payload reads without touching the GPU graph."""
     loaded = []
@@ -206,7 +207,8 @@ def _load_wave(store: DiskStore, index: PublishedKeyIndex, wave: _ReadWave, *,
     return tuple(loaded)
 
 
-def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBatchState,
+def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
+                  state: _SpatialBatchState,
                   wave: _ReadWave, loaded: tuple[_LoadedSpace, ...], *,
                   limits: tuple[int, ...],
                   writer_replay: BankWriterReplay | None = None,
@@ -357,7 +359,8 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
     return SpatialForwardResult(loss, nll, routing, metrics, write_outputs)
 
 
-def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKeyIndex,
+def spatial_bank_forward(agent: SDKBAgent, store: StoredReadBackend,
+                         index: BatchKeyIndexBackend,
                          rows: list[dict[str, Any]], *, limits: tuple[int, ...],
                          routing_candidates: int, pad_token_id: int = 0,
                          plan_observer: Callable[[str, str, ReadPlan], None] | None = None,
@@ -564,7 +567,7 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
 
 
 def spatial_bank_pipeline_forward(
-        agent: SDKBAgent, store: DiskStore, index: PublishedKeyIndex,
+        agent: SDKBAgent, store: StoredReadBackend, index: BatchKeyIndexBackend,
         rows: list[dict[str, Any]], *, limits: tuple[int, ...],
         routing_candidates: int, microbatch_size: int, inflight: int,
         pad_token_id: int = 0,
@@ -584,9 +587,28 @@ def spatial_bank_pipeline_forward(
     if len(chunks) > 1 and inflight < 2:
         raise ValueError("Multiple pipeline microbatches require at least two in flight")
     results: list[tuple[int, SpatialForwardResult]] = []
-    pending: deque[tuple[int, _SpatialBatchState, _ReadWave,
-                         Future[tuple[_LoadedSpace, ...]]]] = deque()
+    pending: deque[tuple[int, _SpatialBatchState, _ReadWave, float,
+                         Future[tuple[tuple[_LoadedSpace, ...], float, float]]]] = deque()
     next_chunk = 0
+    request_seconds, retrieval_seconds, ready_queue_seconds = [], [], []
+    blocked_seconds = 0.0
+    max_pending = 0
+
+    def percentile(values: list[float], fraction: float) -> float:
+        if not values:
+            return 0.0
+        ordered = sorted(values)
+        position = fraction * (len(ordered) - 1)
+        lower = int(position)
+        upper = min(lower + 1, len(ordered) - 1)
+        share = position - lower
+        return ordered[lower] * (1 - share) + ordered[upper] * share
+
+    def timed_load(wave: _ReadWave) -> tuple[tuple[_LoadedSpace, ...], float, float]:
+        started = time.perf_counter()
+        loaded = _load_wave(store, index, wave, limits=limits,
+                            routing_candidates=routing_candidates)
+        return loaded, started, time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=min(inflight, len(chunks)),
                             thread_name_prefix="sdkb-bank-read") as pool:
@@ -598,20 +620,27 @@ def spatial_bank_pipeline_forward(
             if wave is None:
                 results.append((index_in_step, _finish_batch(agent, state)))
                 return
-            future = pool.submit(
-                _load_wave, store, index, wave, limits=limits,
-                routing_candidates=routing_candidates)
-            pending.append((index_in_step, state, wave, future))
+            issued = time.perf_counter()
+            future = pool.submit(timed_load, wave)
+            pending.append((index_in_step, state, wave, issued, future))
 
         while next_chunk < len(chunks) and len(pending) < inflight:
             launch(next_chunk)
             next_chunk += 1
+            max_pending = max(max_pending, len(pending))
         while pending:
             level = pending[0][1].execution.recurrent.completed
             wavefront = []
             while pending and pending[0][1].execution.recurrent.completed == level:
-                index_in_step, state, wave, future = pending.popleft()
-                wavefront.append((index_in_step, state, wave, future.result()))
+                index_in_step, state, wave, issued, future = pending.popleft()
+                wait_started = time.perf_counter()
+                loaded, started, completed = future.result()
+                consumed = time.perf_counter()
+                blocked_seconds += consumed - wait_started
+                request_seconds.append(completed - issued)
+                retrieval_seconds.append(completed - started)
+                ready_queue_seconds.append(max(0.0, consumed - completed))
+                wavefront.append((index_in_step, state, wave, loaded))
             live = None
             if writer_replay is not None:
                 replay_budget = agent.config.train.writer_replay_records_per_site
@@ -632,10 +661,10 @@ def spatial_bank_pipeline_forward(
                         launch(next_chunk)
                         next_chunk += 1
                 else:
-                    future = pool.submit(
-                        _load_wave, store, index, following, limits=limits,
-                        routing_candidates=routing_candidates)
-                    pending.append((index_in_step, state, following, future))
+                    issued = time.perf_counter()
+                    future = pool.submit(timed_load, following)
+                    pending.append((index_in_step, state, following, issued, future))
+                max_pending = max(max_pending, len(pending))
 
     ordered = [result for _, result in sorted(results)]
     supervised = sum(result.metrics["supervised_tokens"] for result in ordered)
@@ -697,6 +726,13 @@ def spatial_bank_pipeline_forward(
         "supervised_tokens": supervised,
         "pipeline_microbatches": len(chunks),
         "pipeline_inflight": min(inflight, len(chunks)),
+        "pipeline_max_pending": max_pending,
+        "pipeline_retrieval_seconds_p50": percentile(retrieval_seconds, .50),
+        "pipeline_retrieval_seconds_p95": percentile(retrieval_seconds, .95),
+        "pipeline_retrieval_seconds_p99": percentile(retrieval_seconds, .99),
+        "pipeline_request_seconds_p95": percentile(request_seconds, .95),
+        "pipeline_ready_queue_seconds_p95": percentile(ready_queue_seconds, .95),
+        "pipeline_blocked_seconds": blocked_seconds,
     }
     write_outputs = None
     if any(result.write_outputs is not None for result in ordered):

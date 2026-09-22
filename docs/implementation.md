@@ -63,6 +63,10 @@ captured plan, causal metadata, RNG/autocast state, serialized precision, and al
 producer cotangents through the optimizer boundary. Add issued/ready/consumed
 timestamps, retrieval wait, ready-queue depth, continuation batch fill, GPU idle
 intervals, and p50/p95/p99 latency telemetry before claiming latency hiding.
+The current bounded pipeline now records request and service latency, ready-queue
+delay, main-thread blocking time, and maximum pending reads. It still consumes a
+deterministic same-level wavefront and therefore does not yet establish that remote
+latency can be hidden.
 Execution and publication of the already prompted write sites is implemented by
 `build_prequential_bank.py`. Learned placement and network retrieval remain later
 work; this executor does not claim that the model chose the calls or generated their
@@ -85,8 +89,15 @@ The physical bootstrap snapshot remains read-only. Journal heads supersede it an
 new records extend its resident index, so the two files implement one logical bank.
 Checkpoints store a journal cursor and digest instead of copying the SQLite payload
 database. Retained checkpoints pin history; explicit GC releases superseded rows
-only below every pin. Remote search, learned call placement, compact-code rebuild
-workers, and training sampled from logged size bands remain planned.
+only below every pin. A conforming remote backend, learned call placement,
+utility-driven maintenance, and training sampled from logged size bands remain planned.
+
+The stored read path now depends on the public protocols in
+`storage_contract.py`: stored payload fetch/lookup, scoped search, batched key
+search, and mutable recovery control. SQLite implements those protocols without
+exposing its connection to model code. This is an executable adapter boundary, not
+a network backend result; the remote transaction and failure contract is specified
+in [scale-out v0.9](scale-out-v0.9.md).
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.
@@ -249,6 +260,14 @@ fingerprints and domain/time checks are enforced; deletions invalidate derivativ
 The inference API never calls the writer or compactor. Retaining fallback records
 means this prototype does not establish net disk savings. Learned arbitrary-subset
 or persistent overlapping-field decoding is not implemented.
+
+The mutable bank also maintains leased rebuild jobs for invalid compact descendants.
+Only parents whose compact children are current can be claimed, so recursive
+compactions rebuild from the bottom up. Successful all-space journal publication
+checks the live lease owner and captured child cursors, then clears the lease
+atomically; failed or stale compactor inference releases it for retry.
+`compaction_quality.py` separately gates promotion on held-out behavior and measured
+serialized byte reduction. Passing contribution loss alone is insufficient.
 
 Stored single-space codes also work at native recurrent read boundaries. Each
 boundary fetches the complete cumulative selection, including code multiplicity,

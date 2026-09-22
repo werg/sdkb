@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 import torch
 from torch import Tensor
 
-from .store import DiskStore, ReadPlan, Selection
+from .store import ReadPlan, Selection
+from .storage_contract import KeySearchBackend
 from .recurrence import LoopMemory
 from .routing import cosine_similarities
 from .store import lookup_record
@@ -21,7 +22,7 @@ class ReadSession:
     gate_weights: list[list[Tensor]] = field(default_factory=list)
 
 
-def _gate_weights(agent, store: DiskStore, *, query: Tensor, routing_query: Tensor,
+def _gate_weights(agent, store: KeySearchBackend, *, query: Tensor, routing_query: Tensor,
                   selected_ids: list[list[str]], candidate_plans: list[ReadPlan]) -> list[Tensor] | None:
     """Evaluate learned continuous gates over a captured materialized field."""
     if not agent.config.memory.distance_gating:
@@ -50,7 +51,7 @@ def _gate_weights(agent, store: DiskStore, *, query: Tensor, routing_query: Tens
 
 
 @torch.no_grad()
-def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
+def read_session(agent, store: KeySearchBackend, prompt: Tensor, *, namespace: str,
                  generation: str, query_time: int, domain: str = "research",
                  oracle_ids: tuple[str, ...] | None = None,
                  ablate_values: bool = False, compact: bool = False,
@@ -162,7 +163,7 @@ def read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
 
 
 @torch.no_grad()
-def loop_read_session(agent, store: DiskStore, prompt: Tensor, *, namespace: str,
+def loop_read_session(agent, store: KeySearchBackend, prompt: Tensor, *, namespace: str,
                       generation: str, query_time: int, domain: str,
                       oracle_ids: tuple[str, ...] | None, ablate_values: bool,
                       exclude_ids: frozenset[str], fixed_plans=None,

@@ -80,6 +80,11 @@ class TrainingBank:
                     generation TEXT NOT NULL, position INTEGER NOT NULL,
                     cursor INTEGER NOT NULL,
                     PRIMARY KEY(namespace,stream,generation,position));
+                CREATE TABLE IF NOT EXISTS mutable_bank_rebuild_leases (
+                    namespace TEXT NOT NULL, record_id TEXT NOT NULL,
+                    worker_id TEXT NOT NULL, lease_until_ns INTEGER NOT NULL,
+                    invalidated_cursor INTEGER NOT NULL,
+                    PRIMARY KEY(namespace,record_id));
             """)
             defaults = {
                 'format': str(self.FORMAT), 'cursor': '0', 'floor_cursor': '0',
@@ -276,6 +281,8 @@ class TrainingBank:
 
     def update(self, records: Iterable[StoredRecord], *, optimizer_step: int | None = None,
                children: Mapping[str, Sequence[str]] | None = None,
+               expected_child_cursors: Mapping[str, Mapping[str, int]] | None = None,
+               rebuild_claims: Mapping[str, tuple[str, int]] | None = None,
                event: dict | None = None) -> int:
         """Atomically publish complete all-space revisions for logical records."""
         rows = list(records)
@@ -292,8 +299,18 @@ class TrainingBank:
         if any(set(views) != expected for views in grouped.values()):
             raise ValueError('Every mutable record revision needs every configured space view')
         children = children or {}
+        expected_child_cursors = expected_child_cursors or {}
+        rebuild_claims = rebuild_claims or {}
         if set(children) - set(grouped):
             raise ValueError('Compaction dependencies refer to an unpublished parent')
+        if (set(expected_child_cursors) - set(children)
+                or any(set(expected_child_cursors[parent]) != set(children[parent])
+                       for parent in expected_child_cursors)):
+            raise ValueError('Expected child cursors must cover a declared dependency set')
+        if (set(rebuild_claims) - set(expected_child_cursors)
+                or any(not worker_id or invalidated_at < 0
+                       for worker_id, invalidated_at in rebuild_claims.values())):
+            raise ValueError('Rebuild claims need expected children, worker and cursor')
         if event is not None:
             required = {'stream', 'position', 'event_id', 'visibility_time',
                         'lineage', 'record_metadata'}
@@ -357,6 +374,15 @@ class TrainingBank:
                                            or event['visibility_time'] < state[1])):
                     raise ValueError('Mutable events must commit once in monotonic order')
             cursor = int(self._meta(db, 'cursor')) + 1
+            for parent, (worker_id, invalidated_at) in rebuild_claims.items():
+                lease = db.execute('''SELECT worker_id,lease_until_ns,invalidated_cursor
+                    FROM mutable_bank_rebuild_leases
+                    WHERE namespace=? AND record_id=?''',
+                    (self.index.namespace, parent)).fetchone()
+                if (lease is None or lease[0] != worker_id or lease[1] <= time.time_ns()
+                        or lease[2] != invalidated_at):
+                    raise RuntimeError(
+                        f'Rebuild lease is stale or belongs to another worker: {parent}')
             updated_ids = set(grouped)
             missing_rebuild = self._invalidated(db, cursor - 1) & updated_ids - set(children)
             if missing_rebuild:
@@ -388,6 +414,9 @@ class TrainingBank:
             for record_id in sorted(updated_ids):
                 db.execute('INSERT INTO mutable_bank_status VALUES (?,?,?,?,?)',
                            (cursor, self.index.namespace, record_id, 0, ''))
+                db.execute('''DELETE FROM mutable_bank_rebuild_leases
+                    WHERE namespace=? AND record_id=?''',
+                           (self.index.namespace, record_id))
             for parent, cause in sorted(invalidated.items()):
                 db.execute('INSERT INTO mutable_bank_status VALUES (?,?,?,?,?)',
                            (cursor, self.index.namespace, parent, 1, cause))
@@ -398,6 +427,8 @@ class TrainingBank:
                     WHERE namespace=? AND parent_id=? AND retired_cursor IS NULL''',
                     (cursor, self.index.namespace, parent))
                 for child in child_ids:
+                    if child in self._invalidated(db, cursor - 1):
+                        raise ValueError(f'Cannot compact invalidated child: {child}')
                     child_cursor = db.execute('''SELECT COALESCE(MAX(cursor),0)
                         FROM mutable_bank_heads WHERE namespace=? AND record_id=?''',
                         (self.index.namespace, child)).fetchone()[0]
@@ -405,6 +436,10 @@ class TrainingBank:
                                 for array in self.index.spaces.values())
                     if child_cursor == 0 and not known:
                         raise KeyError(f'Unknown compact child: {child}')
+                    expected_cursor = expected_child_cursors.get(parent, {}).get(child)
+                    if expected_cursor is not None and child_cursor != expected_cursor:
+                        raise RuntimeError(
+                            f'Child {child} changed while its compaction was built')
                     db.execute('INSERT INTO mutable_bank_dependencies VALUES (?,?,?,?,?,NULL)',
                                (self.index.namespace, parent, child, cursor, child_cursor))
             db.execute("UPDATE mutable_bank_meta SET value=? WHERE key='cursor'", (str(cursor),))
@@ -531,6 +566,76 @@ class TrainingBank:
                                'invalidated_at': status[1], 'children': children})
         return tuple(result)
 
+    def claim_rebuilds(self, worker_id: str, *, limit: int = 1,
+                       lease_seconds: float = 300,
+                       now_ns: int | None = None) -> tuple[dict, ...]:
+        """Lease ready compact descendants in dependency order.
+
+        A parent is ready only after all invalidated compact children have been
+        rebuilt. Leases coordinate workers; publication remains the all-space
+        ``update`` transaction and clears the lease atomically.
+        """
+        if not worker_id or limit < 1 or lease_seconds <= 0:
+            raise ValueError('A rebuild claim needs a worker, positive limit and lease')
+        now = time.time_ns() if now_ns is None else now_ns
+        if now < 0:
+            raise ValueError('Rebuild lease time cannot be negative')
+        lease_until = now + int(lease_seconds * 1_000_000_000)
+        with self.cache.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            cursor = int(self._meta(db, 'cursor'))
+            invalidated = self._invalidated(db, cursor)
+            db.execute('''DELETE FROM mutable_bank_rebuild_leases
+                WHERE namespace=? AND lease_until_ns<=?''',
+                       (self.index.namespace, now))
+            jobs = []
+            for record_id in sorted(invalidated):
+                children = tuple(row[0] for row in db.execute('''SELECT child_id
+                    FROM mutable_bank_dependencies WHERE namespace=? AND parent_id=?
+                    AND introduced_cursor<=? AND
+                    (retired_cursor IS NULL OR retired_cursor>?) ORDER BY child_id''',
+                    (self.index.namespace, record_id, cursor, cursor)).fetchall())
+                if not children or any(child in invalidated for child in children):
+                    continue
+                child_cursors = {
+                    child: db.execute('''SELECT COALESCE(MAX(cursor),0)
+                        FROM mutable_bank_heads WHERE namespace=? AND record_id=?''',
+                        (self.index.namespace, child)).fetchone()[0]
+                    for child in children
+                }
+                status = db.execute('''SELECT cause_id,cursor FROM mutable_bank_status
+                    WHERE namespace=? AND record_id=? AND cursor<=?
+                    ORDER BY cursor DESC LIMIT 1''',
+                    (self.index.namespace, record_id, cursor)).fetchone()
+                lease = db.execute('''SELECT worker_id,lease_until_ns
+                    FROM mutable_bank_rebuild_leases
+                    WHERE namespace=? AND record_id=?''',
+                    (self.index.namespace, record_id)).fetchone()
+                if lease is not None:
+                    continue
+                db.execute('INSERT INTO mutable_bank_rebuild_leases VALUES (?,?,?,?,?)', (
+                    self.index.namespace, record_id, worker_id, lease_until, status[1]))
+                jobs.append({'record_id': record_id, 'cause_id': status[0],
+                             'invalidated_at': status[1], 'children': children,
+                             'child_cursors': child_cursors,
+                             'worker_id': worker_id, 'lease_until_ns': lease_until})
+                if len(jobs) == limit:
+                    break
+        return tuple(jobs)
+
+    def release_rebuilds(self, worker_id: str, record_ids: Iterable[str]) -> int:
+        """Release this worker's jobs after cancellation or failed inference."""
+        ids = tuple(dict.fromkeys(record_ids))
+        if not worker_id or any(not record_id for record_id in ids):
+            raise ValueError('A rebuild release needs valid worker and record IDs')
+        if not ids:
+            return 0
+        placeholders = ','.join('?' for _ in ids)
+        with self.cache.connect() as db:
+            return db.execute(f'''DELETE FROM mutable_bank_rebuild_leases
+                WHERE namespace=? AND worker_id=? AND record_id IN ({placeholders})''',
+                (self.index.namespace, worker_id, *ids)).rowcount
+
     def rollback(self, cursor: int, *, maintenance_position: int | None = None) -> None:
         """Discard a later uncheckpointed branch and restore logical heads."""
         with self.cache.connect() as db:
@@ -548,6 +653,7 @@ class TrainingBank:
             db.execute('UPDATE mutable_bank_dependencies SET retired_cursor=NULL '
                        'WHERE retired_cursor>?', (cursor,))
             db.execute('DELETE FROM mutable_bank_heads')
+            db.execute('DELETE FROM mutable_bank_rebuild_leases')
             db.execute('''INSERT INTO mutable_bank_heads
                 SELECT namespace,record_id,space,MAX(cursor)
                 FROM mutable_bank_revisions WHERE cursor<=?

@@ -160,11 +160,11 @@ The implementation migrates the former overwrite-in-place training overlay at th
 next process start. A trainer already running code from before this change continues
 using its opened legacy tables until it is gracefully checkpointed and resumed.
 
-Scale-out work remains: a network store must provide the same transaction and cursor
-contract; compact invalidations need a background rebuild worker; and learned
-utility should eventually supplement the implemented age/coverage maintenance
-schedule. These are deployment and policy extensions to the mutable lifecycle, not
-frozen-bank semantics.
+The public network storage contract and leased, dependency-ordered compact rebuild
+worker are now defined in [scale-out v0.9](scale-out-v0.9.md). Scale-out work remains:
+implement and failure-test a network adapter, measure compact behavior and net byte
+savings, and supplement age/coverage maintenance with learned utility. These are
+deployment and policy extensions to the mutable lifecycle, not frozen-bank semantics.
 
 Executed regression evidence is recorded in
 [mutable-bank v0.8 validation](validation-mutable-bank-v0.8.md).

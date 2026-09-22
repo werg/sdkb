@@ -318,6 +318,21 @@ class DiskStore:
         """Revalidate visibility at use time; deletion invalidates outstanding plans."""
         return self.fetch_many((plan,))[0]
 
+    def lookup(self, record_id: str, *, namespace: str, space: str,
+               generation: str, domain: str = "research",
+               query_time: int = 2**62) -> StoredRecord:
+        """Fetch one compatible stored record through the public backend surface."""
+        with self.connect() as db:
+            row = db.execute("""SELECT key,payload,created_at,source_id FROM records
+                WHERE namespace=? AND record_id=? AND space=? AND generation=? AND domain=?
+                AND created_at<? AND deleted=0""",
+                (namespace, record_id, space, generation, domain, query_time)).fetchone()
+        if row is None:
+            raise KeyError(record_id)
+        key = torch.from_numpy(np.frombuffer(row[0], dtype="<f4").copy())
+        return StoredRecord(record_id, key, load(row[1])["payload"], namespace, space,
+                            generation, domain, row[2], row[3])
+
     def fetch_many(self, plans: Iterable[ReadPlan]) -> list[list[Tensor]]:
         """Revalidate and load several captured plans through one connection."""
         result = []
@@ -416,6 +431,9 @@ class DiskStore:
             db.execute('UPDATE mutable_bank_dependencies SET retired_cursor=NULL '
                        'WHERE retired_cursor>?', (target,))
             db.execute('DELETE FROM mutable_bank_heads')
+            if db.execute("""SELECT 1 FROM sqlite_master WHERE type='table'
+                    AND name='mutable_bank_rebuild_leases'""").fetchone() is not None:
+                db.execute('DELETE FROM mutable_bank_rebuild_leases')
             db.execute('''INSERT INTO mutable_bank_heads
                 SELECT namespace,record_id,space,MAX(cursor)
                 FROM mutable_bank_revisions WHERE cursor<=?
@@ -559,16 +577,8 @@ class AsyncRetriever:
         self.close()
 
 
-def lookup_record(store: DiskStore, record_id: str, *, namespace: str, space: str,
+def lookup_record(store, record_id: str, *, namespace: str, space: str,
                   generation: str, domain: str = "research", query_time: int = 2**62) -> StoredRecord:
-    """Fetch one immutable compatible record (used for training caches and manifests)."""
-    with store.connect() as db:
-        row = db.execute("""SELECT key,payload,created_at,source_id FROM records
-            WHERE namespace=? AND record_id=? AND space=? AND generation=? AND domain=?
-            AND created_at<? AND deleted=0""",
-            (namespace, record_id, space, generation, domain, query_time)).fetchone()
-    if row is None:
-        raise KeyError(record_id)
-    key = torch.from_numpy(np.frombuffer(row[0], dtype="<f4").copy())
-    return StoredRecord(record_id, key, load(row[1])["payload"], namespace, space,
-                        generation, domain, row[2], row[3])
+    """Compatibility helper over the public local/network lookup operation."""
+    return store.lookup(record_id, namespace=namespace, space=space,
+                        generation=generation, domain=domain, query_time=query_time)

@@ -131,7 +131,9 @@ publishes authored writes, event lineage, dependencies, and the visibility front
 Its journal supports checkpoint cursor recovery, index updates, stale-record
 maintenance sampling, compaction invalidation, and checkpoint-pinned revision GC.
 Learned site placement, generated write arguments, size-band training,
-utility-driven maintenance, and compact-code rebuild workers remain planned.
+utility-driven maintenance and a conforming network backend remain planned. Leased,
+dependency-ordered compact-code rebuild workers and explicit behavior-plus-byte
+promotion accounting are implemented but have not established compaction benefit.
 
 This is a course extension, not a description of the current HotpotQA curriculum.
 The current run performs one automatic latent read per short episode and writes

@@ -151,6 +151,36 @@ def test_mutable_bank_adds_records_and_invalidates_compact_descendants(tmp_path)
     torch.testing.assert_close(bank.fetch_many((found,))[0][0], torch.tensor([9.]))
 
 
+def test_compaction_rebuild_claims_are_leased_layered_and_cleared(tmp_path):
+    base = DiskStore(tmp_path / 'base.sqlite')
+    for record_id, children in (('a', ()), ('compact', ('a',)),
+                                ('recursive', ('compact',))):
+        base.put(StoredRecord(record_id, torch.tensor([1., 0.]), torch.tensor([1.]),
+            namespace='corpus', space='s0', generation='g', created_at=1),
+            children=children)
+    journal = DiskStore(tmp_path / 'journal.sqlite')
+    index = PublishedKeyIndex(base, namespace='corpus', generation='g', spaces=('s0',),
+                              expected_sources=3)
+    bank = TrainingBank(base, journal, index)
+    bank.update([StoredRecord('a', torch.tensor([0., 1.]), torch.tensor([2.]), space='s0')])
+
+    first = bank.claim_rebuilds('worker-a', limit=2, lease_seconds=30, now_ns=100)
+    assert [job['record_id'] for job in first] == ['compact']
+    assert bank.claim_rebuilds('worker-b', limit=2, lease_seconds=30, now_ns=101) == ()
+    bank.release_rebuilds('worker-a', ('compact',))
+    assert bank.claim_rebuilds('worker-b', limit=1, lease_seconds=30, now_ns=102)[0][
+        'record_id'] == 'compact'
+    bank.update([StoredRecord('compact', torch.tensor([1., 1.]), torch.tensor([3.]),
+                              space='s0')], children={'compact': ('a',)})
+    assert [job['record_id'] for job in bank.claim_rebuilds(
+        'worker-a', limit=2, lease_seconds=30, now_ns=103)] == ['recursive']
+    bank.update([StoredRecord('recursive', torch.tensor([-1., 1.]), torch.tensor([4.]),
+                              space='s0')], children={'recursive': ('compact',)})
+    assert bank.invalidated_records() == ()
+    with journal.connect() as db:
+        assert db.execute('SELECT COUNT(*) FROM mutable_bank_rebuild_leases').fetchone()[0] == 0
+
+
 def test_mutable_event_frontier_and_revision_commit_are_atomic(tmp_path):
     base = DiskStore(tmp_path / 'base.sqlite')
     base.put(StoredRecord('a', torch.tensor([1., 0.]), torch.tensor([1.]),

@@ -23,6 +23,12 @@
 > order, provenance, and historical physical revisions remain immutable. The logical
 > records they ground have continuously trainable keys, payloads, index membership,
 > utility state, and compact representations.
+>
+> **Scale-out preparation, 22 September 2026:** [scale-out storage and recursive
+> compaction v0.9](scale-out-v0.9.md) defines the public network-backend contract,
+> leased dependency-ordered rebuilds, and behavior-plus-byte promotion gates. The
+> contracts and local worker machinery are implemented; a network service and a
+> measured learned compaction benefit remain future work.
 
 ## Read-time superposition, selective replay, and learned cluster compaction
 

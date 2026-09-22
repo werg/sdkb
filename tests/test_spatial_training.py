@@ -211,6 +211,11 @@ def test_inflight_microbatches_match_reference_gradients_and_overlap_reads(
     torch.testing.assert_close(expected.loss, actual.loss, atol=2e-5, rtol=2e-4)
     assert actual.metrics["pipeline_microbatches"] == 2
     assert actual.metrics["pipeline_inflight"] == 2
+    assert actual.metrics["pipeline_max_pending"] == 2
+    for name in ("pipeline_retrieval_seconds_p50", "pipeline_retrieval_seconds_p95",
+                 "pipeline_retrieval_seconds_p99", "pipeline_ready_queue_seconds_p95",
+                 "pipeline_blocked_seconds"):
+        assert actual.metrics[name] >= 0
     for (name, first), (other, second) in zip(
             reference.named_parameters(), pipelined.named_parameters(), strict=True):
         assert name == other

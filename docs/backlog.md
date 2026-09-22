@@ -74,7 +74,13 @@ runtime work is tracked in `bgkit-audit.md`; it is part of the running experimen
 - [ ] Conditional marginal-utility sampling, plan exploration and learned invocation/stopping.
 - [x] Durable mutable-record journal, age/coverage regeneration of stale or
   never-refreshed entries, checkpoint-pinned revision recovery, and explicit GC.
-- [ ] Add learned-utility maintenance priorities and a compact-code rebuild worker.
+- [x] Add dependency-ordered, leased compact-code rebuild workers with atomic
+  all-space publication and retry release.
+- [ ] Add learned-utility maintenance priorities.
+- [x] Define public local/network read, key-search and mutable-recovery protocols.
+- [x] Add request/service/ready-queue/blocking telemetry to the bounded local
+  recurrent microbatch pipeline.
+- [ ] Implement a network adapter and run transaction/failure conformance against SQLite.
 - [ ] Disk ANN adapter and key/payload layout benchmarks under controlled cache budgets.
 - [x] Bounded device payload staging for single-space stored inference.
 - [ ] Sparse nested producer dependency replay and out-of-core consumer training without read truncation.
@@ -89,6 +95,8 @@ runtime work is tracked in `bgkit-audit.md`; it is part of the running experimen
 - [x] Preserve a partial Boolean XOR result under compactor-only training and stored full-cluster codes.
 - [ ] Preserve strong behavior on harder related clusters, independent facts and exceptions.
 - [x] Persistent full-cluster records with key indirection and explicit raw subset fallback.
+- [x] Add held-out behavior, NLL and serialized-byte promotion accounting plus
+  recursive dependency rebuild scheduling.
 - [ ] Selection-conditioned child responses; retain exact raw fallback until they are implemented.
 - [ ] Adaptive code sizes, exception records and measured net storage/compute savings.
 
