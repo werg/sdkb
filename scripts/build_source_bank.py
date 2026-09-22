@@ -15,8 +15,8 @@ from sdkb.agent import SDKBAgent
 from sdkb.archiving import ensure_free
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import Source
-from sdkb.document_ingestion import (holistic_ingestion_messages,
-                                     prompted_write_messages, writer_prefix_ids)
+from sdkb.document_ingestion import (grouped_ingestion_prefixes,
+                                     source_ingestion_groups, writer_prefix_ids)
 from sdkb.offline_bank import canonical_json, ensure_offline_shard, publish_offline_generation
 from sdkb.operations import atomic_json
 from sdkb.store import DiskStore
@@ -53,7 +53,7 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
                 'model': asdict(config.model), 'memory': asdict(config.memory),
                 'compute_precision': config.train.precision,
                 'max_source_tokens': config.train.max_source_tokens,
-                'writer_input_policy': 'agentic-holistic-and-part-parity-v1'}
+                'writer_input_policy': 'grouped-agentic-holistic-and-streaming-v2'}
     generation = hashlib.sha256(canonical_json(identity).encode()).hexdigest()[:24]
     lock = output / 'identity.json'
     output.mkdir(exist_ok=True)
@@ -80,6 +80,8 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
             raise ValueError('Resolved writer model revision changed')
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
         agent.eval()
+        source_groups = source_ingestion_groups(rows)
+        prefix_cache = {}
         completed_ids = []
         for start in range(0, len(rows), shard_size):
             chunk = rows[start:start + shard_size]
@@ -94,17 +96,14 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
                                         for row in mini]
                         writer_rows = []
                         for row, source in zip(mini, source_batch, strict=True):
-                            scope = {'domain': row.get('domain', 'research')}
-                            if int(hashlib.sha256(source.record_id.encode()).hexdigest(), 16) % 2:
-                                complete, _ = holistic_ingestion_messages(
-                                    source.record_id, source.text, generation=generation,
-                                    scope=scope, write_contents=(source.text,))
-                                messages = complete[:-1]
-                            else:
-                                messages = prompted_write_messages(
-                                    document_id=source.record_id, text=source.text,
-                                    record_id=source.record_id, generation=generation,
-                                    scope=scope, kind=source.kind)
+                            document_id, parts, mode = source_groups[source.record_id]
+                            cache_key = (document_id, row.get('domain', 'research'))
+                            if cache_key not in prefix_cache:
+                                prefix_cache[cache_key] = grouped_ingestion_prefixes(
+                                    document_id, parts, generation=generation,
+                                    scope={'domain': row.get('domain', 'research')},
+                                    mode=mode)
+                            messages = prefix_cache[cache_key][source.record_id]
                             writer_rows.append(torch.tensor(
                                 [writer_prefix_ids(agent.tokenizer, messages)],
                                 dtype=torch.long, device=agent.device))

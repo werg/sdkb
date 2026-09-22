@@ -1,5 +1,6 @@
-from sdkb.document_ingestion import (holistic_ingestion_messages, holistic_write_count,
-    prompted_write_messages, split_document, streaming_ingestion_messages,
+from sdkb.document_ingestion import (grouped_ingestion_prefixes,
+    holistic_ingestion_messages, holistic_write_count, prompted_write_messages,
+    source_ingestion_groups, split_document, streaming_ingestion_messages,
     writer_prefix_ids)
 
 
@@ -49,3 +50,20 @@ def test_holistic_ingestion_presents_one_blob_and_separate_model_chosen_writes()
         calls[1]['tool_calls'][0]['function']['arguments']['content'])
     assert all(record['chunking_policy'] == 'holistic-model-decomposition'
                for record in records)
+
+
+def test_grouped_sources_support_true_holistic_and_streaming_multiwrite_prefixes():
+    parts = (('r1', 'First fact.'), ('r2', 'Second fact.'))
+    for mode in ('holistic', 'streaming'):
+        prefixes = grouped_ingestion_prefixes(
+            'doc', parts, generation='g1', scope={'domain': 'research'}, mode=mode)
+        assert set(prefixes) == {'r1', 'r2'}
+        assert prefixes['r1'][-1]['tool_calls'][0]['function']['arguments']['content'] == 'First fact.'
+        assert prefixes['r2'][-1]['tool_calls'][0]['function']['arguments']['content'] == 'Second fact.'
+        assert len(prefixes['r2']) > len(prefixes['r1'])
+    rows = [
+        {'record_id': f'r{i}', 'text': f'part {i}',
+         'provenance': {'article_title': 'same'}} for i in range(5)]
+    groups = source_ingestion_groups(rows, maximum_parts=4)
+    assert groups['r0'][1] == tuple((f'r{i}', f'part {i}') for i in range(4))
+    assert groups['r4'][1] == (('r4', 'part 4'),)

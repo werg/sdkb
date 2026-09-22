@@ -102,6 +102,65 @@ def holistic_ingestion_messages(document_id: str, text: str, *, generation: str,
     return messages, tuple(records)
 
 
+def grouped_ingestion_prefixes(document_id: str,
+                               parts: tuple[tuple[str, str], ...], *,
+                               generation: str, scope: dict[str, str],
+                               mode: str) -> dict[str, list[dict]]:
+    """Build per-record causal prefixes for one holistic or streaming document."""
+    if (not document_id or not parts or len(parts) > 8
+            or len({record_id for record_id, _ in parts}) != len(parts)
+            or any(not record_id or not text.strip() for record_id, text in parts)
+            or mode not in {'holistic', 'streaming'}):
+        raise ValueError('Grouped ingestion needs 1..8 distinct nonempty parts and a mode')
+    messages = [{'role': 'system', 'content': INGESTION_SYSTEM_PROMPT}]
+    if mode == 'holistic':
+        blob = '\n\n'.join(f'Part {index + 1} [{record_id}]:\n{text}'
+                            for index, (record_id, text) in enumerate(parts))
+        messages.append({'role': 'user', 'content': (
+            f'Document {document_id}:\n{blob}\n\nInspect the complete document and '
+            'choose a reusable memory decomposition. Emit distinct memory.write calls.')})
+    prefixes = {}
+    for ordinal, (record_id, text) in enumerate(parts):
+        if mode == 'streaming':
+            messages.append({'role': 'user', 'content': (
+                f'Document {document_id}, part {ordinal + 1} of {len(parts)}:\n{text}\n\n'
+                'Store the reusable information from this part before continuing.')})
+        call_id = 'ingest-group-' + hashlib.sha256(
+            f'{mode}:{document_id}:{record_id}'.encode()).hexdigest()[:20]
+        messages.append(write_call(
+            call_id=call_id, content=text, kind='document_part', scope=scope,
+            applies_when=f'Information from document {document_id} is relevant.',
+            evidence_refs=(f'{document_id}:part:{ordinal}',),
+            confidence='source_document'))
+        prefixes[record_id] = list(messages)
+        messages.append(write_result(call_id=call_id, status='ok',
+                                     generation=generation, record_id=record_id))
+    validate_memory_transcript(messages)
+    return prefixes
+
+
+def source_ingestion_groups(rows: list[dict], *, maximum_parts: int = 4) -> dict[str, tuple]:
+    """Assign source rows to stable bounded article groups and presentation modes."""
+    if maximum_parts < 1 or maximum_parts > 8:
+        raise ValueError('Source ingestion groups support 1..8 parts')
+    articles: dict[str, list[dict]] = {}
+    for row in rows:
+        title = row.get('provenance', {}).get('article_title') or row['record_id']
+        articles.setdefault(str(title), []).append(row)
+    result = {}
+    for title, article_rows in articles.items():
+        for start in range(0, len(article_rows), maximum_parts):
+            group = article_rows[start:start + maximum_parts]
+            document_id = f'{title}#{start // maximum_parts}'
+            mode = ('holistic' if int(hashlib.sha256(document_id.encode()).hexdigest(), 16) % 2
+                    else 'streaming')
+            parts = tuple((row['record_id'], row['text']) for row in group)
+            shared = (document_id, parts, mode)
+            for row in group:
+                result[row['record_id']] = shared
+    return result
+
+
 def prompted_write_messages(*, document_id: str, text: str, record_id: str,
                             generation: str, scope: dict[str, str], kind: str,
                             span: tuple[int, int] | None = None,

@@ -87,6 +87,12 @@ re-encodes only the write call's text argument.
 
 The curriculum includes two complementary modes.
 
+The current source-bank builder groups up to four passages from the same article.
+A stable article-group hash assigns half the groups to holistic presentation and
+half to streaming presentation. Every record keeps its original opaque identity;
+the writer prefix for a later record includes the earlier visible write calls and
+commit results from that group.
+
 ### Holistic mode
 
 The prompt contains one complete document and asks the agent to inspect relevant

@@ -20,8 +20,8 @@ from sdkb.checkpoints import (resolve_checkpoint, restore_checkpoint, save_check
                               stop_on_signal)
 from sdkb.config import load_config
 from sdkb.key_index import PublishedKeyIndex
-from sdkb.document_ingestion import (holistic_ingestion_messages,
-                                     prompted_write_messages, writer_prefix_ids)
+from sdkb.document_ingestion import (grouped_ingestion_prefixes,
+                                     source_ingestion_groups, writer_prefix_ids)
 from sdkb.offline_bank import (canonical_json, publish_offline_generation,
                                stored_memory_identity)
 from sdkb.operations import atomic_json, run_lock, stop_requested
@@ -184,22 +184,19 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 source_rows[row['record_id']] = row
         if set(map(str, next(iter(index.spaces.values())).ids)) - source_rows.keys():
             raise ValueError('Writer replay manifest does not cover the published bank')
+    source_groups = source_ingestion_groups(list(source_rows.values()))
+    prefix_cache = {}
 
     class WriterInputs(dict):
         def __getitem__(self, record_id):
             row = source_rows[record_id]
-            if int(hashlib.sha256(record_id.encode()).hexdigest(), 16) % 2:
-                complete, _ = holistic_ingestion_messages(
-                    record_id, row['text'], generation=bank_manifest['generation'],
-                    scope={'domain': row.get('domain', 'research')},
-                    write_contents=(row['text'],))
-                messages = complete[:-1]  # Causal prefix through the write call.
-            else:
-                messages = prompted_write_messages(
-                    document_id=record_id, text=row['text'], record_id=record_id,
-                    generation=bank_manifest['generation'],
-                    scope={'domain': row.get('domain', 'research')},
-                    kind=row.get('kind', 'passage'))
+            document_id, parts, mode = source_groups[record_id]
+            cache_key = (document_id, row.get('domain', 'research'))
+            if cache_key not in prefix_cache:
+                prefix_cache[cache_key] = grouped_ingestion_prefixes(
+                    document_id, parts, generation=bank_manifest['generation'],
+                    scope={'domain': row.get('domain', 'research')}, mode=mode)
+            messages = prefix_cache[cache_key][record_id]
             ids = writer_prefix_ids(agent.tokenizer, messages)
             return torch.tensor([ids], dtype=torch.long, device=agent.device)
 
@@ -220,8 +217,9 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             "resume": resume, "attempt": tracker.attempt,
             "bank_key_index": {"kind": "resident_exact_cpu", "bytes": index.key_bytes},
             "writer_replay_ingestion_mix": {
-                "holistic_complete_blob": "sha256(record_id) parity 1",
-                "prompted_source_part": "sha256(record_id) parity 0",
+                "holistic_complete_blob": "sha256(article-group) parity 1",
+                "sequential_source_parts": "sha256(article-group) parity 0",
+                "maximum_parts_per_group": 4,
             },
             "spatial": settings,
         }
