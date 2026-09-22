@@ -96,6 +96,10 @@ runtime work is tracked in `bgkit-audit.md`; it is part of the running experimen
 - [x] Optional multi-space recurrent reader.
 - [ ] Train recurrent LFM and compare to the attention-only student option.
 - [ ] Place early query heads and integrate asynchronous result arrival safely.
+- [ ] Replace the local two-microbatch retrieval pipeline with a bounded,
+  completion-driven trajectory scheduler before network-bank training. Batch ready
+  continuations by recurrent level/shape, bound retained activation bytes, preserve
+  fixed replay plans, and report retrieval-wait/queue-depth/GPU-idle p50/p95/p99.
 - [ ] Implement/test hybrid conv/KV cache lifecycle before optimized decoding.
 - [ ] Build stripped, information-matched deployment baselines and measure the frontier.
 

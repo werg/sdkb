@@ -46,6 +46,22 @@ optional pipeline splits an optimizer batch into several retained microbatch gra
 runs their search and serialized payload reads on CPU workers, and resumes their
 recurrent boundaries in a deterministic order. Its microbatch size and in-flight
 limit are recorded in the run fingerprint.
+
+The implemented target run has two microbatches in flight. Live Spark sampling with
+the local resident-key/NVMe bank shows continuous SDKB GPU activity and low sustained
+I/O wait, so this is adequate for the current regime. It is not evidence that remote
+or network-bank latency is hidden. The pipeline still has a same-wave join before
+combined writer capture, a bounded two-state queue, and a synchronous post-update
+refresh/publication boundary.
+
+Network-backed training needs a bounded completion-driven scheduler: keep a larger
+configurable pool of paused causal trajectory states, issue reads asynchronously,
+batch ready continuations by recurrent level and compatible shape, and apply
+backpressure by retained activation bytes as well as request count. Preserve each
+captured plan, causal metadata, RNG/autocast state, serialized precision, and all
+producer cotangents through the optimizer boundary. Add issued/ready/consumed
+timestamps, retrieval wait, ready-queue depth, continuation batch fill, GPU idle
+intervals, and p50/p95/p99 latency telemetry before claiming latency hiding.
 Execution and publication of the already prompted write sites is implemented by
 `build_prequential_bank.py`. Learned placement and network retrieval remain later
 work; this executor does not claim that the model chose the calls or generated their
