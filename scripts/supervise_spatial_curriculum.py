@@ -67,7 +67,7 @@ def _train(python: str, root: Path, *, config: Path, data: Path, bank: Path,
                "--inflight", "2", "--loops", "3", "--limits", "16", "8", "4", "4",
                "--routing-candidates", "256", "--checkpoint-every", str(steps + 1),
                "--train-recurrent-core", "--gradient-checkpointing",
-               "--retain-writer-replay-activations", "--max-unused-cuda-gib", "20",
+               "--retain-writer-replay-activations", "--max-unused-cuda-gib", "28",
                "--cache-reclaim-host-reserve-gib", "16", "--profile-steps", "3"]
     if (output / "CURRENT").exists():
         command.append("--resume")

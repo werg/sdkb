@@ -40,7 +40,8 @@ The spatial trainer may retain bounded unused CUDA allocator blocks between step
 avoid repeated native allocations. `--max-unused-cuda-gib` sets that cache allowance,
 while `--cache-reclaim-host-reserve-gib` forces release when host-available memory
 falls below its reserve. This applies to both unified and discrete-memory hosts;
-checkpoint boundaries always force release.
+checkpoint boundaries always force release. The Spark target supervisor uses a
+28 GiB unused-cache ceiling and a 16 GiB host reserve based on measured peaks.
 
 The source manifest digest must equal the digest recorded by the immutable bank.
 The overlay is restored from `training_cache.sqlite`; deleting or omitting it changes
