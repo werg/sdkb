@@ -253,6 +253,8 @@ def test_spatial_pipeline_replays_selected_writer_keys_and_payloads(
     result = spatial_bank_pipeline_forward(
         agent, training_bank, index, rows, limits=(2,), routing_candidates=2,
         microbatch_size=1, inflight=2, writer_replay=replay)
+    assert len(replay.tape.records) == 1
+    assert len(replay.record_ids) == len(set(replay.record_ids))
     result.loss.backward()
     replay.backward()
     assert replay.record_ids

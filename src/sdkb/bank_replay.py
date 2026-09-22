@@ -51,7 +51,7 @@ class BankWriterReplay:
         self.tape.backward()
 
     @torch.no_grad()
-    def refresh(self, bank: TrainingBank, *, batch_size: int = 32) -> int:
+    def refresh(self, bank: TrainingBank, *, batch_size: int = 64) -> int:
         """Regenerate touched views after the optimizer step and commit atomically."""
         ids = tuple(sorted(dict.fromkeys(self.record_ids),
                            key=lambda record_id: self.writer_inputs[record_id].shape[1]))

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -208,22 +209,15 @@ def _load_wave(store: DiskStore, index: PublishedKeyIndex, wave: _ReadWave, *,
 def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBatchState,
                   wave: _ReadWave, loaded: tuple[_LoadedSpace, ...], *,
                   limits: tuple[int, ...],
-                  writer_replay: BankWriterReplay | None = None) -> None:
+                  writer_replay: BankWriterReplay | None = None,
+                  live: Mapping[str, tuple[Tensor, ...]] | None = None) -> None:
     memory = agent.config.memory
-    live = {}
     replay_budget = agent.config.train.writer_replay_records_per_site
-    if writer_replay is not None and replay_budget:
-        required_priority, other_priority = [], []
-        for row in range(len(wave.metadata)):
-            required = loaded[0].required_ids[row]
-            if len(required) > replay_budget:
-                raise ValueError('Writer replay budget must cover every supplied support')
-            required_priority.extend(required)
-            for result in loaded:
-                other_priority.extend(result.selected_ids[row])
-        priority = required_priority + other_priority
-        chosen = tuple(dict.fromkeys(priority))[:replay_budget * len(wave.metadata)]
-        live = writer_replay.capture(chosen)
+    if live is None:
+        live = {}
+        if writer_replay is not None and replay_budget:
+            live = writer_replay.capture(_wave_replay_ids(
+                wave, loaded, replay_budget=replay_budget))
     payloads, weights = [], []
     support_scores = [[] for _ in wave.metadata]
     support_indices = [[] for _ in wave.metadata]
@@ -303,6 +297,20 @@ def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBat
     results = agent._read_padded_batch(payloads, weights, wave.query)
     state.execution = agent.advance_spatial_recurrent(
         state.execution, wave.active, results)
+
+
+def _wave_replay_ids(wave: _ReadWave, loaded: tuple[_LoadedSpace, ...], *,
+                     replay_budget: int) -> tuple[str, ...]:
+    required_priority, other_priority = [], []
+    for row in range(len(wave.metadata)):
+        required = loaded[0].required_ids[row]
+        if len(required) > replay_budget:
+            raise ValueError('Writer replay budget must cover every supplied support')
+        required_priority.extend(required)
+        for result in loaded:
+            other_priority.extend(result.selected_ids[row])
+    priority = required_priority + other_priority
+    return tuple(dict.fromkeys(priority))[:replay_budget * len(wave.metadata)]
 
 
 def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForwardResult:
@@ -598,20 +606,35 @@ def spatial_bank_pipeline_forward(
             launch(next_chunk)
             next_chunk += 1
         while pending:
-            index_in_step, state, wave, future = pending.popleft()
-            _consume_wave(agent, index, state, wave, future.result(), limits=limits,
-                          writer_replay=writer_replay)
-            following = _issue_wave(agent, state)
-            if following is None:
-                results.append((index_in_step, _finish_batch(agent, state)))
-                if next_chunk < len(chunks):
-                    launch(next_chunk)
-                    next_chunk += 1
-            else:
-                future = pool.submit(
-                    _load_wave, store, index, following, limits=limits,
-                    routing_candidates=routing_candidates)
-                pending.append((index_in_step, state, following, future))
+            level = pending[0][1].execution.recurrent.completed
+            wavefront = []
+            while pending and pending[0][1].execution.recurrent.completed == level:
+                index_in_step, state, wave, future = pending.popleft()
+                wavefront.append((index_in_step, state, wave, future.result()))
+            live = None
+            if writer_replay is not None:
+                replay_budget = agent.config.train.writer_replay_records_per_site
+                record_ids = tuple(dict.fromkeys(
+                    record_id
+                    for _, _, wave, loaded in wavefront
+                    for record_id in _wave_replay_ids(
+                        wave, loaded, replay_budget=replay_budget)
+                ))
+                live = writer_replay.capture(record_ids)
+            for index_in_step, state, wave, loaded in wavefront:
+                _consume_wave(agent, index, state, wave, loaded, limits=limits,
+                              live=live)
+                following = _issue_wave(agent, state)
+                if following is None:
+                    results.append((index_in_step, _finish_batch(agent, state)))
+                    if next_chunk < len(chunks):
+                        launch(next_chunk)
+                        next_chunk += 1
+                else:
+                    future = pool.submit(
+                        _load_wave, store, index, following, limits=limits,
+                        routing_candidates=routing_candidates)
+                    pending.append((index_in_step, state, following, future))
 
     ordered = [result for _, result in sorted(results)]
     supervised = sum(result.metrics["supervised_tokens"] for result in ordered)

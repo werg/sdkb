@@ -20,6 +20,11 @@ no-grad batch; it still regenerates every touched key and payload before the nex
 step. Overlay payload reads are batched by space while retaining the authorization
 checks performed by the immutable base store.
 
+In the overlapped pipeline, independent microbatches at the same recurrent level
+combine their selected writer records into one producer batch. Their consumer graphs
+remain separate and execute in deterministic round-robin order; shared replay leaves
+sum every use before the single producer replay.
+
 `--profile-steps N` synchronizes phase boundaries for the first `N` steps of a
 process and records forward, consumer-backward, writer-backward, optimizer, refresh,
 and cache-reclamation wall times. It is a diagnostic mode because those additional
