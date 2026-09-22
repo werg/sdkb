@@ -92,7 +92,11 @@ Operational details are in [development-v0.2.md](development-v0.2.md).
 source is tokenized using the student tokenizer, followed by `write_slots + 1`
 learned input embeddings. The first resulting state produces the single canonical
 key; the remaining states produce a fixed sequence of canonical value vectors.
-Per-space address maps and codecs produce stored keys and payloads.
+Per-space address maps and codecs produce stored keys and payloads. Historical
+checkpoints flatten those vectors before a dense codec. New positional checkpoints
+apply a projection shared over value positions and retain a declared
+`[positions, channels]` layout even when serialized contiguously. The canonical
+Phase 2 operator and migration contract are in `positional-memory-v0.7.md`.
 
 The writer receives only the source. The query head receives only the current
 query prompt and, on follow-up reads, the preceding memory state. Required-record annotations, target answers and opaque IDs are not

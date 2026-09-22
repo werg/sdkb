@@ -227,6 +227,6 @@ Core tests do not download models/data. Current execution and capability evidenc
 is in [Spark validation](docs/validation-spark.md). The earlier
 [0.4 handoff](docs/validation-v0.4.md) remains historical CPU evidence.
 
-[Recurrent conversion](docs/recurrence.md) · [Architecture](docs/architecture.md) · [Implementation](docs/implementation.md) ·
+[Recurrent conversion](docs/recurrence.md) · [Positional memory interface](docs/positional-memory-v0.7.md) · [Architecture](docs/architecture.md) · [Implementation](docs/implementation.md) ·
 [Dataset guide](docs/datasets.md) · [Training](docs/training.md) ·
 [Migration](docs/migration.md) · [Publication/handoff](docs/handoff.md)

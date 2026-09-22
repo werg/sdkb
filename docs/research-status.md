@@ -1,5 +1,16 @@
 # Research status and the remaining claim
 
+> **Phase 2 interface update, 22 September 2026:**
+> `positional-memory-v0.7.md` supersedes the dense flattened-codec proposal.
+> Position-preserving codecs, MLP operator readers, and an operator compactor are
+> implemented as opt-in primitives. Eight-slot teacher distillation, slice-frozen
+> 8-to-32 expansion, and their recovery paths have executable runners and CPU
+> tests. A pinned LFM2.5-230M numerical preflight on the GB10 passed with exact
+> one-loop identity, exact causal-prefix invariance, and nonzero gradients in all
+> four positional codec/reader branches. Sustained distillation, task training,
+> and persistent recursive compaction remain pending and are not included in the
+> capability evidence below.
+
 Updated 20 September 2026. This is a synthesis of completed evidence and current
 work. Individual experiment records retain their original protocols and results.
 The [architecture](architecture.md) remains the research objective; implementation

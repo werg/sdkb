@@ -16,8 +16,12 @@ CONSUMER_MEMORY_FIELDS = frozenset({
 
 def stored_memory_identity(memory: dict) -> dict:
     """Fields that determine serialized keys/payloads rather than read behavior."""
-    return {key: value for key, value in memory.items()
-            if key not in CONSUMER_MEMORY_FIELDS}
+    result = {key: value for key, value in memory.items()
+              if key not in CONSUMER_MEMORY_FIELDS}
+    # Banks published before the positional interface are unambiguously flat.
+    # Preserve their compatibility without mutating historical manifests.
+    result.setdefault('payload_layout', 'flat')
+    return result
 
 
 def assert_bank_writer_compatible(run: Path, checkpoint: Path, bank_dir: Path,

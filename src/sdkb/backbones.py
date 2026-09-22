@@ -139,21 +139,32 @@ class HFBackbone(nn.Module):
         return list(getattr(self.lm.config, "layer_types", ["full_attention"] * self.layer_count))
 
     def prepare_layers(self, embeddings: Tensor, mask: Tensor):
-        """Native Transformers 5.17 mask/RoPE construction, never a cache mutation.
+        """Native pinned-Transformers mask/RoPE construction, never a cache mutation.
 
-        Verified against the upstream LFM2 model definition. Unsupported API changes
-        should fail the one-pass preflight, not silently use a generic attention mask.
+        The supported 5.5 and 5.17 LFM2 APIs name their convolution-mask path
+        differently. Unsupported API changes should fail the one-pass preflight,
+        not silently use a generic attention mask.
         """
         if embeddings.shape[1] > self.max_length:
             raise ValueError("Configured context limit exceeded")
-        from transformers.masking_utils import create_causal_mask, create_recurrent_attention_mask
+        from transformers.masking_utils import create_causal_mask
         model = self.lm.base_model
         positions = torch.arange(embeddings.shape[1], device=embeddings.device)[None]
         kwargs = dict(config=self.lm.config, inputs_embeds=embeddings,
                       attention_mask=mask, past_key_values=None, position_ids=positions)
         masks = {"full_attention": create_causal_mask(**kwargs)}
         if self.lm.config.model_type == "lfm2":
-            masks["conv"] = create_recurrent_attention_mask(**kwargs)
+            try:
+                # Transformers 5.17 names the native recurrent/linear mask
+                # constructor explicitly.
+                from transformers.masking_utils import create_recurrent_attention_mask
+            except ImportError:
+                # Transformers 5.5 LFM2 passes the ordinary padding mask to its
+                # convolution layers (and None for a one-token decoding step).
+                # This mirrors Lfm2Model.forward in that pinned API.
+                masks["conv"] = mask if embeddings.shape[1] != 1 else None
+            else:
+                masks["conv"] = create_recurrent_attention_mask(**kwargs)
         rotary = model.rotary_emb(embeddings, position_ids=positions)
         return embeddings, (masks, positions, rotary)
 

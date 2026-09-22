@@ -32,6 +32,7 @@ class MemoryConfig:
     write_slots: int = 8
     read_slots: int = 8
     payload_dims: list[int] = field(default_factory=lambda: [256])
+    payload_layout: str = "flat"  # legacy flat record or position-preserving operator interface
     neighbors: list[int] = field(default_factory=lambda: [16])
     reader_width: int = 128
     reader_rounds: int = 3
@@ -252,6 +253,13 @@ class Config:
             raise ValueError("All memory dimensions and counts must be positive")
         if r.reader not in {"mlp", "attention"} or r.compaction not in {"none", "mean", "synthetic"}:
             raise ValueError("Invalid reader/compactor")
+        if r.payload_layout not in {"flat", "positional"}:
+            raise ValueError("Invalid payload layout")
+        if r.payload_layout == "positional":
+            if r.reader != "mlp":
+                raise ValueError("The positional interface currently requires the MLP operator")
+            if any(dim % r.write_slots for dim in r.payload_dims):
+                raise ValueError("Every positional payload must divide into writer slots")
         if (not isinstance(r.gate_density_k, int) or isinstance(r.gate_density_k, bool)
                 or r.gate_density_k < 1 or not 0 < r.gate_min_temperature
                 < r.gate_initial_temperature < r.gate_max_temperature

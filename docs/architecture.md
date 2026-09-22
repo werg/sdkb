@@ -158,7 +158,7 @@ $$
 k_i^{(\ell)}=K_\ell(k_i),\qquad u_i^{(\ell)}=C_\ell(V_i),\qquad q^{(\ell)}=Q_\ell(q).
 $$
 
-Here $u_i^{(\ell)}$ denotes the whole stored payload in that space, flattened for notation. Its total scalar width is $d_\ell$. An implementation may retain internal token structure, but that structure must be accounted for in the byte budget. Key dimensions are separate from value dimensions and need not follow the same schedule.
+Here $u_i^{(\ell)}$ denotes the whole stored payload in that space and its total scalar width is $d_\ell$. Historical Phase 1 records treat it as a flat vector. The Phase 2 interface defined in `positional-memory-v0.7.md` requires the logical shape `[stored_positions, channels_per_position]`; contiguous serialization does not remove that structure. Position count and channel width must both be recorded in the bank identity and byte budget. Key dimensions are separate from value dimensions and need not follow the same schedule.
 
 Each space retrieves a neighborhood using its own score and eligibility rules. The reader receives values, key-derived relevance features, space identity, and selected provenance features. Values from the same source can appear in several spaces; this is intentional multi-view processing, not independent supporting evidence. Maintain canonical record identifiers so that duplicates and correlated sources can be recognized.
 
@@ -949,7 +949,7 @@ Keep the full architecture as the target while ensuring each experiment answers 
 
 ### 12.2 Proposed starting configuration
 
-The early compatibility experiments used a sub-billion-parameter student with eight canonical writer slots, eight returned reader slots, and payload widths `[256, 512, 1024, 2048]`. That capacity is now considered insufficient. Phase 2 warm-starts from the Phase 1 model, expands both slot counts to 32, and widens the stored spaces to `[1024, 2048, 4096, 8192]` BF16 scalars per record; use the actual backbone width rather than assuming 1,024. Use four retrieval spaces, three pooled-residual rounds, a reader width of 256 or 512, density-adaptive normalized-key gates, and explicit null/status inputs. These are starting settings, not tuned recommendations.
+The early compatibility experiments used a sub-billion-parameter student with eight canonical writer slots, eight returned reader slots, and flat payload widths `[256, 512, 1024, 2048]`. That interface remains valid for historical checkpoints but is not the Phase 2 target. Phase 2 follows `positional-memory-v0.7.md`: distill an eight-position structured interface and then expand both slot counts to 32 while retaining per-position channel widths `[32,64,128,256]`, yielding stored widths `[1024,2048,4096,8192]`. The reader and compactor use repeated shared input-position-to-target-position MLP operators. Do not instantiate a dense `Linear(32*decoder_width, payload_width)` codec; at decoder width 1,024 it would add roughly 503 million codec parameters and contradict the small-resident-model objective.
 
 For multiscale experiments, test four spaces with the illustrative payload/count schedule in Section 10 against single-space readers matched for total bytes and output slots. Preserve all eligibility and provenance rules. Prefer factorized local MLPs before adding deeper per-pair networks.
 

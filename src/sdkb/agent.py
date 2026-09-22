@@ -20,6 +20,8 @@ from .recurrence import (
     SpatialReadSite,
 )
 from .readers import MultiSpaceReader, SetReader
+from .positional import (MultiSpacePositionalReader, PositionalCodec,
+                         PositionalCompactor, PositionalSetReader)
 from .routing import AdaptiveDistanceGate, cosine_scores, group_plan_loss
 
 
@@ -116,17 +118,31 @@ class SDKBAgent(nn.Module):
         ]) if r.distance_gating else None
         canonical_dim = r.write_slots * self.width
         self.codecs = nn.ModuleList([
+            PositionalCodec(self.width, d // r.write_slots)
+            for d in r.payload_dims
+        ] if r.payload_layout == "positional" else [
             nn.Identity() if d == canonical_dim else nn.Linear(canonical_dim, d)
             for d in r.payload_dims
         ])
         options = dict(width=r.reader_width, slots=r.read_slots, rounds=r.reader_rounds,
                        kind=r.reader, chunk_size=r.chunk_size, checkpoint_chunks=r.checkpoint_chunks)
-        self.reader = (SetReader(r.payload_dims[0], r.key_dim, self.width, **options)
-                       if len(r.payload_dims) == 1 else
-                       MultiSpaceReader(r.payload_dims, r.key_dim, self.width, **options))
+        if r.payload_layout == "positional":
+            self.reader = (PositionalSetReader(r.payload_dims[0], r.write_slots,
+                                               r.key_dim, self.width, **options)
+                           if len(r.payload_dims) == 1 else
+                           MultiSpacePositionalReader(r.payload_dims, r.write_slots,
+                                                      r.key_dim, self.width, **options))
+        else:
+            self.reader = (SetReader(r.payload_dims[0], r.key_dim, self.width, **options)
+                           if len(r.payload_dims) == 1 else
+                           MultiSpaceReader(r.payload_dims, r.key_dim, self.width, **options))
         if config.train.arm == "direct_latent" and r.payload_dims != [canonical_dim]:
             raise ValueError("direct_latent requires a single identity-width stored payload")
-        self.compactor = (SyntheticCompactor(r.payload_dims[0], r.reader_width, r.compact_records)
+        self.compactor = ((PositionalCompactor(r.payload_dims[0], r.write_slots,
+                                               r.reader_width, r.compact_records,
+                                               r.reader_rounds, r.chunk_size)
+                           if r.payload_layout == "positional" else
+                           SyntheticCompactor(r.payload_dims[0], r.reader_width, r.compact_records))
                           if r.compaction == "synthetic" else None)
         self.memory_norm = nn.LayerNorm(self.width)
         self.memory_gate = nn.Parameter(torch.tensor(-1.0))
@@ -178,10 +194,12 @@ class SDKBAgent(nn.Module):
                                       loops=self.config.model.writer_loops)
         tail = hidden[:, -(self.config.memory.write_slots + 1):]
         key = F.normalize(self.key_head(tail[:, 0]), dim=-1)
-        canonical = self.value_head(tail[:, 1:]).flatten(1)
+        canonical = self.value_head(tail[:, 1:])
         output = []
         for address, codec in zip(self.address_maps, self.codecs, strict=True):
-            output.extend((F.normalize(address(key), dim=-1), codec(canonical)))
+            encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
+                            else canonical.flatten(1))
+            output.extend((F.normalize(address(key), dim=-1), encoded))
         return tuple(output)
 
     def produce_batch(self, source_ids: list[Tensor], *,
@@ -214,12 +232,13 @@ class SDKBAgent(nn.Module):
             payload_rows = torch.ones(len(source_ids), dtype=torch.bool, device=self.device)
         if payload_rows.shape != (len(source_ids),) or payload_rows.dtype != torch.bool:
             raise ValueError('payload_rows must be one boolean per source')
-        canonical = self.value_head(tail[payload_rows, 1:]).flatten(1)
+        canonical = self.value_head(tail[payload_rows, 1:])
         output = []
         for address, codec, dim in zip(self.address_maps, self.codecs,
                                        self.config.memory.payload_dims, strict=True):
             if canonical.shape[0]:
-                encoded = codec(canonical)
+                encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
+                                else canonical.flatten(1))
                 payload = encoded.new_zeros(len(source_ids), dim).index_copy(
                     0, payload_rows.nonzero().flatten(), encoded)
             else:
@@ -233,10 +252,12 @@ class SDKBAgent(nn.Module):
         if states.ndim != 3 or states.shape[1:] != (slots, self.width):
             raise ValueError('Trajectory write states have incompatible slots or width')
         key = F.normalize(self.key_head(states[:, 0]), dim=-1)
-        canonical = self.value_head(states[:, 1:]).flatten(1)
+        canonical = self.value_head(states[:, 1:])
         output = []
         for address, codec in zip(self.address_maps, self.codecs, strict=True):
-            output.extend((F.normalize(address(key), dim=-1), codec(canonical)))
+            encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
+                            else canonical.flatten(1))
+            output.extend((F.normalize(address(key), dim=-1), encoded))
         return tuple(output)
 
     def _query_features(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
@@ -296,7 +317,7 @@ class SDKBAgent(nn.Module):
                     weights: list[Tensor] | None = None) -> tuple[Tensor, Tensor]:
         values, weights = self._prepare_values(payloads, ablate_values, weights)
         auxiliary = query.sum() * 0
-        if isinstance(self.reader, MultiSpaceReader):
+        if isinstance(self.reader, (MultiSpaceReader, MultiSpacePositionalReader)):
             return self.reader(values, query, weights), auxiliary
         if compact and values[0].shape[1] > 0:
             view = self._compact_values(values[0], weights[0])
@@ -310,7 +331,7 @@ class SDKBAgent(nn.Module):
 
     def _read_padded_batch(self, payloads: list[Tensor], weights: list[Tensor],
                            query: Tensor) -> Tensor:
-        if isinstance(self.reader, MultiSpaceReader):
+        if isinstance(self.reader, (MultiSpaceReader, MultiSpacePositionalReader)):
             return self.reader(payloads, query, weights)
         return self.reader(payloads[0], query, weights[0]).tokens
 
@@ -378,12 +399,14 @@ class SDKBAgent(nn.Module):
 
         hidden = self.backbone.hidden(embeddings, mask.long(), boundary=boundary)
         max_target = int(target_lengths.max())
-        logits_rows, label_rows = [], []
+        logits_rows, label_rows, state_rows = [], [], []
         for row, target in enumerate(targets):
             start = int(prompt_lengths[row]) + slot_count - 1
-            logits = self.backbone.logits(hidden[row:row + 1, start:start + target.shape[1]]).float()
+            answer_state = hidden[row:row + 1, start:start + target.shape[1]]
+            logits = self.backbone.logits(answer_state).float()
             logits_rows.append(F.pad(logits, (0, 0, 0, max_target - target.shape[1])))
             label_rows.append(F.pad(target, (0, max_target - target.shape[1]), value=-100))
+            state_rows.append(F.pad(answer_state, (0, 0, 0, max_target - target.shape[1])))
         logits = torch.cat(logits_rows, 0)
         labels = torch.cat(label_rows, 0)
         token_loss = F.cross_entropy(logits.transpose(1, 2), labels, reduction='none')
@@ -391,11 +414,11 @@ class SDKBAgent(nn.Module):
         routing = routing / max(1, read_count)
         return ForwardResult(nll + t.routing_weight * routing, nll, routing,
                              self.memory_gate * 0, selected[0], raw_nll=nll,
-                             read_count=read_count)
+                             read_count=read_count, answer_states=torch.cat(state_rows, 0))
 
     def read_pair(self, payloads: list[Tensor], query: Tensor, *, ablate_values: bool = False):
         """Raw and compact paths see exactly the same noisy values and selection."""
-        if isinstance(self.reader, MultiSpaceReader):
+        if isinstance(self.reader, (MultiSpaceReader, MultiSpacePositionalReader)):
             raise ValueError("Paired compaction currently requires one space")
         values, weights = self._prepare_values(payloads, ablate_values)
         raw = self.reader(values[0], query, weights[0]).tokens

@@ -83,13 +83,20 @@ def model_probe(config) -> dict:
                             ('reader_output', (agent.reader.local[0] if hasattr(agent.reader, 'local') else agent.reader).output[-1].weight), ('memory_gate', agent.memory_gate)]
     if len(config.memory.payload_dims) > 1:
         for space, (codec, reader) in enumerate(zip(agent.codecs, agent.reader.local, strict=True)):
-            if isinstance(codec, torch.nn.Linear):
-                gradient_parameters.append((f'codec_{space}', codec.weight))
+            codec_weight = (codec.weight if isinstance(codec, torch.nn.Linear)
+                            else getattr(getattr(codec, 'projection', None), 'weight', None))
+            if codec_weight is not None:
+                gradient_parameters.append((f'codec_{space}', codec_weight))
             gradient_parameters.extend((
                 (f'reader_local_{space}', reader.blocks[0].input.weight),
                 (f'address_map_{space}', agent.address_maps[space].weight),
                 (f'query_map_{space}', agent.query_maps[space].weight),
             ))
+            if hasattr(reader.blocks[0], 'source_position'):
+                gradient_parameters.extend((
+                    (f'reader_source_positions_{space}', reader.blocks[0].source_position),
+                    (f'reader_target_positions_{space}', reader.blocks[0].target_position),
+                ))
         gradient_parameters.append(('reader_fusion_0', agent.reader.fusion[0].weight))
     if native and config.memory.read_timing == 'loop_boundary':
         gradient_parameters = [(name, parameter) for name, parameter in gradient_parameters

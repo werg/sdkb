@@ -1,5 +1,10 @@
 # Adaptive routed writes, continuous bank learning, and document ingestion
 
+> **Superseded interface section:** `positional-memory-v0.7.md` replaces this
+> document's Phase 2 flattened-codec proposal. The v0.6 key geometry, continuous
+> gates, ingestion, overlap, and online-bank contracts remain applicable.
+> Historical v0.6 checkpoints retain their flat payload interface.
+
 **Target specification and implementation status — 22 September 2026**
 
 This revision joins routing, writing, and compaction around one continuously
@@ -154,7 +159,12 @@ compaction.
 Unit tests establish invariants and gradients. They do not establish retrieval
 quality, compositional memory use, or parameter substitution.
 
-## 7. Next interface generation: wider canonical writes
+## 7. Superseded Phase 2 interface sketch
+
+The capacity figures below remain the target totals, but their former dense
+flattened realization is superseded. See `positional-memory-v0.7.md` for the
+position-preserving codec, block neural operator reader and compactor, and the
+staged eight-position distillation followed by 32-position expansion.
 
 Eight canonical writer value slots and eight returned reader slots are compatibility
 settings for the active v0.6 run, not the intended capacity. Phase 2 starts at
