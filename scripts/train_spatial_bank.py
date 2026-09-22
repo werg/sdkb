@@ -50,7 +50,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           sources_path: Path | None = None,
           max_unused_cuda_gib: float = 4.0,
           gradient_checkpointing: bool = False,
-          profile_steps: int = 0) -> dict:
+          profile_steps: int = 0,
+          retain_writer_replay_activations: bool = False) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0):
         raise ValueError("Invalid spatial training schedule")
@@ -238,6 +239,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             "spatial": settings,
             "max_unused_cuda_gib": max_unused_cuda_gib,
             "gradient_checkpointing": config.model.gradient_checkpointing,
+            "retain_writer_replay_activations": retain_writer_replay_activations,
         }
         atomic_json(output / "environment.json", environment)
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
@@ -269,7 +271,9 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                         phase_seconds[f'profile_{name}_seconds'] = now - phase_tick
                     phase_tick = now
 
-                replay = (BankWriterReplay(agent, writer_inputs)
+                replay = (BankWriterReplay(
+                              agent, writer_inputs,
+                              checkpoint_backward=not retain_writer_replay_activations)
                           if config.train.writer_replay_records_per_site else None)
                 with autocast_context(config):
                     if pipeline:
@@ -380,6 +384,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-unused-cuda-gib", type=float, default=4.0)
     parser.add_argument("--gradient-checkpointing", action="store_true")
     parser.add_argument("--profile-steps", type=int, default=0)
+    parser.add_argument("--retain-writer-replay-activations", action="store_true")
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -393,4 +398,5 @@ if __name__ == "__main__":
         max_unused_cuda_gib=args.max_unused_cuda_gib,
         gradient_checkpointing=args.gradient_checkpointing,
         profile_steps=args.profile_steps,
+        retain_writer_replay_activations=args.retain_writer_replay_activations,
     ), indent=2))

@@ -67,7 +67,7 @@ def _train(python: str, root: Path, *, config: Path, data: Path, bank: Path,
                "--inflight", "2", "--loops", "3", "--limits", "16", "8", "4", "4",
                "--routing-candidates", "256", "--checkpoint-every", str(steps + 1),
                "--train-recurrent-core", "--gradient-checkpointing",
-               "--profile-steps", "3"]
+               "--retain-writer-replay-activations", "--profile-steps", "3"]
     if (output / "CURRENT").exists():
         command.append("--resume")
     elif output.exists():

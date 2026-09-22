@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from contextlib import contextmanager
 
 import torch
 from torch import Tensor
@@ -14,12 +15,17 @@ from .training_bank import TrainingBank
 
 class BankWriterReplay:
     def __init__(self, agent: SDKBAgent, writer_inputs: Mapping[str, Tensor], *,
-                 verify_outputs: bool = True) -> None:
+                 verify_outputs: bool = True, checkpoint_backward: bool = True,
+                 capture_batch_size: int = 16) -> None:
+        if capture_batch_size < 1:
+            raise ValueError('Writer replay capture batch size must be positive')
         self.agent = agent
         self.writer_inputs = writer_inputs
         self.tape = ReplayTape(verify_outputs=verify_outputs)
         self.record_ids: list[str] = []
         self._leaves: dict[str, tuple[Tensor, ...]] = {}
+        self.checkpoint_backward = checkpoint_backward
+        self.capture_batch_size = capture_batch_size
 
     def _produce(self, record_ids: tuple[str, ...]) -> tuple[Tensor, ...]:
         outputs = self.agent.produce_batch([self.writer_inputs[record_id]
@@ -39,19 +45,23 @@ class BankWriterReplay:
             raise KeyError(f'Writer inputs missing for {sorted(missing)[:3]}')
         unseen = tuple(record_id for record_id in record_ids if record_id not in self._leaves)
         if unseen:
-            leaves = self.tape.capture(self.agent, lambda: self._produce(unseen))
-            self.record_ids.extend(unseen)
-            self._leaves.update({
-                record_id: tuple(output[row:row + 1] for output in leaves)
-                for row, record_id in enumerate(unseen)
-            })
+            ordered = sorted(unseen, key=lambda record_id: self.writer_inputs[record_id].shape[1])
+            for start in range(0, len(ordered), self.capture_batch_size):
+                batch = tuple(ordered[start:start + self.capture_batch_size])
+                leaves = self.tape.capture(self.agent, lambda batch=batch: self._produce(batch))
+                self.record_ids.extend(batch)
+                self._leaves.update({
+                    record_id: tuple(output[row:row + 1] for output in leaves)
+                    for row, record_id in enumerate(batch)
+                })
         return {record_id: self._leaves[record_id] for record_id in record_ids}
 
     def backward(self) -> None:
-        self.tape.backward()
+        with _checkpointing(self.agent, enabled=self.checkpoint_backward):
+            self.tape.backward()
 
     @torch.no_grad()
-    def refresh(self, bank: TrainingBank, *, batch_size: int = 64) -> int:
+    def refresh(self, bank: TrainingBank, *, batch_size: int = 32) -> int:
         """Regenerate touched views after the optimizer step and commit atomically."""
         ids = tuple(sorted(dict.fromkeys(self.record_ids),
                            key=lambda record_id: self.writer_inputs[record_id].shape[1]))
@@ -69,3 +79,17 @@ class BankWriterReplay:
                         namespace=bank.index.namespace, space=f's{space}',
                         generation=bank.index.generation))
         return bank.update(records)
+
+
+@contextmanager
+def _checkpointing(module, *, enabled: bool):
+    flags = [(child, child.gradient_checkpointing) for child in module.modules()
+             if hasattr(child, 'gradient_checkpointing')]
+    if not enabled:
+        for child, _ in flags:
+            child.gradient_checkpointing = False
+    try:
+        yield
+    finally:
+        for child, value in flags:
+            child.gradient_checkpointing = value

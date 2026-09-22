@@ -51,3 +51,15 @@ def test_replay_reuses_a_record_selected_by_later_read_waves(tiny_config):
     sum(value.square().mean() for values in second.values() for value in values).backward()
     replay.backward()
     assert agent.key_head.weight.grad is not None
+
+
+def test_replay_can_retain_activations_and_restores_checkpoint_policy(tiny_config):
+    tiny_config.model.gradient_checkpointing = True
+    agent = SDKBAgent(tiny_config)
+    inputs = {'a': torch.tensor([[1, 2, 3]], dtype=torch.long)}
+    replay = BankWriterReplay(agent, inputs, checkpoint_backward=False)
+    leaves = replay.capture(('a',))['a']
+    sum(value.square().mean() for value in leaves).backward()
+    replay.backward()
+    assert agent.backbone.base.gradient_checkpointing is True
+    assert agent.key_head.weight.grad is not None

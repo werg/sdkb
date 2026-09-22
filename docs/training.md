@@ -30,6 +30,12 @@ process and records forward, consumer-backward, writer-backward, optimizer, refr
 and cache-reclamation wall times. It is a diagnostic mode because those additional
 synchronizations can reduce overlap; target supervisors use three steps after launch.
 
+`--retain-writer-replay-activations` disables layer recomputation only while an
+individual producer replay batch runs forward and backward. Consumer graphs keep
+their configured checkpointing policy, and the writer policy is restored afterward.
+This is a platform-neutral throughput option for machines with measured activation
+headroom; it does not change selected records, stored precision, gradients, or refresh.
+
 The source manifest digest must equal the digest recorded by the immutable bank.
 The overlay is restored from `training_cache.sqlite`; deleting or omitting it changes
 the next retrieval plan and is not an exact resume. Hard search still uses a bounded
