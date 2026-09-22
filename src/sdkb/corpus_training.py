@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from .agent import ForwardResult, SDKBAgent
 from .data import Episode
 from .recurrence import LoopMemory, LoopWrite
-from .routing import cosine_scores, group_plan_loss
+from .routing import cosine_scores, cosine_similarities, group_plan_loss
 from .store import DiskStore, ReadPlan, Selection, lookup_record
 
 
@@ -43,7 +43,7 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
         nonlocal swapped_tokens
         if completed != 1:
             return None
-        payloads, swapped_payloads = [], []
+        payloads, swapped_payloads, relevance_weights = [], [], []
         for space, (dim, limit) in enumerate(zip(agent.config.memory.payload_dims, limits, strict=True)):
             space_name = f's{space}'
             address = agent.query_maps[space](routing_query)
@@ -69,6 +69,22 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
                                  tuple(Selection(record_id, 0.0) for record_id in chosen_ids))
             values = store.fetch(selection)
             payloads.append(torch.stack([value.to(agent.device).float() for value in values]))
+            if agent.config.memory.distance_gating:
+                raw = cosine_similarities(address, keys)[0]
+                positions = [candidate_ids.index(record_id) for record_id in chosen_ids]
+                support = set(episode.required_ids)
+                local, _ = agent.distance_gates[space](
+                    address, raw[positions][None], raw[None],
+                    torch.ones((1, len(chosen_ids)), dtype=torch.bool,
+                               device=agent.device),
+                    torch.ones((1, len(candidate_ids)), dtype=torch.bool,
+                               device=agent.device),
+                    torch.tensor([[record_id in support for record_id in chosen_ids]],
+                                 dtype=torch.bool, device=agent.device),
+                    agent.config.train.support_gate_floor)
+                relevance_weights.append(local[0])
+            else:
+                relevance_weights.append(query.new_ones(len(chosen_ids)))
             if contrast:
                 wrong_id = next((record_id for record_id in found
                                  if record_id not in chosen_ids
@@ -85,9 +101,10 @@ def stored_corpus_forward(agent: SDKBAgent, store: DiskStore, episode: Episode, 
             learned_recalls.append(float(set(episode.required_ids) <= set(found[:limit])))
             if payloads[-1].shape != (len(chosen_ids), dim):
                 raise ValueError('Stored payload width or selected count changed')
-        tokens, _ = agent.read_tokens(payloads, query)
+        tokens, _ = agent.read_tokens(payloads, query, weights=relevance_weights)
         if contrast:
-            swapped_tokens, _ = agent.read_tokens(swapped_payloads, query)
+            swapped_tokens, _ = agent.read_tokens(swapped_payloads, query,
+                                                  weights=relevance_weights)
         return tokens
 
     memory = agent.plan_loop_memory(prompt, provider, include_routing_query=True)
@@ -158,7 +175,7 @@ def stored_corpus_forward_batch(agent: SDKBAgent, store: DiskStore,
                          F.normalize(agent.routing_query_head(features), dim=-1))
         payloads, weights = [], []
         for space, (dim, limit) in enumerate(zip(r.payload_dims, limits, strict=True)):
-            rows = []
+            rows, row_weights = [], []
             for row_index, episode in enumerate(episodes):
                 domain = episode.provenance.get('domain', 'research')
                 address = agent.query_maps[space](routing_query[row_index:row_index + 1])
@@ -180,14 +197,30 @@ def stored_corpus_forward_batch(agent: SDKBAgent, store: DiskStore,
                                 tuple(Selection(record_id, 0.0) for record_id in chosen))
                 rows.append(torch.stack([value.to(agent.device).float()
                                          for value in store.fetch(plan)]))
+                if r.distance_gating:
+                    raw = cosine_similarities(address, keys)[0]
+                    positions = [candidate_ids.index(record_id) for record_id in chosen]
+                    support = set(episode.required_ids)
+                    local, _ = agent.distance_gates[space](
+                        address, raw[positions][None], raw[None],
+                        torch.ones((1, len(chosen)), dtype=torch.bool,
+                                   device=agent.device),
+                        torch.ones((1, len(candidate_ids)), dtype=torch.bool,
+                                   device=agent.device),
+                        torch.tensor([[record_id in support for record_id in chosen]],
+                                     dtype=torch.bool, device=agent.device),
+                        agent.config.train.support_gate_floor)
+                    row_weights.append(local[0])
+                else:
+                    row_weights.append(query.new_ones(len(chosen)))
                 selected_ids[row_index][space] = chosen
                 recalls[row_index][space] = float(set(episode.required_ids) <= set(found[:limit]))
             count = max(value.shape[0] for value in rows)
             payloads.append(torch.cat([F.pad(value, (0, 0, 0, count-value.shape[0]))[None]
                                        for value in rows], 0))
-            weights.append(torch.cat([torch.cat((query.new_ones(value.shape[0]),
-                                                 query.new_zeros(count-value.shape[0])))[None]
-                                      for value in rows], 0))
+            weights.append(torch.cat([
+                torch.cat((weight, query.new_zeros(count - value.shape[0])))[None]
+                for value, weight in zip(rows, row_weights, strict=True)], 0))
         memory = agent._read_padded_batch(payloads, weights, query)
         return LoopWrite(prompt_lengths, memory)
 

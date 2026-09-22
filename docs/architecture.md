@@ -11,6 +11,12 @@
 > length-scaled multi-record writes, recursive read-then-write bank generations,
 > and corpus-scale capacity targets. These are planned behaviors, not properties of
 > the current one-read HotpotQA run.
+>
+> **Target update, 22 September 2026:** [adaptive memory v0.6](adaptive-memory-v0.6.md)
+> specifies density-adaptive continuous contribution gates, gentle support anchors,
+> selective key-and-payload writer replay, a checkpointed mutable training overlay,
+> and holistic plus streaming document-ingestion trajectories. Its status table
+> distinguishes implemented primitives from curriculum and compaction work still pending.
 
 ## Read-time superposition, selective replay, and learned cluster compaction
 

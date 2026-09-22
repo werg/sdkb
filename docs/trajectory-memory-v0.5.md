@@ -4,6 +4,13 @@
 does not implement this behavior. It remains useful interface pretraining for the
 writer, reader, recurrence, and global addressing.
 
+**22 September 2026 refinement:** Document ingestion uses both holistic and
+streaming agentic trajectories. In holistic rows, one complete document prompt
+leads to model-chosen multiple write calls. In streaming rows, natural or
+deterministic overlapping parts each precede a separate write call. Some rows then
+read those detailed records and write synthesis records. See
+[adaptive memory v0.6](adaptive-memory-v0.6.md).
+
 ## 1. Target behavior
 
 SDKB should act as a small controller over a very large persistent knowledge base.

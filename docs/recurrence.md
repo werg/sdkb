@@ -228,8 +228,10 @@ supported when at least three core passes leave a pass to consume it.
 
 ### Producer replay
 
-Producer depth is explicitly `writer_loops=1`. Sampling consumer depths does not
-change the serialization function. Training can freshly regenerate selected values;
+Producer depth is explicitly configured by `writer_loops`; changing or sampling
+consumer depth does not silently change the serialization function. Integrated
+read-before-write trajectories set it to the trajectory depth so their write-slot
+states can depend on earlier injected results. Training can freshly regenerate selected values;
 normal inference only reads stored values. Core and reader gradients accumulate
 through the full consumer trajectory, then producer cotangents are replayed before
 any optimizer update. This is not truncated backpropagation across depth.

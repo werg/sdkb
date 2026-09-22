@@ -59,6 +59,7 @@ def test_packed_writes_are_distinct_visible_sites_with_read_lineage():
     row = pack_spatial_trajectory(
         StableChatTokenizer(), episodes, read_slots=2, generation="g0",
         levels=(1, 1, 2), include_writes=True, write_generation="g1",
+        write_slots=2,
     )
     validate_spatial_row(row)
     assert len(row["write_sites"]) == 3
@@ -67,3 +68,6 @@ def test_packed_writes_are_distinct_visible_sites_with_read_lineage():
                for write, read in zip(row["write_sites"], row["sites"], strict=True))
     assert all(write["call_position"] > read["workspace_start"]
                for write, read in zip(row["write_sites"], row["sites"], strict=True))
+    assert sum(token == -2 for token in row['input_ids']) == 3 * (2 + 1)
+    assert all(write['workspace_start'] > write['call_position']
+               for write in row['write_sites'])

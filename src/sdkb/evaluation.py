@@ -104,6 +104,7 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
             original_plans = (None if fixed_plans_by_episode is None else
                               [[replace(p, namespace=namespace) for p in step]
                                for step in fixed_plans_by_episode[episode.episode_id]])
+            original_gate_weights = None
             conditions = ['all']
             if not full_evidence_only:
                 conditions.extend(('none', 'zero_values'))
@@ -129,10 +130,13 @@ def stored_transfer_evaluation(agent, store: DiskStore, episodes: list[Episode],
                                            exclude_ids=excluded, ablate_values=condition == 'zero_values',
                                            compact=condition == 'compact',
                                            cluster_bank=cluster_bank if condition == 'persistent' or use_codes_for_all_conditions else None,
-                                           fixed_plans=original_plans if condition in {'all', 'zero_values', 'compact', 'persistent'} else None)
+                                           fixed_plans=original_plans if condition in {'all', 'zero_values', 'compact', 'persistent'} else None,
+                                           fixed_gate_weights=original_gate_weights
+                                           if condition in {'zero_values', 'compact', 'persistent'} else None)
                     memory, selected_spaces, plans = session.memory, session.selected_ids, session.plans
                     if condition == 'all':
                         original_plans = plans
+                        original_gate_weights = session.gate_weights
                         if capture_plans is not None:
                             capture_plans[episode.episode_id] = plans
                 elif arm == 'shared_compute':

@@ -110,6 +110,7 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
                     candidates = frozenset().union(*(world_ids[w] for w in eligible_worlds))
                     prompt = agent.prompt_ids(e.query)
                     plans = None
+                    gate_weights = None
                     for condition in ('all', 'selected_pair', 'none', 'zero_values'):
                         memory, selected = None, []
                         if condition != 'none':
@@ -117,11 +118,13 @@ def run(source, bank_path, episodes_file, routing_probe, count_policy, output, p
                                 query_time=e.query_time, oracle_ids=e.required_ids if condition == 'selected_pair' else None,
                                 exclude_ids=universe - candidates if condition != 'selected_pair' else frozenset(),
                                 ablate_values=condition == 'zero_values',
-                                fixed_plans=plans if condition == 'zero_values' else None)
+                                fixed_plans=plans if condition == 'zero_values' else None,
+                                fixed_gate_weights=gate_weights if condition == 'zero_values' else None)
                             memory = session.memory
                             selected = list(dict.fromkeys(r for ids in session.selected_ids for r in ids))
                             if condition == 'all':
                                 plans = session.plans
+                                gate_weights = session.gate_weights
                         groups = e.sufficient_groups or (e.required_ids,)
                         rows.append({'episode': e.episode_id, 'environment': e.environment, 'task_family': e.task_family,
                             'condition': condition, 'answer': e.answer, 'selected_ids': selected,

@@ -10,6 +10,12 @@
 > [trajectory memory v0.5](trajectory-memory-v0.5.md). The first stored-read training
 > slice and fixed-trajectory `memory.write` execution are implemented; learned call
 > placement and generated write arguments remain later releases.
+>
+> **v0.6 update:** [adaptive memory](adaptive-memory-v0.6.md) specifies and tracks
+> density-adaptive continuous read gates, support anchors across spaces, serialized
+> key-and-payload writer replay, a checkpointed mutable training-bank overlay, and
+> agentic document-ingestion prefixes. Consult its status table before treating a
+> target behavior as implemented.
 
 `trajectory_memory.py` defines and validates the first canonical transcript contract.
 It requires each memory call to occupy its own assistant event, one logical record

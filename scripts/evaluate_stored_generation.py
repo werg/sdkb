@@ -71,6 +71,7 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens, *, learned_world=
                 continue
             prompt = agent.prompt_ids(episode.query)
             plans = None
+            gate_weights = None
             for condition in ('all', 'zero_values', 'none'):
                 memory = None
                 selected_ids = []
@@ -79,11 +80,13 @@ def evaluate(run, bank, episodes_path, worlds, max_new_tokens, *, learned_world=
                                            query_time=episode.query_time,
                                            oracle_ids=None if learned_world else tuple(evidence_ids(episode, config.train.evidence_scope)),
                                            exclude_ids=universe - {s.record_id for s in episode.supports} if learned_world else frozenset(),
-                                           ablate_values=condition == 'zero_values', fixed_plans=plans)
+                                           ablate_values=condition == 'zero_values', fixed_plans=plans,
+                                           fixed_gate_weights=gate_weights if condition == 'zero_values' else None)
                     memory = session.memory
                     selected_ids = list(dict.fromkeys(rid for ids in session.selected_ids for rid in ids))
                     if condition == 'all':
                         plans = session.plans
+                        gate_weights = session.gate_weights
                 prediction = agent.generate_from_memory(prompt, memory, max_new_tokens=max_new_tokens)
                 rows.append(dict(episode=episode.episode_id, environment=episode.environment,
                                  task_family=episode.task_family, condition=condition,

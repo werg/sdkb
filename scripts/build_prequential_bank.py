@@ -21,7 +21,8 @@ import torch
 from sdkb.agent import SDKBAgent
 from sdkb.checkpoints import resolve_checkpoint, stop_on_signal
 from sdkb.key_index import PublishedKeyIndex
-from sdkb.offline_bank import canonical_json, publish_offline_generation
+from sdkb.offline_bank import (canonical_json, publish_offline_generation,
+                               stored_memory_identity)
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward
@@ -65,10 +66,8 @@ def _inventory(data: SpatialTrajectoryIndex, parent: PublishedKeyIndex,
 
 
 def _model_bank_compatible(config, manifest: dict) -> None:
-    memory = asdict(config.memory)
-    bank_memory = dict(manifest["identity"]["memory"])
-    memory.pop("read_steps", None)
-    bank_memory.pop("read_steps", None)
+    memory = stored_memory_identity(asdict(config.memory))
+    bank_memory = stored_memory_identity(dict(manifest["identity"]["memory"]))
     model = manifest["identity"]["model"]
     if memory != bank_memory or any(
         model[name] != getattr(config.model, name)
@@ -77,8 +76,7 @@ def _model_bank_compatible(config, manifest: dict) -> None:
         raise ValueError("Executor model and parent stored interface differ")
 
 
-def _source_ids(agent: SDKBAgent, texts: list[str], maximum: int) -> list[torch.Tensor]:
-    rows = []
+def _validate_write_texts(agent: SDKBAgent, texts: list[str], maximum: int) -> None:
     for text in texts:
         ids = agent.tokenizer.encode(text, add_special_tokens=True)
         if not ids:
@@ -86,8 +84,6 @@ def _source_ids(agent: SDKBAgent, texts: list[str], maximum: int) -> list[torch.
         if len(ids) > maximum:
             raise ValueError(
                 f"Authored memory uses {len(ids)} tokens, exceeding --max-write-tokens={maximum}")
-        rows.append(torch.tensor([ids], dtype=torch.long, device=agent.device))
-    return rows
 
 
 def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
@@ -104,6 +100,8 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
     config.train.tokenized_episodes_file = None
     config.train.batch_size = 1
     config.validate()
+    if config.model.writer_loops != config.model.loops:
+        raise ValueError('Integrated authored writes require writer_loops to match this trajectory depth')
     if len(limits) != len(config.memory.payload_dims):
         raise ValueError("Supply one prequential read limit per memory space")
 
@@ -206,8 +204,11 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
                     plan_observer=observe,
                 )
                 writes = row["write_sites"]
-                outputs = agent.produce_batch(
-                    _source_ids(agent, [write["content"] for write in writes], max_write_tokens))
+                _validate_write_texts(
+                    agent, [write["content"] for write in writes], max_write_tokens)
+                outputs = result.write_outputs
+                if outputs is None or outputs[0].shape[0] != len(writes):
+                    raise ValueError('Trajectory did not produce one integrated state per write call')
             records, lineage, metadata = [], {}, {}
             storage_dtype = getattr(torch, config.memory.storage_dtype)
             by_call = {site["call_id"]: site for site in row["sites"]}

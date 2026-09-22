@@ -58,6 +58,12 @@ class MemoryConfig:
     noise_std: float = 0.0
     quantization_step: float = 0.0
     independent_routing_query: bool = False
+    distance_gating: bool = False
+    gate_density_k: int = 8
+    gate_min_temperature: float = 0.02
+    gate_max_temperature: float = 0.5
+    gate_initial_temperature: float = 0.1
+    gate_max_radius_adjustment: float = 0.25
 
 
 @dataclass
@@ -100,6 +106,8 @@ class TrainConfig:
     retrieval: str = "oracle"  # oracle or learned (candidate-local top-k)
     routing_weight: float = 0.1
     routing_warmup: int = 100
+    support_gate_floor: float = 0.0
+    writer_replay_records_per_site: int = 0
     threads: int = 4
     cuda_memory_fraction: float | None = None
     min_system_available_bytes: int = 0
@@ -244,6 +252,18 @@ class Config:
             raise ValueError("All memory dimensions and counts must be positive")
         if r.reader not in {"mlp", "attention"} or r.compaction not in {"none", "mean", "synthetic"}:
             raise ValueError("Invalid reader/compactor")
+        if (not isinstance(r.gate_density_k, int) or isinstance(r.gate_density_k, bool)
+                or r.gate_density_k < 1 or not 0 < r.gate_min_temperature
+                < r.gate_initial_temperature < r.gate_max_temperature
+                or r.gate_max_radius_adjustment < 0):
+            raise ValueError('Invalid adaptive distance-gate configuration')
+        if (not 0 <= t.support_gate_floor <= 1
+                or not isinstance(t.writer_replay_records_per_site, int)
+                or isinstance(t.writer_replay_records_per_site, bool)
+                or t.writer_replay_records_per_site < 0):
+            raise ValueError('Invalid support floor or key replay budget')
+        if t.writer_replay_records_per_site and not r.distance_gating:
+            raise ValueError('Continuous record replay requires distance gating')
         if len(r.payload_dims) > 1 and r.compaction != "none":
             raise ValueError("Integrated compaction runner is single-space; multi-space APIs are separate")
         if r.storage_dtype not in {"float32", "bfloat16", "float16"}:

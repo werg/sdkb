@@ -11,9 +11,10 @@ from torch import Tensor
 from torch.nn import functional as F
 
 from .agent import SDKBAgent
+from .bank_replay import BankWriterReplay
 from .key_index import PublishedKeyIndex
 from .recurrence import SpatialReadSite
-from .routing import cosine_scores, group_plan_loss
+from .routing import cosine_scores, cosine_similarities, union_support_loss
 from .spatial_data import validate_spatial_row
 from .store import DiskStore, ReadPlan, Selection
 
@@ -24,6 +25,22 @@ class SpatialForwardResult:
     nll: Tensor
     routing: Tensor
     metrics: dict[str, Any]
+    write_outputs: tuple[Tensor, ...] | None = None
+
+
+def _trajectory_write_outputs(agent: SDKBAgent, hidden: Tensor,
+                              rows: list[dict[str, Any]]) -> tuple[Tensor, ...] | None:
+    states = []
+    slots = agent.config.memory.write_slots + 1
+    for row_index, row in enumerate(rows):
+        for write in row.get('write_sites', ()):
+            if 'workspace_start' not in write or row.get('write_slots') != slots - 1:
+                raise ValueError('Authored trajectories require configured write workspaces')
+            start = write['workspace_start']
+            states.append(hidden[row_index, start:start + slots])
+    if not states:
+        return None
+    return agent.produce_from_write_states(torch.stack(states))
 
 
 @dataclass
@@ -40,6 +57,10 @@ class _SpatialBatchState:
     positive_hits: list[int]
     candidate_positive_hits: list[int]
     candidate_reciprocal_rank: list[float]
+    gate_mass: list[float]
+    gate_effective_records: list[float]
+    gate_temperature: list[float]
+    gate_radius: list[float]
     read_sites: int = 0
 
 
@@ -57,6 +78,7 @@ class _LoadedSpace:
     candidate_ids: tuple[tuple[str, ...], ...]
     required_ids: tuple[tuple[str, ...], ...]
     found_ids: tuple[tuple[str, ...], ...]
+    selected_ids: tuple[tuple[str, ...], ...]
     values: tuple[tuple[Tensor, ...], ...]
 
 
@@ -117,6 +139,10 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
         [0.0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
     )
 
 
@@ -172,6 +198,8 @@ def _load_wave(store: DiskStore, index: PublishedKeyIndex, wave: _ReadWave, *,
         values = store.fetch_many(chosen_plans)
         loaded.append(_LoadedSpace(
             tuple(candidates), tuple(required_rows), tuple(found_rows),
+            tuple(tuple(selection.record_id for selection in plan.selections)
+                  for plan in chosen_plans),
             tuple(tuple(row) for row in values),
         ))
     return tuple(loaded)
@@ -179,23 +207,45 @@ def _load_wave(store: DiskStore, index: PublishedKeyIndex, wave: _ReadWave, *,
 
 def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBatchState,
                   wave: _ReadWave, loaded: tuple[_LoadedSpace, ...], *,
-                  limits: tuple[int, ...]) -> None:
+                  limits: tuple[int, ...],
+                  writer_replay: BankWriterReplay | None = None) -> None:
     memory = agent.config.memory
+    live = {}
+    replay_budget = agent.config.train.writer_replay_records_per_site
+    if writer_replay is not None and replay_budget:
+        required_priority, other_priority = [], []
+        for row in range(len(wave.metadata)):
+            required = loaded[0].required_ids[row]
+            if len(required) > replay_budget:
+                raise ValueError('Writer replay budget must cover every supplied support')
+            required_priority.extend(required)
+            for result in loaded:
+                other_priority.extend(result.selected_ids[row])
+        priority = required_priority + other_priority
+        chosen = tuple(dict.fromkeys(priority))[:replay_budget * len(wave.metadata)]
+        live = writer_replay.capture(chosen)
     payloads, weights = [], []
+    support_scores = [[] for _ in wave.metadata]
+    support_indices = [[] for _ in wave.metadata]
     for space, (width, limit, result) in enumerate(
             zip(memory.payload_dims, limits, loaded, strict=True)):
         address = wave.addresses[space]
-        device_rows = []
-        for row_index, (candidate_ids, required, found, values, item) in enumerate(zip(
+        device_rows, weight_rows = [], []
+        for row_index, (candidate_ids, required, found, selected_ids, values, item) in enumerate(zip(
                 result.candidate_ids, result.required_ids, result.found_ids,
-                result.values, wave.metadata, strict=True)):
-            keys = index.keys_for_ids(
+                result.selected_ids, result.values, wave.metadata, strict=True)):
+            stored_keys = index.keys_for_ids(
                 f"s{space}", candidate_ids, domain=item["domain"],
                 query_time=item["query_time"],
             ).to(agent.device)
+            keys = torch.stack([
+                live[record_id][2 * space][0] if record_id in live else stored_keys[position]
+                for position, record_id in enumerate(candidate_ids)
+            ])
             scores = cosine_scores(address[row_index:row_index + 1], keys)[0]
             positive_indices = tuple(candidate_ids.index(record_id) for record_id in required)
-            state.routing_terms.append(group_plan_loss(scores, [positive_indices]))
+            support_scores[row_index].append(scores)
+            support_indices[row_index].append(positive_indices)
             state.learned_hits[space] += int(set(required) <= set(found[:limit]))
             state.positive_labels[space] += len(required)
             state.positive_hits[space] += sum(record_id in found[:limit]
@@ -206,9 +256,37 @@ def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBat
                 1 / (found.index(record_id) + 1) if record_id in found else 0
                 for record_id in required)
             state.selected_counts[space] += len(values)
-            device_rows.append(torch.stack([
-                value.to(agent.device).float() for value in values
-            ]))
+            row_values = torch.stack([
+                (live[record_id][2 * space + 1][0] if record_id in live
+                 else value.to(agent.device).float())
+                for record_id, value in zip(selected_ids, values, strict=True)
+            ])
+            device_rows.append(row_values)
+            if memory.distance_gating:
+                selected_positions = [candidate_ids.index(record_id)
+                                      for record_id in selected_ids]
+                raw_scores = cosine_similarities(
+                    address[row_index:row_index + 1], keys)[0]
+                chosen_scores = raw_scores[selected_positions][None]
+                candidate_raw = raw_scores[None]
+                selected_mask = torch.ones_like(chosen_scores, dtype=torch.bool)
+                candidate_mask = torch.ones_like(candidate_raw, dtype=torch.bool)
+                required_set = set(required)
+                required_mask = torch.tensor(
+                    [[record_id in required_set for record_id in selected_ids]],
+                    dtype=torch.bool, device=agent.device)
+                row_weights, diagnostics = agent.distance_gates[space](
+                    address[row_index:row_index + 1], chosen_scores, candidate_raw,
+                    selected_mask, candidate_mask, required_mask,
+                    agent.config.train.support_gate_floor)
+                weight_rows.append(row_weights[0])
+                state.gate_mass[space] += float(diagnostics['mass'].detach())
+                state.gate_effective_records[space] += float(
+                    diagnostics['effective_records'].detach())
+                state.gate_temperature[space] += float(diagnostics['temperature'].detach())
+                state.gate_radius[space] += float(diagnostics['radius'].detach())
+            else:
+                weight_rows.append(wave.query.new_ones(len(values)))
         count = max(map(len, result.values))
         if any(row.shape[1] != width for row in device_rows):
             raise ValueError("Stored spatial payload width differs from configuration")
@@ -216,10 +294,11 @@ def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBat
             F.pad(row, (0, 0, 0, count - row.shape[0])) for row in device_rows
         ]))
         weights.append(torch.stack([
-            torch.cat((wave.query.new_ones(row.shape[0]),
-                       wave.query.new_zeros(count - row.shape[0])))
-            for row in device_rows
-        ]))
+            torch.cat((row, wave.query.new_zeros(count - row.shape[0])))
+            for row in weight_rows]))
+    state.routing_terms.extend(
+        union_support_loss(scores, indices)
+        for scores, indices in zip(support_scores, support_indices, strict=True))
     state.read_sites += len(wave.metadata)
     results = agent._read_padded_batch(payloads, weights, wave.query)
     state.execution = agent.advance_spatial_recurrent(
@@ -228,6 +307,7 @@ def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBat
 
 def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForwardResult:
     hidden = agent.finish_spatial_recurrent(state.execution)
+    write_outputs = _trajectory_write_outputs(agent, hidden, state.rows)
     supervised = state.labels >= 0
     logits = agent.backbone.logits(hidden[supervised]).float()
     nll = F.cross_entropy(logits, state.labels[supervised])
@@ -255,13 +335,18 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
             zip(state.candidate_reciprocal_rank, state.positive_labels, strict=True)
         ],
         "positive_labels": state.positive_labels,
+        "gate_mass": [value / denominator for value in state.gate_mass],
+        "gate_effective_records": [value / denominator
+                                   for value in state.gate_effective_records],
+        "gate_temperature": [value / denominator for value in state.gate_temperature],
+        "gate_radius": [value / denominator for value in state.gate_radius],
         "selected_payload_bytes": sum(
             count * width * 2 for count, width in
             zip(state.selected_counts, agent.config.memory.payload_dims, strict=True)
         ) / len(state.rows),
         "supervised_tokens": int(supervised.sum()),
     }
-    return SpatialForwardResult(loss, nll, routing, metrics)
+    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs)
 
 
 def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKeyIndex,
@@ -321,6 +406,10 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
     positive_hits = [0] * len(memory.payload_dims)
     candidate_positive_hits = [0] * len(memory.payload_dims)
     candidate_reciprocal_rank = [0.0] * len(memory.payload_dims)
+    gate_mass = [0.0] * len(memory.payload_dims)
+    gate_effective_records = [0.0] * len(memory.payload_dims)
+    gate_temperature = [0.0] * len(memory.payload_dims)
+    gate_radius = [0.0] * len(memory.payload_dims)
     read_sites = 0
 
     def provider(level, active, query, routing_query):
@@ -331,6 +420,8 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
         metadata = [rows[row]["sites"][site]
                     for site in indices for row in range(batch)]
         payloads, weights = [], []
+        support_scores = [[] for _ in metadata]
+        support_indices = [[] for _ in metadata]
         for space, (width, limit) in enumerate(
                 zip(memory.payload_dims, limits, strict=True)):
             name = f"s{space}"
@@ -341,7 +432,7 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
                 domains=tuple(item["domain"] for item in metadata),
                 query_times=tuple(item["query_time"] for item in metadata),
             )
-            chosen_plans = []
+            chosen_plans, candidate_rows, selected_rows = [], [], []
             for row_index, (plan, item) in enumerate(zip(plans, metadata, strict=True)):
                 found = [selection.record_id for selection in plan.selections]
                 required = list(item["required_ids"])
@@ -351,10 +442,13 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
                 scores = cosine_scores(address[row_index:row_index + 1], keys)[0]
                 positive_indices = tuple(candidate_ids.index(record_id)
                                          for record_id in required)
-                routing_terms.append(group_plan_loss(scores, [positive_indices]))
+                support_scores[row_index].append(scores)
+                support_indices[row_index].append(positive_indices)
                 chosen = required + [record_id for record_id in found
                                      if record_id not in required]
                 chosen = chosen[:limit]
+                candidate_rows.append((keys, candidate_ids, required))
+                selected_rows.append(chosen)
                 learned_hits[space] += int(set(required) <= set(found[:limit]))
                 positive_labels[space] += len(required)
                 positive_hits[space] += sum(record_id in found[:limit]
@@ -380,13 +474,42 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
                 raise ValueError("Stored spatial payload width differs from configuration")
             payloads.append(torch.stack([
                 F.pad(row, (0, 0, 0, count - row.shape[0])) for row in device_rows]))
-            weights.append(torch.stack([
-                torch.cat((query.new_ones(row.shape[0]),
-                           query.new_zeros(count - row.shape[0]))) for row in device_rows]))
+            weight_rows = []
+            for row_index, (value, chosen, candidate) in enumerate(zip(
+                    device_rows, selected_rows, candidate_rows, strict=True)):
+                if memory.distance_gating:
+                    keys, candidate_ids, required = candidate
+                    raw = cosine_similarities(
+                        address[row_index:row_index + 1], keys)[0]
+                    positions = [candidate_ids.index(record_id) for record_id in chosen]
+                    support = set(required)
+                    local, diagnostics = agent.distance_gates[space](
+                        address[row_index:row_index + 1], raw[positions][None], raw[None],
+                        torch.ones((1, len(chosen)), dtype=torch.bool, device=agent.device),
+                        torch.ones((1, len(candidate_ids)), dtype=torch.bool,
+                                   device=agent.device),
+                        torch.tensor([[record_id in support for record_id in chosen]],
+                                     dtype=torch.bool, device=agent.device),
+                        agent.config.train.support_gate_floor)
+                    row_weight = local[0]
+                    gate_mass[space] += float(diagnostics['mass'].detach())
+                    gate_effective_records[space] += float(
+                        diagnostics['effective_records'].detach())
+                    gate_temperature[space] += float(diagnostics['temperature'].detach())
+                    gate_radius[space] += float(diagnostics['radius'].detach())
+                else:
+                    row_weight = query.new_ones(value.shape[0])
+                weight_rows.append(torch.cat((row_weight,
+                    query.new_zeros(count - value.shape[0]))))
+            weights.append(torch.stack(weight_rows))
+        routing_terms.extend(
+            union_support_loss(scores, positive)
+            for scores, positive in zip(support_scores, support_indices, strict=True))
         read_sites += len(metadata)
         return agent._read_padded_batch(payloads, weights, query)
 
     hidden = agent.spatial_recurrent_hidden(input_ids, attention, sites, provider)
+    write_outputs = _trajectory_write_outputs(agent, hidden, rows)
     supervised = labels >= 0
     # The tied vocabulary projection is large. Blank workspaces, prompts, tool
     # results and padding have no target, so projecting them wastes both memory and
@@ -416,19 +539,25 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
             zip(candidate_reciprocal_rank, positive_labels, strict=True)
         ],
         "positive_labels": positive_labels,
+        "gate_mass": [value / denominator for value in gate_mass],
+        "gate_effective_records": [value / denominator
+                                   for value in gate_effective_records],
+        "gate_temperature": [value / denominator for value in gate_temperature],
+        "gate_radius": [value / denominator for value in gate_radius],
         "selected_payload_bytes": sum(count * width * 2 for count, width in
                                       zip(selected_counts, memory.payload_dims, strict=True))
                                   / batch,
         "supervised_tokens": int(supervised.sum()),
     }
-    return SpatialForwardResult(loss, nll, routing, metrics)
+    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs)
 
 
 def spatial_bank_pipeline_forward(
         agent: SDKBAgent, store: DiskStore, index: PublishedKeyIndex,
         rows: list[dict[str, Any]], *, limits: tuple[int, ...],
         routing_candidates: int, microbatch_size: int, inflight: int,
-        pad_token_id: int = 0) -> SpatialForwardResult:
+        pad_token_id: int = 0,
+        writer_replay: BankWriterReplay | None = None) -> SpatialForwardResult:
     """Overlap retained microbatch graphs with CPU search and serialized payload I/O.
 
     GPU continuations execute in deterministic round-robin order. Retrieval workers
@@ -468,7 +597,8 @@ def spatial_bank_pipeline_forward(
             next_chunk += 1
         while pending:
             index_in_step, state, wave, future = pending.popleft()
-            _consume_wave(agent, index, state, wave, future.result(), limits=limits)
+            _consume_wave(agent, index, state, wave, future.result(), limits=limits,
+                          writer_replay=writer_replay)
             following = _issue_wave(agent, state)
             if following is None:
                 results.append((index_in_step, _finish_batch(agent, state)))
@@ -526,6 +656,14 @@ def spatial_bank_pipeline_forward(
             sum(result.metrics["positive_labels"][space] for result in ordered)
             for space in range(spaces)
         ],
+        **{
+            name: [
+                sum(result.metrics[name][space] * result.metrics["read_sites"]
+                    for result in ordered) / read_sites
+                for space in range(spaces)
+            ] for name in ("gate_mass", "gate_effective_records",
+                           "gate_temperature", "gate_radius")
+        },
         "selected_payload_bytes": sum(
             result.metrics["selected_payload_bytes"] * len(chunk)
             for result, chunk in zip(ordered, chunks, strict=True)
@@ -534,4 +672,11 @@ def spatial_bank_pipeline_forward(
         "pipeline_microbatches": len(chunks),
         "pipeline_inflight": min(inflight, len(chunks)),
     }
-    return SpatialForwardResult(loss, nll, routing, metrics)
+    write_outputs = None
+    if any(result.write_outputs is not None for result in ordered):
+        if any(result.write_outputs is None for result in ordered):
+            raise ValueError('Pipeline chunks disagree about authored write workspaces')
+        write_outputs = tuple(torch.cat([result.write_outputs[index]
+                                         for result in ordered], 0)
+                              for index in range(len(ordered[0].write_outputs)))
+    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs)

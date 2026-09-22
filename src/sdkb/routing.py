@@ -3,14 +3,114 @@ from __future__ import annotations
 
 import itertools
 import torch
-from torch import Tensor
+from torch import Tensor, nn
 from torch.nn import functional as F
+
+
+def cosine_similarities(query: Tensor, keys: Tensor) -> Tensor:
+    """Normalized similarities without conflating geometry with loss temperature."""
+    return F.normalize(query.float(), dim=-1) @ F.normalize(keys.float(), dim=-1).T
 
 
 def cosine_scores(query: Tensor, keys: Tensor, temperature: float = 0.1) -> Tensor:
     if temperature <= 0:
         raise ValueError("Temperature must be positive")
-    return F.normalize(query.float(), dim=-1) @ F.normalize(keys.float(), dim=-1).T / temperature
+    return cosine_similarities(query, keys) / temperature
+
+
+class AdaptiveDistanceGate(nn.Module):
+    """Density-relative nonnegative record gates with bounded learned bandwidth.
+
+    Candidate discovery remains hard.  The forward reader receives ordinary
+    materialized records multiplied by these continuous relevance weights.  The
+    local reference similarity is detached so keys cannot improve every gate by
+    manipulating the density estimator itself.
+    """
+
+    def __init__(self, query_dim: int, *, density_k: int = 8,
+                 min_temperature: float = 0.02, max_temperature: float = 0.5,
+                 initial_temperature: float = 0.1,
+                 max_radius_adjustment: float = 0.25) -> None:
+        super().__init__()
+        if (query_dim < 1 or density_k < 1 or not 0 < min_temperature
+                < initial_temperature < max_temperature
+                or max_radius_adjustment < 0):
+            raise ValueError('Invalid adaptive distance-gate configuration')
+        self.density_k = density_k
+        self.min_temperature = min_temperature
+        self.max_temperature = max_temperature
+        self.max_radius_adjustment = max_radius_adjustment
+        self.adjust = nn.Linear(query_dim, 2)
+        nn.init.zeros_(self.adjust.weight)
+        nn.init.zeros_(self.adjust.bias)
+        fraction = ((initial_temperature - min_temperature)
+                    / (max_temperature - min_temperature))
+        with torch.no_grad():
+            self.adjust.bias[1] = torch.logit(torch.tensor(fraction))
+
+    def forward(self, query: Tensor, selected_scores: Tensor, candidate_scores: Tensor,
+                selected_mask: Tensor, candidate_mask: Tensor,
+                support_mask: Tensor | None = None,
+                support_floor: float = 0.0) -> tuple[Tensor, dict[str, Tensor]]:
+        if (query.ndim != 2 or selected_scores.ndim != 2 or candidate_scores.ndim != 2
+                or selected_mask.shape != selected_scores.shape
+                or candidate_mask.shape != candidate_scores.shape
+                or query.shape[0] != selected_scores.shape[0]
+                or query.shape[0] != candidate_scores.shape[0]):
+            raise ValueError('Adaptive gate tensors have incompatible shapes')
+        if not 0 <= support_floor <= 1:
+            raise ValueError('Support gate floor must be between zero and one')
+        if support_mask is not None and support_mask.shape != selected_scores.shape:
+            raise ValueError('Support mask differs from selected records')
+        boundaries = []
+        for scores, valid in zip(candidate_scores, candidate_mask, strict=True):
+            available = scores[valid]
+            if not available.numel():
+                raise ValueError('Adaptive gating needs at least one candidate per query')
+            k = min(self.density_k, available.numel())
+            boundaries.append(available.topk(k).values[-1])
+        boundary = torch.stack(boundaries).detach()
+        adjustment_input = F.normalize(query.to(self.adjust.weight.dtype), dim=-1)
+        adjustments = self.adjust(adjustment_input).to(selected_scores.dtype)
+        radius = boundary + adjustments[:, 0].tanh() * self.max_radius_adjustment
+        fraction = adjustments[:, 1].sigmoid()
+        temperature = self.min_temperature + fraction * (
+            self.max_temperature - self.min_temperature)
+        weights = ((selected_scores - radius[:, None]) / temperature[:, None]).sigmoid()
+        if support_mask is not None and support_floor:
+            floor = torch.full_like(weights, support_floor)
+            weights = torch.where(support_mask, torch.maximum(weights, floor), weights)
+        weights = weights * selected_mask.to(weights.dtype)
+        mass = weights.sum(-1)
+        effective = mass.square() / weights.square().sum(-1).clamp_min(1e-12)
+        return weights, {'radius': radius, 'temperature': temperature,
+                         'mass': mass, 'effective_records': effective}
+
+
+def union_support_loss(space_scores: list[Tensor],
+                       positive_indices: list[tuple[int, ...]]) -> Tensor:
+    """Gently anchor every labelled fact in at least one retrieval space.
+
+    Labels are positive evidence only.  Unlabelled records remain alternatives
+    rather than being declared false, and spaces are free to specialize.
+    """
+    if (not space_scores or len(space_scores) != len(positive_indices)
+            or any(scores.ndim != 1 for scores in space_scores)):
+        raise ValueError('One score vector and positive index tuple per space required')
+    count = len(positive_indices[0])
+    if count < 1 or any(len(indices) != count for indices in positive_indices):
+        raise ValueError('Support identities must align across spaces')
+    losses = []
+    for positive in range(count):
+        probabilities = []
+        for scores, indices in zip(space_scores, positive_indices, strict=True):
+            index = indices[positive]
+            if not 0 <= index < scores.numel():
+                raise ValueError('Support index is outside its candidate field')
+            probabilities.append(scores.softmax(-1)[index])
+        probability = 1 - torch.stack([1 - value for value in probabilities]).prod()
+        losses.append(-probability.clamp_min(1e-12).log())
+    return torch.stack(losses).mean()
 
 
 def group_plan_loss(scores: Tensor, sufficient_groups: list[tuple[int, ...]]) -> Tensor:

@@ -65,7 +65,8 @@ def evaluate(run: Path, episodes_file: Path, output: Path, *,
                     oracle_ids=episode.required_ids)
                 zero = read_session(agent, store, prompt, namespace='short_eval',
                     generation=generation, query_time=episode.query_time,
-                    fixed_plans=correct.plans, ablate_values=True)
+                    fixed_plans=correct.plans, fixed_gate_weights=correct.gate_weights,
+                    ablate_values=True)
                 predictions = {'all': agent.generate_from_memory(prompt, correct.memory,
                     max_new_tokens=max_new_tokens),
                     'zero_values': agent.generate_from_memory(prompt, zero.memory,

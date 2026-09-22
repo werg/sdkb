@@ -101,6 +101,33 @@ def field_responsibilities(points: Tensor, centers: Tensor, memberships: int = 2
     return torch.zeros_like(distances).scatter(1, indices, coefficients).to(points.dtype)
 
 
+def adaptive_field_responsibilities(points: Tensor, centers: Tensor, *, memberships: int = 2,
+                                    density_k: int = 8, minimum_scale: float = 1e-3,
+                                    log_scale_adjustment: Tensor | None = None) -> Tensor:
+    """Overlapping local charts with density-relative bandwidth and conserved mass.
+
+    The k-nearest input radius supplies each center's scale.  A compactor may
+    provide a bounded learned log-scale adjustment, but absolute key position is
+    not an input.  Responsibilities remain a partition of unity per raw record.
+    """
+    if (points.ndim != 2 or centers.ndim != 2 or points.shape[1] != centers.shape[1]
+            or not 1 <= memberships <= centers.shape[0] or density_k < 1
+            or minimum_scale <= 0):
+        raise ValueError('Invalid adaptive compaction field geometry')
+    distances = torch.cdist(points.float(), centers.float()).square()
+    k = min(density_k, points.shape[0])
+    scale = distances.topk(k, dim=0, largest=False).values[-1].clamp_min(
+        minimum_scale ** 2).detach()
+    if log_scale_adjustment is not None:
+        if log_scale_adjustment.shape != (centers.shape[0],):
+            raise ValueError('One scale adjustment is required per compaction center')
+        scale = scale * log_scale_adjustment.float().tanh().exp()
+    local_distance, indices = distances.topk(memberships, largest=False, dim=-1)
+    local_scale = scale[indices]
+    coefficients = (-local_distance / local_scale).softmax(-1)
+    return torch.zeros_like(distances).scatter(1, indices, coefficients).to(points.dtype)
+
+
 def random_partition(n: int, group_size: int, generator: torch.Generator) -> list[list[int]]:
     """Alternative training views; a point occurs exactly once in each view."""
     if n < 0 or group_size < 1:
@@ -145,7 +172,8 @@ class CompactView:
 def compact_view(x: Tensor, weights: Tensor, *, method: str = "mean",
                  compactor: SyntheticCompactor | None = None, grouping: str = "whole",
                  group_size: int = 4, memberships: int = 2,
-                 generator: torch.Generator | None = None) -> CompactView:
+                 generator: torch.Generator | None = None,
+                 geometry: Tensor | None = None) -> CompactView:
     """Temporary local replacement, including exact partition-of-unity field shares.
 
     A training read has batch size one; grouping is discrete and detached. Every
@@ -161,6 +189,8 @@ def compact_view(x: Tensor, weights: Tensor, *, method: str = "mean",
         raise ValueError("Invalid compaction method")
     if not torch.isfinite(weights).all() or (weights < 0).any():
         raise ValueError("Nonnegative finite weights required")
+    if geometry is not None and (geometry.ndim != 2 or geometry.shape[0] != x.shape[1]):
+        raise ValueError('Compaction geometry must provide one key per record')
     n = x.shape[1]
     if n == 0:
         return CompactView(x, weights, [], 0, 0)
@@ -188,9 +218,10 @@ def compact_view(x: Tensor, weights: Tensor, *, method: str = "mean",
             remaining.difference_update(group)
     else:
         count = max(1, (n + group_size - 1) // group_size)
-        points = x[0].detach().float()
-        coefficients = field_responsibilities(points, points[order[:count]],
-                                             min(memberships, count)).detach()
+        points = (x[0] if geometry is None else geometry).detach().float()
+        coefficients = adaptive_field_responsibilities(
+            points, points[order[:count]], memberships=min(memberships, count),
+            density_k=min(group_size, n)).detach()
         for field in range(count):
             ids = (coefficients[:, field] > 0).nonzero().flatten().tolist()
             if ids:

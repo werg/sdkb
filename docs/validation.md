@@ -1,5 +1,12 @@
 > Historical evidence/development document. Current SDKB operations: [training](training.md), [Spark](spark.md), [validation](validation-v0.3.md).
 
+Adaptive routing changes require regression tests showing that task loss reaches
+the query, distance gate, selected serialized keys and payloads, and writer
+parameters through replay. Resume validation must reopen the mutable training-bank
+overlay from the checkpointed SQLite snapshot. Density-adaptive compaction tests
+must conserve pre-normalization numerator and mass across overlapping fields. See
+[adaptive memory v0.6](adaptive-memory-v0.6.md).
+
 > Historical v0.1 bootstrap report. For the current implementation and executed
 > learning/compaction study, see [validation-v0.2.md](validation-v0.2.md).
 

@@ -10,7 +10,7 @@ model:
   recurrence_mode: middle_block
   recurrent_start: 4
   recurrent_end: 10
-  writer_loops: 1
+  writer_loops: 3
   gradient_checkpointing: true
   freeze_backbone: true
 memory:
@@ -25,6 +25,12 @@ memory:
   chunk_size: 16
   checkpoint_chunks: true
   storage_dtype: bfloat16
+  distance_gating: true
+  gate_density_k: 16
+  gate_min_temperature: 0.02
+  gate_max_temperature: 0.5
+  gate_initial_temperature: 0.1
+  gate_max_radius_adjustment: 0.25
   compaction: none
   read_timing: loop_boundary
   read_steps: 1
@@ -42,7 +48,9 @@ train:
   live_fraction: 0.0
   arm: memory
   retrieval: learned
-  routing_weight: 0.1
+  routing_weight: 0.02
+  support_gate_floor: 0.15
+  writer_replay_records_per_site: 8
   bank_payload_contrast_weight: 0.2
   bank_payload_contrast_margin: 0.5
   bank_dir: /archive/banks/four-space-short-local-routing-6512

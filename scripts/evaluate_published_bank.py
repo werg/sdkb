@@ -82,6 +82,7 @@ def generate_from_published_bank(agent, store, episodes, *, namespace: str,
             correct = read_session(agent, store, prompt, oracle_ids=oracle,
                                    fixed_plans=plan, **common)
             zero = read_session(agent, store, prompt, fixed_plans=correct.plans,
+                                fixed_gate_weights=correct.gate_weights,
                                 ablate_values=True, **common)
             arms = {'all': correct.memory, 'zero_values': zero.memory}
             if swapped_plans is not None:

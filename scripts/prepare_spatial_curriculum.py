@@ -17,7 +17,7 @@ from sdkb.trajectories import file_sha256
 def build(episodes_path: Path, output: Path, *, model_id: str, revision: str,
           sites_per_trajectory: int, read_slots: int, mode: str,
           generation: str, include_writes: bool = False,
-          write_generation: str = "pending-authored") -> dict:
+          write_generation: str = "pending-authored", write_slots: int = 8) -> dict:
     if sites_per_trajectory < 1 or read_slots < 1 or mode not in {"same_level", "two_level"}:
         raise ValueError("Invalid spatial packing settings")
     episodes = EpisodeIndex(episodes_path)
@@ -34,7 +34,8 @@ def build(episodes_path: Path, output: Path, *, model_id: str, revision: str,
             row = pack_spatial_trajectory(tokenizer, group, read_slots=read_slots,
                                           generation=generation, levels=levels,
                                           include_writes=include_writes,
-                                          write_generation=write_generation)
+                                          write_generation=write_generation,
+                                          write_slots=write_slots if include_writes else 0)
             line = (json.dumps(row, separators=(",", ":")) + "\n").encode()
             handle.write(line)
             digest.update(line)
@@ -63,6 +64,7 @@ def build(episodes_path: Path, output: Path, *, model_id: str, revision: str,
         "generation": generation,
         "include_writes": include_writes,
         "write_generation": write_generation if include_writes else None,
+        "write_slots": write_slots if include_writes else 0,
     }
     manifest_path = output.with_suffix(output.suffix + ".manifest.json")
     pending_manifest = manifest_path.with_suffix(manifest_path.suffix + ".pending")
@@ -83,9 +85,11 @@ if __name__ == "__main__":
     parser.add_argument("--generation", required=True)
     parser.add_argument("--include-writes", action="store_true")
     parser.add_argument("--write-generation", default="pending-authored")
+    parser.add_argument("--write-slots", type=int, default=8)
     args = parser.parse_args()
     print(json.dumps(build(args.episodes, args.output, model_id=args.model_id,
                            revision=args.revision, sites_per_trajectory=args.sites_per_trajectory,
                            read_slots=args.read_slots, mode=args.mode,
                            generation=args.generation, include_writes=args.include_writes,
-                           write_generation=args.write_generation), indent=2))
+                           write_generation=args.write_generation,
+                           write_slots=args.write_slots), indent=2))

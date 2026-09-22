@@ -20,7 +20,7 @@ from .recurrence import (
     SpatialReadSite,
 )
 from .readers import MultiSpaceReader, SetReader
-from .routing import cosine_scores, group_plan_loss
+from .routing import AdaptiveDistanceGate, cosine_scores, group_plan_loss
 
 
 def answer_state_alignment(student: Tensor, teacher: Tensor) -> Tensor:
@@ -100,6 +100,15 @@ class SDKBAgent(nn.Module):
         self.query_head = nn.Linear(self.width, r.key_dim, bias=False)
         self.address_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
         self.query_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
+        self.distance_gates = nn.ModuleList([
+            AdaptiveDistanceGate(
+                r.key_dim, density_k=r.gate_density_k,
+                min_temperature=r.gate_min_temperature,
+                max_temperature=r.gate_max_temperature,
+                initial_temperature=r.gate_initial_temperature,
+                max_radius_adjustment=r.gate_max_radius_adjustment,
+            ) for _ in r.payload_dims
+        ]) if r.distance_gating else None
         canonical_dim = r.write_slots * self.width
         self.codecs = nn.ModuleList([
             nn.Identity() if d == canonical_dim else nn.Linear(canonical_dim, d)
@@ -213,6 +222,18 @@ class SDKBAgent(nn.Module):
             output.extend((F.normalize(address(key), dim=-1), payload))
         return tuple(output)
 
+    def produce_from_write_states(self, states: Tensor) -> tuple[Tensor, ...]:
+        """Project causal key/value slot states embedded in an agent trajectory."""
+        slots = self.config.memory.write_slots + 1
+        if states.ndim != 3 or states.shape[1:] != (slots, self.width):
+            raise ValueError('Trajectory write states have incompatible slots or width')
+        key = F.normalize(self.key_head(states[:, 0]), dim=-1)
+        canonical = self.value_head(states[:, 1:]).flatten(1)
+        output = []
+        for address, codec in zip(self.address_maps, self.codecs, strict=True):
+            output.extend((F.normalize(address(key), dim=-1), codec(canonical)))
+        return tuple(output)
+
     def _query_features(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
         embeddings = self._context(prompt_ids, memory)
         # Query uses ONLY the prompt, never teacher-forced target tokens.
@@ -232,7 +253,8 @@ class SDKBAgent(nn.Module):
         return (F.normalize(self.query_head(features), dim=-1),
                 F.normalize(self.routing_query_head(features), dim=-1))
 
-    def _prepare_values(self, payloads: list[Tensor], ablate_values: bool = False):
+    def _prepare_values(self, payloads: list[Tensor], ablate_values: bool = False,
+                        weights: list[Tensor] | None = None):
         r = self.config.memory
         values = [v[None] for v in payloads]
         if ablate_values:
@@ -240,7 +262,17 @@ class SDKBAgent(nn.Module):
         if self.training:
             values = [storage_noise(v, noise_std=r.noise_std, quantization_step=r.quantization_step)
                       for v in values]
-        return values, [v.new_ones(v.shape[:2]) for v in values]
+        if weights is None:
+            prepared_weights = [v.new_ones(v.shape[:2]) for v in values]
+        else:
+            if len(weights) != len(values):
+                raise ValueError('One relevance-weight vector is required per memory space')
+            prepared_weights = []
+            for value, weight in zip(values, weights, strict=True):
+                if weight.ndim != 1 or weight.shape[0] != value.shape[1]:
+                    raise ValueError('Relevance weights differ from selected payloads')
+                prepared_weights.append(weight[None].to(device=value.device, dtype=value.dtype))
+        return values, prepared_weights
 
     def _compact_values(self, value: Tensor, weights: Tensor):
         r = self.config.memory
@@ -255,8 +287,9 @@ class SDKBAgent(nn.Module):
         return view
 
     def read_tokens(self, payloads: list[Tensor], query: Tensor, *, compact: bool = False,
-                    ablate_values: bool = False) -> tuple[Tensor, Tensor]:
-        values, weights = self._prepare_values(payloads, ablate_values)
+                    ablate_values: bool = False,
+                    weights: list[Tensor] | None = None) -> tuple[Tensor, Tensor]:
+        values, weights = self._prepare_values(payloads, ablate_values, weights)
         auxiliary = query.sum() * 0
         if isinstance(self.reader, MultiSpaceReader):
             return self.reader(values, query, weights), auxiliary
@@ -468,7 +501,7 @@ class SDKBAgent(nn.Module):
             if bool(occupied.gather(1, indices).any()):
                 raise ValueError("Spatial workspaces must not overlap")
             occupied.scatter_(1, indices, True)
-        if bool(((input_ids == -1) != occupied).any()) or bool((input_ids < -1).any()):
+        if bool(((input_ids == -1) != occupied).any()) or bool((input_ids < -2).any()):
             raise ValueError("Blank token positions must exactly match spatial workspaces")
         if bool((attention_mask[occupied] == 0).any()):
             raise ValueError("Spatial workspaces must be visible sequence positions")
@@ -479,6 +512,16 @@ class SDKBAgent(nn.Module):
         for site in sites:
             indices = site.workspace_starts.to(input_ids.device)[:, None] + slots
             embeddings[rows, indices] = self.loop_workspace[None]
+        writer_slots = self.config.memory.write_slots + 1
+        for row in range(batch):
+            positions = (input_ids[row] == -2).nonzero().flatten()
+            if positions.numel() % writer_slots:
+                raise ValueError('Trajectory write workspaces have incomplete slot groups')
+            for start in range(0, positions.numel(), writer_slots):
+                group = positions[start:start + writer_slots]
+                if (group[-1] - group[0] + 1).item() != writer_slots:
+                    raise ValueError('Trajectory write slots must be contiguous')
+                embeddings[row, group] = self.write_slots
 
         recurrent = self.backbone.begin(embeddings, attention_mask)
         return SpatialExecution(recurrent, sites, batch)

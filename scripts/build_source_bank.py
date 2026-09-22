@@ -15,6 +15,8 @@ from sdkb.agent import SDKBAgent
 from sdkb.archiving import ensure_free
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import Source
+from sdkb.document_ingestion import (holistic_ingestion_messages,
+                                     prompted_write_messages, writer_prefix_ids)
 from sdkb.offline_bank import canonical_json, ensure_offline_shard, publish_offline_generation
 from sdkb.operations import atomic_json
 from sdkb.store import DiskStore
@@ -43,14 +45,15 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
     if len(rows) != max_sources or len({r['record_id'] for r in rows}) != len(rows):
         raise ValueError('Source manifest has too few or duplicate records')
     model_sha = file_sha256(checkpoint / 'model.safetensors')
-    identity = {'format': 1, 'writer_checkpoint_sha256': model_sha,
+    identity = {'format': 2, 'writer_checkpoint_sha256': model_sha,
                 'writer_checkpoint_step': json.loads((checkpoint / 'manifest.json').read_text())['step'],
                 'source_manifest_sha256': file_sha256(sources), 'source_count': max_sources,
                 'source_order_sha256': hashlib.sha256(canonical_json(
                     [row['record_id'] for row in rows]).encode()).hexdigest(),
                 'model': asdict(config.model), 'memory': asdict(config.memory),
                 'compute_precision': config.train.precision,
-                'max_source_tokens': config.train.max_source_tokens}
+                'max_source_tokens': config.train.max_source_tokens,
+                'writer_input_policy': 'agentic-holistic-and-part-parity-v1'}
     generation = hashlib.sha256(canonical_json(identity).encode()).hexdigest()[:24]
     lock = output / 'identity.json'
     output.mkdir(exist_ok=True)
@@ -89,8 +92,23 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
                         source_batch = [Source(**{key: row[key] for key in
                                                   ('record_id', 'text', 'created_at', 'kind')})
                                         for row in mini]
-                        encoded = agent.produce_batch([agent.text_ids(source.text, source=True)
-                                                       for source in source_batch])
+                        writer_rows = []
+                        for row, source in zip(mini, source_batch, strict=True):
+                            scope = {'domain': row.get('domain', 'research')}
+                            if int(hashlib.sha256(source.record_id.encode()).hexdigest(), 16) % 2:
+                                complete, _ = holistic_ingestion_messages(
+                                    source.record_id, source.text, generation=generation,
+                                    scope=scope, write_contents=(source.text,))
+                                messages = complete[:-1]
+                            else:
+                                messages = prompted_write_messages(
+                                    document_id=source.record_id, text=source.text,
+                                    record_id=source.record_id, generation=generation,
+                                    scope=scope, kind=source.kind)
+                            writer_rows.append(torch.tensor(
+                                [writer_prefix_ids(agent.tokenizer, messages)],
+                                dtype=torch.long, device=agent.device))
+                        encoded = agent.produce_batch(writer_rows)
                         payloads = stored_channel(agent, encoded)
                         for index, (row, source) in enumerate(zip(mini, source_batch, strict=True)):
                             outputs = tuple(value[index:index + 1] for value in payloads)

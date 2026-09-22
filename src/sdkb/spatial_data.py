@@ -69,9 +69,11 @@ def _tokens(tokenizer, messages: list[dict[str, Any]]) -> dict[str, list[int]]:
 def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slots: int,
                             generation: str, levels: Sequence[int] | None = None,
                             include_writes: bool = False,
-                            write_generation: str = "pending-authored") -> dict[str, Any]:
+                            write_generation: str = "pending-authored",
+                            write_slots: int = 0) -> dict[str, Any]:
     """Pack several visible calls into one sequence with blank result spans."""
-    if not episodes or read_slots < 1:
+    if (not episodes or read_slots < 1 or write_slots < 0
+            or include_writes and write_slots < 1):
         raise ValueError("Spatial packing needs episodes and positive read slots")
     levels = tuple(levels or (1,) * len(episodes))
     if len(levels) != len(episodes) or any(level < 1 for level in levels):
@@ -120,6 +122,7 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
                                          generation=write_generation, record_id=record_id))
             write_boundaries.append({
                 "call_id": write_id, "base_call_position": len(write_prefix) - 1,
+                "base_workspace_start": len(write_prefix),
                 "episode_id": episode.episode_id, "record_id": record_id,
                 "parent_read_call_ids": [call_id], "content": content,
                 "_call_prefix": write_prefix,
@@ -135,15 +138,23 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
         if base_ids[:len(boundary["_call_prefix"])] != boundary["_call_prefix"]:
             raise ValueError("Chat template changed an earlier write when later messages were appended")
 
-    insertions = {boundary["base_workspace_start"]: boundary for boundary in boundaries}
-    if len(insertions) != len(boundaries):
+    read_insertions = {boundary["base_workspace_start"]: boundary for boundary in boundaries}
+    write_insertions = {boundary["base_workspace_start"]: boundary
+                        for boundary in write_boundaries}
+    if (len(read_insertions) != len(boundaries)
+            or len(write_insertions) != len(write_boundaries)
+            or set(read_insertions).intersection(write_insertions)):
         raise ValueError("Spatial result positions must be distinct")
     expanded_ids, expanded_assistant, base_to_expanded = [], [], {}
     for base_position in range(len(base_ids) + 1):
-        if base_position in insertions:
-            insertions[base_position]["workspace_start"] = len(expanded_ids)
+        if base_position in read_insertions:
+            read_insertions[base_position]["workspace_start"] = len(expanded_ids)
             expanded_ids.extend([-1] * read_slots)
             expanded_assistant.extend([0] * read_slots)
+        if base_position in write_insertions:
+            write_insertions[base_position]["workspace_start"] = len(expanded_ids)
+            expanded_ids.extend([-2] * (write_slots + 1))
+            expanded_assistant.extend([0] * (write_slots + 1))
         if base_position < len(base_ids):
             base_to_expanded[base_position] = len(expanded_ids)
             expanded_ids.append(base_ids[base_position])
@@ -162,6 +173,7 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
     write_sites = [{key: boundary[key] for key in (
         "call_id", "episode_id", "record_id", "parent_read_call_ids", "content")} | {
         "call_position": base_to_expanded[boundary["base_call_position"]],
+        "workspace_start": boundary["workspace_start"],
     } for boundary in write_boundaries]
     if not any(label >= 0 for label in labels):
         raise ValueError("Packed trajectory has no supervised assistant tokens")
@@ -174,6 +186,7 @@ def pack_spatial_trajectory(tokenizer, episodes: Sequence[Episode], *, read_slot
         "sites": sites,
         "write_sites": write_sites,
         "read_slots": read_slots,
+        "write_slots": write_slots,
         "tokens": len(expanded_ids),
         "supervised_tokens": sum(label >= 0 for label in labels),
     }
@@ -224,6 +237,7 @@ def validate_spatial_row(row: dict[str, Any]) -> None:
     if write_sites and len(write_sites) != len(row["episode_ids"]):
         raise ValueError("Spatial episodes and writes differ in length")
     blanks = {index for index, token in enumerate(row["input_ids"]) if token == -1}
+    write_blanks = {index for index, token in enumerate(row["input_ids"]) if token == -2}
     read_slots = row["read_slots"]
     if not isinstance(read_slots, int) or isinstance(read_slots, bool) or read_slots < 1:
         raise ValueError("Spatial read_slots must be positive")
@@ -248,14 +262,24 @@ def validate_spatial_row(row: dict[str, Any]) -> None:
         calls.add(site["call_id"])
         if not site["required_ids"]:
             raise ValueError("Spatial site needs verified positive IDs")
-    if any(token < -1 for token in row["input_ids"]) or not blanks or covered != blanks:
+    if any(token < -2 for token in row["input_ids"]) or not blanks or covered != blanks:
         raise ValueError("Spatial rows require only -1 blank sentinels")
     read_calls = calls
+    write_slots = row.get("write_slots", 0)
+    write_covered = set()
     for write in write_sites:
         if (not {"call_id", "call_position", "episode_id", "record_id",
-                 "parent_read_call_ids", "content"} <= set(write)
+                 "parent_read_call_ids", "content", "workspace_start"} <= set(write)
                 or not 0 <= write["call_position"] < len(row["input_ids"])
                 or row["input_ids"][write["call_position"]] < 0
+                or not write["call_position"] < write["workspace_start"]
                 or not write["record_id"] or not write["content"]
                 or not set(write["parent_read_call_ids"]) <= read_calls):
             raise ValueError("Invalid spatial write site or read lineage")
+        span = set(range(write["workspace_start"],
+                         write["workspace_start"] + write_slots + 1))
+        if write_slots < 1 or span - write_blanks or write_covered.intersection(span):
+            raise ValueError("Spatial write workspaces are incomplete or overlapping")
+        write_covered.update(span)
+    if write_covered != write_blanks:
+        raise ValueError("Spatial write sentinels must exactly match write workspaces")

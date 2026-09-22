@@ -2,7 +2,8 @@ import pytest
 import torch
 
 from sdkb.compaction import (SyntheticCompactor, mean_and_mass, contribution_loss,
-    field_responsibilities, FullClusterCode, random_partition, storage_noise)
+    adaptive_field_responsibilities, field_responsibilities, FullClusterCode,
+    random_partition, storage_noise)
 from sdkb.readers import SetReader, merge_statistics
 
 
@@ -41,6 +42,16 @@ def test_overlapping_fields_conserve_contribution_and_mass(kind):
     merged = merge_statistics(pieces)
     torch.testing.assert_close(full.mean(), merged.mean(), atol=1e-7, rtol=1e-7)
     torch.testing.assert_close(full.log_mass(), merged.log_mass(), atol=1e-7, rtol=1e-7)
+
+
+def test_adaptive_fields_use_local_density_and_conserve_each_record():
+    points = torch.tensor([[0.], [.01], [.02], [5.], [7.], [9.]])
+    centers = torch.tensor([[0.], [7.]])
+    alpha = adaptive_field_responsibilities(points, centers, memberships=2, density_k=3)
+    torch.testing.assert_close(alpha.sum(1), torch.ones(len(points)))
+    # The dense first chart receives a much smaller raw radius than the sparse chart.
+    assert alpha[2, 0] > alpha[2, 1]
+    assert alpha[4, 1] > alpha[4, 0]
 
 
 def test_full_cluster_scope_is_enforced():

@@ -82,6 +82,35 @@ def test_multiread_training_and_inference_agree(tmp_path, tiny_config):
     assert not torch.equal(result.query_keys[0], result.query_keys[1])
 
 
+def test_stored_session_applies_adaptive_distance_weights(tmp_path, tiny_config,
+                                                         monkeypatch):
+    tiny_config.memory.distance_gating = True
+    tiny_config.memory.gate_density_k = 4
+    agent = SDKBAgent(tiny_config).eval()
+    episode = make_episode(0, distractors=4)
+    store = DiskStore(tmp_path / 'gated-bank.sqlite')
+    build_shared_bank(agent, store, [episode])
+    observed = []
+    original = agent.read_tokens
+
+    def capture(payloads, query, **kwargs):
+        observed.append(kwargs.get('weights'))
+        return original(payloads, query, **kwargs)
+
+    monkeypatch.setattr(agent, 'read_tokens', capture)
+    session = read_session(agent, store, agent.prompt_ids(episode.query), namespace='global',
+                           generation='frozen-v1', query_time=episode.query_time)
+    assert observed and observed[0] is not None
+    weights = observed[0][0]
+    assert weights.shape == (tiny_config.memory.neighbors[0],)
+    assert torch.all((weights > 0) & (weights < 1))
+    read_session(agent, store, agent.prompt_ids(episode.query), namespace='global',
+                 generation='frozen-v1', query_time=episode.query_time,
+                 fixed_plans=session.plans, fixed_gate_weights=session.gate_weights,
+                 ablate_values=True)
+    assert torch.equal(observed[0][0], observed[1][0])
+
+
 def test_exact_search_exclusions_still_fill_topk(tmp_path):
     store = DiskStore(tmp_path / 'store.sqlite')
     for i in range(6):

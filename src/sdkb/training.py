@@ -342,7 +342,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
     bank_manifest = None
     bank_manifest_sha = None
     if config.train.bank_dir is not None:
-        from .offline_bank import canonical_json, publish_offline_generation
+        from .offline_bank import (canonical_json, publish_offline_generation,
+                                   stored_memory_identity)
         from .trajectories import file_sha256
         directory = Path(config.train.bank_dir)
         bank_manifest_path = directory / 'manifest.json'
@@ -359,7 +360,9 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
             raise ValueError('Published bank manifest differs from verified stored records')
         if tuple(bank_manifest['spaces']) != tuple(f's{i}' for i in range(len(config.memory.payload_dims))):
             raise ValueError('Bank spaces are incompatible with this model')
-        if bank_manifest['identity']['model'] != asdict(config.model) or bank_manifest['identity']['memory'] != asdict(config.memory):
+        if (bank_manifest['identity']['model'] != asdict(config.model)
+                or stored_memory_identity(bank_manifest['identity']['memory'])
+                != stored_memory_identity(asdict(config.memory))):
             raise ValueError('Bank writer architecture or storage transform changed')
         if (bank_manifest['identity'].get('compute_precision') != config.train.precision or
                 bank_manifest['identity'].get('max_source_tokens') != config.train.max_source_tokens):
@@ -785,6 +788,7 @@ def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode
         raise ValueError("Use likelihood evaluation for multi-read/control arms")
     for episode in episodes:
         original_plans = None
+        original_gate_weights = None
         for condition in conditions:
             cf = condition.startswith("cf_")
             variant = counterfactual(episode, "restoration" if condition == "cf_restoration" else "permission") if cf else episode
@@ -811,10 +815,13 @@ def stored_evaluation(agent: SDKBAgent, store: DiskStore, episodes: list[Episode
                                            oracle_ids=None if learned else tuple(selected_ids),
                                            ablate_values=condition == "zero_values",
                                            fixed_plans=[[replace(p, namespace=namespace) for p in step] for step in original_plans]
-                                               if condition == 'zero_values' or cf else None)
+                                               if condition == 'zero_values' or cf else None,
+                                           fixed_gate_weights=original_gate_weights
+                                               if condition == 'zero_values' else None)
                     memory, selected_spaces = session.memory, session.selected_ids
                     if condition == 'all':
                         original_plans = session.plans
+                        original_gate_weights = session.gate_weights
                     read_count = len(session.plans)
                 elif arm == "shared_compute":
                     memory = agent.shared_compute_tokens(prompt)

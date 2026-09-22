@@ -1,0 +1,51 @@
+from sdkb.document_ingestion import (holistic_ingestion_messages, holistic_write_count,
+    prompted_write_messages, split_document, streaming_ingestion_messages,
+    writer_prefix_ids)
+
+
+class Tokenizer:
+    def encode(self, text, add_special_tokens=False):
+        del add_special_tokens
+        return text.split()
+
+    def apply_chat_template(self, messages, **kwargs):
+        del kwargs
+        rendered = repr(messages)
+        return {'input_ids': list(rendered.encode()), 'assistant_masks': [0] * len(rendered)}
+
+
+def test_streaming_ingestion_writes_after_every_structured_or_manual_part():
+    text = 'First paragraph has facts.\n\n' + ' '.join(f'w{i}' for i in range(30))
+    parts = split_document(text, Tokenizer(), max_tokens=10, overlap_words=2)
+    assert parts[0].policy == 'paragraph'
+    assert any(part.policy == 'token-bounded-overlap' for part in parts)
+    messages, records = streaming_ingestion_messages(
+        'doc-1', text, Tokenizer(), generation='g1', scope={'domain': 'research'},
+        max_part_tokens=10, overlap_words=2)
+    assert len(records) == len(parts)
+    assert sum(bool(message.get('tool_calls')) for message in messages) == len(parts)
+    assert all(record['span_start'] < record['span_end'] for record in records)
+
+
+def test_holistic_prompt_ends_at_auditable_write_call():
+    messages = prompted_write_messages(
+        document_id='doc', text='A named fact: 17.', record_id='record', generation='g1',
+        scope={'domain': 'research'}, kind='document_fact')
+    assert messages[-1]['tool_calls'][0]['function']['name'] == 'memory.write'
+    assert writer_prefix_ids(Tokenizer(), messages)
+    assert holistic_write_count(128) == 1
+    assert holistic_write_count(4096) > holistic_write_count(128)
+
+
+def test_holistic_ingestion_presents_one_blob_and_separate_model_chosen_writes():
+    messages, records = holistic_ingestion_messages(
+        'whole-doc', 'Alpha is 17. Beta requires alpha.', generation='g2',
+        scope={'domain': 'research'},
+        write_contents=('Alpha is exactly 17.', 'Beta requires alpha.'))
+    assert sum(message['role'] == 'user' for message in messages) == 1
+    calls = [message for message in messages if message.get('tool_calls')]
+    assert len(calls) == len(records) == 2
+    assert calls[0]['tool_calls'][0]['function']['arguments']['content'] != (
+        calls[1]['tool_calls'][0]['function']['arguments']['content'])
+    assert all(record['chunking_policy'] == 'holistic-model-decomposition'
+               for record in records)

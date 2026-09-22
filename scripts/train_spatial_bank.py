@@ -15,16 +15,21 @@ from safetensors.torch import load_model
 import torch
 
 from sdkb.agent import SDKBAgent
+from sdkb.bank_replay import BankWriterReplay
 from sdkb.checkpoints import (resolve_checkpoint, restore_checkpoint, save_checkpoint,
                               stop_on_signal)
 from sdkb.config import load_config
 from sdkb.key_index import PublishedKeyIndex
-from sdkb.offline_bank import canonical_json, publish_offline_generation
+from sdkb.document_ingestion import (holistic_ingestion_messages,
+                                     prompted_write_messages, writer_prefix_ids)
+from sdkb.offline_bank import (canonical_json, publish_offline_generation,
+                               stored_memory_identity)
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.optimizers import make_optimizer, optimizer_report
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
 from sdkb.store import DiskStore
+from sdkb.training_bank import TrainingBank
 from sdkb.tracking import Tracking
 from sdkb.training import EpisodeSampler, autocast_context, environment_report, resource_report
 from sdkb.trajectories import file_sha256
@@ -39,7 +44,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           init_from: Path | None, *, resume: bool, steps: int, batch_size: int,
           loops: int, limits: tuple[int, ...], routing_candidates: int,
           checkpoint_every: int, train_recurrent_core: bool = False,
-          microbatch_size: int | None = None, inflight: int = 1) -> dict:
+          microbatch_size: int | None = None, inflight: int = 1,
+          sources_path: Path | None = None) -> dict:
     if steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1:
         raise ValueError("Invalid spatial training schedule")
     pipeline = microbatch_size is not None or inflight != 1
@@ -81,19 +87,23 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     )
     if canonical_json(verified) != canonical_json({key: bank_manifest[key] for key in verified}):
         raise ValueError("Published bank differs from its verified manifest")
-    bank_memory = dict(bank_manifest["identity"]["memory"])
-    current_memory = asdict(config.memory)
-    # Recurrent read depth is a consumer schedule, not part of stored key/payload
-    # encoding. Every other memory field remains pinned to the bank generation.
-    bank_memory.pop("read_steps", None)
-    current_memory.pop("read_steps", None)
+    bank_memory = stored_memory_identity(dict(bank_manifest["identity"]["memory"]))
+    current_memory = stored_memory_identity(asdict(config.memory))
     if (tuple(bank_manifest["spaces"]) != tuple(f"s{i}" for i in range(len(limits)))
             or bank_memory != current_memory):
         raise ValueError("Spatial model and published bank interfaces differ")
-    settings = {"format": 1, "loops": loops, "limits": limits,
+    if config.train.writer_replay_records_per_site and (not pipeline or sources_path is None):
+        raise ValueError('Writer replay requires --sources and the overlapped pipeline')
+    source_sha = None
+    if sources_path is not None:
+        source_sha = file_sha256(sources_path)
+        if source_sha != bank_manifest['identity']['source_manifest_sha256']:
+            raise ValueError('Writer replay source manifest differs from bank creation')
+    settings = {"format": 2, "loops": loops, "limits": limits,
                 "routing_candidates": routing_candidates, "batch_size": batch_size,
                 "steps": steps, "sampler": "deterministic_shuffled_passes",
-                "train_recurrent_core": train_recurrent_core}
+                "train_recurrent_core": train_recurrent_core,
+                "source_manifest_sha256": source_sha}
     if pipeline:
         settings["pipeline"] = {
             "microbatch_size": microbatch_size, "inflight": inflight,
@@ -119,7 +129,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     for name, parameter in agent.named_parameters():
         if name.startswith(("write_slots", "key_head.", "value_head.",
                             "address_maps.", "codecs.")):
-            parameter.requires_grad_(False)
+            parameter.requires_grad_(bool(config.train.writer_replay_records_per_site))
     agent.train()
     initialization = None
     if not resume:
@@ -129,7 +139,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             raise ValueError("Warm-start model revision differs")
         missing, unexpected = load_model(agent, str(checkpoint / "model.safetensors"),
                                          strict=False, device=config.train.device)
-        if missing or unexpected:
+        allowed_missing = {name for name in missing if name.startswith('distance_gates.')}
+        if set(missing) != allowed_missing or unexpected:
             raise ValueError(f"Spatial warm start is incompatible: {missing=}, {unexpected=}")
         if loops == 2 and file_sha256(checkpoint / "model.safetensors") != \
                 bank_manifest["identity"]["writer_checkpoint_sha256"]:
@@ -164,6 +175,38 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         store, namespace=bank_manifest["namespace"], generation=bank_manifest["generation"],
         spaces=tuple(bank_manifest["spaces"]), expected_sources=bank_manifest["sources"],
     )
+    training_bank = TrainingBank(store, cache, index)
+    source_rows = {}
+    if sources_path is not None:
+        with sources_path.open(encoding='utf-8') as handle:
+            for line in handle:
+                row = json.loads(line)
+                source_rows[row['record_id']] = row
+        if set(map(str, next(iter(index.spaces.values())).ids)) - source_rows.keys():
+            raise ValueError('Writer replay manifest does not cover the published bank')
+
+    class WriterInputs(dict):
+        def __getitem__(self, record_id):
+            row = source_rows[record_id]
+            if int(hashlib.sha256(record_id.encode()).hexdigest(), 16) % 2:
+                complete, _ = holistic_ingestion_messages(
+                    record_id, row['text'], generation=bank_manifest['generation'],
+                    scope={'domain': row.get('domain', 'research')},
+                    write_contents=(row['text'],))
+                messages = complete[:-1]  # Causal prefix through the write call.
+            else:
+                messages = prompted_write_messages(
+                    document_id=record_id, text=row['text'], record_id=record_id,
+                    generation=bank_manifest['generation'],
+                    scope={'domain': row.get('domain', 'research')},
+                    kind=row.get('kind', 'passage'))
+            ids = writer_prefix_ids(agent.tokenizer, messages)
+            return torch.tensor([ids], dtype=torch.long, device=agent.device)
+
+        def keys(self):
+            return source_rows.keys()
+
+    writer_inputs = WriterInputs()
     sampler = EpisodeSampler(len(data), seed=config.train.seed)
     if not resume:
         save_checkpoint(agent, optimizer, output, 0, rng, cache, fingerprint,
@@ -176,6 +219,10 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         environment = environment_report() | {
             "resume": resume, "attempt": tracker.attempt,
             "bank_key_index": {"kind": "resident_exact_cpu", "bytes": index.key_bytes},
+            "writer_replay_ingestion_mix": {
+                "holistic_complete_blob": "sha256(record_id) parity 1",
+                "prompted_source_part": "sha256(record_id) parity 0",
+            },
             "spatial": settings,
         }
         atomic_json(output / "environment.json", environment)
@@ -190,13 +237,16 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                         for offset in range(batch_size)]
                 optimizer.zero_grad(set_to_none=True)
                 tick = time.perf_counter()
+                replay = (BankWriterReplay(agent, writer_inputs)
+                          if config.train.writer_replay_records_per_site else None)
                 with autocast_context(config):
                     if pipeline:
                         result = spatial_bank_pipeline_forward(
-                            agent, store, index, rows, limits=limits,
+                            agent, training_bank, index, rows, limits=limits,
                             routing_candidates=routing_candidates,
                             microbatch_size=microbatch_size, inflight=inflight,
                             pad_token_id=agent.tokenizer.pad_token_id or 0,
+                            writer_replay=replay,
                         )
                     else:
                         result = spatial_bank_forward(
@@ -205,11 +255,14 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                             pad_token_id=agent.tokenizer.pad_token_id or 0,
                         )
                 result.loss.backward()
+                if replay is not None:
+                    replay.backward()
                 gradient_norm = torch.nn.utils.clip_grad_norm_(
                     [parameter for parameter in agent.parameters() if parameter.requires_grad],
                     config.train.clip_grad_norm,
                 )
                 optimizer.step()
+                refreshed_views = replay.refresh(training_bank) if replay is not None else 0
                 completed = step + 1
                 elapsed = time.perf_counter() - tick
                 row = {
@@ -220,6 +273,9 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     "tokens": sum(item["tokens"] for item in rows),
                     "tokens_per_second": sum(item["tokens"] for item in rows) / elapsed,
                     "trajectory_rows": batch_size, **result.metrics,
+                    "replayed_records": len(set(replay.record_ids)) if replay is not None else 0,
+                    "refreshed_record_views": refreshed_views,
+                    "training_overlay_views": training_bank.sizes()['views'],
                 }
                 if completed == 1 or completed % config.train.log_every == 0:
                     log.write(json.dumps(row) + "\n")
@@ -261,6 +317,7 @@ if __name__ == "__main__":
     parser.add_argument("--train-recurrent-core", action="store_true")
     parser.add_argument("--microbatch-size", type=int)
     parser.add_argument("--inflight", type=int, default=1)
+    parser.add_argument("--sources", type=Path)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -270,4 +327,5 @@ if __name__ == "__main__":
         checkpoint_every=args.checkpoint_every,
         train_recurrent_core=args.train_recurrent_core,
         microbatch_size=args.microbatch_size, inflight=args.inflight,
+        sources_path=args.sources,
     ), indent=2))

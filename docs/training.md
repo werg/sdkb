@@ -3,6 +3,27 @@
 Detached runs, graceful stops, W&B and external-disk checkpoint archives are
 described in [portable operations](operations.md).
 
+## Adaptive spatial bank training (v0.6)
+
+The target spatial trainer may enable `memory.distance_gating` and
+`train.writer_replay_records_per_site`. It then requires the exact standalone source
+manifest through `scripts/train_spatial_bank.py --sources ...`. Selected records are
+encoded from prompted causal prefixes ending at `memory.write`, cast to actual
+storage precision, and captured as replay leaves. Consumer backward is followed by
+writer replay before clipping and the optimizer step. Updated keys and payloads are
+then regenerated into the checkpointed training overlay.
+
+The source manifest digest must equal the digest recorded by the immutable bank.
+The overlay is restored from `training_cache.sqlite`; deleting or omitting it changes
+the next retrieval plan and is not an exact resume. Hard search still uses a bounded
+candidate field. `train.routing_weight` controls the gentle support anchor, while
+the ordinary task loss trains continuous gates and selected keys/payloads directly.
+
+Document ingestion data should use the helpers in `document_ingestion.py`. Provide
+both complete-document prompts with several model-chosen writes and streaming
+natural/manual parts with one visible write after each part. Store exact source spans,
+chunk policy, call IDs, and parent read IDs in the prepared artifact.
+
 
 > **v0.4 update:** the recommended entry points are `recipes/looped_smoke.yaml`,
 > `recipes/looped_starter_muon.yaml` and `recipes/looped_causal.yaml`. They add native

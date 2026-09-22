@@ -7,6 +7,19 @@ from pathlib import Path
 from .store import DiskStore, StoredRecord
 
 
+CONSUMER_MEMORY_FIELDS = frozenset({
+    'read_steps', 'distance_gating', 'gate_density_k', 'gate_min_temperature',
+    'gate_max_temperature', 'gate_initial_temperature',
+    'gate_max_radius_adjustment',
+})
+
+
+def stored_memory_identity(memory: dict) -> dict:
+    """Fields that determine serialized keys/payloads rather than read behavior."""
+    return {key: value for key, value in memory.items()
+            if key not in CONSUMER_MEMORY_FIELDS}
+
+
 def assert_bank_writer_compatible(run: Path, checkpoint: Path, bank_dir: Path,
                                   manifest: dict, *, training_bank_dir: str | Path | None) -> None:
     """Reject stale payloads if an evaluator's writer differs from bank creation.
@@ -57,10 +70,8 @@ def assert_bank_reader_compatible(run: Path, checkpoint: Path, bank_dir: Path,
 
     from .trajectories import file_sha256
 
-    current_memory = asdict(config.memory)
-    bank_memory = dict(manifest['identity']['memory'])
-    current_memory.pop('read_steps', None)
-    bank_memory.pop('read_steps', None)
+    current_memory = stored_memory_identity(asdict(config.memory))
+    bank_memory = stored_memory_identity(dict(manifest['identity']['memory']))
     bank_model = manifest['identity']['model']
     if current_memory != bank_memory or any(
             bank_model[name] != getattr(config.model, name)
