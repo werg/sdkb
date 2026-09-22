@@ -222,10 +222,13 @@ class TrainingBank:
                  AND r.space=h.space WHERE h.cursor<=?''', (cursor,)).fetchall()
             invalidated = self._invalidated(db, cursor)
         self.index.bank_cursor = cursor
-        for record_id, space, domain, created_at, source_id, key, key_dim in rows:
-            self.index.upsert(space, record_id, key, key_dim, domain=domain,
-                              created_at=created_at, source_id=source_id,
-                              deleted=record_id in invalidated)
+        for space in self._spaces:
+            self.index.upsert_many(space, [
+                (record_id, key, key_dim, domain, created_at, source_id,
+                 record_id in invalidated)
+                for record_id, row_space, domain, created_at, source_id, key, key_dim
+                in rows if row_space == space
+            ])
         self.index.set_deleted(invalidated, True)
 
     @staticmethod

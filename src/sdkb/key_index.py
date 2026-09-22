@@ -110,6 +110,67 @@ class PublishedKeyIndex:
             array.deleted = array.deleted[order]
         self.key_bytes = sum(item.keys.nbytes for item in self.spaces.values())
 
+    def upsert_many(self, space: str, rows: Sequence[tuple]) -> None:
+        """Apply a journal snapshot with one vectorized existing-ID patch."""
+        if space not in self.spaces or not rows:
+            return
+        array = self.spaces[space]
+        ids = np.asarray([row[0] for row in rows], dtype=object)
+        if len(set(ids)) != len(ids):
+            raise ValueError('Mutable index batch contains duplicate logical IDs')
+        dimensions = {row[2] for row in rows}
+        if dimensions != {array.keys.shape[1]}:
+            raise ValueError('Mutable key dimension differs from the base index')
+        keys = np.stack([np.frombuffer(row[1], dtype='<f4') for row in rows]).copy()
+        norms = np.linalg.norm(keys, axis=1, keepdims=True)
+        if not np.isfinite(keys).all() or np.any(norms <= 0):
+            raise ValueError('Mutable key is nonfinite or zero')
+        keys /= norms
+        positions = np.searchsorted(array.ids, ids)
+        existing = positions < len(array.ids)
+        existing &= np.asarray([
+            array.ids[position] == record_id if position < len(array.ids) else False
+            for position, record_id in zip(positions, ids, strict=True)
+        ])
+        old_positions = positions[existing]
+        array.keys[old_positions] = keys[existing]
+        array.domains[old_positions] = np.asarray(
+            [row[3] for row, present in zip(rows, existing, strict=True) if present],
+            dtype=object)
+        array.times[old_positions] = np.asarray(
+            [row[4] for row, present in zip(rows, existing, strict=True) if present],
+            dtype=np.int64)
+        sources = np.asarray(
+            [row[5] for row, present in zip(rows, existing, strict=True) if present],
+            dtype=object)
+        replace_source = sources != ''
+        array.source_ids[old_positions[replace_source]] = sources[replace_source]
+        array.deleted[old_positions] = np.asarray(
+            [row[6] for row, present in zip(rows, existing, strict=True) if present],
+            dtype=bool)
+        if not np.all(existing):
+            fresh = ~existing
+            array.ids = np.concatenate((array.ids, ids[fresh]))
+            array.keys = np.concatenate((array.keys, keys[fresh]), axis=0)
+            array.domains = np.concatenate((array.domains, np.asarray(
+                [row[3] for row, present in zip(rows, fresh, strict=True) if present],
+                dtype=object)))
+            array.times = np.concatenate((array.times, np.asarray(
+                [row[4] for row, present in zip(rows, fresh, strict=True) if present],
+                dtype=np.int64)))
+            array.source_ids = np.concatenate((array.source_ids, np.asarray(
+                [row[5] for row, present in zip(rows, fresh, strict=True) if present],
+                dtype=object)))
+            array.deleted = np.concatenate((array.deleted, np.asarray(
+                [row[6] for row, present in zip(rows, fresh, strict=True) if present],
+                dtype=bool)))
+            order = np.argsort(array.ids, kind='stable')
+            array.ids, array.keys = array.ids[order], array.keys[order]
+            array.domains, array.times = array.domains[order], array.times[order]
+            array.source_ids, array.deleted = (
+                array.source_ids[order], array.deleted[order])
+        self.key_bytes = sum(item.keys.nbytes for item in self.spaces.values())
+
     def set_deleted(self, record_ids: set[str], deleted: bool) -> None:
         for array in self.spaces.values():
             if record_ids:
