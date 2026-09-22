@@ -11,6 +11,8 @@ import subprocess
 import sys
 import time
 
+from sdkb.operations import control_dir
+
 
 # Variable trajectory and writer lengths otherwise leave many differently sized
 # native allocator segments cached. This is especially costly on a unified-memory
@@ -60,6 +62,9 @@ def _train(python: str, root: Path, *, config: Path, data: Path, bank: Path,
     _wait_complete(parent, interval=interval, stopped=stopped)
     if shutil.disk_usage(root).free < 30 * 1024**3:
         raise OSError("External disk has less than the 30 GiB curriculum reserve")
+    # This explicit launch acknowledges only a stop left by the previous process.
+    # A request written after spawn must survive the trainer's long initialization.
+    (control_dir(output) / "STOP").unlink(missing_ok=True)
     command = [python, "scripts/train_spatial_bank.py", "--config", str(config),
                "--data", str(data), "--bank", str(bank), "--output", str(output),
                "--sources", str(sources),

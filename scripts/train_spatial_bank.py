@@ -229,7 +229,10 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     completed, last_saved = start, 0 if not resume else None
     began = time.perf_counter()
 
-    with run_lock(output), stop_on_signal() as signal_state, ExitStack() as lifecycle:
+    # The launcher acknowledges a stale stop before spawning. Never clear a new
+    # request that arrives during model, index, or checkpoint initialization.
+    with run_lock(output, clear_stop=False), stop_on_signal() as signal_state, \
+            ExitStack() as lifecycle:
         tracker = lifecycle.enter_context(Tracking(config, output))
         environment = environment_report() | {
             "resume": resume, "attempt": tracker.attempt,

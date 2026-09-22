@@ -71,6 +71,11 @@ acknowledges an earlier stop request. Use one canonical run path through shared
 mounts. These controls have been exercised on Linux ARM64; other platforms need
 their own runtime validation.
 
+Target-curriculum supervisors acknowledge the earlier stop immediately before they
+spawn a stage. The stage itself preserves any stop written during model, index, or
+checkpoint initialization, so a startup-time request cannot be cleared when the run
+lock is acquired later.
+
 Inside Docker, run `sdkb launch` in the foreground and let Docker own process
 lifetime; do not detach a child inside an ephemeral `docker run --rm` container.
 On Spark:
