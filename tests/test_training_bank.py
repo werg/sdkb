@@ -31,6 +31,31 @@ def test_training_overlay_updates_search_keys_and_stored_payloads(tmp_path):
         's0', ('a',), domain='research', query_time=2)[0], torch.tensor([0., 1.]))
 
 
+def test_training_overlay_batches_multiple_plans_and_spaces(tmp_path):
+    base = DiskStore(tmp_path / 'base.sqlite')
+    for space in ('s0', 's1'):
+        for offset, record_id in enumerate(('a', 'b')):
+            base.put(StoredRecord(record_id, torch.tensor([1., float(offset)]),
+                torch.tensor([float(offset)]), namespace='corpus', space=space,
+                generation='g', created_at=1))
+    cache = DiskStore(tmp_path / 'cache.sqlite')
+    index = PublishedKeyIndex(base, namespace='corpus', generation='g',
+                              spaces=('s0', 's1'), expected_sources=2)
+    bank = TrainingBank(base, cache, index)
+    bank.update([
+        StoredRecord('a', torch.tensor([1., 0.]), torch.tensor([7.]), space='s0'),
+        StoredRecord('b', torch.tensor([1., 1.]), torch.tensor([8.]), space='s1'),
+    ])
+    plans = tuple(ReadPlan('corpus', space, 'g', 'research', 2,
+                           tuple(Selection(record_id, 0.) for record_id in ('a', 'b')))
+                  for space in ('s0', 's1'))
+    rows = bank.fetch_many(plans)
+    torch.testing.assert_close(rows[0][0], torch.tensor([7.]))
+    torch.testing.assert_close(rows[0][1], torch.tensor([1.]))
+    torch.testing.assert_close(rows[1][0], torch.tensor([0.]))
+    torch.testing.assert_close(rows[1][1], torch.tensor([8.]))
+
+
 def test_training_overlay_is_part_of_exact_checkpoint_resume(tiny_config, tmp_path):
     agent = SDKBAgent(tiny_config)
     optimizer = make_optimizer(agent)

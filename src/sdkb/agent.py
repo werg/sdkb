@@ -80,6 +80,11 @@ class SDKBAgent(nn.Module):
                              end=m.recurrent_end, input_mix=m.recurrent_input_mix,
                              update_mix=m.recurrent_update_mix)
                          if m.recurrence_mode == "middle_block" else RecurrentBackbone(base, m.loops))
+        if (m.backend == "hf" and m.gradient_checkpointing
+                and m.recurrence_mode == "middle_block"):
+            # The repeated block dominates retained activations. Retain the
+            # one-pass prelude/coda instead of recomputing every decoder layer.
+            base.checkpoint_layer_range(m.recurrent_start, m.recurrent_end)
         if m.recurrence_mode == "middle_block":
             self.loop_workspace = nn.Parameter(torch.randn(r.read_slots, base.width) * 0.02)
             self.loop_query_norm = nn.RMSNorm(base.width, eps=1e-5)

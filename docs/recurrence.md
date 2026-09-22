@@ -178,7 +178,10 @@ All passes use `past_key_values=None`. Convolution histories and attention cache
 must not silently survive as if one depth pass were another segment of sequence.
 This reference recomputes prefixes at inference. It is suitable for validating the
 training architecture, not an optimized serving engine. Layer checkpointing stays
-inside the native block calls and does not repeat retrieval side effects.
+inside the native block calls and does not repeat retrieval side effects. For native
+middle-block training, activation checkpointing applies to the repeated shared block;
+the one-pass prelude and coda retain their activations. This spends bounded memory to
+avoid recomputing layers that execute only once.
 
 ## 4. SDKB reads are part of the recurrence
 

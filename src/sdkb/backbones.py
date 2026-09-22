@@ -112,6 +112,15 @@ class HFBackbone(nn.Module):
             self.lm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
         self.resolved_revision = getattr(self.lm.config, "_commit_hash", None) or revision
 
+    def checkpoint_layer_range(self, start: int, end: int) -> None:
+        """Keep activation recomputation on the repeated native layer range only."""
+        layers = self.lm.base_model.layers
+        if not 0 <= start < end <= len(layers):
+            raise ValueError("Invalid gradient-checkpointing layer range")
+        for index, layer in enumerate(layers):
+            if hasattr(layer, "gradient_checkpointing"):
+                layer.gradient_checkpointing = start <= index < end
+
     def embed(self, ids: Tensor) -> Tensor:
         return self.lm.get_input_embeddings()(ids)
 

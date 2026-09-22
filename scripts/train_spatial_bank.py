@@ -49,9 +49,10 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           microbatch_size: int | None = None, inflight: int = 1,
           sources_path: Path | None = None,
           max_unused_cuda_gib: float = 4.0,
-          gradient_checkpointing: bool = False) -> dict:
+          gradient_checkpointing: bool = False,
+          profile_steps: int = 0) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
-            or max_unused_cuda_gib < 0):
+            or max_unused_cuda_gib < 0 or profile_steps < 0):
         raise ValueError("Invalid spatial training schedule")
     max_unused_cuda_bytes = int(max_unused_cuda_gib * 1024 ** 3)
     pipeline = microbatch_size is not None or inflight != 1
@@ -200,14 +201,18 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             document_id, parts, generation=bank_manifest['generation'],
             scope={'domain': domain}, mode=mode)
 
+    @lru_cache(maxsize=2048)
+    def writer_tokens(record_id):
+        row = source_rows[record_id]
+        document_id, parts, mode = source_groups[record_id]
+        messages = ingestion_prefixes(
+            document_id, parts, mode, row.get('domain', 'research'))[record_id]
+        return tuple(writer_prefix_ids(agent.tokenizer, messages))
+
     class WriterInputs(dict):
         def __getitem__(self, record_id):
-            row = source_rows[record_id]
-            document_id, parts, mode = source_groups[record_id]
-            messages = ingestion_prefixes(
-                document_id, parts, mode, row.get('domain', 'research'))[record_id]
-            ids = writer_prefix_ids(agent.tokenizer, messages)
-            return torch.tensor([ids], dtype=torch.long, device=agent.device)
+            return torch.tensor([writer_tokens(record_id)], dtype=torch.long,
+                                device=agent.device)
 
         def keys(self):
             return source_rows.keys()
@@ -248,7 +253,22 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 rows = [data[sampler.index(step * batch_size + offset)]
                         for offset in range(batch_size)]
                 optimizer.zero_grad(set_to_none=True)
+                profiling = step < start + profile_steps
+                if profiling and torch.cuda.is_available():
+                    torch.cuda.synchronize(config.train.device)
                 tick = time.perf_counter()
+                phase_tick = tick
+                phase_seconds = {}
+
+                def finish_phase(name):
+                    nonlocal phase_tick
+                    if profiling and torch.cuda.is_available():
+                        torch.cuda.synchronize(config.train.device)
+                    now = time.perf_counter()
+                    if profiling:
+                        phase_seconds[f'profile_{name}_seconds'] = now - phase_tick
+                    phase_tick = now
+
                 replay = (BankWriterReplay(agent, writer_inputs)
                           if config.train.writer_replay_records_per_site else None)
                 with autocast_context(config):
@@ -266,15 +286,20 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                             routing_candidates=routing_candidates,
                             pad_token_id=agent.tokenizer.pad_token_id or 0,
                         )
+                finish_phase('forward')
                 result.loss.backward()
+                finish_phase('consumer_backward')
                 if replay is not None:
                     replay.backward()
+                finish_phase('writer_backward')
                 gradient_norm = torch.nn.utils.clip_grad_norm_(
                     [parameter for parameter in agent.parameters() if parameter.requires_grad],
                     config.train.clip_grad_norm,
                 )
                 optimizer.step()
+                finish_phase('optimizer')
                 refreshed_views = replay.refresh(training_bank) if replay is not None else 0
+                finish_phase('refresh')
                 loss_value = float(result.loss.detach())
                 nll_value = float(result.nll.detach())
                 routing_value = float(result.routing.detach())
@@ -285,6 +310,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 optimizer.zero_grad(set_to_none=True)
                 cache_metrics = reclaim_cuda_cache(
                     config.train.device, max_unused_cuda_bytes)
+                finish_phase('cache_reclaim')
                 completed = step + 1
                 elapsed = time.perf_counter() - tick
                 row = {
@@ -297,7 +323,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     "replayed_records": replayed_records,
                     "refreshed_record_views": refreshed_views,
                     "training_overlay_views": training_bank.sizes()['views'],
-                    **cache_metrics,
+                    **cache_metrics, **phase_seconds,
                 }
                 if torch.cuda.is_available() and str(config.train.device).startswith('cuda'):
                     row.update(
@@ -306,7 +332,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                         cuda_peak_reserved_bytes=torch.cuda.max_memory_reserved(
                             config.train.device),
                     )
-                if completed == 1 or completed % config.train.log_every == 0:
+                if profiling or completed == 1 or completed % config.train.log_every == 0:
                     log.write(json.dumps(row) + "\n")
                     log.flush()
                     tracker.log(row)
@@ -353,6 +379,7 @@ if __name__ == "__main__":
     parser.add_argument("--sources", type=Path)
     parser.add_argument("--max-unused-cuda-gib", type=float, default=4.0)
     parser.add_argument("--gradient-checkpointing", action="store_true")
+    parser.add_argument("--profile-steps", type=int, default=0)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -365,4 +392,5 @@ if __name__ == "__main__":
         sources_path=args.sources,
         max_unused_cuda_gib=args.max_unused_cuda_gib,
         gradient_checkpointing=args.gradient_checkpointing,
+        profile_steps=args.profile_steps,
     ), indent=2))

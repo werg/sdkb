@@ -13,6 +13,18 @@ storage precision, and captured as replay leaves. Consumer backward is followed 
 writer replay before clipping and the optimizer step. Updated keys and payloads are
 then regenerated into the checkpointed training overlay.
 
+Within one optimizer step, a record selected at several read waves shares one
+serialized replay leaf, so every consumer use accumulates into the same producer
+cotangent. Post-update refresh groups records by source length and may use a larger
+no-grad batch; it still regenerates every touched key and payload before the next
+step. Overlay payload reads are batched by space while retaining the authorization
+checks performed by the immutable base store.
+
+`--profile-steps N` synchronizes phase boundaries for the first `N` steps of a
+process and records forward, consumer-backward, writer-backward, optimizer, refresh,
+and cache-reclamation wall times. It is a diagnostic mode because those additional
+synchronizations can reduce overlap; target supervisors use three steps after launch.
+
 The source manifest digest must equal the digest recorded by the immutable bank.
 The overlay is restored from `training_cache.sqlite`; deleting or omitting it changes
 the next retrieval plan and is not an exact resume. Hard search still uses a bounded

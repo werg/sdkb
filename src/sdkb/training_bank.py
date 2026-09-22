@@ -48,14 +48,28 @@ class TrainingBank:
     def fetch_many(self, plans: Iterable[ReadPlan]) -> list[list[torch.Tensor]]:
         plans = tuple(plans)
         base_rows = self.base.fetch_many(plans)
+        requested: dict[str, set[str]] = {}
+        for plan in plans:
+            requested.setdefault(plan.space, set()).update(
+                selection.record_id for selection in plan.selections)
+        overlay = {}
         with self.cache.connect() as db:
-            for row, plan in zip(base_rows, plans, strict=True):
-                for position, selection in enumerate(plan.selections):
-                    found = db.execute('''SELECT payload FROM training_bank_overlay
-                                          WHERE space=? AND record_id=?''',
-                                       (plan.space, selection.record_id)).fetchone()
-                    if found is not None:
-                        row[position] = load(found[0])["payload"]
+            for space, record_ids in requested.items():
+                ordered = sorted(record_ids)
+                for start in range(0, len(ordered), 900):
+                    chunk = ordered[start:start + 900]
+                    placeholders = ','.join('?' for _ in chunk)
+                    rows = db.execute(
+                        f'''SELECT record_id,payload FROM training_bank_overlay
+                            WHERE space=? AND record_id IN ({placeholders})''',
+                        (space, *chunk)).fetchall()
+                    overlay.update(((space, record_id), load(blob)['payload'])
+                                   for record_id, blob in rows)
+        for row, plan in zip(base_rows, plans, strict=True):
+            for position, selection in enumerate(plan.selections):
+                value = overlay.get((plan.space, selection.record_id))
+                if value is not None:
+                    row[position] = value
         return base_rows
 
     def update(self, records: Iterable[StoredRecord]) -> int:

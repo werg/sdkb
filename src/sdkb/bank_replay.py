@@ -19,6 +19,7 @@ class BankWriterReplay:
         self.writer_inputs = writer_inputs
         self.tape = ReplayTape(verify_outputs=verify_outputs)
         self.record_ids: list[str] = []
+        self._leaves: dict[str, tuple[Tensor, ...]] = {}
 
     def _produce(self, record_ids: tuple[str, ...]) -> tuple[Tensor, ...]:
         outputs = self.agent.produce_batch([self.writer_inputs[record_id]
@@ -36,18 +37,24 @@ class BankWriterReplay:
         missing = set(record_ids) - self.writer_inputs.keys()
         if missing:
             raise KeyError(f'Writer inputs missing for {sorted(missing)[:3]}')
-        leaves = self.tape.capture(self.agent, lambda: self._produce(record_ids))
-        self.record_ids.extend(record_ids)
-        return {record_id: tuple(output[row:row + 1] for output in leaves)
-                for row, record_id in enumerate(record_ids)}
+        unseen = tuple(record_id for record_id in record_ids if record_id not in self._leaves)
+        if unseen:
+            leaves = self.tape.capture(self.agent, lambda: self._produce(unseen))
+            self.record_ids.extend(unseen)
+            self._leaves.update({
+                record_id: tuple(output[row:row + 1] for output in leaves)
+                for row, record_id in enumerate(unseen)
+            })
+        return {record_id: self._leaves[record_id] for record_id in record_ids}
 
     def backward(self) -> None:
         self.tape.backward()
 
     @torch.no_grad()
-    def refresh(self, bank: TrainingBank, *, batch_size: int = 16) -> int:
+    def refresh(self, bank: TrainingBank, *, batch_size: int = 32) -> int:
         """Regenerate touched views after the optimizer step and commit atomically."""
-        ids = tuple(dict.fromkeys(self.record_ids))
+        ids = tuple(sorted(dict.fromkeys(self.record_ids),
+                           key=lambda record_id: self.writer_inputs[record_id].shape[1]))
         records = []
         dtype = getattr(torch, self.agent.config.memory.storage_dtype)
         for start in range(0, len(ids), batch_size):

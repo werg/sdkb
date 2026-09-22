@@ -34,3 +34,20 @@ def test_selected_serialized_key_and_payload_replay_then_refresh(tiny_config, tm
     plan = ReadPlan('corpus', 's0', 'g', 'research', 2, (Selection('record', 0.),))
     refreshed = bank.fetch_many((plan,))[0][0]
     assert refreshed.dtype == torch.bfloat16
+
+
+def test_replay_reuses_a_record_selected_by_later_read_waves(tiny_config):
+    agent = SDKBAgent(tiny_config)
+    inputs = {
+        'a': torch.tensor([[1, 2, 3]], dtype=torch.long),
+        'b': torch.tensor([[4, 5]], dtype=torch.long),
+    }
+    replay = BankWriterReplay(agent, inputs)
+    first = replay.capture(('a',))
+    second = replay.capture(('a', 'b'))
+    assert second['a'][0] is first['a'][0]
+    assert replay.record_ids == ['a', 'b']
+    assert len(replay.tape.records) == 2
+    sum(value.square().mean() for values in second.values() for value in values).backward()
+    replay.backward()
+    assert agent.key_head.weight.grad is not None
