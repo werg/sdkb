@@ -252,9 +252,9 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
     if state["cuda_rng"]:
         torch.cuda.set_rng_state_all(state["cuda_rng"])
     if path != run:
+        from .store import DiskStore
         destination = run / "training_cache.sqlite"
         if (path / 'bank-state.json').is_file():
-            from .store import DiskStore
             if not destination.is_file():
                 raise FileNotFoundError(
                     'Mutable-bank journal is missing; checkpoints store only its cursor')
@@ -262,11 +262,44 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
                 json.loads((path / 'bank-state.json').read_text()))
         else:
             # Discard uncheckpointed legacy cache writes.
-            for suffix in ("-wal", "-shm"):
-                Path(str(destination) + suffix).unlink(missing_ok=True)
-            temp = run / "cache-restore.tmp"
-            shutil.copyfile(path / "training_cache.sqlite", temp)
-            os.replace(temp, destination)
+            source_cache = path / "training_cache.sqlite"
+            source_digest = _digest(source_cache)
+            migrated = None
+            if destination.is_file():
+                try:
+                    with sqlite3.connect(destination) as db:
+                        migrated = dict(db.execute('''SELECT key,value
+                            FROM mutable_bank_meta WHERE key IN
+                            ('legacy_source_sha256','legacy_checkpoint_cursor')'''))
+                except sqlite3.Error:
+                    migrated = None
+            if (migrated is not None
+                    and migrated.get('legacy_source_sha256') == source_digest
+                    and 'legacy_checkpoint_cursor' in migrated):
+                store = DiskStore(destination)
+                target = int(migrated['legacy_checkpoint_cursor'])
+                with store.connect() as db:
+                    meta = dict(db.execute('SELECT key,value FROM mutable_bank_meta'))
+                    commit = db.execute('''SELECT content_sha256,optimizer_step
+                        FROM mutable_bank_commits WHERE cursor=?''', (target,)).fetchone()
+                store.restore_mutable_bank({
+                    'format': int(meta['format']), 'store_uuid': meta['store_uuid'],
+                    'cursor': target, 'floor_cursor': int(meta['floor_cursor']),
+                    'maintenance_position': 0,
+                    'commit_sha256': commit[0], 'optimizer_step': commit[1],
+                })
+            else:
+                for suffix in ("-wal", "-shm"):
+                    Path(str(destination) + suffix).unlink(missing_ok=True)
+                temp = run / "cache-restore.tmp"
+                shutil.copyfile(source_cache, temp)
+                os.replace(temp, destination)
+                with sqlite3.connect(destination) as db:
+                    db.execute('''CREATE TABLE IF NOT EXISTS mutable_bank_migration_source
+                        (sha256 TEXT NOT NULL)''')
+                    db.execute('DELETE FROM mutable_bank_migration_source')
+                    db.execute('INSERT INTO mutable_bank_migration_source VALUES (?)',
+                               (source_digest,))
         # Reconcile mutable run logs, never write into a directly loaded immutable set.
         reconcile_metrics(run, state['step'])
     return int(state["step"])

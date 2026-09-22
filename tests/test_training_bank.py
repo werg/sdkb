@@ -233,3 +233,37 @@ def test_legacy_overlay_migrates_to_revision_journal(tmp_path):
     rows = bank.fetch_many(plans)
     torch.testing.assert_close(rows[0][0], torch.tensor([7.]))
     torch.testing.assert_close(rows[1][0], torch.tensor([8.]))
+
+
+def test_legacy_checkpoint_reuses_and_rolls_back_completed_migration(tiny_config, tmp_path):
+    agent = SDKBAgent(tiny_config)
+    optimizer = make_optimizer(agent)
+    run = tmp_path / 'run'
+    run.mkdir()
+    base = DiskStore(tmp_path / 'base.sqlite')
+    base.put(StoredRecord('a', torch.ones(tiny_config.memory.key_dim),
+        torch.ones(tiny_config.memory.payload_dims[0]), namespace='corpus', space='s0',
+        generation='g', created_at=1, source_id='source-a'))
+    cache = DiskStore(run / 'training_cache.sqlite')
+    with cache.connect() as db:
+        db.execute('''CREATE TABLE training_bank_overlay (
+            space TEXT NOT NULL, record_id TEXT NOT NULL, key BLOB NOT NULL,
+            key_dim INTEGER NOT NULL, payload BLOB NOT NULL,
+            PRIMARY KEY(space,record_id))''')
+        key = torch.arange(tiny_config.memory.key_dim).float().add(1)
+        db.execute('INSERT INTO training_bank_overlay VALUES (?,?,?,?,?)', (
+            's0', 'a', key.numpy().astype('<f4').tobytes(), key.numel(),
+            save({'payload': torch.full((tiny_config.memory.payload_dims[0],), 3.)})))
+    save_checkpoint(agent, optimizer, run, 4, random.Random(1), cache, 'data')
+    assert restore_checkpoint(agent, optimizer, run, random.Random(2), 'data') == 4
+    index = PublishedKeyIndex(base, namespace='corpus', generation='g', spaces=('s0',),
+                              expected_sources=1)
+    bank = TrainingBank(base, cache, index)
+    migrated_cursor = bank.cursor
+    assert migrated_cursor == 1
+    bank.update([StoredRecord('a', torch.arange(tiny_config.memory.key_dim).float() + 2,
+                              torch.full((tiny_config.memory.payload_dims[0],), 9.),
+                              space='s0')])
+    assert bank.cursor == 2
+    assert restore_checkpoint(agent, optimizer, run, random.Random(3), 'data') == 4
+    assert cache.mutable_bank_state()['cursor'] == migrated_cursor

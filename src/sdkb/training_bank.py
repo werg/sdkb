@@ -98,6 +98,13 @@ class TrainingBank:
                 raise ValueError('Unsupported mutable-bank journal format')
             if found['catalog_scope'] != defaults['catalog_scope']:
                 raise ValueError('Mutable-bank journal belongs to another base catalog')
+            if 'mutable_bank_migration_source' in self._tables(db):
+                source = db.execute(
+                    'SELECT sha256 FROM mutable_bank_migration_source').fetchone()
+                if source is None or len(source[0]) != 64:
+                    raise ValueError('Legacy migration source identity is invalid')
+                db.execute('INSERT OR REPLACE INTO mutable_bank_meta VALUES (?,?)',
+                           ('legacy_source_sha256', source[0]))
             if found.get('base_lineage_imported') != '1':
                 with self.base.connect() as source:
                     rows = source.execute(
@@ -145,6 +152,14 @@ class TrainingBank:
             self._migrate_batch(ids)
         with self.cache.connect() as db:
             db.execute('DROP TABLE training_bank_overlay')
+            source = db.execute("""SELECT value FROM mutable_bank_meta
+                WHERE key='legacy_source_sha256'""").fetchone()
+            if source is not None:
+                cursor = int(self._meta(db, 'cursor'))
+                db.execute('INSERT OR REPLACE INTO mutable_bank_meta VALUES (?,?)',
+                           ('legacy_checkpoint_cursor', str(cursor)))
+                db.execute('''INSERT OR REPLACE INTO mutable_bank_checkpoint_pins
+                    VALUES (?,?)''', ('legacy:' + source[0], cursor))
 
     def _migrate_batch(self, record_ids: list[str]) -> None:
         """Copy already serialized legacy tensors without decoding their payloads."""
