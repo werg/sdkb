@@ -153,3 +153,18 @@ compaction.
 
 Unit tests establish invariants and gradients. They do not establish retrieval
 quality, compositional memory use, or parameter substitution.
+
+## 7. Next interface generation: wider canonical writes
+
+Eight canonical writer value slots are a compatibility setting for the active v0.6
+run, not the intended capacity. The next interface generation starts at **32 writer
+value slots per `memory.write` call**. Returned reader slots remain a separate
+capacity decision; increasing writer slots does not silently change them.
+
+This is an interface migration. The writer workspace, canonical value width, and
+codec input matrices change shape, so an eight-slot checkpoint must not be resumed
+as if it were exact. Copy compatible backbone, recurrent, query, reader, and key
+parameters explicitly; initialize the additional writer slots and wider codec
+inputs under a recorded conversion; then rebuild every stored bank with that writer.
+Run 16/32/64-slot information-matched controls later, but do not delay the 32-slot
+generation on that sweep.

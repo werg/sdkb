@@ -949,7 +949,7 @@ Keep the full architecture as the target while ensuring each experiment answers 
 
 ### 12.2 Proposed starting configuration
 
-Begin with a sub-billion-parameter student and eight canonical value slots; use the actual backbone width rather than assuming 1,024. Use one retrieval space initially, three pooled-residual rounds, a reader width of 256 or 512, ordinary normalized key similarity, and explicit null/status inputs. These are convenient sweep centers, not tuned recommendations.
+The early compatibility experiments used a sub-billion-parameter student and eight canonical value slots. That width is now considered insufficient. The next interface generation starts with 32 canonical writer value slots; use the actual backbone width rather than assuming 1,024. Returned reader slots are configured independently. Use four retrieval spaces, three pooled-residual rounds, a reader width of 256 or 512, density-adaptive normalized-key gates, and explicit null/status inputs. These are starting settings, not tuned recommendations.
 
 For multiscale experiments, test four spaces with the illustrative payload/count schedule in Section 10 against single-space readers matched for total bytes and output slots. Preserve all eligibility and provenance rules. Prefer factorized local MLPs before adding deeper per-pair networks.
 
