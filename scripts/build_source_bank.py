@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict, replace
+from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
@@ -81,7 +82,12 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
         load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
         agent.eval()
         source_groups = source_ingestion_groups(rows)
-        prefix_cache = {}
+
+        @lru_cache(maxsize=256)
+        def ingestion_prefixes(document_id, parts, mode, domain):
+            return grouped_ingestion_prefixes(
+                document_id, parts, generation=generation,
+                scope={'domain': domain}, mode=mode)
         completed_ids = []
         for start in range(0, len(rows), shard_size):
             chunk = rows[start:start + shard_size]
@@ -97,13 +103,9 @@ def build(run: Path, sources: Path, output: Path, *, max_sources: int,
                         writer_rows = []
                         for row, source in zip(mini, source_batch, strict=True):
                             document_id, parts, mode = source_groups[source.record_id]
-                            cache_key = (document_id, row.get('domain', 'research'))
-                            if cache_key not in prefix_cache:
-                                prefix_cache[cache_key] = grouped_ingestion_prefixes(
-                                    document_id, parts, generation=generation,
-                                    scope={'domain': row.get('domain', 'research')},
-                                    mode=mode)
-                            messages = prefix_cache[cache_key][source.record_id]
+                            messages = ingestion_prefixes(
+                                document_id, parts, mode,
+                                row.get('domain', 'research'))[source.record_id]
                             writer_rows.append(torch.tensor(
                                 [writer_prefix_ids(agent.tokenizer, messages)],
                                 dtype=torch.long, device=agent.device))

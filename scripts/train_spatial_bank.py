@@ -5,6 +5,7 @@ import argparse
 from contextlib import ExitStack
 from copy import deepcopy
 from dataclasses import asdict
+from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
@@ -185,18 +186,19 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         if set(map(str, next(iter(index.spaces.values())).ids)) - source_rows.keys():
             raise ValueError('Writer replay manifest does not cover the published bank')
     source_groups = source_ingestion_groups(list(source_rows.values()))
-    prefix_cache = {}
+
+    @lru_cache(maxsize=256)
+    def ingestion_prefixes(document_id, parts, mode, domain):
+        return grouped_ingestion_prefixes(
+            document_id, parts, generation=bank_manifest['generation'],
+            scope={'domain': domain}, mode=mode)
 
     class WriterInputs(dict):
         def __getitem__(self, record_id):
             row = source_rows[record_id]
             document_id, parts, mode = source_groups[record_id]
-            cache_key = (document_id, row.get('domain', 'research'))
-            if cache_key not in prefix_cache:
-                prefix_cache[cache_key] = grouped_ingestion_prefixes(
-                    document_id, parts, generation=bank_manifest['generation'],
-                    scope={'domain': row.get('domain', 'research')}, mode=mode)
-            messages = prefix_cache[cache_key][record_id]
+            messages = ingestion_prefixes(
+                document_id, parts, mode, row.get('domain', 'research'))[record_id]
             ids = writer_prefix_ids(agent.tokenizer, messages)
             return torch.tensor([ids], dtype=torch.long, device=agent.device)
 
@@ -275,6 +277,15 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     "refreshed_record_views": refreshed_views,
                     "training_overlay_views": training_bank.sizes()['views'],
                 }
+                if torch.cuda.is_available() and str(config.train.device).startswith('cuda'):
+                    row.update(
+                        cuda_allocated_bytes=torch.cuda.memory_allocated(config.train.device),
+                        cuda_reserved_bytes=torch.cuda.memory_reserved(config.train.device),
+                        cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(
+                            config.train.device),
+                        cuda_peak_reserved_bytes=torch.cuda.max_memory_reserved(
+                            config.train.device),
+                    )
                 if completed == 1 or completed % config.train.log_every == 0:
                     log.write(json.dumps(row) + "\n")
                     log.flush()

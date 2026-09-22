@@ -8,6 +8,7 @@ from pathlib import Path
 import json
 import hashlib
 import math
+import os
 import platform
 import random
 import subprocess
@@ -58,12 +59,15 @@ def autocast_context(config: Config):
 def environment_report() -> dict:
     report = {"python": platform.python_version(), "machine": platform.machine(),
               "torch": torch.__version__, "cuda_runtime": torch.version.cuda,
-              "cuda_available": torch.cuda.is_available()}
+              "cuda_available": torch.cuda.is_available(),
+              "pytorch_allocator_conf": (os.environ.get("PYTORCH_ALLOC_CONF")
+                                           or os.environ.get("PYTORCH_CUDA_ALLOC_CONF"))}
     if torch.cuda.is_available():
         report.update(gpu=torch.cuda.get_device_name(0),
                       compute_capability=list(torch.cuda.get_device_capability(0)),
                       bf16_supported=torch.cuda.is_bf16_supported(),
-                      cuda_total_bytes=torch.cuda.get_device_properties(0).total_memory)
+                      cuda_total_bytes=torch.cuda.get_device_properties(0).total_memory,
+                      cuda_allocator_backend=torch.cuda.memory.get_allocator_backend())
     try:
         report["git_commit"] = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True).strip()

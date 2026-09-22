@@ -258,7 +258,7 @@ def _consume_wave(agent: SDKBAgent, index: PublishedKeyIndex, state: _SpatialBat
             state.selected_counts[space] += len(values)
             row_values = torch.stack([
                 (live[record_id][2 * space + 1][0] if record_id in live
-                 else value.to(agent.device).float())
+                 else value.to(device=agent.device, dtype=torch.float32))
                 for record_id, value in zip(selected_ids, values, strict=True)
             ])
             device_rows.append(row_values)
@@ -468,7 +468,9 @@ def spatial_bank_forward(agent: SDKBAgent, store: DiskStore, index: PublishedKey
                     plan_observer(item["call_id"], name, chosen_plans[-1])
             values = store.fetch_many(chosen_plans)
             count = max(map(len, values))
-            device_rows = [torch.stack([value.to(agent.device).float() for value in row])
+            device_rows = [torch.stack([
+                value.to(device=agent.device, dtype=torch.float32) for value in row
+            ])
                            for row in values]
             if any(row.shape[1] != width for row in device_rows):
                 raise ValueError("Stored spatial payload width differs from configuration")

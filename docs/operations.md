@@ -286,6 +286,16 @@ added on unified-memory machines. CUDA allocator counters do not measure every
 driver or library allocation. Exact resume restores training state, not historical
 allocator peaks; the peak starts over for each attempt.
 
+The sustained spatial supervisor defaults to PyTorch expandable allocator segments,
+an 0.8 garbage-collection threshold, and a 512 MiB maximum split size. This follows
+the working Spark policy in `bgkit` and bounds cached-segment growth from variable
+trajectory and writer shapes. A caller-supplied `PYTORCH_ALLOC_CONF` or legacy
+`PYTORCH_CUDA_ALLOC_CONF` takes precedence, and the effective setting and allocator
+backend are recorded in the run environment. `nvidia-smi` process attribution on
+Spark includes CUDA-side use that ordinary process RSS and Docker memory accounting
+omit; identify the PID from the container process tree before assigning it to a
+co-tenant.
+
 Optional `cuda_memory_fraction` limits this process's CUDA allocator;
 `min_system_available_bytes` checks host `MemAvailable` before allocation and
 between updates, requesting a checkpointed stop under pressure. Neither adds host

@@ -3,12 +3,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import shutil
 import signal
 import subprocess
 import sys
 import time
+
+
+# Variable trajectory and writer lengths otherwise leave many differently sized
+# native allocator segments cached. This is especially costly on a unified-memory
+# machine, while remaining a supported PyTorch policy on discrete GPUs.
+DEFAULT_ALLOCATOR_CONF = (
+    "expandable_segments:True,garbage_collection_threshold:0.8,"
+    "max_split_size_mb:512"
+)
 
 
 def _complete(run: Path) -> bool:
@@ -69,6 +79,7 @@ def _train(python: str, root: Path, *, config: Path, data: Path, bank: Path,
 
 
 def main(args) -> None:
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", DEFAULT_ALLOCATOR_CONF)
     stopped = {"signal": None}
     previous = {}
 
