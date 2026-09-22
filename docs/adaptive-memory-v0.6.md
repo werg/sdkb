@@ -156,15 +156,23 @@ quality, compositional memory use, or parameter substitution.
 
 ## 7. Next interface generation: wider canonical writes
 
-Eight canonical writer value slots are a compatibility setting for the active v0.6
-run, not the intended capacity. The next interface generation starts at **32 writer
-value slots per `memory.write` call**. Returned reader slots remain a separate
-capacity decision; increasing writer slots does not silently change them.
+Eight canonical writer value slots and eight returned reader slots are compatibility
+settings for the active v0.6 run, not the intended capacity. Phase 2 starts at
+**32 writer value slots per `memory.write` call and 32 returned reader slots per
+read site**.
 
-This is an interface migration. The writer workspace, canonical value width, and
-codec input matrices change shape, so an eight-slot checkpoint must not be resumed
-as if it were exact. Copy compatible backbone, recurrent, query, reader, and key
-parameters explicitly; initialize the additional writer slots and wider codec
-inputs under a recorded conversion; then rebuild every stored bank with that writer.
-Run 16/32/64-slot information-matched controls later, but do not delay the 32-slot
-generation on that sweep.
+This is an interface migration, not an exact resume. Preserve the first eight writer
+slots and the old codec path, append 24 causally later writer slots, and introduce
+their codec contribution through a small live residual branch. Preserve the first
+eight reader/workspace slots, initialize 24 additional slots near the learned slot
+distribution with distinct perturbations, and begin their injection through a small
+live gate. The old eight-slot subpath therefore supplies a useful starting function
+while every new path receives gradient.
+
+Warm up reconstruction, extraction, and stored-payload dependence before resuming
+the transfer curriculum. Rebuild every bank with the 32-slot writer. Also reconsider
+the per-space stored payload widths: squeezing four times as many canonical states
+through the existing widths increases computation but not stored capacity. Start by
+profiling a four-times-wider `[1024, 2048, 4096, 8192]` BF16 payload schedule against
+a smaller storage control. Run 16/32/64-slot information-matched controls later, but
+do not delay the 32-slot generation on that sweep.

@@ -119,10 +119,12 @@ config axes. Targets are never silently truncated. These bounded windows are not
 an architectural limit on trajectory read counts; producer replay addresses graph
 storage independently.
 
-The active v0.6 compatibility generation has eight canonical writer value slots.
-The following interface generation uses 32. Because this changes writer workspace
-and codec shapes, migrate compatible parameters explicitly and rebuild the bank;
-never label that transition an exact resume.
+The active v0.6 compatibility generation has eight canonical writer value slots and
+eight returned reader slots. Phase 2 warm-starts from it and expands both counts to
+32. Preserve an initially dominant eight-slot subpath, give all additional slots a
+small live contribution, run an interface warmup, and then rebuild the bank. Because
+writer workspace, codec, reader, and trajectory shapes change, never label that
+transition an exact resume.
 
 Gradient accumulation is four examples per optimizer update. Parameters/optimizer
 state remain FP32, forward operations use BF16 autocast, and stored values use BF16.
