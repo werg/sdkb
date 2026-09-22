@@ -449,11 +449,10 @@ candidates. During this initial mixed-selection phase, known positives are alway
 delivered with retrieved distractors; telemetry reports their supplied status and
 the learned retriever's unaided positive recall separately. The generic
 corpus-training path freezes the writer and its stored transforms for that controlled
-fork. The spatial trainer instead layers a checkpointed mutable
-key/payload overlay over the same verified base and regenerates touched records
-after optimizer steps. Resume checks the base fingerprint and restores optimizer,
-sampler, RNG, partial-microbatch state, and overlay. This base-plus-overlay design is
-a transition toward the mutation journal specified by mutable bank v0.8.
+fork. The spatial trainer instead appends touched key/payload revisions to the
+mutable-bank journal after optimizer steps. Resume checks the base fingerprint and
+restores optimizer, sampler, RNG, partial-microbatch state, journal cursor, and
+maintenance position without copying the bank into the checkpoint.
 
 Published bank training loads a resident, contiguous FP32 key array for each
 space (10.24 MB at 10,000 sources and four 64-dimensional keys). It performs an
@@ -461,7 +460,7 @@ exact CPU scan with the same domain/time/exclusion ordering as the SQLite
 reference at index load; selected payloads still come from SQLite with fresh
 visibility checks. A later deletion therefore fails closed at fetch time.
 The resident array is rebuilt from the verified base snapshot on each start and
-then patched from the restored mutable key overlay. It is never copied into optimizer
+then patched from active journal heads. It is never copied into optimizer
 checkpoints. A warm-cache Spark probe
 measured about 0.05–0.06 seconds per space for the SQLite scan and about
 0.0006–0.0007 seconds per space for the resident array on the 10,000-source bank.
@@ -473,6 +472,13 @@ Snapshot readers verify shard bytes under a shared SQLite read transaction, so
 concurrent trainers and evaluations do not contend for a write lock merely to
 recheck the base. The target mutable store uses pinned read epochs and atomic
 post-step revision publication rather than a permanently frozen semantic bank.
+
+Use `python scripts/gc_mutable_bank.py --journal RUN/training_cache.sqlite` to
+inspect cursor retention and checkpoint pins. Adding `--before-cursor N --apply`
+removes superseded logical revisions only when every retained checkpoint permits
+that floor. SQLite reuses those pages for later revisions; add `--vacuum` only in a
+maintenance window with enough scratch space when the filesystem must receive the
+free pages immediately.
 
 The optional `train.payload_contrast_weight` fork uses episodes with one verified
 source and an earlier independent distractor (`--with-distractor` in

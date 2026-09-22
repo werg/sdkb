@@ -130,27 +130,41 @@ Retain physical revisions since the oldest recoverable checkpoint. When a
 checkpoint is retired, garbage collection may release revisions referenced only
 by it. The large bank is never copied into every model checkpoint.
 
-## 8. Current implementation gap
+## 8. Implementation status
 
-The v0.6 spatial trainer already updates touched keys and payloads in a
-checkpointed mutable overlay and searches those updated keys on subsequent
-steps. This is the correct learning behavior. Its published source bank remains
-an immutable physical fallback, and refreshed full-bank builds are still used as
-handoff boundaries. The prequential executor similarly uses a frozen parent plus
-append-only authored records.
+The durable local executor now implements the lifecycle contract:
 
-Those are transitional implementations. The remaining work is to make the
-overlay the durable active logical bank:
+* `TrainingBank` appends explicit all-space record revisions to a monotonic journal
+  and atomically advances logical heads and resident index entries;
+* captured read plans pin a bank cursor, so an optimizer update cannot change the
+  serialized payload underneath an in-flight forward/backward/replay graph;
+* new authored records and revisions of bootstrap records use the same logical
+  catalog and visibility-filtered index;
+* checkpoints contain a store identity, journal cursor, commit digest, and
+  maintenance position rather than another copy of the bank database;
+* exact resume truncates an uncheckpointed later branch and reconstructs heads;
+* retained checkpoints pin revision history, while `scripts/gc_mutable_bank.py`
+  refuses to collect a pinned cursor;
+* the spatial trainer can rotate maintenance regeneration through old and
+  never-refreshed source records; and
+* child revision changes make transitive compact descendants unavailable until a
+  caller publishes rebuilt all-space codes with current child revisions.
 
-* add explicit record revisions and a monotonic mutation journal;
-* atomically update all space views and index deltas;
-* checkpoint the journal cursor and maintenance scheduler;
-* regenerate sampled stale and never-retrieved records;
-* invalidate and rebuild transitive compacted descendants;
-* add revision retention and garbage collection; and
-* replace parent-plus-generation lookup with one visibility-filtered mutable
-  catalog.
+`build_prequential_bank.py` now commits an event's authored records, immutable event
+metadata, evidence lineage, dependencies, and visibility frontier in the same bank
+journal transaction. The bootstrap SQLite bank remains a read-only physical layer,
+but it is not a separate semantic generation: journal heads supersede its records,
+and newly authored records enter the same index.
 
-Until that executor exists, documentation and reports must say "frozen snapshot
-plus mutable training overlay" when describing the current run. They must not
-present immutable generations as the desired bank architecture.
+The implementation migrates the former overwrite-in-place training overlay at the
+next process start. A trainer already running code from before this change continues
+using its opened legacy tables until it is gracefully checkpointed and resumed.
+
+Scale-out work remains: a network store must provide the same transaction and cursor
+contract; compact invalidations need a background rebuild worker; and learned
+utility should eventually supplement the implemented age/coverage maintenance
+schedule. These are deployment and policy extensions to the mutable lifecycle, not
+frozen-bank semantics.
+
+Executed regression evidence is recorded in
+[mutable-bank v0.8 validation](validation-mutable-bank-v0.8.md).

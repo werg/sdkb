@@ -68,24 +68,25 @@ Execution and publication of the already prompted write sites is implemented by
 work; this executor does not claim that the model chose the calls or generated their
 visible arguments.
 
-`DiskStore.commit_event` supplies the prequential persistence primitive. In
-one SQLite transaction it verifies that every logical write has all configured space
-views, inserts their physical payload revisions, records a content-addressed event
-commit,
-persists external evidence lineage and write metadata, and advances a monotonic
-stream frontier. Exact retries are idempotent. Because
+`TrainingBank.update(..., event=...)` supplies the mutable prequential persistence
+primitive. In one SQLite transaction it verifies that every logical write has all
+configured space views, appends their physical payload revisions, advances logical
+heads and index revisions, records a content-addressed event commit, persists
+evidence lineage and write metadata, and advances a monotonic stream frontier. Exact
+retries are idempotent. Because
 ordinary search requires `created_at < query_time`, a record committed at an event's
-visibility time cannot appear in that event's own reads. `GrowingCatalogIndex`
-currently merges a frozen base snapshot with an append-only authored overlay while
-retaining each payload's physical revision identity. The executor follows file
+visibility time cannot appear in that event's own reads. The executor follows file
 order, resumes from the transactional frontier, runs every trajectory against the
-current catalog, encodes all prompted write arguments with the final writer, and
-publishes those writes only after the trajectory finishes. It records selected-read
-lineage and bank size after every event. This is a transitional physical layout.
-The target is one logically mutable bank with append-only revisions and a mutation
-journal as specified in `mutable-bank-v0.8.md`. Revision-aware garbage collection,
-remote search, learned call placement, and training sampled from logged size bands
-remain planned.
+same mutable catalog, encodes all prompted write arguments with the final writer,
+and publishes those writes only after the trajectory finishes. It records selected
+read lineage and bank size after every event.
+
+The physical bootstrap snapshot remains read-only. Journal heads supersede it and
+new records extend its resident index, so the two files implement one logical bank.
+Checkpoints store a journal cursor and digest instead of copying the SQLite payload
+database. Retained checkpoints pin history; explicit GC releases superseded rows
+only below every pin. Remote search, learned call placement, compact-code rebuild
+workers, and training sampled from logged size bands remain planned.
 
 This file maps the research plan to executable behavior. `architecture.md` remains
 the design document; the table in the root README is the implementation inventory.

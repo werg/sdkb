@@ -74,6 +74,10 @@ def _train(python: str, root: Path, *, config: Path, data: Path, bank: Path,
                "--train-recurrent-core", "--gradient-checkpointing",
                "--retain-writer-replay-activations", "--max-unused-cuda-gib", "28",
                "--cache-reclaim-host-reserve-gib", "16", "--profile-steps", "3"]
+    prior_inputs = output / 'spatial-inputs.json'
+    if (not prior_inputs.exists()
+            or json.loads(prior_inputs.read_text()).get('maintenance_records_per_step')):
+        command.extend(("--maintenance-records-per-step", "1"))
     if (output / "CURRENT").exists():
         command.append("--resume")
     elif output.exists():

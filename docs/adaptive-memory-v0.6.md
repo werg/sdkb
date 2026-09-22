@@ -63,17 +63,16 @@ becomes a detached replay leaf. The consumer reads those leaves. After consumer
 backward, selective replay reconstructs the writer computation under the captured
 RNG and autocast state and applies every accumulated key and payload cotangent.
 
-After the optimizer step, touched records are regenerated and committed to a
-mutable training overlay. The overlay contains both keys and payloads. Subsequent
-searches and reads consult it before the frozen physical base snapshot. The overlay
-lives in `training_cache.sqlite`, so model, optimizer, RNG, sampler position, and
-mutable bank state share one checkpoint commit point. Inference reads stored base or
-overlay tensors and never regenerates source trajectories.
+After the optimizer step, touched records are regenerated and atomically appended to
+the mutable-bank journal with all their space views. Logical heads and resident keys
+advance only after the physical revisions commit. Subsequent searches and reads use
+those heads over the read-only bootstrap snapshot. Inference reads stored tensors
+and never regenerates source trajectories.
 
-The base-plus-overlay layout is the implemented transition, not the desired
-long-term lifecycle. [Mutable bank v0.8](mutable-bank-v0.8.md) defines one logically
-evolving bank backed by append-only physical revisions, a mutation journal, pinned
-read epochs, and garbage collection of revisions no longer needed for recovery.
+[Mutable bank v0.8](mutable-bank-v0.8.md) defines and now implements the local
+lifecycle: pinned read cursors, checkpoint cursor recovery without copying the bank,
+background maintenance sampling, compaction invalidation, and checkpoint-aware
+revision garbage collection. Legacy overwrite overlays migrate on their next start.
 
 Untouched records retain their prior stored version. This is expected bounded
 staleness: the task supplied no gradient for them. Background generation refreshes

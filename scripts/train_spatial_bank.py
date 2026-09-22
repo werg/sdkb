@@ -52,10 +52,12 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           gradient_checkpointing: bool = False,
           profile_steps: int = 0,
           retain_writer_replay_activations: bool = False,
-          cache_reclaim_host_reserve_gib: float = 16.0) -> dict:
+          cache_reclaim_host_reserve_gib: float = 16.0,
+          maintenance_records_per_step: int = 0) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
-            or cache_reclaim_host_reserve_gib < 0):
+            or cache_reclaim_host_reserve_gib < 0
+            or maintenance_records_per_step < 0):
         raise ValueError("Invalid spatial training schedule")
     max_unused_cuda_bytes = int(max_unused_cuda_gib * 1024 ** 3)
     cache_reclaim_host_reserve_bytes = int(cache_reclaim_host_reserve_gib * 1024 ** 3)
@@ -107,6 +109,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         raise ValueError("Spatial model and published bank interfaces differ")
     if config.train.writer_replay_records_per_site and (not pipeline or sources_path is None):
         raise ValueError('Writer replay requires --sources and the overlapped pipeline')
+    if maintenance_records_per_step and not config.train.writer_replay_records_per_site:
+        raise ValueError('Bank maintenance requires writer replay and source inputs')
     source_sha = None
     if sources_path is not None:
         source_sha = file_sha256(sources_path)
@@ -122,6 +126,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             "microbatch_size": microbatch_size, "inflight": inflight,
             "ordering": "deterministic_round_robin",
         }
+    if maintenance_records_per_step:
+        settings['maintenance_records_per_step'] = maintenance_records_per_step
     fingerprint = _fingerprint(data, bank_manifest_path, settings)
 
     if resume:
@@ -293,7 +299,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                         )
                     else:
                         result = spatial_bank_forward(
-                            agent, store, index, rows, limits=limits,
+                            agent, training_bank, index, rows, limits=limits,
                             routing_candidates=routing_candidates,
                             pad_token_id=agent.tokenizer.pad_token_id or 0,
                         )
@@ -309,7 +315,12 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 )
                 optimizer.step()
                 finish_phase('optimizer')
-                refreshed_views = replay.refresh(training_bank) if replay is not None else 0
+                maintenance_ids = (() if replay is None else training_bank.maintenance_ids(
+                    maintenance_records_per_step, exclude=replay.record_ids,
+                    eligible=writer_inputs.keys()))
+                refreshed_views = (replay.refresh(
+                    training_bank, additional_ids=maintenance_ids,
+                    optimizer_step=step + 1) if replay is not None else 0)
                 finish_phase('refresh')
                 loss_value = float(result.loss.detach())
                 nll_value = float(result.nll.detach())
@@ -333,8 +344,10 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     "tokens_per_second": sum(item["tokens"] for item in rows) / elapsed,
                     "trajectory_rows": batch_size, **result_metrics,
                     "replayed_records": replayed_records,
+                    "maintenance_records": len(maintenance_ids),
                     "refreshed_record_views": refreshed_views,
-                    "training_overlay_views": training_bank.sizes()['views'],
+                    "bank_active_views": training_bank.sizes()['views'],
+                    "bank_journal_cursor": training_bank.cursor,
                     **cache_metrics, **phase_seconds,
                 }
                 if torch.cuda.is_available() and str(config.train.device).startswith('cuda'):
@@ -394,6 +407,7 @@ if __name__ == "__main__":
     parser.add_argument("--profile-steps", type=int, default=0)
     parser.add_argument("--retain-writer-replay-activations", action="store_true")
     parser.add_argument("--cache-reclaim-host-reserve-gib", type=float, default=16.0)
+    parser.add_argument("--maintenance-records-per-step", type=int, default=0)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -409,4 +423,5 @@ if __name__ == "__main__":
         profile_steps=args.profile_steps,
         retain_writer_replay_activations=args.retain_writer_replay_activations,
         cache_reclaim_host_reserve_gib=args.cache_reclaim_host_reserve_gib,
+        maintenance_records_per_step=args.maintenance_records_per_step,
     ), indent=2))

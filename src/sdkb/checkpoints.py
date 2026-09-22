@@ -113,8 +113,11 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
     root.mkdir(exist_ok=True)
     gradient_bytes = sum(p.grad.numel() * p.grad.element_size() for p in agent.parameters()
                          if p.grad is not None) if accumulation else 0
+    bank_state = cache.mutable_bank_state()
+    cache_copy_bytes = (0 if bank_state is not None
+                        else cache.sizes()['physical_sqlite_bytes'])
     ensure_free(root, weights_bytes + optimizer_bytes + gradient_bytes +
-                cache.sizes()['physical_sqlite_bytes'] + 1024 ** 2, agent.config.train.min_free_disk_bytes)
+                cache_copy_bytes + 1024 ** 2, agent.config.train.min_free_disk_bytes)
     token = uuid.uuid4().hex[:12]
     pending = root / (".pending-" + token)
     pending.mkdir()
@@ -135,9 +138,14 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
             state['gradients'] = {n: p.grad.detach().cpu() for n, p in agent.named_parameters()
                                   if p.grad is not None}
         torch.save(state, pending / "training_state.pt")
-        # backup() sees a consistent SQLite snapshot, including committed WAL data.
-        with cache.connect() as source, sqlite3.connect(pending / "training_cache.sqlite") as dest:
-            source.backup(dest)
+        if bank_state is None:
+            # Legacy episode caches remain small and self-contained.
+            with cache.connect() as source, sqlite3.connect(
+                    pending / "training_cache.sqlite") as dest:
+                source.backup(dest)
+        else:
+            (pending / 'bank-state.json').write_text(
+                json.dumps(bank_state, indent=2, sort_keys=True) + '\n')
         (pending / "config.json").write_text(json.dumps(asdict(agent.config), indent=2) + "\n")
         if (run / 'run-identity.json').exists():
             shutil.copyfile(run / 'run-identity.json', pending / 'run-identity.json')
@@ -152,11 +160,15 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
         _fsync_dir(pending)
         os.replace(pending, final)
         _fsync_dir(root)
+        if bank_state is not None:
+            cache.pin_mutable_bank(final.name, bank_state['cursor'])
         _atomic_text(run / "CURRENT", final.name + "\n")
         _checkpoint_event({'event': 'checkpoint_committed', 'step': step, 'path': str(final),
                            'elapsed_seconds': time.perf_counter() - started,
                            'bytes': sum(p.stat().st_size for p in final.iterdir() if p.is_file())})
     except BaseException:
+        if bank_state is not None:
+            cache.unpin_mutable_bank(final.name)
         shutil.rmtree(pending, ignore_errors=True)
         raise
     # Convenient legacy filenames; readers in this version always resolve CURRENT.
@@ -175,7 +187,15 @@ def save_checkpoint(agent, optimizer, run: Path, step: int, rng: random.Random,
     protected = archiver.protected_names() if archiver is not None else set()
     for old in committed[keep:]:
         if old != final and old.name not in protected:
+            if bank_state is not None:
+                cache.unpin_mutable_bank(old.name)
             shutil.rmtree(old)
+    if bank_state is not None:
+        try:
+            cache.gc_mutable_bank(cache.mutable_bank_gc_ceiling())
+        except (OSError, sqlite3.Error) as error:
+            _checkpoint_event({'event': 'checkpoint_bank_gc_deferred', 'step': step,
+                               'error': str(error)})
     return final
 
 
@@ -232,13 +252,21 @@ def restore_checkpoint(agent, optimizer, run: Path, rng: random.Random,
     if state["cuda_rng"]:
         torch.cuda.set_rng_state_all(state["cuda_rng"])
     if path != run:
-        # Discard uncheckpointed writes. Stale/live training would otherwise change.
         destination = run / "training_cache.sqlite"
-        for suffix in ("-wal", "-shm"):
-            Path(str(destination) + suffix).unlink(missing_ok=True)
-        temp = run / "cache-restore.tmp"
-        shutil.copyfile(path / "training_cache.sqlite", temp)
-        os.replace(temp, destination)
+        if (path / 'bank-state.json').is_file():
+            from .store import DiskStore
+            if not destination.is_file():
+                raise FileNotFoundError(
+                    'Mutable-bank journal is missing; checkpoints store only its cursor')
+            DiskStore(destination).restore_mutable_bank(
+                json.loads((path / 'bank-state.json').read_text()))
+        else:
+            # Discard uncheckpointed legacy cache writes.
+            for suffix in ("-wal", "-shm"):
+                Path(str(destination) + suffix).unlink(missing_ok=True)
+            temp = run / "cache-restore.tmp"
+            shutil.copyfile(path / "training_cache.sqlite", temp)
+            os.replace(temp, destination)
         # Reconcile mutable run logs, never write into a directly loaded immutable set.
         reconcile_metrics(run, state['step'])
     return int(state["step"])

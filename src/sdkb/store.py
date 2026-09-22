@@ -35,6 +35,7 @@ class ReadPlan:
     domain: str
     query_time: int
     selections: tuple[Selection, ...]
+    bank_cursor: int | None = None
 
 
 @dataclass
@@ -348,7 +349,8 @@ class DiskStore:
             raise ValueError("chunk_size must be positive")
         for start in range(0, len(plan.selections), chunk_size):
             part = ReadPlan(plan.namespace, plan.space, plan.generation, plan.domain,
-                            plan.query_time, plan.selections[start:start + chunk_size])
+                            plan.query_time, plan.selections[start:start + chunk_size],
+                            plan.bank_cursor)
             values = self.fetch(part)
             yield torch.stack(values)[None], torch.ones(1, len(values))
 
@@ -365,6 +367,164 @@ class DiskStore:
                 db.execute("UPDATE records SET deleted=1 WHERE namespace=? AND record_id=?", (namespace, rid))
                 db.execute("INSERT OR IGNORE INTO tombstones VALUES (?,?)", (namespace, rid))
         return affected
+
+    def mutable_bank_state(self) -> dict | None:
+        """Return the small recovery token for a mutable-bank journal, if present."""
+        with self.connect() as db:
+            exists = db.execute("""SELECT 1 FROM sqlite_master
+                WHERE type='table' AND name='mutable_bank_meta'""").fetchone()
+            if exists is None:
+                return None
+            meta = dict(db.execute('SELECT key,value FROM mutable_bank_meta'))
+            cursor = int(meta['cursor'])
+            commit = db.execute('''SELECT content_sha256,optimizer_step
+                FROM mutable_bank_commits WHERE cursor=?''', (cursor,)).fetchone()
+        return {
+            'format': int(meta['format']), 'store_uuid': meta['store_uuid'],
+            'cursor': cursor, 'floor_cursor': int(meta['floor_cursor']),
+            'maintenance_position': int(meta['maintenance_position']),
+            'commit_sha256': None if commit is None else commit[0],
+            'optimizer_step': None if commit is None else commit[1],
+        }
+
+    def restore_mutable_bank(self, state: dict) -> None:
+        """Roll a journal back to a checkpoint token without copying bank payloads."""
+        required = {'format', 'store_uuid', 'cursor', 'floor_cursor',
+                    'maintenance_position', 'commit_sha256', 'optimizer_step'}
+        if set(state) != required or state['format'] != 1:
+            raise ValueError('Invalid mutable-bank checkpoint state')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            meta = dict(db.execute('SELECT key,value FROM mutable_bank_meta'))
+            target, current = int(state['cursor']), int(meta['cursor'])
+            if meta.get('store_uuid') != state['store_uuid']:
+                raise ValueError('Checkpoint refers to a different mutable bank')
+            if (target != 0 and target < int(meta['floor_cursor'])) or target > current:
+                raise ValueError('Checkpoint bank cursor is outside retained history')
+            commit = db.execute('''SELECT content_sha256,optimizer_step
+                FROM mutable_bank_commits WHERE cursor=?''', (target,)).fetchone()
+            expected = None if target == 0 else (
+                state['commit_sha256'], state['optimizer_step'])
+            if commit != expected:
+                raise ValueError('Checkpoint bank cursor content differs from its journal')
+            self._rollback_mutable_events(db, target)
+            db.execute('DELETE FROM mutable_bank_revisions WHERE cursor>?', (target,))
+            db.execute('DELETE FROM mutable_bank_commits WHERE cursor>?', (target,))
+            db.execute('DELETE FROM mutable_bank_status WHERE cursor>?', (target,))
+            db.execute('DELETE FROM mutable_bank_dependencies '
+                       'WHERE introduced_cursor>?', (target,))
+            db.execute('UPDATE mutable_bank_dependencies SET retired_cursor=NULL '
+                       'WHERE retired_cursor>?', (target,))
+            db.execute('DELETE FROM mutable_bank_heads')
+            db.execute('''INSERT INTO mutable_bank_heads
+                SELECT namespace,record_id,space,MAX(cursor)
+                FROM mutable_bank_revisions WHERE cursor<=?
+                GROUP BY namespace,record_id,space''', (target,))
+            db.execute("UPDATE mutable_bank_meta SET value=? WHERE key='cursor'",
+                       (str(target),))
+            if target == 0:
+                db.execute("UPDATE mutable_bank_meta SET value='0' "
+                           "WHERE key='floor_cursor'")
+            db.execute("UPDATE mutable_bank_meta SET value=? "
+                       "WHERE key='maintenance_position'",
+                       (str(state['maintenance_position']),))
+
+    @staticmethod
+    def _rollback_mutable_events(db, cursor: int) -> None:
+        """Restore event frontiers whose atomic bank commit is being rolled back."""
+        exists = db.execute("""SELECT 1 FROM sqlite_master WHERE type='table'
+            AND name='mutable_bank_event_cursors'""").fetchone()
+        if exists is None:
+            return
+        affected = db.execute('''SELECT namespace,stream,generation,position
+            FROM mutable_bank_event_cursors WHERE cursor>?''', (cursor,)).fetchall()
+        scopes = {(namespace, stream, generation)
+                  for namespace, stream, generation, _position in affected}
+        for namespace, stream, generation, position in affected:
+            row = db.execute('''SELECT record_ids FROM event_commits
+                WHERE namespace=? AND stream=? AND generation=? AND position=?''',
+                (namespace, stream, generation, position)).fetchone()
+            if row is not None:
+                for record_id in json.loads(row[0]):
+                    db.execute('''DELETE FROM event_lineage WHERE namespace=?
+                        AND generation=? AND record_id=?''',
+                        (namespace, generation, record_id))
+                    db.execute('''DELETE FROM event_record_metadata WHERE namespace=?
+                        AND generation=? AND record_id=?''',
+                        (namespace, generation, record_id))
+            db.execute('''DELETE FROM event_commits WHERE namespace=? AND stream=?
+                AND generation=? AND position=?''',
+                (namespace, stream, generation, position))
+        db.execute('DELETE FROM mutable_bank_event_cursors WHERE cursor>?', (cursor,))
+        for namespace, stream, generation in scopes:
+            latest = db.execute('''SELECT position,visibility_time FROM event_commits
+                WHERE namespace=? AND stream=? AND generation=? ORDER BY position DESC
+                LIMIT 1''', (namespace, stream, generation)).fetchone()
+            if latest is None:
+                db.execute('''DELETE FROM event_streams WHERE namespace=? AND stream=?
+                    AND generation=?''', (namespace, stream, generation))
+            else:
+                db.execute('''UPDATE event_streams SET next_position=?,visibility_time=?
+                    WHERE namespace=? AND stream=? AND generation=?''',
+                    (latest[0] + 1, latest[1], namespace, stream, generation))
+
+    def pin_mutable_bank(self, checkpoint: str, cursor: int) -> None:
+        with self.connect() as db:
+            exists = db.execute("""SELECT 1 FROM sqlite_master
+                WHERE type='table' AND name='mutable_bank_checkpoint_pins'""").fetchone()
+            if exists is not None:
+                db.execute('INSERT OR REPLACE INTO mutable_bank_checkpoint_pins VALUES (?,?)',
+                           (checkpoint, cursor))
+
+    def unpin_mutable_bank(self, checkpoint: str) -> None:
+        with self.connect() as db:
+            exists = db.execute("""SELECT 1 FROM sqlite_master
+                WHERE type='table' AND name='mutable_bank_checkpoint_pins'""").fetchone()
+            if exists is not None:
+                db.execute('DELETE FROM mutable_bank_checkpoint_pins WHERE checkpoint=?',
+                           (checkpoint,))
+
+    def gc_mutable_bank(self, before_cursor: int) -> dict[str, int]:
+        """Release superseded revisions while retaining every pinned recovery point."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            meta = dict(db.execute('SELECT key,value FROM mutable_bank_meta'))
+            current, floor = int(meta['cursor']), int(meta['floor_cursor'])
+            pinned = [row[0] for row in db.execute(
+                'SELECT cursor FROM mutable_bank_checkpoint_pins WHERE cursor>0').fetchall()]
+            ceiling = min(pinned) if pinned else current
+            if before_cursor < floor or before_cursor > ceiling:
+                raise ValueError('GC cursor would remove checkpoint-pinned history')
+            # Keep the newest baseline revision/status no later than the new floor,
+            # plus every later event needed for rollback to a retained checkpoint.
+            deleted_revisions = db.execute('''DELETE FROM mutable_bank_revisions
+                WHERE cursor<? AND (namespace,record_id,space,cursor) NOT IN (
+                    SELECT namespace,record_id,space,MAX(cursor)
+                    FROM mutable_bank_revisions WHERE cursor<=?
+                    GROUP BY namespace,record_id,space)''',
+                (before_cursor, before_cursor)).rowcount
+            deleted_status = db.execute('''DELETE FROM mutable_bank_status
+                WHERE cursor<? AND (namespace,record_id,cursor) NOT IN (
+                    SELECT namespace,record_id,MAX(cursor) FROM mutable_bank_status
+                    WHERE cursor<=? GROUP BY namespace,record_id)''',
+                (before_cursor, before_cursor)).rowcount
+            deleted_commits = db.execute(
+                'DELETE FROM mutable_bank_commits WHERE cursor<?',
+                (before_cursor,)).rowcount
+            db.execute("UPDATE mutable_bank_meta SET value=? WHERE key='floor_cursor'",
+                       (str(before_cursor),))
+        return {'revisions': deleted_revisions, 'status': deleted_status,
+                'commits': deleted_commits}
+
+    def mutable_bank_gc_ceiling(self) -> int | None:
+        """Return the oldest non-base checkpoint cursor safe for journal GC."""
+        state = self.mutable_bank_state()
+        if state is None:
+            return None
+        with self.connect() as db:
+            pins = [row[0] for row in db.execute('''SELECT cursor
+                FROM mutable_bank_checkpoint_pins WHERE cursor>0''').fetchall()]
+        return min(pins) if pins else int(state['cursor'])
 
     def sizes(self) -> dict[str, int]:
         with self.connect() as db:

@@ -72,8 +72,9 @@ runtime work is tracked in `bgkit-audit.md`; it is part of the running experimen
 - [x] Global heterogeneous bank evaluation, negatives outside each episode namespace.
 - [x] Scheduled next-query state updates, remaining-group supervision and replay parity.
 - [ ] Conditional marginal-utility sampling, plan exploration and learned invocation/stopping.
-- [ ] Durable mutable-record journal, key-drift audit, and sampled regeneration of
-  stale or never-retrieved entries, with checkpoint-pinned revision recovery and GC.
+- [x] Durable mutable-record journal, age/coverage regeneration of stale or
+  never-refreshed entries, checkpoint-pinned revision recovery, and explicit GC.
+- [ ] Add learned-utility maintenance priorities and a compact-code rebuild worker.
 - [ ] Disk ANN adapter and key/payload layout benchmarks under controlled cache budgets.
 - [x] Bounded device payload staging for single-space stored inference.
 - [ ] Sparse nested producer dependency replay and out-of-core consumer training without read truncation.

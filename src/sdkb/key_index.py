@@ -22,6 +22,7 @@ class _Space:
     keys: np.ndarray
     domains: np.ndarray
     times: np.ndarray
+    source_ids: np.ndarray
     deleted: np.ndarray
 
 
@@ -33,16 +34,24 @@ class PublishedKeyIndex:
         if not namespace or not generation or not spaces or expected_sources < 1:
             raise ValueError('Published index needs a scoped nonempty generation')
         self.namespace, self.generation = namespace, generation
+        self.bank_cursor: int | None = None
+        self._space_names = spaces
+        self._expected_sources = expected_sources
+        self.reload(store)
+
+    def reload(self, store: DiskStore) -> None:
+        """Restore the physical base view before applying journal revisions."""
         self.spaces = {}
         common_ids = None
-        for space in spaces:
+        for space in self._space_names:
             with store.connect() as db:
-                rows = db.execute('''SELECT record_id,key,key_dim,domain,created_at,deleted
+                rows = db.execute('''SELECT record_id,key,key_dim,domain,created_at,source_id,deleted
                                      FROM records WHERE namespace=? AND generation=? AND space=?
-                                     ORDER BY record_id''', (namespace, generation, space)).fetchall()
-            if len(rows) != expected_sources:
+                                     ORDER BY record_id''',
+                                  (self.namespace, self.generation, space)).fetchall()
+            if len(rows) != self._expected_sources:
                 raise ValueError('Published bank space is not complete')
-            ids = np.asarray([row[0] for row in rows])
+            ids = np.asarray([row[0] for row in rows], dtype=object)
             if common_ids is not None and not np.array_equal(ids, common_ids):
                 raise ValueError('Published bank spaces have different logical source IDs')
             common_ids = ids
@@ -54,12 +63,57 @@ class PublishedKeyIndex:
                 raise ValueError('Published key bytes are incompatible or nonfinite')
             keys /= np.maximum(np.linalg.norm(keys, axis=1, keepdims=True), 1e-12)
             self.spaces[space] = _Space(ids, keys,
-                                        np.asarray([row[3] for row in rows]),
+                                        np.asarray([row[3] for row in rows], dtype=object),
                                         np.asarray([row[4] for row in rows], dtype=np.int64),
-                                        np.asarray([bool(row[5]) for row in rows]))
-        if len(self.spaces) != len(spaces):
+                                        np.asarray([row[5] for row in rows], dtype=object),
+                                        np.asarray([bool(row[6]) for row in rows]))
+        if len(self.spaces) != len(self._space_names):
             raise ValueError('Published spaces must be distinct')
         self.key_bytes = sum(array.keys.nbytes for array in self.spaces.values())
+
+    def upsert(self, space: str, record_id: str, key: bytes, key_dim: int, *,
+               domain: str, created_at: int, source_id: str = '',
+               deleted: bool = False) -> None:
+        """Apply one committed journal head to the resident exact index."""
+        if space not in self.spaces or not record_id or not domain or created_at < 0:
+            raise ValueError('Invalid mutable index revision')
+        vector = np.frombuffer(key, dtype='<f4').copy()
+        array = self.spaces[space]
+        if vector.shape != (key_dim,) or key_dim != array.keys.shape[1]:
+            raise ValueError('Mutable key dimension differs from the base index')
+        norm = np.linalg.norm(vector)
+        if not np.isfinite(vector).all() or norm <= 0:
+            raise ValueError('Mutable key is nonfinite or zero')
+        vector /= norm
+        positions = np.flatnonzero(array.ids == record_id)
+        if len(positions) > 1:
+            raise ValueError('Resident index contains duplicate logical IDs')
+        if len(positions) == 1:
+            position = int(positions[0])
+            array.keys[position] = vector
+            array.domains[position] = domain
+            array.times[position] = created_at
+            if source_id:
+                array.source_ids[position] = source_id
+            array.deleted[position] = deleted
+        else:
+            array.ids = np.append(array.ids, record_id)
+            array.keys = np.concatenate((array.keys, vector[None]), axis=0)
+            array.domains = np.append(array.domains, domain)
+            array.times = np.append(array.times, created_at)
+            array.source_ids = np.append(array.source_ids, source_id)
+            array.deleted = np.append(array.deleted, deleted)
+            order = np.argsort(array.ids, kind='stable')
+            array.ids, array.keys = array.ids[order], array.keys[order]
+            array.domains, array.times = array.domains[order], array.times[order]
+            array.source_ids = array.source_ids[order]
+            array.deleted = array.deleted[order]
+        self.key_bytes = sum(item.keys.nbytes for item in self.spaces.values())
+
+    def set_deleted(self, record_ids: set[str], deleted: bool) -> None:
+        for array in self.spaces.values():
+            if record_ids:
+                array.deleted[np.isin(array.ids, tuple(record_ids))] = deleted
 
     def keys_for_ids(self, space: str, record_ids: Sequence[str], *, domain: str,
                      query_time: int) -> Tensor:
@@ -116,5 +170,6 @@ class PublishedKeyIndex:
             plans.append(ReadPlan(
                 namespace, space, generation, domain, query_time,
                 tuple(Selection(str(array.ids[i]), float(scores[row, i])) for i in chosen),
+                self.bank_cursor,
             ))
         return tuple(plans)

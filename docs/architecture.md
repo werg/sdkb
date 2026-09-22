@@ -14,7 +14,7 @@
 >
 > **Target update, 22 September 2026:** [adaptive memory v0.6](adaptive-memory-v0.6.md)
 > specifies density-adaptive continuous contribution gates, gentle support anchors,
-> selective key-and-payload writer replay, a checkpointed mutable training overlay,
+> selective key-and-payload writer replay, continuously revised stored records,
 > and holistic plus streaming document-ingestion trajectories. Its status table
 > distinguishes implemented primitives from curriculum and compaction work still pending.
 >

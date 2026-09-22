@@ -125,10 +125,13 @@ the next pass. The first implementation now packs multiple structured search sit
 batches their global exact searches by space and level, fetches stored payloads, and
 scatters them into their own workspaces. Current `read_steps` are depth boundaries
 and must not be reported as trajectory site count. The packer also emits distinct
-prompted write-call targets with read lineage. The first growing-bank executor now
-runs those fixed trajectories against a parent-plus-authored catalog and atomically
-publishes their writes. Learned site placement, generated write arguments,
-size-band training, collection, and the durable mutable-bank journal remain planned.
+prompted write-call targets with read lineage. The growing-bank executor now runs
+those fixed trajectories against one revisioned logical catalog and atomically
+publishes authored writes, event lineage, dependencies, and the visibility frontier.
+Its journal supports checkpoint cursor recovery, index updates, stale-record
+maintenance sampling, compaction invalidation, and checkpoint-pinned revision GC.
+Learned site placement, generated write arguments, size-band training,
+utility-driven maintenance, and compact-code rebuild workers remain planned.
 
 This is a course extension, not a description of the current HotpotQA curriculum.
 The current run performs one automatic latent read per short episode and writes

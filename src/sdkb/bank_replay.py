@@ -61,9 +61,12 @@ class BankWriterReplay:
             self.tape.backward()
 
     @torch.no_grad()
-    def refresh(self, bank: TrainingBank, *, batch_size: int = 32) -> int:
+    def refresh(self, bank: TrainingBank, *, batch_size: int = 32,
+                additional_ids: tuple[str, ...] = (),
+                optimizer_step: int | None = None) -> int:
         """Regenerate touched views after the optimizer step and commit atomically."""
-        ids = tuple(sorted(dict.fromkeys(self.record_ids),
+        all_ids = (*self.record_ids, *additional_ids)
+        ids = tuple(sorted(dict.fromkeys(all_ids),
                            key=lambda record_id: self.writer_inputs[record_id].shape[1]))
         records = []
         dtype = getattr(torch, self.agent.config.memory.storage_dtype)
@@ -78,7 +81,7 @@ class BankWriterReplay:
                         outputs[2 * space + 1][row].to(dtype).detach(),
                         namespace=bank.index.namespace, space=f's{space}',
                         generation=bank.index.generation))
-        return bank.update(records)
+        return bank.update(records, optimizer_step=optimizer_step)
 
 
 @contextmanager

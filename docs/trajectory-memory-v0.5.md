@@ -335,17 +335,14 @@ compaction revisions; logged historical reads continue to resolve their pinned
 physical revisions and visibility frontier. Preserve lineage through collection so
 a recursive summary cannot outlive deletion of evidence it depends on.
 
-`DiskStore.commit_event` atomically publishes all configured space views, records a
-content-addressed event plus evidence lineage, and advances a monotonic resumable
+`TrainingBank.update(..., event=...)` atomically publishes all configured space
+views, logical heads, index deltas, evidence lineage, and the monotonic event
 frontier. Strict `created_at < query_time` visibility excludes same-event writes.
-`build_prequential_bank.py` currently executes the supervised event stream against
-a frozen base snapshot plus earlier authored events, encodes every prompted write,
-and commits it only after that trajectory completes. It resumes from the database
-frontier and records the growing logical-record count per event. This is the fixed
-trajectory executor for Release 4 preparation. It does not yet provide learned tool
-placement, generated write arguments, size-band training, garbage collection, ANN,
-or a network store. Its base-plus-append layout is transitional; mutable bank v0.8
-defines the target unified mutation journal.
+`build_prequential_bank.py` executes the supervised event stream against this one
+logical catalog, encodes every prompted write, and commits it only after that
+trajectory completes. It resumes from the journal frontier and records the growing
+logical-record count per event. It does not yet provide learned tool placement,
+generated write arguments, size-band training, ANN, or a network store.
 
 ## 7. Training curriculum
 

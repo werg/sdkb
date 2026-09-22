@@ -1,9 +1,7 @@
-"""Build a transitional authored overlay by replaying causal memory trajectories.
+"""Grow one revisioned mutable bank by replaying causal memory trajectories.
 
-Every event reads a frozen base snapshot plus earlier authored events. Its writes
-become visible atomically only after the trajectory completes. The SQLite event
-frontier is the recovery cursor, so a restart never republishes partial events.
-Later training updates are not yet applied through the target mutable-bank journal.
+Every event reads the current admissible logical bank. Its all-space writes and
+event frontier become visible in one journal transaction after the trajectory ends.
 """
 from __future__ import annotations
 
@@ -28,13 +26,9 @@ from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward
 from sdkb.store import DiskStore, StoredRecord
-from sdkb.temporal_catalog import CatalogStore, GrowingCatalogIndex
+from sdkb.training_bank import TrainingBank
 from sdkb.training import autocast_context, config_from_run, environment_report, resource_report
 from sdkb.trajectories import file_sha256
-
-
-def _digest(value: dict) -> str:
-    return hashlib.sha256(canonical_json(value).encode()).hexdigest()
 
 
 def _under(path: Path, root: Path) -> bool:
@@ -129,7 +123,7 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
     parent_max_time = max(int(space.times.max()) for space in parent_index.spaces.values())
     base_time = parent_max_time + 1
     core_identity = {
-        "format": 1, "kind": "prequential-growing-bank",
+        "format": 2, "kind": "prequential-mutable-bank",
         "writer_checkpoint_sha256": file_sha256(checkpoint / "model.safetensors"),
         "writer_checkpoint": str(checkpoint), "parent_bank": str(parent_bank.resolve()),
         "parent_manifest_sha256": file_sha256(parent_manifest_path),
@@ -139,13 +133,11 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
         "base_time": base_time, "spaces": list(parent_manifest["spaces"]),
         "memory": asdict(config.memory), "limits": list(limits),
         "routing_candidates": routing_candidates, "max_write_tokens": max_write_tokens,
-        "causal_policy": "event N sees parent and authored events with position < N",
+        "causal_policy": "event N sees logical records admitted before position N",
     }
-    authored_generation = _digest(core_identity)[:24]
-    catalog_generation = _digest(core_identity | {"authored_generation": authored_generation})[:24]
     identity = core_identity | {
-        "namespace": "experience", "authored_generation": authored_generation,
-        "catalog_generation": catalog_generation,
+        "namespace": parent_manifest["namespace"],
+        "catalog_generation": parent_manifest["generation"],
     }
     identity_path = output / "identity.json"
     if identity_path.exists():
@@ -156,17 +148,14 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
             raise ValueError("Existing prequential output has no identity")
         output.mkdir(parents=True, exist_ok=True)
         atomic_json(identity_path, identity)
-    authored_store = DiskStore(output / "bank.sqlite")
-    index = GrowingCatalogIndex(
-        parent_index, authored_store, authored_namespace="experience",
-        authored_generation=authored_generation, capacity=len(record_ids),
-        catalog_generation=catalog_generation,
-    )
-    store = CatalogStore(parent_store, authored_store, index)
-    frontier = authored_store.event_frontier(
-        namespace="experience", stream=stream, generation=authored_generation)
+    journal = DiskStore(output / "bank.sqlite")
+    store = TrainingBank(parent_store, journal, parent_index)
+    index = parent_index
+    frontier = journal.event_frontier(
+        namespace=index.namespace, stream=stream, generation=index.generation)
     start = frontier["next_position"]
-    if start > event_count or index.authored_count != cumulative_writes[start]:
+    authored_count = len(index.spaces[next(iter(index.spaces))].ids) - parent_manifest['sources']
+    if start > event_count or authored_count != cumulative_writes[start]:
         raise ValueError("Authored records and committed event frontier disagree")
     expected_time = -1 if start == 0 else base_time + start - 1
     if frontier["visibility_time"] != expected_time:
@@ -210,7 +199,7 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
                 outputs = result.write_outputs
                 if outputs is None or outputs[0].shape[0] != len(writes):
                     raise ValueError('Trajectory did not produce one integrated state per write call')
-            records, lineage, metadata = [], {}, {}
+            records, lineage, dependencies, metadata = [], {}, {}, {}
             storage_dtype = getattr(torch, config.memory.storage_dtype)
             by_call = {site["call_id"]: site for site in row["sites"]}
             for write_index, write in enumerate(writes):
@@ -222,15 +211,14 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
                     raise ValueError("Write lineage lacks a complete authorization-homogeneous read")
                 domain = next(iter(domains))
                 record_id = write["record_id"]
-                parents = set()
+                parents, child_ids = set(), set()
                 for call_id in parent_calls:
                     for ids in observed.get(call_id, {}).values():
                         for selected_id in ids:
-                            origin = index.origin(next(iter(index.spaces)), selected_id)
-                            generation = (parent_manifest["generation"] if origin == "parent"
-                                          else authored_generation)
-                            parents.add(f"{origin}:{generation}:{selected_id}")
+                            parents.add(f"record:{selected_id}")
+                            child_ids.add(selected_id)
                 lineage[record_id] = tuple(sorted(parents))
+                dependencies[record_id] = tuple(sorted(child_ids))
                 metadata[record_id] = {
                     "trajectory_id": row["trajectory_id"], "write_call_id": write["call_id"],
                     "episode_id": write["episode_id"],
@@ -242,22 +230,21 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
                     records.append(StoredRecord(
                         record_id, outputs[2 * space][write_index].detach(),
                         outputs[2 * space + 1][write_index].to(storage_dtype).detach(),
-                        namespace="experience", space=f"s{space}",
-                        generation=authored_generation, domain=domain,
+                        namespace=index.namespace, space=f"s{space}",
+                        generation=index.generation, domain=domain,
                         created_at=query_time, source_id=row["trajectory_id"],
                     ))
-            authored_store.commit_event(
-                records, namespace="experience", stream=stream,
-                generation=authored_generation, position=position,
-                event_id=row["trajectory_id"], visibility_time=query_time,
-                expected_spaces=tuple(parent_manifest["spaces"]),
-                lineage=lineage, record_metadata=metadata,
-            )
-            index.add_records(records)
+            store.update(records, children=dependencies, event={
+                'stream': stream, 'position': position,
+                'event_id': row['trajectory_id'], 'visibility_time': query_time,
+                'lineage': lineage, 'record_metadata': metadata,
+            })
             completed = position + 1
+            authored_count = len(index.spaces[next(iter(index.spaces))].ids) \
+                - parent_manifest['sources']
             event_row = {
                 "position": position, "event_id": row["trajectory_id"],
-                "writes": len(writes), "authored_records": index.authored_count,
+                "writes": len(writes), "authored_records": authored_count,
                 "query_time": query_time, "loss": float(result.loss),
                 "nll": float(result.nll), "routing": float(result.routing),
                 "seconds": time.perf_counter() - tick,
@@ -268,10 +255,11 @@ def build(run: Path, parent_bank: Path, trajectories: Path, output: Path, *,
             atomic_json(output / "progress.json", event_row | {
                 "completed_events": completed, "total_events": event_count})
             print(json.dumps(event_row), flush=True)
-    summary = authored_store.generation_summary(
-        namespace="experience", generation=authored_generation,
-        spaces=tuple(parent_manifest["spaces"]),
-    )
+    bank_sizes = store.sizes()
+    summary = {"logical_records": parent_manifest['sources'] + cumulative_writes[completed],
+               "journal_cursor": bank_sizes['cursor'],
+               "revision_views": bank_sizes['revision_views'],
+               "journal_tensor_bytes": bank_sizes['tensor_bytes']}
     manifest = identity | summary | {
         "completed_events": completed, "complete": completed == event_count,
         "elapsed_seconds": time.perf_counter() - began,
