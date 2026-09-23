@@ -73,7 +73,7 @@ changes ride the same migration, so we pay that cost once.
 | Key slot position | first write slot, before values | **last** write slot, after the 32 value slots |
 | Key heads | shared `key_head` + per-space maps, BF16 | per-space direct heads with bias, **fp32** |
 | Query heads | shared `query_head` + per-space maps | per-space direct query heads with bias, fp32; reader keeps its own `query_head` |
-| Key width | 64 in every space | proposed 128 in every space (see section 5); key width is independent of payload width |
+| Key width | 64 in every space | **256 in every space** (section 5); key width is independent of payload width |
 | Training logit scale | fixed | learned per space for full-field objectives; ranking and gates use raw cosine |
 
 Moving the key slot after the value slots does two things:
@@ -160,7 +160,11 @@ Owner decisions, 23 September 2026:
   authorization boundaries stay per corpus.
 - **Order:** the Phase 2 migration (R1–R2) comes before R3.
 
-Open: key width. Measured on 1,750 held-out Hotpot training sites, by
+- **Key width: 256 in every space.** Changing the width later means retraining
+  the heads and rebuilding the bank, so the generous choice is made now. The
+  source-disjoint gate still decides whether the wider keys generalize.
+
+Key-width evidence, measured on 1,750 held-out Hotpot training sites, by
 projecting a frozen teacher to width `d` and measuring all-support recall@16
 (raw 768-d teacher in parentheses):
 
@@ -174,8 +178,10 @@ Cost per record: an fp32 key is 256 bytes at 64 and 512 bytes at 128, against
 2–16 KB of Phase 2 payload per space. Exact search over 100k keys in a space is
 26 MB at 64 and 51 MB at 128. A backlog caution: on an earlier synthetic
 fixture, wider addresses improved training fit but reduced held-out pair
-retrieval, so the width choice is confirmed on the source-disjoint gate. The
-proposed default is 128 in every space.
+retrieval, so the width choice is confirmed on the source-disjoint gate. At
+256, fp32 keys take 4 KB per record across four spaces (against about 30 KB of
+Phase 2 payload), and the resident exact index takes about 410 MB per 100k
+records (about 4 GB per million).
 
 ## 6. Carried-over tooling
 
