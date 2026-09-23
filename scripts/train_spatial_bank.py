@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import sqlite3
 import time
 
 from safetensors.torch import load_model
@@ -30,6 +31,7 @@ from sdkb.optimizers import make_optimizer, optimizer_report
 from sdkb.runtime import reclaim_cuda_cache
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
+from sdkb.routing_curriculum import RoutingCandidateIndex
 from sdkb.store import DiskStore
 from sdkb.training_bank import TrainingBank
 from sdkb.tracking import Tracking
@@ -53,7 +55,10 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           profile_steps: int = 0,
           retain_writer_replay_activations: bool = False,
           cache_reclaim_host_reserve_gib: float = 16.0,
-          maintenance_records_per_step: int = 0) -> dict:
+          maintenance_records_per_step: int = 0,
+          routing_episodes_path: Path | None = None,
+          routing_weight: float | None = None,
+          inherit_bank: bool = False) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
             or cache_reclaim_host_reserve_gib < 0
@@ -84,13 +89,26 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     config.train.tokenized_episodes_file = None
     config.train.live_fraction = 0
     config.train.checkpoint_every = checkpoint_every
-    # This stage normally has only initial and final checkpoints. A high retention
-    # count avoids deleting directories while the unattended handoff is active.
+    if routing_weight is not None:
+        if routing_weight <= 0:
+            raise ValueError('Routing weight must be positive')
+        config.train.routing_weight = routing_weight
+    if routing_episodes_path is not None and (sources_path is None or not pipeline):
+        raise ValueError('Routing curriculum requires source metadata and pipeline')
+    if inherit_bank and (init_from is None or resume):
+        raise ValueError('Bank journal inheritance needs a warm-start parent')
+    # Retain enough recovery points for a long unattended trajectory stage.
     config.train.keep_checkpoints = max(config.train.keep_checkpoints, 16)
     config.train.archive_dir = None
     config.train.wandb_group = f"trajectory-spatial-r{loops}"
     config.validate()
     data = SpatialTrajectoryIndex(data_path)
+    if routing_episodes_path is not None:
+        trajectory_manifest = data_path.with_suffix(data_path.suffix + '.manifest.json')
+        packed = json.loads(trajectory_manifest.read_text())
+        if (packed['source_sha256'] != file_sha256(routing_episodes_path)
+                or packed['output_sha256'] != data.sha256):
+            raise ValueError('Routing query text differs from packed causal trajectories')
     bank_manifest_path = bank_dir / "manifest.json"
     bank_manifest = json.loads(bank_manifest_path.read_text())
     store = DiskStore(bank_dir / "bank.sqlite")
@@ -128,6 +146,19 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         }
     if maintenance_records_per_step:
         settings['maintenance_records_per_step'] = maintenance_records_per_step
+    if routing_episodes_path is not None:
+        settings['routing_curriculum'] = {
+            'episodes_sha256': file_sha256(routing_episodes_path),
+            'routing_weight': config.train.routing_weight,
+            'sampled_negatives': 32,
+            'hard_ramp_steps': 3000,
+            'lexical_auxiliary_fraction': .05,
+        }
+    if resume and (output / 'spatial-inputs.json').exists():
+        inherited = json.loads((output / 'spatial-inputs.json').read_text()).get(
+            'inherit_bank_from')
+        if inherited is not None:
+            settings['inherit_bank_from'] = inherited
     fingerprint = _fingerprint(data, bank_manifest_path, settings)
 
     if resume:
@@ -173,6 +204,15 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         initialization = {"checkpoint": str(checkpoint),
                           "checkpoint_sha256": file_sha256(checkpoint / "model.safetensors"),
                           "optimizer_reset": True, "bank_writer_exact": loops == 2}
+        if inherit_bank:
+            parent_state = json.loads((checkpoint / 'bank-state.json').read_text())
+            parent_cache = DiskStore(init_from / 'training_cache.sqlite')
+            if parent_cache.mutable_bank_state() != parent_state:
+                raise ValueError('Parent bank journal has moved beyond its checkpoint')
+            with parent_cache.connect() as source, sqlite3.connect(
+                    output / 'training_cache.sqlite') as target:
+                source.backup(target)
+            initialization['inherited_bank_state'] = parent_state
         atomic_json(output / "initialization.json", initialization)
     atomic_json(output / "spatial-inputs.json", settings | {
         "fingerprint": fingerprint, "data": str(data_path), "data_sha256": data.sha256,
@@ -204,6 +244,17 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         if set(map(str, next(iter(index.spaces.values())).ids)) - source_rows.keys():
             raise ValueError('Writer replay manifest does not cover the published bank')
     source_groups = source_ingestion_groups(list(source_rows.values()))
+    routing_teacher = (RoutingCandidateIndex(sources_path)
+                       if routing_episodes_path is not None else None)
+    queries = {}
+    if routing_episodes_path is not None:
+        with routing_episodes_path.open(encoding='utf-8') as handle:
+            for line in handle:
+                episode = json.loads(line)
+                episode_id = episode['episode_id']
+                if episode_id in queries and queries[episode_id] != episode['query']:
+                    raise ValueError('Episode query identity changed')
+                queries[episode_id] = episode['query']
 
     @lru_cache(maxsize=256)
     def ingestion_prefixes(document_id, parts, mode, domain):
@@ -267,6 +318,11 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     break
                 rows = [data[sampler.index(step * batch_size + offset)]
                         for offset in range(batch_size)]
+                if routing_teacher is not None:
+                    for row in rows:
+                        row['routing_step'] = step
+                        for site in row['sites']:
+                            site['routing_query_text'] = queries[site['episode_id']]
                 optimizer.zero_grad(set_to_none=True)
                 profiling = step < start + profile_steps
                 if profiling and torch.cuda.is_available():
@@ -296,6 +352,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                             microbatch_size=microbatch_size, inflight=inflight,
                             pad_token_id=agent.tokenizer.pad_token_id or 0,
                             writer_replay=replay,
+                            routing_teacher=routing_teacher,
                         )
                     else:
                         result = spatial_bank_forward(
@@ -408,6 +465,9 @@ if __name__ == "__main__":
     parser.add_argument("--retain-writer-replay-activations", action="store_true")
     parser.add_argument("--cache-reclaim-host-reserve-gib", type=float, default=16.0)
     parser.add_argument("--maintenance-records-per-step", type=int, default=0)
+    parser.add_argument("--routing-episodes", type=Path)
+    parser.add_argument("--routing-weight", type=float)
+    parser.add_argument("--inherit-bank", action="store_true")
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -424,4 +484,7 @@ if __name__ == "__main__":
         retain_writer_replay_activations=args.retain_writer_replay_activations,
         cache_reclaim_host_reserve_gib=args.cache_reclaim_host_reserve_gib,
         maintenance_records_per_step=args.maintenance_records_per_step,
+        routing_episodes_path=args.routing_episodes,
+        routing_weight=args.routing_weight,
+        inherit_bank=args.inherit_bank,
     ), indent=2))

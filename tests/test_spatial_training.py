@@ -8,6 +8,7 @@ from sdkb.agent import SDKBAgent
 from sdkb.bank_replay import BankWriterReplay
 from sdkb.data import make_episode
 from sdkb.key_index import PublishedKeyIndex
+from sdkb.routing_curriculum import RoutingCandidateIndex
 from sdkb.spatial_data import pack_spatial_trajectory
 from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
 from sdkb.store import DiskStore, StoredRecord
@@ -68,6 +69,51 @@ def test_spatial_bank_forward_reads_all_sites_without_writer(tiny_config, tmp_pa
     assert agent.query_maps[0].weight.grad is not None
     assert agent.query_maps[0].weight.grad.abs().sum() > 0
     assert next(agent.reader.parameters()).grad is not None
+
+
+def test_routing_curriculum_keeps_reader_selection_and_trains_address(tiny_config,
+                                                                     tmp_path):
+    tiny_config.model.loops = 2
+    tiny_config.model.recurrence_mode = 'middle_block'
+    tiny_config.model.recurrent_start = 0
+    tiny_config.model.recurrent_end = 1
+    tiny_config.memory.read_timing = 'loop_boundary'
+    tiny_config.memory.neighbors = [2]
+    agent = SDKBAgent(tiny_config)
+    episodes = [make_episode(index, distractors=0) for index in range(2)]
+    row = pack_spatial_trajectory(StableChatTokenizer(), episodes, read_slots=2,
+                                  generation='g1', levels=(1, 1))
+    row['routing_step'] = 0
+    for site, episode in zip(row['sites'], episodes, strict=True):
+        site['routing_query_text'] = episode.query
+    sources = {source.record_id: source for episode in episodes
+               for source in episode.supports}
+    manifest = tmp_path / 'sources.jsonl'
+    manifest.write_text(''.join(json.dumps({
+        'record_id': source.record_id, 'text': source.text,
+        'created_at': source.created_at, 'domain': 'research'}) + '\n'
+        for source in sources.values()))
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    store.put_many(StoredRecord(
+        record_id, torch.randn(tiny_config.memory.key_dim),
+        torch.randn(tiny_config.memory.payload_dims[0], dtype=torch.bfloat16),
+        namespace='corpus', space='s0', generation='g1', domain='research',
+        created_at=source.created_at, source_id=record_id,
+    ) for record_id, source in sources.items())
+    index = PublishedKeyIndex(store, namespace='corpus', generation='g1',
+                              spaces=('s0',), expected_sources=len(sources))
+    baseline = spatial_bank_pipeline_forward(
+        agent, store, index, [row], limits=(2,), routing_candidates=2,
+        microbatch_size=1, inflight=2)
+    corrected = spatial_bank_pipeline_forward(
+        agent, store, index, [row], limits=(2,), routing_candidates=2,
+        microbatch_size=1, inflight=2,
+        routing_teacher=RoutingCandidateIndex(manifest))
+    assert corrected.metrics['selected_counts'] == baseline.metrics['selected_counts']
+    assert corrected.metrics['lexical_alignment'] >= 0
+    assert corrected.routing.isfinite()
+    corrected.loss.backward()
+    assert agent.query_maps[0].weight.grad.abs().sum() > 0
 
 
 def test_spatial_forward_projects_only_supervised_positions(tiny_config, tmp_path, monkeypatch):

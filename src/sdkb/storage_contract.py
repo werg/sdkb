@@ -56,6 +56,9 @@ class BatchKeyIndexBackend(Protocol):
     def keys_for_ids(self, space: str, record_ids: Sequence[str], *,
                      domain: str, query_time: int) -> Tensor: ...
 
+    def eligible_ids(self, space: str, record_ids: Sequence[str], *,
+                     domain: str, query_time: int) -> tuple[str, ...]: ...
+
 
 @runtime_checkable
 class MutableRecoveryBackend(Protocol):

@@ -16,6 +16,8 @@ from .agent import SDKBAgent
 from .bank_replay import BankWriterReplay
 from .recurrence import SpatialReadSite
 from .routing import cosine_scores, cosine_similarities, union_support_loss
+from .routing_curriculum import (RoutingCandidateIndex, lexical_alignment_loss,
+                                 routing_mix)
 from .spatial_data import validate_spatial_row
 from .store import ReadPlan, Selection
 from .storage_contract import BatchKeyIndexBackend, StoredReadBackend
@@ -53,6 +55,7 @@ class _SpatialBatchState:
     sites: tuple[SpatialReadSite, ...]
     site_indices: dict[int, tuple[int, ...]]
     routing_terms: list[Tensor]
+    lexical_terms: list[Tensor]
     selected_counts: list[int]
     learned_hits: list[int]
     positive_labels: list[int]
@@ -78,6 +81,7 @@ class _ReadWave:
 @dataclass(frozen=True)
 class _LoadedSpace:
     candidate_ids: tuple[tuple[str, ...], ...]
+    easy_ids: tuple[tuple[str, ...], ...]
     required_ids: tuple[tuple[str, ...], ...]
     found_ids: tuple[tuple[str, ...], ...]
     selected_ids: tuple[tuple[str, ...], ...]
@@ -134,7 +138,7 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
                                  if value == level) for level in set(levels)}
     execution = agent.begin_spatial_recurrent(input_ids, attention, sites)
     return _SpatialBatchState(
-        rows, labels, execution, sites, site_indices, [],
+        rows, labels, execution, sites, site_indices, [], [],
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
@@ -155,7 +159,8 @@ def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None
             active, query, routing_query = pending
             level = state.execution.recurrent.completed
             metadata = tuple(
-                state.rows[row]["sites"][site]
+                (state.rows[row]["sites"][site] | {
+                    'routing_step': state.rows[row].get('routing_step', 0)})
                 for site in state.site_indices[level]
                 for row in range(len(state.rows))
             )
@@ -170,7 +175,9 @@ def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None
 
 
 def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _ReadWave, *,
-               limits: tuple[int, ...], routing_candidates: int) -> tuple[_LoadedSpace, ...]:
+               limits: tuple[int, ...], routing_candidates: int,
+               routing_teacher: RoutingCandidateIndex | None = None,
+               ) -> tuple[_LoadedSpace, ...]:
     """Perform selection and serialized payload reads without touching the GPU graph."""
     loaded = []
     for space, limit in enumerate(limits):
@@ -182,14 +189,27 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
             domains=tuple(item["domain"] for item in wave.metadata),
             query_times=tuple(item["query_time"] for item in wave.metadata),
         )
-        candidates, required_rows, found_rows, chosen_plans = [], [], [], []
+        candidates, easy_rows, required_rows, found_rows, chosen_plans = [], [], [], [], []
         for plan, item in zip(plans, wave.metadata, strict=True):
             found = tuple(selection.record_id for selection in plan.selections)
             required = tuple(item["required_ids"])
-            candidate_ids = tuple(dict.fromkeys(found + required))
+            easy = ()
+            if routing_teacher is not None:
+                sampled = routing_teacher.sample(
+                    item['episode_id'], item['routing_step'],
+                    domain=item['domain'], query_time=item['query_time'], limit=32)
+                in_batch = tuple(record_id for other in wave.metadata
+                                 for record_id in other['required_ids']
+                                 if other['episode_id'] != item['episode_id'])
+                proposed = tuple(dict.fromkeys(sampled + in_batch))
+                easy = index.eligible_ids(
+                    name, proposed, domain=item['domain'],
+                    query_time=item['query_time'])
+            candidate_ids = tuple(dict.fromkeys(found + required + easy))
             chosen = (required + tuple(record_id for record_id in found
                                        if record_id not in required))[:limit]
             candidates.append(candidate_ids)
+            easy_rows.append(tuple(dict.fromkeys(required + easy)))
             required_rows.append(required)
             found_rows.append(found)
             chosen_plans.append(ReadPlan(
@@ -199,7 +219,7 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
             ))
         values = store.fetch_many(chosen_plans)
         loaded.append(_LoadedSpace(
-            tuple(candidates), tuple(required_rows), tuple(found_rows),
+            tuple(candidates), tuple(easy_rows), tuple(required_rows), tuple(found_rows),
             tuple(tuple(selection.record_id for selection in plan.selections)
                   for plan in chosen_plans),
             tuple(tuple(row) for row in values),
@@ -212,7 +232,8 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                   wave: _ReadWave, loaded: tuple[_LoadedSpace, ...], *,
                   limits: tuple[int, ...],
                   writer_replay: BankWriterReplay | None = None,
-                  live: Mapping[str, tuple[Tensor, ...]] | None = None) -> None:
+                  live: Mapping[str, tuple[Tensor, ...]] | None = None,
+                  routing_teacher: RoutingCandidateIndex | None = None) -> None:
     memory = agent.config.memory
     replay_budget = agent.config.train.writer_replay_records_per_site
     if live is None:
@@ -223,6 +244,9 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
     payloads, weights = [], []
     support_scores = [[] for _ in wave.metadata]
     support_indices = [[] for _ in wave.metadata]
+    easy_scores = [[] for _ in wave.metadata]
+    easy_indices = [[] for _ in wave.metadata]
+    lexical_terms = [[] for _ in wave.metadata]
     for space, (width, limit, result) in enumerate(
             zip(memory.payload_dims, limits, loaded, strict=True)):
         address = wave.addresses[space]
@@ -239,9 +263,26 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                 for position, record_id in enumerate(candidate_ids)
             ])
             scores = cosine_scores(address[row_index:row_index + 1], keys)[0]
-            positive_indices = tuple(candidate_ids.index(record_id) for record_id in required)
-            support_scores[row_index].append(scores)
-            support_indices[row_index].append(positive_indices)
+            hard_ids = tuple(dict.fromkeys(found + required))
+            hard_positions = [candidate_ids.index(record_id) for record_id in hard_ids]
+            support_scores[row_index].append(scores[hard_positions])
+            support_indices[row_index].append(
+                tuple(hard_ids.index(record_id) for record_id in required))
+            if routing_teacher is not None:
+                easy_ids = result.easy_ids[row_index]
+                easy_positions = [candidate_ids.index(record_id) for record_id in easy_ids]
+                easy_scores[row_index].append(scores[easy_positions])
+                easy_indices[row_index].append(
+                    tuple(easy_ids.index(record_id) for record_id in required))
+                query_text = item.get('routing_query_text')
+                if query_text is None:
+                    raise ValueError('Routing teacher requires visible query text')
+                lexical = routing_teacher.lexical_similarities(
+                    query_text, candidate_ids, domain=item['domain'],
+                    query_time=item['query_time'])
+                lexical_terms[row_index].append(lexical_alignment_loss(
+                    [scores], torch.tensor(lexical, dtype=scores.dtype,
+                                           device=scores.device)))
             state.learned_hits[space] += int(set(required) <= set(found[:limit]))
             state.positive_labels[space] += len(required)
             state.positive_hits[space] += sum(record_id in found[:limit]
@@ -264,7 +305,7 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                 raw_scores = cosine_similarities(
                     address[row_index:row_index + 1], keys)[0]
                 chosen_scores = raw_scores[selected_positions][None]
-                candidate_raw = raw_scores[None]
+                candidate_raw = raw_scores[hard_positions][None]
                 selected_mask = torch.ones_like(chosen_scores, dtype=torch.bool)
                 candidate_mask = torch.ones_like(candidate_raw, dtype=torch.bool)
                 required_set = set(required)
@@ -292,9 +333,17 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
         weights.append(torch.stack([
             torch.cat((row, wave.query.new_zeros(count - row.shape[0])))
             for row in weight_rows]))
-    state.routing_terms.extend(
-        union_support_loss(scores, indices)
-        for scores, indices in zip(support_scores, support_indices, strict=True))
+    for row_index, (scores, indices) in enumerate(zip(
+            support_scores, support_indices, strict=True)):
+        hard = union_support_loss(scores, indices)
+        if routing_teacher is None:
+            state.routing_terms.append(hard)
+        else:
+            easy = union_support_loss(easy_scores[row_index], easy_indices[row_index])
+            easy_weight, hard_weight = routing_mix(
+                wave.metadata[row_index]['routing_step'])
+            state.routing_terms.append(easy_weight * easy + hard_weight * hard)
+            state.lexical_terms.append(torch.stack(lexical_terms[row_index]).mean())
     state.read_sites += len(wave.metadata)
     results = agent._read_padded_batch(payloads, weights, wave.query)
     state.execution = agent.advance_spatial_recurrent(
@@ -325,6 +374,9 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
     if not state.routing_terms or state.read_sites != expected_reads:
         raise ValueError("Every spatial site must execute exactly one bank read")
     routing = torch.stack(state.routing_terms).mean()
+    lexical = (torch.stack(state.lexical_terms).mean()
+               if state.lexical_terms else routing.new_zeros(()))
+    routing = routing + .05 * lexical
     loss = nll + agent.config.train.routing_weight * routing
     denominator = state.read_sites
     metrics = {
@@ -345,6 +397,7 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
             zip(state.candidate_reciprocal_rank, state.positive_labels, strict=True)
         ],
         "positive_labels": state.positive_labels,
+        "lexical_alignment": float(lexical.detach()),
         "gate_mass": [value / denominator for value in state.gate_mass],
         "gate_effective_records": [value / denominator
                                    for value in state.gate_effective_records],
@@ -571,7 +624,8 @@ def spatial_bank_pipeline_forward(
         rows: list[dict[str, Any]], *, limits: tuple[int, ...],
         routing_candidates: int, microbatch_size: int, inflight: int,
         pad_token_id: int = 0,
-        writer_replay: BankWriterReplay | None = None) -> SpatialForwardResult:
+        writer_replay: BankWriterReplay | None = None,
+        routing_teacher: RoutingCandidateIndex | None = None) -> SpatialForwardResult:
     """Overlap retained microbatch graphs with CPU search and serialized payload I/O.
 
     GPU continuations execute in deterministic round-robin order. Retrieval workers
@@ -607,7 +661,8 @@ def spatial_bank_pipeline_forward(
     def timed_load(wave: _ReadWave) -> tuple[tuple[_LoadedSpace, ...], float, float]:
         started = time.perf_counter()
         loaded = _load_wave(store, index, wave, limits=limits,
-                            routing_candidates=routing_candidates)
+                            routing_candidates=routing_candidates,
+                            routing_teacher=routing_teacher)
         return loaded, started, time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=min(inflight, len(chunks)),
@@ -653,7 +708,7 @@ def spatial_bank_pipeline_forward(
                 live = writer_replay.capture(record_ids)
             for index_in_step, state, wave, loaded in wavefront:
                 _consume_wave(agent, index, state, wave, loaded, limits=limits,
-                              live=live)
+                              live=live, routing_teacher=routing_teacher)
                 following = _issue_wave(agent, state)
                 if following is None:
                     results.append((index_in_step, _finish_batch(agent, state)))
@@ -711,6 +766,9 @@ def spatial_bank_pipeline_forward(
             sum(result.metrics["positive_labels"][space] for result in ordered)
             for space in range(spaces)
         ],
+        "lexical_alignment": sum(
+            result.metrics["lexical_alignment"] * result.metrics["read_sites"]
+            for result in ordered) / read_sites,
         **{
             name: [
                 sum(result.metrics[name][space] * result.metrics["read_sites"]

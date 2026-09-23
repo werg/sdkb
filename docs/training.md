@@ -50,6 +50,37 @@ the next retrieval plan and is not an exact resume. Hard search still uses a bou
 candidate field. `train.routing_weight` controls the gentle support anchor, while
 the ordinary task loss trains continuous gates and selected keys/payloads directly.
 
+### Full-bank address correction after v0.6 R3
+
+The first 100,000-source R3 run showed unassisted top-256 positive recall near the
+random expectation, despite improving task NLL with supplied supports. Its writer
+keys retain article-level structure; the causal query-to-key alignment is the
+immediate bottleneck. A continuation can use `--routing-episodes` with the original
+episode JSONL and `--sources` to train the same packed trajectories with a stronger
+address objective. It samples causally eligible random and other in-batch verified
+sources as early negatives, then ramps the weight of globally mined exact-search
+negatives over 3,000 optimizer steps. Verified supports remain the main positive
+signal. A weak source-derived lexical similarity distribution supplies an auxiliary
+gradient over the *same candidate field*. It does not choose records, inject text,
+or enter inference. Unassisted top-k recall remains the primary address metric.
+
+`--routing-weight` sets the new stage's address-loss weight. Changing it or the
+curriculum starts a new warm-start stage. `--inherit-bank` copies the committed
+parent journal into that stage after checking it matches the parent checkpoint;
+the model and mutable keys/payloads therefore begin at the same causal revision.
+The new stage resets optimizer state deliberately and saves its own step-zero
+checkpoint. `--maintenance-records-per-step` refreshes a bounded additional set
+of old records, while writer replay refreshes the selected records after every
+step. The offline bank remains a physical bootstrap, not a frozen logical target.
+
+The curriculum should be judged on source-disjoint validation queries using
+unassisted positive recall at the actual neighborhood budgets, then with correct,
+wrong, and zeroed latent payloads on the same task examples. Lower routing loss or
+teacher NLL alone does not establish usable retrieval or information transfer.
+If address learning stalls, a small embedding teacher can supply a richer soft
+similarity target; each space should have its own trainable teacher projection and
+the additional teacher compute and key-refresh cost must be reported.
+
 Document ingestion data should use the helpers in `document_ingestion.py`. Provide
 both complete-document prompts with several model-chosen writes and streaming
 natural/manual parts with one visible write after each part. Store exact source spans,

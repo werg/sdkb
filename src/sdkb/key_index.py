@@ -191,6 +191,22 @@ class PublishedKeyIndex:
             raise PermissionError('Record key is outside its causal authorization scope')
         return torch.from_numpy(array.keys[positions].copy())
 
+    def eligible_ids(self, space: str, record_ids: Sequence[str], *, domain: str,
+                     query_time: int) -> tuple[str, ...]:
+        """Filter proposals using the current bank authorization snapshot."""
+        if space not in self.spaces:
+            raise ValueError('Unknown key space')
+        array = self.spaces[space]
+        result = []
+        for record_id in record_ids:
+            position = int(np.searchsorted(array.ids, record_id))
+            if (position < len(array.ids) and array.ids[position] == record_id
+                    and array.domains[position] == domain
+                    and array.times[position] < query_time
+                    and not array.deleted[position]):
+                result.append(record_id)
+        return tuple(result)
+
     def search(self, query: Tensor, *, top_k: int = 16, namespace: str = 'corpus',
                space: str = 's0', generation: str = '', domain: str = 'research',
                query_time: int = 2**62, exclude_ids: frozenset[str] = frozenset()) -> ReadPlan:
