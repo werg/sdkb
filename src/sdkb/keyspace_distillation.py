@@ -69,6 +69,10 @@ def convert_to_direct(state: dict[str, Tensor], spaces: int,
               | {f'query_maps.{space}.weight' for space in range(spaces)})
     converted = {name: value for name, value in state.items() if name not in shared}
     converted.update(heads)  # includes any widened distance-gate inputs
+    reference = heads['writer_key_heads.0.weight']
+    for side in ('writer', 'query'):
+        converted[f'{side}_key_state_mean'] = reference.new_zeros(reference.shape[1])
+        converted[f'{side}_key_state_scale'] = reference.new_ones(reference.shape[1])
     return converted
 
 

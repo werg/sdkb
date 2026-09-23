@@ -251,3 +251,16 @@ def test_widened_direct_conversion_keeps_folded_rows(tiny_config):
     assert direct.writer_key_heads[1].weight.shape == (16, direct.width)
     gate = direct.distance_gates[0].adjust.weight
     assert gate.shape[1] == 20 and float(gate[:, key_dim:].abs().sum()) == 0
+
+
+def test_key_state_statistics_preserve_every_key_and_address(tiny_config):
+    _, direct = _pair(_spatial(tiny_config))
+    states = torch.randn(5, direct.width) * .1 + 3.0
+    before_keys = direct.writer_space_keys(states)
+    before_address = direct.routing_address(states, 1)
+    direct.set_key_state_statistics('writer', states.mean(0), states.std(0))
+    direct.set_key_state_statistics('query', states.mean(0) * 0.5, states.std(0) * 2)
+    for left, right in zip(before_keys, direct.writer_space_keys(states), strict=True):
+        torch.testing.assert_close(left, right, rtol=1e-4, atol=1e-5)
+    torch.testing.assert_close(before_address, direct.routing_address(states, 1),
+                               rtol=1e-4, atol=1e-4)

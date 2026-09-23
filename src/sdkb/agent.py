@@ -115,6 +115,11 @@ class SDKBAgent(nn.Module):
                 nn.Linear(self.width, dim) for dim in self.space_key_dims])
             self.query_key_heads = nn.ModuleList([
                 nn.Linear(self.width, dim) for dim in self.space_key_dims])
+            # Fixed input standardization for well-conditioned head training.
+            # Identity by default; set with ``set_key_state_statistics``.
+            for side in ('writer', 'query'):
+                self.register_buffer(f'{side}_key_state_mean', torch.zeros(self.width))
+                self.register_buffer(f'{side}_key_state_scale', torch.ones(self.width))
         else:
             self.key_head = nn.Linear(self.width, r.key_dim, bias=False)
             self.address_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
@@ -216,20 +221,43 @@ class SDKBAgent(nn.Module):
         text = render_prompt(self.tokenizer, query, support_text)
         return self.text_ids(text)
 
-    @staticmethod
-    def _fp32_head(head: nn.Linear, states: Tensor) -> Tensor:
+    def _fp32_head(self, head: nn.Linear, states: Tensor, side: str) -> Tensor:
         """Direct key heads resolve small differences between collinear states.
 
         BF16 autocast rounds such scores to a handful of values, so these heads
-        always compute in fp32; stored keys are serialized as fp32 anyway.
+        always compute in fp32 over fixed-standardized inputs; stored keys are
+        serialized as fp32 anyway.
         """
+        mean = getattr(self, f'{side}_key_state_mean')
+        scale = getattr(self, f'{side}_key_state_scale')
         with torch.autocast(states.device.type, enabled=False):
-            return head(states.float())
+            return head((states.float() - mean) / scale)
+
+    @torch.no_grad()
+    def set_key_state_statistics(self, side: str, mean: Tensor, scale: Tensor) -> None:
+        """Change standardization without changing any key or address.
+
+        ``W((h - m)/s) + b`` is re-expressed for new statistics ``(m', s')`` so
+        every head computes exactly the same affine function of ``h``.
+        """
+        if self.writer_key_heads is None or side not in {'writer', 'query'}:
+            raise ValueError('Key-state statistics apply to direct writer or query heads')
+        old_mean = getattr(self, f'{side}_key_state_mean')
+        old_scale = getattr(self, f'{side}_key_state_scale')
+        mean, scale = mean.to(old_mean), scale.to(old_scale).clamp_min(1e-6)
+        heads = self.writer_key_heads if side == 'writer' else self.query_key_heads
+        for head in heads:
+            raw_weight = head.weight / old_scale
+            raw_bias = head.bias - raw_weight @ old_mean
+            head.weight.copy_(raw_weight * scale)
+            head.bias.copy_(raw_bias + raw_weight @ mean)
+        old_mean.copy_(mean)
+        old_scale.copy_(scale)
 
     def writer_space_keys(self, key_states: Tensor) -> tuple[Tensor, ...]:
         """Normalized per-space stored keys from writer key-slot states."""
         if self.writer_key_heads is not None:
-            return tuple(F.normalize(self._fp32_head(head, key_states), dim=-1)
+            return tuple(F.normalize(self._fp32_head(head, key_states, 'writer'), dim=-1)
                          for head in self.writer_key_heads)
         key = F.normalize(self.key_head(key_states), dim=-1)
         return tuple(F.normalize(address(key), dim=-1) for address in self.address_maps)
@@ -251,7 +279,7 @@ class SDKBAgent(nn.Module):
         if self.query_key_heads is not None:
             if routing_input.shape[-1] != self.width:
                 raise ValueError('Direct query key heads need routing features')
-            return self._fp32_head(self.query_key_heads[space], routing_input)
+            return self._fp32_head(self.query_key_heads[space], routing_input, 'query')
         if routing_input.shape[-1] != self.config.memory.key_dim:
             raise ValueError('Shared query maps need a normalized routing query')
         return self.query_maps[space](routing_input)

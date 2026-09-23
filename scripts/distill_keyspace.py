@@ -423,7 +423,7 @@ def warmup_run(args) -> dict:
         for start in range(0, len(warmup.ids), args.refresh_chunk):
             stop = min(start + args.refresh_chunk, len(warmup.ids))
             chunk_states = raw_states[start:stop].to(args.device)
-            keys = [F.normalize(agent._fp32_head(agent_heads[space], chunk_states),
+            keys = [F.normalize(agent._fp32_head(agent_heads[space], chunk_states, 'writer'),
                                 dim=-1).cpu() for space in range(spaces)]
             records = [StoredRecord(warmup.ids[row], keys[space][row - start],
                                     payloads[space][row].to(storage),
