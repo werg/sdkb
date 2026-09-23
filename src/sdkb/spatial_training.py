@@ -55,6 +55,8 @@ class _SpatialBatchState:
     sites: tuple[SpatialReadSite, ...]
     site_indices: dict[int, tuple[int, ...]]
     routing_terms: list[Tensor]
+    easy_terms: list[Tensor]
+    hard_terms: list[Tensor]
     lexical_terms: list[Tensor]
     selected_counts: list[int]
     learned_hits: list[int]
@@ -138,7 +140,7 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
                                  if value == level) for level in set(levels)}
     execution = agent.begin_spatial_recurrent(input_ids, attention, sites)
     return _SpatialBatchState(
-        rows, labels, execution, sites, site_indices, [], [],
+        rows, labels, execution, sites, site_indices, [], [], [], [],
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
@@ -336,10 +338,12 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
     for row_index, (scores, indices) in enumerate(zip(
             support_scores, support_indices, strict=True)):
         hard = union_support_loss(scores, indices)
+        state.hard_terms.append(hard)
         if routing_teacher is None:
             state.routing_terms.append(hard)
         else:
             easy = union_support_loss(easy_scores[row_index], easy_indices[row_index])
+            state.easy_terms.append(easy)
             easy_weight, hard_weight = routing_mix(
                 wave.metadata[row_index]['routing_step'])
             state.routing_terms.append(easy_weight * easy + hard_weight * hard)
@@ -376,6 +380,11 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
     routing = torch.stack(state.routing_terms).mean()
     lexical = (torch.stack(state.lexical_terms).mean()
                if state.lexical_terms else routing.new_zeros(()))
+    hard_loss = torch.stack(state.hard_terms).mean()
+    easy_loss = (torch.stack(state.easy_terms).mean()
+                 if state.easy_terms else routing.new_zeros(()))
+    easy_weight, hard_weight = (routing_mix(state.rows[0].get('routing_step', 0))
+                                if state.easy_terms else (0.0, 1.0))
     routing = routing + .05 * lexical
     loss = nll + agent.config.train.routing_weight * routing
     denominator = state.read_sites
@@ -398,6 +407,10 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
         ],
         "positive_labels": state.positive_labels,
         "lexical_alignment": float(lexical.detach()),
+        "routing_easy_loss": float(easy_loss.detach()),
+        "routing_hard_loss": float(hard_loss.detach()),
+        "routing_easy_weight": easy_weight,
+        "routing_hard_weight": hard_weight,
         "gate_mass": [value / denominator for value in state.gate_mass],
         "gate_effective_records": [value / denominator
                                    for value in state.gate_effective_records],
@@ -769,6 +782,12 @@ def spatial_bank_pipeline_forward(
         "lexical_alignment": sum(
             result.metrics["lexical_alignment"] * result.metrics["read_sites"]
             for result in ordered) / read_sites,
+        **{
+            name: sum(result.metrics[name] * result.metrics['read_sites']
+                      for result in ordered) / read_sites
+            for name in ('routing_easy_loss', 'routing_hard_loss',
+                         'routing_easy_weight', 'routing_hard_weight')
+        },
         **{
             name: [
                 sum(result.metrics[name][space] * result.metrics["read_sites"]

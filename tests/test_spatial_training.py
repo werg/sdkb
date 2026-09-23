@@ -111,6 +111,10 @@ def test_routing_curriculum_keeps_reader_selection_and_trains_address(tiny_confi
         routing_teacher=RoutingCandidateIndex(manifest))
     assert corrected.metrics['selected_counts'] == baseline.metrics['selected_counts']
     assert corrected.metrics['lexical_alignment'] >= 0
+    assert corrected.metrics['routing_easy_weight'] == 1.0
+    assert corrected.metrics['routing_hard_weight'] == 0.0
+    assert corrected.metrics['routing_easy_loss'] >= 0
+    assert corrected.metrics['routing_hard_loss'] >= 0
     assert corrected.routing.isfinite()
     corrected.loss.backward()
     assert agent.query_maps[0].weight.grad.abs().sum() > 0
