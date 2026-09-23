@@ -47,7 +47,7 @@ def stored_corpus_forward(agent: SDKBAgent, store: KeySearchBackend, episode: Ep
         payloads, swapped_payloads, relevance_weights = [], [], []
         for space, (dim, limit) in enumerate(zip(agent.config.memory.payload_dims, limits, strict=True)):
             space_name = f's{space}'
-            address = agent.query_maps[space](routing_query)
+            address = agent.routing_address(routing_query, space)
             candidates = searcher.search(address[0], top_k=max(
                                       limit + int(contrast),
                                       agent.config.train.bank_routing_candidates), namespace=namespace,
@@ -172,14 +172,13 @@ def stored_corpus_forward_batch(agent: SDKBAgent, store: KeySearchBackend,
         positions = prompt_lengths + r.read_slots - 1
         features = agent.loop_query_norm(state[torch.arange(batch, device=agent.device), positions])
         query = F.normalize(agent.query_head(features), dim=-1)
-        routing_query = (query if agent.routing_query_head is None else
-                         F.normalize(agent.routing_query_head(features), dim=-1))
+        routing_query = agent.routing_input(features, query)
         payloads, weights = [], []
         for space, (dim, limit) in enumerate(zip(r.payload_dims, limits, strict=True)):
             rows, row_weights = [], []
             for row_index, episode in enumerate(episodes):
                 domain = episode.provenance.get('domain', 'research')
-                address = agent.query_maps[space](routing_query[row_index:row_index + 1])
+                address = agent.routing_address(routing_query[row_index:row_index + 1], space)
                 found = [item.record_id for item in searcher.search(
                     address[0], top_k=max(limit, agent.config.train.bank_routing_candidates),
                     namespace=namespace, space=f's{space}', generation=generation,

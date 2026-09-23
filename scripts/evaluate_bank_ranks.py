@@ -91,7 +91,7 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
                 if completed != 1:
                     return None
                 for space in range(len(config.memory.payload_dims)):
-                    address = agent.query_maps[space](routing_query)[0]
+                    address = agent.routing_address(routing_query, space)[0]
                     plan = index.search(address, top_k=manifest['sources'],
                                         namespace=manifest['namespace'], space=f's{space}',
                                         generation=manifest['generation'],

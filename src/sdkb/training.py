@@ -336,7 +336,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
         agent.compactor.train()
     if config.train.optimization_scope == 'routing':
         for name, parameter in agent.named_parameters():
-            parameter.requires_grad_(name.startswith(('key_head.', 'address_maps.', 'query_maps.', 'routing_query_head.')))
+            parameter.requires_grad_(name.startswith(('key_head.', 'address_maps.', 'query_maps.', 'routing_query_head.',
+                                                              'writer_key_heads.', 'query_key_heads.')))
         # Keep frozen feature/payload/reader paths deterministic. The top-level
         # training flag still honors the configured routing warmup.
         for module in agent.children():
@@ -380,7 +381,8 @@ def _train(config, output, *, resume, stop_after, init_from, stop_output, stop, 
                                       spaces=tuple(bank_manifest['spaces']),
                                       expected_sources=bank_manifest['sources'])
         for name, parameter in agent.named_parameters():
-            if name.startswith(('write_slots', 'key_head.', 'value_head.', 'address_maps.', 'codecs.')):
+            if name.startswith(('write_slots', 'key_head.', 'value_head.', 'address_maps.',
+                                 'writer_key_heads.', 'codecs.')):
                 parameter.requires_grad_(False)
     from .optimizers import make_optimizer, optimizer_report
     optimizer = make_optimizer(agent)
@@ -915,7 +917,7 @@ def evaluate_episode_file(run: str | Path, path: str | Path) -> dict:
                 payloads, ids = [], []
                 for space, dim in enumerate(config.memory.payload_dims):
                     if config.train.retrieval == "learned" and condition != "none":
-                        plan = store.search(agent.query_maps[space](routing_query)[0], namespace=episode.episode_id,
+                        plan = store.search(agent.routing_address(routing_query, space)[0], namespace=episode.episode_id,
                             space=f"s{space}", generation="frozen-v0", query_time=episode.query_time,
                             top_k=agent.requested_records(q, config.memory.neighbors[space]))
                     else:

@@ -29,6 +29,9 @@ class ModelConfig:
 @dataclass
 class MemoryConfig:
     key_dim: int = 64
+    # shared_maps: one writer/query key head plus per-space linear maps.
+    # direct: one writer-state and one query-state key head per space.
+    key_interface: str = "shared_maps"
     write_slots: int = 8
     read_slots: int = 8
     payload_dims: list[int] = field(default_factory=lambda: [256])
@@ -271,6 +274,10 @@ class Config:
             raise ValueError("Invalid reader/compactor")
         if r.payload_layout not in {"flat", "positional"}:
             raise ValueError("Invalid payload layout")
+        if r.key_interface not in {"shared_maps", "direct"}:
+            raise ValueError("Invalid key interface")
+        if r.key_interface == "direct" and r.independent_routing_query:
+            raise ValueError("Direct query key heads already separate routing from reading")
         if r.payload_layout == "positional":
             if r.reader != "mlp":
                 raise ValueError("The positional interface currently requires the MLP operator")

@@ -168,7 +168,7 @@ def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None
                 for site in state.site_indices[level]
                 for row in range(len(state.rows))
             )
-            addresses = tuple(mapping(routing_query) for mapping in agent.query_maps)
+            addresses = agent.routing_addresses(routing_query)
             # Synchronize only the small address matrices before handing work to
             # CPU threads. The differentiable device expressions remain retained.
             search_addresses = tuple(address.detach().float().cpu()
@@ -546,7 +546,7 @@ def spatial_bank_forward(agent: SDKBAgent, store: StoredReadBackend,
         for space, (width, limit) in enumerate(
                 zip(memory.payload_dims, limits, strict=True)):
             name = f"s{space}"
-            address = agent.query_maps[space](routing_query)
+            address = agent.routing_address(routing_query, space)
             plans = index.search_batch(
                 address, top_k=max(limit, routing_candidates),
                 namespace=index.namespace, space=name, generation=index.generation,

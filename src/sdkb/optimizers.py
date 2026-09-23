@@ -53,7 +53,7 @@ def make_optimizer(agent):
     config = agent.config.train
     named = dict(agent.named_parameters())
     base = {id(p) for p in agent.backbone.base.parameters()}
-    key_prefixes = ('key_head.', 'address_maps.')
+    key_prefixes = ('key_head.', 'address_maps.', 'writer_key_heads.')
     if config.writer_key_learning_rate is None:
         groups = [dict(params=[p for p in named.values() if p.requires_grad
                                and (id(p) in base) == backbone],

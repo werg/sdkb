@@ -1,7 +1,9 @@
 # Keyspace distillation contingency
 
-**Status:** design, not implemented. Use this if the corrected four-space R3
-stage fails the gate below. The warmup changes the key interface and adds
+**Status:** implemented as scripts, first run in progress (23 September 2026).
+The owner stopped the live-key R3 stage at step 55 and triggered this warmup
+directly instead of waiting for the step-250/300 gate. Use this if a corrected
+four-space R3 stage fails the gate below. The warmup changes the key interface and adds
 teacher distillation in one stage. It trains only key heads over cached writer
 and query states, then returns to the full trajectory curriculum with a
 coherent refreshed bank.
@@ -81,6 +83,13 @@ functions of cached states:
 - for each `memory.search` site, the routing features at that site's packed
   causal prefix.
 
+Level-1 query features depend only on the first core pass, so they are exact.
+Level-2 features also see the payloads that earlier level-1 reads in the same
+trajectory wrote into their workspaces. The cache records them under the parent
+checkpoint's actual selections (verified supports first, then its own search
+results). During the warmup they are fixed inputs, not an exact function of the
+trained heads. The continuation stage computes them live again.
+
 The cache stores states as the actual autocast forward produced them, at the
 serialized precision, under that checkpoint's RNG. It records the checkpoint
 and writer-state token. At BF16, the cache costs `2 × width` bytes per state,
@@ -119,12 +128,20 @@ Each space gets a different frozen local dense encoder, preferring different
 model families, training data or tokenizers. Each space also gets a different
 declared source view and query view, for example:
 
-| Space | Source view | Query view |
-| --- | --- | --- |
-| s0 | chunk only | call arguments only |
-| s1 | chunk + heading path | arguments + fixed prefix window |
-| s2 | chunk + neighbouring chunk | arguments + window + prior tool results |
-| s3 | heading path + chunk summary span | fixed prefix window only |
+| Name | Source view | Name | Query view |
+| --- | --- | --- | --- |
+| `chunk` | stored text (title and passage) | `arguments` | `memory.search` query argument |
+| `passage` | passage without title | `content` | arguments minus fixed instruction lines |
+| `chunk_neighbor` | chunk plus an adjacent chunk of the same article group | `prefix_window` | last 512 visible prefix tokens through the call |
+| `title_lead` | title plus first sentence | `short_window` | last 128 visible prefix tokens through the call |
+
+Windows strip 32-hex record identifiers that earlier causal writes mention.
+Textual prior tool results do not exist in these trajectories (reads are
+latent), so no view uses them. Candidate teachers are local, frozen and chosen
+by the benchmark in step 1: Qwen3-Embedding-0.6B, EmbeddingGemma-300m,
+LFM2.5-Embedding-350M, gte-modernbert-base, granite-embedding-english-r2,
+snowflake-arctic-embed-m-v1.5, bge-base-en-v1.5, mxbai-embed-large-v1 and
+e5-base-v2.
 
 The space-to-teacher and view assignment is configuration, not a semantic label.
 Random projections of one identical target are not a source of diversity. The
@@ -152,9 +169,9 @@ frozen. A projection never sees a gate or validation source.
 3. **Distill.** For each site and space, the field is all causally eligible
    records. The loss combines:
    - KL(teacher ‖ student) over the eligible field. Student logits are cosine
-     scaled by 10, matching the routing losses. Each teacher's temperature is
-     tuned on the held-out training portion so its distribution ranks verified
-     supports best, then fixed.
+     scaled by 10, matching the routing losses. A temperature cannot change a
+     ranking, so each teacher's temperature minimizes the held-out training
+     portion's verified-support NLL under its full-field softmax, then is fixed.
    - The verified-support union contrastive loss over the same field.
    - The soft lexical auxiliary.
 4. **Control.** Rerun the same warmup with teacher weight zero and all else
@@ -169,6 +186,27 @@ frozen. A projection never sees a gate or validation source.
    model and journal. It restores the downstream task loss, stored-key
    objective, live writer replay, key-stability term and bounded key refresh.
    Writer parameters train at the existing small nonzero learning rate.
+
+## Implementation
+
+- `memory.key_interface: direct` adds `writer_key_heads` and `query_key_heads`
+  and removes the shared key parameters. `SDKBAgent.routing_input` and
+  `routing_address` give every search path one address rule for both
+  interfaces. A direct-interface stage accepts the shared-map base bank only
+  through a complete refreshed journal whose manifest names the direct
+  interface.
+- `scripts/cache_keyspace_states.py` caches writer key-slot states, serialized
+  payloads, parent shared keys and per-site query features.
+- `scripts/embed_keyspace_teachers.py` embeds the declared views.
+- `scripts/distill_keyspace.py benchmark|warmup` implements steps 1 and 3–5.
+  It fits projections and temperatures, distills the heads, writes the
+  refreshed journal, saves a direct checkpoint, and checks that the saved
+  writer reproduces journal keys from source tokens.
+- `scripts/evaluate_keyspace_gate.py` runs the unassisted gate on the packed
+  validation trajectories.
+- `train_spatial_bank.py --min-host-available-gib` yields when shared unified
+  memory runs low: it releases cached CUDA blocks, waits, then checkpoints and
+  stops.
 
 ## Measurements
 

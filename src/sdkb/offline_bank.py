@@ -21,6 +21,8 @@ def stored_memory_identity(memory: dict) -> dict:
     # Banks published before the positional interface are unambiguously flat.
     # Preserve their compatibility without mutating historical manifests.
     result.setdefault('payload_layout', 'flat')
+    # Banks published before per-space direct heads used shared key maps.
+    result.setdefault('key_interface', 'shared_maps')
     return result
 
 
@@ -50,7 +52,7 @@ def assert_bank_writer_compatible(run: Path, checkpoint: Path, bank_dir: Path,
     # writer_loops=1 bypasses the recurrent bridge; only the parent decoder
     # participates in source encoding. The bridge is allowed to learn on reads.
     prefixes = ('backbone.base.', 'write_slots', 'key_head.', 'value_head.',
-                'address_maps.', 'codecs.')
+                'address_maps.', 'writer_key_heads.', 'codecs.')
     with safe_open(source, framework='pt', device='cpu') as origin, \
             safe_open(current, framework='pt', device='cpu') as evaluated:
         keys = {key for key in origin.keys() if key.startswith(prefixes)}

@@ -102,11 +102,22 @@ class SDKBAgent(nn.Module):
             for p in self.backbone.base.parameters():
                 p.requires_grad_(False)
         self.write_slots = nn.Parameter(torch.randn(r.write_slots + 1, self.width) * 0.02)
-        self.key_head = nn.Linear(self.width, r.key_dim, bias=False)
         self.value_head = nn.Sequential(nn.LayerNorm(self.width), nn.Linear(self.width, self.width))
         self.query_head = nn.Linear(self.width, r.key_dim, bias=False)
-        self.address_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
-        self.query_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
+        if r.key_interface == "direct":
+            # Each space addresses its own projection of writer and query states.
+            # Writer key-slot states are nearly collinear, so the heads carry a
+            # bias and always run in fp32 (see ``_fp32_head``).
+            self.key_head = self.address_maps = self.query_maps = None
+            self.writer_key_heads = nn.ModuleList([
+                nn.Linear(self.width, r.key_dim) for _ in r.payload_dims])
+            self.query_key_heads = nn.ModuleList([
+                nn.Linear(self.width, r.key_dim) for _ in r.payload_dims])
+        else:
+            self.key_head = nn.Linear(self.width, r.key_dim, bias=False)
+            self.address_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
+            self.query_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
+            self.writer_key_heads = self.query_key_heads = None
         self.distance_gates = nn.ModuleList([
             AdaptiveDistanceGate(
                 r.key_dim, density_k=r.gate_density_k,
@@ -182,6 +193,50 @@ class SDKBAgent(nn.Module):
         text = render_prompt(self.tokenizer, query, support_text)
         return self.text_ids(text)
 
+    @staticmethod
+    def _fp32_head(head: nn.Linear, states: Tensor) -> Tensor:
+        """Direct key heads resolve small differences between collinear states.
+
+        BF16 autocast rounds such scores to a handful of values, so these heads
+        always compute in fp32; stored keys are serialized as fp32 anyway.
+        """
+        with torch.autocast(states.device.type, enabled=False):
+            return head(states.float())
+
+    def writer_space_keys(self, key_states: Tensor) -> tuple[Tensor, ...]:
+        """Normalized per-space stored keys from writer key-slot states."""
+        if self.writer_key_heads is not None:
+            return tuple(F.normalize(self._fp32_head(head, key_states), dim=-1)
+                         for head in self.writer_key_heads)
+        key = F.normalize(self.key_head(key_states), dim=-1)
+        return tuple(F.normalize(address(key), dim=-1) for address in self.address_maps)
+
+    def routing_input(self, features: Tensor, query: Tensor) -> Tensor:
+        """What per-space query addressing consumes for these causal features.
+
+        Shared maps consume the normalized routing query. Direct heads consume
+        the normalized query-state features themselves.
+        """
+        if self.query_key_heads is not None:
+            return features
+        if self.routing_query_head is None:
+            return query
+        return F.normalize(self.routing_query_head(features), dim=-1)
+
+    def routing_address(self, routing_input: Tensor, space: int) -> Tensor:
+        """Unnormalized search address; cosine scoring normalizes it."""
+        if self.query_key_heads is not None:
+            if routing_input.shape[-1] != self.width:
+                raise ValueError('Direct query key heads need routing features')
+            return self._fp32_head(self.query_key_heads[space], routing_input)
+        if routing_input.shape[-1] != self.config.memory.key_dim:
+            raise ValueError('Shared query maps need a normalized routing query')
+        return self.query_maps[space](routing_input)
+
+    def routing_addresses(self, routing_input: Tensor) -> tuple[Tensor, ...]:
+        return tuple(self.routing_address(routing_input, space)
+                     for space in range(len(self.config.memory.payload_dims)))
+
     def produce(self, source_ids: Tensor) -> tuple[Tensor, ...]:
         """One key and fixed canonical slots, then per-space keys/stored payloads.
 
@@ -193,13 +248,13 @@ class SDKBAgent(nn.Module):
         hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long),
                                       loops=self.config.model.writer_loops)
         tail = hidden[:, -(self.config.memory.write_slots + 1):]
-        key = F.normalize(self.key_head(tail[:, 0]), dim=-1)
+        keys = self.writer_space_keys(tail[:, 0])
         canonical = self.value_head(tail[:, 1:])
         output = []
-        for address, codec in zip(self.address_maps, self.codecs, strict=True):
+        for key, codec in zip(keys, self.codecs, strict=True):
             encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
                             else canonical.flatten(1))
-            output.extend((F.normalize(address(key), dim=-1), encoded))
+            output.extend((key, encoded))
         return tuple(output)
 
     def produce_batch(self, source_ids: list[Tensor], *,
@@ -227,15 +282,15 @@ class SDKBAgent(nn.Module):
                                       loops=self.config.model.writer_loops)
         indices = lengths[:, None] + torch.arange(slots, device=self.device)[None]
         tail = hidden.gather(1, indices[..., None].expand(-1, -1, width))
-        key = F.normalize(self.key_head(tail[:, 0]), dim=-1)
+        keys = self.writer_space_keys(tail[:, 0])
         if payload_rows is None:
             payload_rows = torch.ones(len(source_ids), dtype=torch.bool, device=self.device)
         if payload_rows.shape != (len(source_ids),) or payload_rows.dtype != torch.bool:
             raise ValueError('payload_rows must be one boolean per source')
         canonical = self.value_head(tail[payload_rows, 1:])
         output = []
-        for address, codec, dim in zip(self.address_maps, self.codecs,
-                                       self.config.memory.payload_dims, strict=True):
+        for key, codec, dim in zip(keys, self.codecs,
+                                   self.config.memory.payload_dims, strict=True):
             if canonical.shape[0]:
                 encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
                                 else canonical.flatten(1))
@@ -243,7 +298,7 @@ class SDKBAgent(nn.Module):
                     0, payload_rows.nonzero().flatten(), encoded)
             else:
                 payload = canonical.new_zeros(len(source_ids), dim)
-            output.extend((F.normalize(address(key), dim=-1), payload))
+            output.extend((key, payload))
         return tuple(output)
 
     def produce_from_write_states(self, states: Tensor) -> tuple[Tensor, ...]:
@@ -251,13 +306,13 @@ class SDKBAgent(nn.Module):
         slots = self.config.memory.write_slots + 1
         if states.ndim != 3 or states.shape[1:] != (slots, self.width):
             raise ValueError('Trajectory write states have incompatible slots or width')
-        key = F.normalize(self.key_head(states[:, 0]), dim=-1)
+        keys = self.writer_space_keys(states[:, 0])
         canonical = self.value_head(states[:, 1:])
         output = []
-        for address, codec in zip(self.address_maps, self.codecs, strict=True):
+        for key, codec in zip(keys, self.codecs, strict=True):
             encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
                             else canonical.flatten(1))
-            output.extend((F.normalize(address(key), dim=-1), encoded))
+            output.extend((key, encoded))
         return tuple(output)
 
     def _query_features(self, prompt_ids: Tensor, memory: Tensor | None = None) -> Tensor:
@@ -272,12 +327,12 @@ class SDKBAgent(nn.Module):
 
     def query_pair(self, prompt_ids: Tensor, memory: Tensor | None = None) -> tuple[Tensor, Tensor]:
         """Reader conditioning and one retrieval key, both from the causal prefix."""
-        if self.routing_query_head is None:
+        if self.query_key_heads is None and self.routing_query_head is None:
             query = self.query(prompt_ids, memory)
             return query, query
         features = self._query_features(prompt_ids, memory)
-        return (F.normalize(self.query_head(features), dim=-1),
-                F.normalize(self.routing_query_head(features), dim=-1))
+        query = F.normalize(self.query_head(features), dim=-1)
+        return query, self.routing_input(features, query)
 
     def _prepare_values(self, payloads: list[Tensor], ablate_values: bool = False,
                         weights: list[Tensor] | None = None):
@@ -368,8 +423,7 @@ class SDKBAgent(nn.Module):
             query_state = state[torch.arange(batch, device=self.device), query_positions]
             features = self.loop_query_norm(query_state)
             query = F.normalize(self.query_head(features), dim=-1)
-            routing_query = (query if self.routing_query_head is None else
-                             F.normalize(self.routing_query_head(features), dim=-1))
+            routing_query = self.routing_input(features, query)
             payloads, weights = [], []
             for space, dim in enumerate(r.payload_dims):
                 chosen_rows = []
@@ -377,7 +431,7 @@ class SDKBAgent(nn.Module):
                 for row in range(batch):
                     keys = (torch.cat([item[2 * space] for item in records[row]], 0)
                             if records[row] else query.new_empty(0, r.key_dim))
-                    scores = cosine_scores(self.query_maps[space](routing_query[row:row + 1]), keys)[0]
+                    scores = cosine_scores(self.routing_address(routing_query[row:row + 1], space), keys)[0]
                     if t.retrieval == 'learned' and required[row]:
                         local_routing = local_routing + group_plan_loss(scores, [tuple(required[row])])
                     choice = (required[row] if oracle else
@@ -492,13 +546,13 @@ class SDKBAgent(nn.Module):
         return F.normalize(self.query_head(self.loop_query_norm(state[:, index])), dim=-1)
 
     def loop_query_pair(self, state: Tensor, prefix_length: int) -> tuple[Tensor, Tensor]:
-        if self.routing_query_head is None:
+        if self.query_key_heads is None and self.routing_query_head is None:
             query = self.loop_query(state, prefix_length)
             return query, query
         index = prefix_length + self.config.memory.read_slots - 1
         features = self.loop_query_norm(state[:, index])
-        return (F.normalize(self.query_head(features), dim=-1),
-                F.normalize(self.routing_query_head(features), dim=-1))
+        query = F.normalize(self.query_head(features), dim=-1)
+        return query, self.routing_input(features, query)
 
     def begin_spatial_recurrent(self, input_ids: Tensor, attention_mask: Tensor,
                                 sites: tuple[SpatialReadSite, ...]) -> SpatialExecution:
@@ -570,9 +624,7 @@ class SDKBAgent(nn.Module):
         ], 0)
         features = self.loop_query_norm(features)
         query = F.normalize(self.query_head(features), dim=-1)
-        routing_query = (query if self.routing_query_head is None else
-                         F.normalize(self.routing_query_head(features), dim=-1))
-        return active, query, routing_query
+        return active, query, self.routing_input(features, query)
 
     def advance_spatial_recurrent(self, execution: SpatialExecution,
                                   active: tuple[SpatialReadSite, ...],
@@ -681,7 +733,7 @@ class SDKBAgent(nn.Module):
                     candidates = [i for i in range(len(records)) if i not in selected[space]]
                     if candidates:
                         keys = torch.cat([records[i][2 * space] for i in candidates], 0)
-                        scores = cosine_scores(self.query_maps[space](routing_query), keys)[0]
+                        scores = cosine_scores(self.routing_address(routing_query, space), keys)[0]
                         remaining = [candidates.index(i) for i in required if i in candidates]
                         if t.retrieval == "learned" and remaining:
                             routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)
@@ -772,7 +824,7 @@ class SDKBAgent(nn.Module):
         for space, dim in enumerate(r.payload_dims):
             keys = torch.cat([record[2 * space] for record in records], 0) if records else q.new_empty(0, r.key_dim)
             values = torch.cat([record[2 * space + 1] for record in records], 0) if records else q.new_empty(0, dim)
-            scores = cosine_scores(F.normalize(self.query_maps[space](routing_query), dim=-1), keys)[0]
+            scores = cosine_scores(F.normalize(self.routing_address(routing_query, space), dim=-1), keys)[0]
             if t.retrieval == "learned" and required and records:
                 routing = routing + group_plan_loss(scores, [tuple(required)]) / len(r.payload_dims)
             oracle = t.retrieval == "oracle" or (self.training and step < t.routing_warmup)
@@ -826,7 +878,7 @@ class SDKBAgent(nn.Module):
                 candidates = [i for i in range(len(records)) if i not in selected[space]]
                 if candidates:
                     keys = torch.cat([records[i][2 * space] for i in candidates], 0)
-                    scores = cosine_scores(self.query_maps[space](routing_query), keys)[0]
+                    scores = cosine_scores(self.routing_address(routing_query, space), keys)[0]
                     remaining = [candidates.index(i) for i in required if i in candidates]
                     if self.training and t.retrieval == "learned" and remaining:
                         routing = routing + group_plan_loss(scores, [tuple(remaining)]) / len(r.payload_dims)

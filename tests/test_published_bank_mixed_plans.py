@@ -16,7 +16,9 @@ def test_supplied_mixed_plan_uses_prefix_query_and_deduplicates(monkeypatch):
 
     class Agent:
         config = object()
-        query_maps = [lambda query: query, lambda query: query]
+        def routing_address(self, routing_query, space):
+            assert space in (0, 1)
+            return routing_query
 
         def prompt_ids(self, query):
             assert query == 'earlier question'

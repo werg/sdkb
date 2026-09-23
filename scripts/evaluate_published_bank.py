@@ -37,7 +37,7 @@ def supplied_mixed_plans(agent, searcher, episodes, *, namespace: str,
                 if completed != 1:
                     return None
                 for space, limit in enumerate(limits):
-                    found = searcher.search(agent.query_maps[space](routing_query)[0],
+                    found = searcher.search(agent.routing_address(routing_query, space)[0],
                         top_k=max(limit + 1, 8), namespace=namespace, space=f's{space}',
                         generation=generation, domain=domain, query_time=episode.query_time)
                     ids = list(episode.required_ids)

@@ -28,7 +28,7 @@ from sdkb.offline_bank import (canonical_json, publish_offline_generation,
                                stored_memory_identity)
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.optimizers import make_optimizer, optimizer_report
-from sdkb.runtime import reclaim_cuda_cache
+from sdkb.runtime import available_host_memory, reclaim_cuda_cache
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
 from sdkb.routing_curriculum import RoutingCandidateIndex
@@ -64,13 +64,17 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           key_stability_weight: float | None = None,
           routing_logit_scale: float | None = None,
           routing_live_weight: float | None = None,
-          routing_hard_ramp_steps: int = 3000) -> dict:
+          routing_hard_ramp_steps: int = 3000,
+          min_host_available_gib: float = 0.0,
+          host_pressure_wait_seconds: float = 600.0) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
             or cache_reclaim_host_reserve_gib < 0
-            or maintenance_records_per_step < 0 or routing_hard_ramp_steps < 1):
+            or maintenance_records_per_step < 0 or routing_hard_ramp_steps < 1
+            or min_host_available_gib < 0 or host_pressure_wait_seconds < 0):
         raise ValueError("Invalid spatial training schedule")
     max_unused_cuda_bytes = int(max_unused_cuda_gib * 1024 ** 3)
+    min_host_available_bytes = int(min_host_available_gib * 1024 ** 3)
     cache_reclaim_host_reserve_bytes = int(cache_reclaim_host_reserve_gib * 1024 ** 3)
     pipeline = microbatch_size is not None or inflight != 1
     if pipeline:
@@ -138,6 +142,19 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         raise ValueError("Published bank differs from its verified manifest")
     bank_memory = stored_memory_identity(dict(bank_manifest["identity"]["memory"]))
     current_memory = stored_memory_identity(asdict(config.memory))
+    if bank_memory.get('key_interface') != current_memory['key_interface']:
+        # Base-snapshot keys came from another key interface. Only a complete
+        # refreshed journal written by this interface may replace every view.
+        interface_journal = None
+        if bank_journal_path is not None:
+            interface_journal = json.loads(
+                (bank_journal_path.parent / 'manifest.json').read_text()).get('key_interface')
+        elif resume and (output / 'spatial-inputs.json').exists():
+            interface_journal = json.loads(
+                (output / 'spatial-inputs.json').read_text()).get('journal_key_interface')
+        if interface_journal != current_memory['key_interface']:
+            raise ValueError('Key interface differs from the bank without a complete refresh')
+        bank_memory['key_interface'] = current_memory['key_interface']
     if (tuple(bank_manifest["spaces"]) != tuple(f"s{i}" for i in range(len(limits)))
             or bank_memory != current_memory):
         raise ValueError("Spatial model and published bank interfaces differ")
@@ -185,6 +202,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         if not refresh_manifest.get('complete'):
             raise ValueError('Staged bank refresh is incomplete')
         settings['bank_refresh_manifest_sha256'] = file_sha256(refresh_manifest_path)
+        if 'key_interface' in refresh_manifest:
+            settings['journal_key_interface'] = refresh_manifest['key_interface']
     if resume and (output / 'spatial-inputs.json').exists():
         prior = json.loads((output / 'spatial-inputs.json').read_text())
         inherited = prior.get('inherit_bank_from')
@@ -193,6 +212,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         refreshed = prior.get('bank_refresh_manifest_sha256')
         if refreshed is not None:
             settings['bank_refresh_manifest_sha256'] = refreshed
+        if 'journal_key_interface' in prior:
+            settings['journal_key_interface'] = prior['journal_key_interface']
     fingerprint = _fingerprint(data, bank_manifest_path, settings)
 
     if resume:
@@ -212,7 +233,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     agent = SDKBAgent(config).to(config.train.device)
     for name, parameter in agent.named_parameters():
         if name.startswith(("write_slots", "key_head.", "value_head.",
-                            "address_maps.", "codecs.")):
+                            "address_maps.", "writer_key_heads.", "codecs.")):
             parameter.requires_grad_(bool(config.train.writer_replay_records_per_site))
     agent.train()
     initialization = None
@@ -355,11 +376,30 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             "gradient_checkpointing": config.model.gradient_checkpointing,
             "retain_writer_replay_activations": retain_writer_replay_activations,
             "cache_reclaim_host_reserve_gib": cache_reclaim_host_reserve_gib,
+            "min_host_available_gib": min_host_available_gib,
         }
         atomic_json(output / "environment.json", environment)
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:
             for step in range(start, steps):
-                if signal_state["signal"] is not None or stop_requested(output):
+                # Shared unified memory: yield to co-tenants before they hit their
+                # own rails. Release cached blocks, wait, then checkpoint and stop.
+                pressure = False
+                if min_host_available_bytes:
+                    available = available_host_memory()
+                    if available is not None and available < min_host_available_bytes:
+                        reclaim_cuda_cache(config.train.device, 0, force=True)
+                        waited = 0.0
+                        while (waited < host_pressure_wait_seconds
+                               and (available_host_memory() or 0) < min_host_available_bytes
+                               and signal_state["signal"] is None
+                               and not stop_requested(output)):
+                            time.sleep(15)
+                            waited += 15
+                        pressure = (available_host_memory() or 0) < min_host_available_bytes
+                        if waited:
+                            print(json.dumps({"host_pressure_wait_seconds": waited,
+                                              "step": step, "stopping": pressure}), flush=True)
+                if pressure or signal_state["signal"] is not None or stop_requested(output):
                     if last_saved != completed:
                         optimizer.zero_grad(set_to_none=True)
                         reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
@@ -526,6 +566,8 @@ if __name__ == "__main__":
     parser.add_argument("--routing-logit-scale", type=float)
     parser.add_argument("--routing-live-weight", type=float)
     parser.add_argument("--routing-hard-ramp-steps", type=int, default=3000)
+    parser.add_argument("--min-host-available-gib", type=float, default=0.0)
+    parser.add_argument("--host-pressure-wait-seconds", type=float, default=600.0)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -551,4 +593,6 @@ if __name__ == "__main__":
         routing_logit_scale=args.routing_logit_scale,
         routing_live_weight=args.routing_live_weight,
         routing_hard_ramp_steps=args.routing_hard_ramp_steps,
+        min_host_available_gib=args.min_host_available_gib,
+        host_pressure_wait_seconds=args.host_pressure_wait_seconds,
     ), indent=2))

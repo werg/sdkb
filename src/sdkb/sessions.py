@@ -39,7 +39,7 @@ def _gate_weights(agent, store: KeySearchBackend, *, query: Tensor, routing_quer
         candidate_ids.extend(record_id for record_id in ids if record_id not in candidate_ids)
         keys = torch.stack([lookup_record(store, record_id, **scope).key
                             for record_id in candidate_ids]).to(agent.device)
-        address = agent.query_maps[space](routing_query)
+        address = agent.routing_address(routing_query, space)
         scores = cosine_similarities(address, keys)[0]
         positions = [candidate_ids.index(record_id) for record_id in ids]
         weights, _ = agent.distance_gates[space](
@@ -104,7 +104,7 @@ def read_session(agent, store: KeySearchBackend, prompt: Tensor, *, namespace: s
             elif oracle_ids is None:
                 requested = agent.requested_records(
                     q, r.neighbors[space] if r.read_steps == 1 else r.read_top_k)
-                candidates = store.search(agent.query_maps[space](routing_query)[0], namespace=namespace,
+                candidates = store.search(agent.routing_address(routing_query, space)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
                                     top_k=max(requested, r.gate_density_k if r.distance_gating else 0),
@@ -187,7 +187,7 @@ def loop_read_session(agent, store: KeySearchBackend, prompt: Tensor, *, namespa
             elif oracle_ids is None:
                 requested = agent.requested_records(
                     query, r.neighbors[space] if r.read_steps == 1 else r.read_top_k)
-                candidates = store.search(agent.query_maps[space](routing_query)[0], namespace=namespace,
+                candidates = store.search(agent.routing_address(routing_query, space)[0], namespace=namespace,
                                     space=f"s{space}", generation=generation, domain=domain,
                                     query_time=query_time,
                                     top_k=max(requested, r.gate_density_k if r.distance_gating else 0),
