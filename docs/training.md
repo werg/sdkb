@@ -87,7 +87,9 @@ wrong, and zeroed latent payloads on the same task examples. Lower routing loss 
 teacher NLL alone does not establish usable retrieval or information transfer.
 If address learning stalls, a small embedding teacher can supply a richer soft
 similarity target; each space should have its own trainable teacher projection and
-the additional teacher compute and key-refresh cost must be reported.
+the additional teacher compute and key-refresh cost must be reported. The
+[keyspace distillation plan](keyspace-distillation-plan.md) records the causal
+teacher inputs, direct per-space head conversion and validation gate.
 
 ### Staged whole-bank refresh after measured key drift
 
