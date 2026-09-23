@@ -105,6 +105,16 @@ substitute for measuring drift and refreshing the full bank again. The first
 coherent stage should check head age, key similarity, unassisted retrieval, and
 task controls before choosing a refresh cadence.
 
+For coherent-bank training, the contrastive address loss scores the **stored**
+keys that exact search actually ranks. Selected live writer keys still affect
+the reader's continuous gate and task loss. With `--key-stability-weight`, an
+additional cosine penalty keeps replayed writer keys near their current stored
+revisions, accumulating its producer gradient before the optimizer step. This
+allows writer keys to move while preventing the address objective from chasing
+newly encoded positives that cannot yet be found in the persistent index.
+`--routing-hard-ramp-steps` controls how quickly full-bank mined negatives gain
+weight. The logs separate easy, hard, lexical, and key-stability terms.
+
 Document ingestion data should use the helpers in `document_ingestion.py`. Provide
 both complete-document prompts with several model-chosen writes and streaming
 natural/manual parts with one visible write after each part. Store exact source spans,

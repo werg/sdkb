@@ -18,11 +18,11 @@ from torch import Tensor
 from torch.nn import functional as F
 
 
-def routing_mix(step: int) -> tuple[float, float]:
+def routing_mix(step: int, ramp_steps: int = 3000) -> tuple[float, float]:
     """Move from sampled eligible negatives toward the whole-bank hard field."""
-    if step < 0:
-        raise ValueError('Routing step must be nonnegative')
-    hard = .75 * min(step / 3000, 1.0)
+    if step < 0 or ramp_steps < 1:
+        raise ValueError('Routing step and ramp must be valid')
+    hard = .75 * min(step / ramp_steps, 1.0)
     return 1.0 - hard, hard
 
 
@@ -33,7 +33,10 @@ def _terms(text: str) -> Counter[str]:
 class RoutingCandidateIndex:
     """Small source-text teacher used only while optimizing address vectors."""
 
-    def __init__(self, sources: Path):
+    def __init__(self, sources: Path, *, ramp_steps: int = 3000):
+        if ramp_steps < 1:
+            raise ValueError('Routing ramp must be positive')
+        self.ramp_steps = ramp_steps
         self.rows = {}
         frequencies = Counter()
         with Path(sources).open(encoding='utf-8') as handle:

@@ -60,11 +60,13 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           routing_weight: float | None = None,
           inherit_bank: bool = False,
           bank_journal_path: Path | None = None,
-          writer_key_learning_rate: float | None = None) -> dict:
+          writer_key_learning_rate: float | None = None,
+          key_stability_weight: float | None = None,
+          routing_hard_ramp_steps: int = 3000) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
             or cache_reclaim_host_reserve_gib < 0
-            or maintenance_records_per_step < 0):
+            or maintenance_records_per_step < 0 or routing_hard_ramp_steps < 1):
         raise ValueError("Invalid spatial training schedule")
     max_unused_cuda_bytes = int(max_unused_cuda_gib * 1024 ** 3)
     cache_reclaim_host_reserve_bytes = int(cache_reclaim_host_reserve_gib * 1024 ** 3)
@@ -97,6 +99,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         config.train.routing_weight = routing_weight
     if writer_key_learning_rate is not None:
         config.train.writer_key_learning_rate = writer_key_learning_rate
+    if key_stability_weight is not None:
+        config.train.key_stability_weight = key_stability_weight
     if routing_episodes_path is not None and (sources_path is None or not pipeline):
         raise ValueError('Routing curriculum requires source metadata and pipeline')
     if inherit_bank and (init_from is None or resume):
@@ -157,9 +161,11 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             'episodes_sha256': file_sha256(routing_episodes_path),
             'routing_weight': config.train.routing_weight,
             'sampled_negatives': 32,
-            'hard_ramp_steps': 3000,
+            'hard_ramp_steps': routing_hard_ramp_steps,
             'lexical_auxiliary_fraction': .05,
         }
+    if config.train.key_stability_weight:
+        settings['key_stability_weight'] = config.train.key_stability_weight
     if config.train.writer_key_learning_rate is not None:
         settings['writer_key_learning_rate'] = config.train.writer_key_learning_rate
     refresh_manifest = None
@@ -278,7 +284,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         if set(map(str, next(iter(index.spaces.values())).ids)) - source_rows.keys():
             raise ValueError('Writer replay manifest does not cover the published bank')
     source_groups = source_ingestion_groups(list(source_rows.values()))
-    routing_teacher = (RoutingCandidateIndex(sources_path)
+    routing_teacher = (RoutingCandidateIndex(
+        sources_path, ramp_steps=routing_hard_ramp_steps)
                        if routing_episodes_path is not None else None)
     queries = {}
     if routing_episodes_path is not None:
@@ -355,6 +362,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 if routing_teacher is not None:
                     for row in rows:
                         row['routing_step'] = step
+                        row['routing_hard_ramp_steps'] = routing_hard_ramp_steps
                         for site in row['sites']:
                             site['routing_query_text'] = queries[site['episode_id']]
                 optimizer.zero_grad(set_to_none=True)
@@ -504,6 +512,8 @@ if __name__ == "__main__":
     parser.add_argument("--inherit-bank", action="store_true")
     parser.add_argument("--bank-journal", type=Path)
     parser.add_argument("--writer-key-learning-rate", type=float)
+    parser.add_argument("--key-stability-weight", type=float)
+    parser.add_argument("--routing-hard-ramp-steps", type=int, default=3000)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -525,4 +535,6 @@ if __name__ == "__main__":
         inherit_bank=args.inherit_bank,
         bank_journal_path=args.bank_journal,
         writer_key_learning_rate=args.writer_key_learning_rate,
+        key_stability_weight=args.key_stability_weight,
+        routing_hard_ramp_steps=args.routing_hard_ramp_steps,
     ), indent=2))

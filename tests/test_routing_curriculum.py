@@ -29,3 +29,4 @@ def test_routing_mix_moves_from_easy_to_global():
     easy, global_weight = routing_mix(1000)
     assert 0 < easy < 1 and 0 < global_weight < 1
     assert routing_mix(3000) == (0.25, 0.75)
+    assert routing_mix(1000, ramp_steps=1000) == (0.25, 0.75)

@@ -120,6 +120,65 @@ def test_routing_curriculum_keeps_reader_selection_and_trains_address(tiny_confi
     assert agent.query_maps[0].weight.grad.abs().sum() > 0
 
 
+def test_stored_routing_is_stable_when_live_writer_keys_drift(tiny_config, tmp_path):
+    tiny_config.model.loops = 2
+    tiny_config.model.recurrence_mode = 'middle_block'
+    tiny_config.model.recurrent_start = 0
+    tiny_config.model.recurrent_end = 1
+    tiny_config.memory.read_timing = 'loop_boundary'
+    tiny_config.memory.neighbors = [2]
+    tiny_config.train.key_stability_weight = .2
+    tiny_config.train.writer_replay_records_per_site = 2
+    agent = SDKBAgent(tiny_config)
+    episode = make_episode(0, distractors=0)
+    row = pack_spatial_trajectory(StableChatTokenizer(), [episode],
+                                  read_slots=2, generation='g1')
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    sources = {source.record_id: source for source in episode.supports}
+    store.put_many(StoredRecord(
+        rid, torch.randn(tiny_config.memory.key_dim),
+        torch.randn(tiny_config.memory.payload_dims[0], dtype=torch.bfloat16),
+        namespace='corpus', space='s0', generation='g1', domain='research',
+        created_at=source.created_at, source_id=rid,
+    ) for rid, source in sources.items())
+    index = PublishedKeyIndex(store, namespace='corpus', generation='g1',
+                              spaces=('s0',), expected_sources=len(sources))
+    manifest = tmp_path / 'sources.jsonl'
+    manifest.write_text(''.join(json.dumps({
+        'record_id': source.record_id, 'text': source.text,
+        'created_at': source.created_at, 'domain': 'research'}) + '\n'
+        for source in sources.values()))
+    row['sites'][0]['routing_query_text'] = episode.query
+    teacher = RoutingCandidateIndex(manifest)
+    stored = spatial_bank_pipeline_forward(
+        agent, store, index, [row], limits=(2,), routing_candidates=2,
+        microbatch_size=1, inflight=2, routing_teacher=teacher)
+    leaves = {}
+
+    class FakeReplay:
+        def capture(self, record_ids):
+            result = {}
+            for record_id in record_ids:
+                old = index.keys_for_ids('s0', (record_id,), domain='research',
+                                         query_time=episode.query_time)
+                key = (-old).requires_grad_()
+                leaves[record_id] = key
+                result[record_id] = (key, torch.zeros(
+                    1, tiny_config.memory.payload_dims[0]))
+            return result
+
+    live = spatial_bank_pipeline_forward(
+        agent, store, index, [row], limits=(2,), routing_candidates=2,
+        microbatch_size=1, inflight=2, routing_teacher=teacher,
+        writer_replay=FakeReplay())
+    assert abs(live.metrics['routing_stored_loss']
+               - stored.metrics['routing_stored_loss']) < 1e-6
+    assert live.metrics['key_stability_loss'] > 1
+    live.loss.backward()
+    assert any(key.grad is not None and key.grad.abs().sum() > 0
+               for key in leaves.values())
+
+
 def test_spatial_forward_projects_only_supervised_positions(tiny_config, tmp_path, monkeypatch):
     tiny_config.model.loops = 2
     tiny_config.model.recurrence_mode = "middle_block"

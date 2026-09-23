@@ -19,6 +19,7 @@ from safetensors.torch import load_model
 from sdkb.agent import SDKBAgent
 from sdkb.archiving import ensure_free
 from sdkb.bank_replay import BankWriterReplay
+from sdkb.bank_coherence import verify_refresh_coverage
 from sdkb.checkpoints import resolve_checkpoint, stop_on_signal
 from sdkb.document_ingestion import (grouped_ingestion_prefixes,
                                      source_ingestion_groups, writer_prefix_ids)
@@ -29,19 +30,6 @@ from sdkb.store import DiskStore
 from sdkb.training import autocast_context, config_from_run
 from sdkb.training_bank import TrainingBank
 from sdkb.trajectories import file_sha256
-
-
-def verify_refresh_coverage(journal: Path, *, namespace: str,
-                            spaces: tuple[str, ...], source_count: int,
-                            parent_cursor: int) -> None:
-    """All logical records must have every view written after the parent cursor."""
-    with sqlite3.connect(f'file:{journal}?mode=ro', uri=True) as db:
-        counts = dict(db.execute('''SELECT space,COUNT(*) FROM mutable_bank_heads
-            WHERE namespace=? AND cursor>? GROUP BY space''',
-            (namespace, parent_cursor)).fetchall())
-    if set(counts) != set(spaces) or any(counts[space] != source_count
-                                           for space in spaces):
-        raise ValueError('Refresh is not complete in every bank space')
 
 
 def refresh(run: Path, bank_dir: Path, sources: Path, output: Path, *,

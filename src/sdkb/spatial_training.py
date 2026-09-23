@@ -58,6 +58,7 @@ class _SpatialBatchState:
     easy_terms: list[Tensor]
     hard_terms: list[Tensor]
     lexical_terms: list[Tensor]
+    key_stability_terms: list[Tensor]
     selected_counts: list[int]
     learned_hits: list[int]
     positive_labels: list[int]
@@ -140,7 +141,7 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
                                  if value == level) for level in set(levels)}
     execution = agent.begin_spatial_recurrent(input_ids, attention, sites)
     return _SpatialBatchState(
-        rows, labels, execution, sites, site_indices, [], [], [], [],
+        rows, labels, execution, sites, site_indices, [], [], [], [], [],
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
@@ -264,7 +265,14 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                 live[record_id][2 * space][0] if record_id in live else stored_keys[position]
                 for position, record_id in enumerate(candidate_ids)
             ])
-            scores = cosine_scores(address[row_index:row_index + 1], keys)[0]
+            scores = cosine_scores(address[row_index:row_index + 1], stored_keys)[0]
+            if agent.config.train.key_stability_weight:
+                state.key_stability_terms.extend(
+                    1 - F.cosine_similarity(
+                        live[record_id][2 * space][0].float()[None],
+                        stored_keys[position].float()[None])[0]
+                    for position, record_id in enumerate(candidate_ids)
+                    if record_id in live)
             hard_ids = tuple(dict.fromkeys(found + required))
             hard_positions = [candidate_ids.index(record_id) for record_id in hard_ids]
             support_scores[row_index].append(scores[hard_positions])
@@ -345,7 +353,8 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
             easy = union_support_loss(easy_scores[row_index], easy_indices[row_index])
             state.easy_terms.append(easy)
             easy_weight, hard_weight = routing_mix(
-                wave.metadata[row_index]['routing_step'])
+                wave.metadata[row_index]['routing_step'],
+                routing_teacher.ramp_steps)
             state.routing_terms.append(easy_weight * easy + hard_weight * hard)
             state.lexical_terms.append(torch.stack(lexical_terms[row_index]).mean())
     state.read_sites += len(wave.metadata)
@@ -377,15 +386,20 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
     expected_reads = len(state.rows) * len(state.sites)
     if not state.routing_terms or state.read_sites != expected_reads:
         raise ValueError("Every spatial site must execute exactly one bank read")
-    routing = torch.stack(state.routing_terms).mean()
+    stored_routing = torch.stack(state.routing_terms).mean()
     lexical = (torch.stack(state.lexical_terms).mean()
-               if state.lexical_terms else routing.new_zeros(()))
+               if state.lexical_terms else stored_routing.new_zeros(()))
+    key_stability = (torch.stack(state.key_stability_terms).mean()
+                     if state.key_stability_terms else stored_routing.new_zeros(()))
     hard_loss = torch.stack(state.hard_terms).mean()
     easy_loss = (torch.stack(state.easy_terms).mean()
-                 if state.easy_terms else routing.new_zeros(()))
-    easy_weight, hard_weight = (routing_mix(state.rows[0].get('routing_step', 0))
+                 if state.easy_terms else stored_routing.new_zeros(()))
+    easy_weight, hard_weight = (routing_mix(
+        state.rows[0].get('routing_step', 0),
+        state.rows[0].get('routing_hard_ramp_steps', 3000))
                                 if state.easy_terms else (0.0, 1.0))
-    routing = routing + .05 * lexical
+    routing = (stored_routing + .05 * lexical
+               + agent.config.train.key_stability_weight * key_stability)
     loss = nll + agent.config.train.routing_weight * routing
     denominator = state.read_sites
     metrics = {
@@ -407,6 +421,8 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
         ],
         "positive_labels": state.positive_labels,
         "lexical_alignment": float(lexical.detach()),
+        "routing_stored_loss": float(stored_routing.detach()),
+        "key_stability_loss": float(key_stability.detach()),
         "routing_easy_loss": float(easy_loss.detach()),
         "routing_hard_loss": float(hard_loss.detach()),
         "routing_easy_weight": easy_weight,
@@ -785,7 +801,8 @@ def spatial_bank_pipeline_forward(
         **{
             name: sum(result.metrics[name] * result.metrics['read_sites']
                       for result in ordered) / read_sites
-            for name in ('routing_easy_loss', 'routing_hard_loss',
+            for name in ('routing_stored_loss', 'key_stability_loss',
+                         'routing_easy_loss', 'routing_hard_loss',
                          'routing_easy_weight', 'routing_hard_weight')
         },
         **{

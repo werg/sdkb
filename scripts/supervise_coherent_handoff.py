@@ -60,6 +60,8 @@ def main(args) -> None:
                    '--sources', str(args.sources),
                    '--routing-episodes', str(args.episodes),
                    '--routing-weight', '0.2',
+                   '--key-stability-weight', '0.2',
+                   '--routing-hard-ramp-steps', '1000',
                    '--writer-key-learning-rate', '0.000001',
                    '--steps', '1000', '--batch-size', '4', '--microbatch-size', '2',
                    '--inflight', '2', '--loops', '3', '--limits', '16', '8', '4', '4',

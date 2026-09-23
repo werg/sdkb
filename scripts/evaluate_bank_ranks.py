@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 import json
 from pathlib import Path
 import statistics
@@ -10,11 +11,12 @@ import torch
 from safetensors.torch import load_model
 
 from sdkb.agent import SDKBAgent
+from sdkb.bank_coherence import verify_refresh_coverage
 from sdkb.checkpoints import resolve_checkpoint
 from sdkb.data import load_episodes
 from sdkb.key_index import PublishedKeyIndex
 from sdkb.offline_bank import (assert_bank_reader_compatible, canonical_json,
-                               publish_offline_generation)
+                               publish_offline_generation, stored_memory_identity)
 from sdkb.operations import atomic_json
 from sdkb.store import DiskStore
 from sdkb.training_bank import TrainingBank
@@ -44,21 +46,34 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
     if journal is not None:
         staged_manifest = json.loads((journal.parent / 'manifest.json').read_text())
         if (not staged_manifest.get('complete')
-                or staged_manifest['bank_manifest_sha256'] != file_sha256(bank_path)):
+                or staged_manifest['bank_manifest_sha256'] != file_sha256(bank_path)
+                or Path(staged_manifest['parent_run']).resolve() != run.resolve()):
             raise ValueError('Rank evaluation needs a complete compatible journal')
         mutable = DiskStore(journal)
         if mutable.mutable_bank_state() != staged_manifest['journal_state']:
             raise ValueError('Rank journal changed since publication')
+        verify_refresh_coverage(
+            journal, namespace=manifest['namespace'],
+            spaces=tuple(manifest['spaces']), source_count=manifest['sources'],
+            parent_cursor=staged_manifest['parent_bank_state']['cursor'])
         TrainingBank(store, mutable, index)
         journal_state = staged_manifest['journal_state']
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device).eval()
     checkpoint = resolve_checkpoint(run, verify=True)
-    compatibility = assert_bank_reader_compatible(
-        run, checkpoint, bank_dir, manifest, config)
-    if journal is not None and staged_manifest['writer_checkpoint_sha256'] != \
-            file_sha256(checkpoint / 'model.safetensors'):
-        raise ValueError('Rank journal was written by another model checkpoint')
+    if journal is None:
+        compatibility = assert_bank_reader_compatible(
+            run, checkpoint, bank_dir, manifest, config)
+    else:
+        if (staged_manifest['writer_checkpoint_sha256']
+                != file_sha256(checkpoint / 'model.safetensors')
+                or stored_memory_identity(asdict(config.memory))
+                != stored_memory_identity(dict(manifest['identity']['memory']))
+                or any(manifest['identity']['model'][name] != getattr(config.model, name)
+                       for name in ('model_id', 'revision'))):
+            raise ValueError('Complete journal and reader checkpoint are incompatible')
+        compatibility = {'relationship': 'fully_refreshed_mutable_bank',
+                         'checkpoint_is_journal_writer_snapshot': True}
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     def forbidden_writer(*_args, **_kwargs):
         raise AssertionError('Routing evaluation must not re-encode sources')

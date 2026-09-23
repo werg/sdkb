@@ -107,6 +107,7 @@ class TrainConfig:
     retrieval: str = "oracle"  # oracle or learned (candidate-local top-k)
     routing_weight: float = 0.1
     writer_key_learning_rate: float | None = None
+    key_stability_weight: float = 0.0
     routing_warmup: int = 100
     support_gate_floor: float = 0.0
     writer_replay_records_per_site: int = 0
@@ -155,6 +156,8 @@ class Config:
                 and (not math.isfinite(t.writer_key_learning_rate)
                      or t.writer_key_learning_rate <= 0)):
             raise ValueError('Writer key learning rate must be positive and finite')
+        if not math.isfinite(t.key_stability_weight) or t.key_stability_weight < 0:
+            raise ValueError('Key stability weight must be nonnegative and finite')
         if t.sampling_policy not in {'random_with_replacement', 'shuffled_passes'}:
             raise ValueError('Unknown episode sampling policy')
         if t.bank_dir is not None:

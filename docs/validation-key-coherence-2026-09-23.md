@@ -44,4 +44,19 @@ cooperatively at step 497; its checkpoint and bank-state token match at cursor
    with a coherent bank, prepare a small embedding teacher with a distinct
    projection per space.
 
-The staged refresh is underway. No improved retrieval result is claimed here.
+## Full-refresh result and next correction
+
+The staged rewrite completed all 100,000 sources at journal cursor 3,250.
+An exact stored-key evaluation on 128 source-disjoint validation queries used
+the matching writer checkpoint, the complete mutable journal, and no source
+encoding. Median support ranks were 72,192, 71,415, 70,253, and 73,422 in
+spaces s0–s3, with zero recall at 128 in every space. Coherence alone therefore
+did not produce a working router.
+
+The training path also exposed a second mismatch: when a verified positive was
+replayed, the routing loss scored its newly encoded live key, while the bank
+search ranked the older stored key. The revised path uses stored keys for
+contrastive routing and retains task gradients through live keys and gates.
+A separate replayed-key stability penalty and a smaller nonzero writer-key
+learning rate are prepared for the next full trajectory stage. This is a
+corrective training hypothesis, not yet a measured retrieval improvement.
