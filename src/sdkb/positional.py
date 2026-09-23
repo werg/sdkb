@@ -33,6 +33,33 @@ class PositionalCodec(nn.Module):
         return self.projection(states).flatten(1)
 
 
+class JointTokenCodec(nn.Module):
+    """Jointly mix every writer slot into a few full-width stored tokens.
+
+    Learned queries cross-attend over all canonical writer states, so each
+    stored token can draw on the whole record. Parameters do not depend on the
+    writer slot count, which lets slot expansion keep the codec unchanged.
+    """
+
+    def __init__(self, width: int, tokens: int, heads: int = 8) -> None:
+        super().__init__()
+        if min(width, tokens, heads) < 1 or width % heads:
+            raise ValueError("Joint codec needs positive tokens and divisible heads")
+        self.width, self.tokens = width, tokens
+        self.queries = nn.Parameter(torch.randn(tokens, width) * 0.02)
+        self.norm = nn.LayerNorm(width)
+        self.attention = nn.MultiheadAttention(width, heads, batch_first=True)
+        self.output = nn.Linear(width, width)
+
+    def forward(self, states: Tensor) -> Tensor:
+        if states.ndim != 3 or states.shape[-1] != self.width:
+            raise ValueError("Joint codec expects [batch, slots, width]")
+        memory = self.norm(states)
+        queries = self.queries[None].expand(states.shape[0], -1, -1).to(memory.dtype)
+        mixed, _ = self.attention(queries, memory, memory, need_weights=False)
+        return self.output(mixed).flatten(1)
+
+
 class PositionOperatorRound(nn.Module):
     """A shared input-position -> target-position residual message operator."""
 
@@ -177,12 +204,16 @@ class PositionalSetReader(nn.Module):
 class MultiSpacePositionalReader(nn.Module):
     """Per-space positional operators coupled through one target residual stream."""
 
-    def __init__(self, input_dims: list[int], source_slots: int, query_dim: int,
+    def __init__(self, input_dims: list[int], source_slots: int | list[int], query_dim: int,
                  output_dim: int, **kwargs) -> None:
         super().__init__()
+        counts = ([source_slots] * len(input_dims) if isinstance(source_slots, int)
+                  else list(source_slots))
+        if len(counts) != len(input_dims):
+            raise ValueError("One stored position count is required per space")
         self.local = nn.ModuleList([
-            PositionalSetReader(d, source_slots, query_dim, output_dim, **kwargs)
-            for d in input_dims
+            PositionalSetReader(d, count, query_dim, output_dim, **kwargs)
+            for d, count in zip(input_dims, counts, strict=True)
         ])
         first = self.local[0]
         self.width, self.rounds, self.slots = first.width, first.rounds, first.slots

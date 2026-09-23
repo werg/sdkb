@@ -19,12 +19,13 @@ def initialize_positional_student(teacher, student) -> StateMigration:
     """Copy the stable system and useful reader maps into an eight-slot student."""
     if teacher.config.memory.payload_layout != 'flat':
         raise ValueError('The distillation teacher must use the legacy flat layout')
-    if student.config.memory.payload_layout != 'positional':
-        raise ValueError('The distillation student must use the positional layout')
+    if student.config.memory.payload_layout not in {'positional', 'joint_tokens'}:
+        raise ValueError('The distillation student must use a structured layout')
     old, new = teacher.config.memory, student.config.memory
-    if ((old.write_slots, old.read_slots, old.payload_dims) !=
-            (new.write_slots, new.read_slots, new.payload_dims)):
-        raise ValueError('Eight-slot distillation preserves slot counts and payload widths')
+    if (old.write_slots, old.read_slots) != (new.write_slots, new.read_slots):
+        raise ValueError('Eight-slot distillation preserves writer and read slot counts')
+    if new.payload_layout == 'positional' and old.payload_dims != new.payload_dims:
+        raise ValueError('Positional distillation preserves payload widths')
     teacher_state, student_state = teacher.state_dict(), student.state_dict()
     copied, translated = [], []
     excluded = ('codecs.', 'reader.', 'compactor.')
@@ -69,14 +70,20 @@ def _expanded_rows(source: Tensor, target: Tensor, old_rows: int,
 def expand_positional_state(source, target, *, seed: int = 1701) -> StateMigration:
     """Expand an eight-position student while preserving every shared parameter."""
     old, new = source.config.memory, target.config.memory
-    if old.payload_layout != 'positional' or new.payload_layout != 'positional':
-        raise ValueError('Slot expansion requires positional source and target interfaces')
+    if (old.payload_layout != new.payload_layout
+            or old.payload_layout not in {'positional', 'joint_tokens'}):
+        raise ValueError('Slot expansion requires matching structured interfaces')
     if new.write_slots <= old.write_slots or new.read_slots <= old.read_slots:
         raise ValueError('Target slot counts must increase')
-    old_channels = [d // old.write_slots for d in old.payload_dims]
-    new_channels = [d // new.write_slots for d in new.payload_dims]
-    if old_channels != new_channels or len(old_channels) != len(new_channels):
-        raise ValueError('Positional expansion must preserve per-space channel widths')
+    if old.payload_layout == 'joint_tokens':
+        # Joint codecs and stored token tables do not depend on writer slots.
+        if (old.payload_dims, old.space_tokens) != (new.payload_dims, new.space_tokens):
+            raise ValueError('Joint token expansion must preserve stored token layouts')
+    else:
+        old_channels = [d // old.write_slots for d in old.payload_dims]
+        new_channels = [d // new.write_slots for d in new.payload_dims]
+        if old_channels != new_channels or len(old_channels) != len(new_channels):
+            raise ValueError('Positional expansion must preserve per-space channel widths')
     if source.config.memory.compaction != 'none' or target.config.memory.compaction != 'none':
         raise ValueError('Distill the positional compactor after expanding the raw interface')
     source_state, target_state = source.state_dict(), target.state_dict()
@@ -89,7 +96,7 @@ def expand_positional_state(source, target, *, seed: int = 1701) -> StateMigrati
     for name in target_state:
         if name.endswith(('.initial_slots', '.null_tokens', '.target_position')):
             row_names[name] = old.read_slots
-        if name.endswith('.source_position'):
+        if name.endswith('.source_position') and old.payload_layout == 'positional':
             row_names[name] = old.write_slots
     with torch.no_grad():
         for name, target_tensor in target_state.items():

@@ -35,7 +35,10 @@ class MemoryConfig:
     write_slots: int = 8
     read_slots: int = 8
     payload_dims: list[int] = field(default_factory=lambda: [256])
-    payload_layout: str = "flat"  # legacy flat record or position-preserving operator interface
+    payload_layout: str = "flat"  # flat, positional operator, or joint full-width tokens
+    # joint_tokens: full decoder-width stored tokens per space, jointly mixed
+    # from every writer slot (payload_dims[s] == space_tokens[s] * width).
+    space_tokens: list[int] = field(default_factory=list)
     neighbors: list[int] = field(default_factory=lambda: [16])
     reader_width: int = 128
     reader_rounds: int = 3
@@ -272,8 +275,17 @@ class Config:
             raise ValueError("All memory dimensions and counts must be positive")
         if r.reader not in {"mlp", "attention"} or r.compaction not in {"none", "mean", "synthetic"}:
             raise ValueError("Invalid reader/compactor")
-        if r.payload_layout not in {"flat", "positional"}:
+        if r.payload_layout not in {"flat", "positional", "joint_tokens"}:
             raise ValueError("Invalid payload layout")
+        if r.payload_layout == "joint_tokens":
+            if (len(r.space_tokens) != len(r.payload_dims) or min(r.space_tokens) < 1
+                    or any(dim % tokens for dim, tokens in
+                           zip(r.payload_dims, r.space_tokens, strict=True))):
+                raise ValueError("Joint token payloads need one token count per space")
+            if r.reader != "mlp" or r.compaction != "none":
+                raise ValueError("Joint token payloads use the MLP operator without compaction")
+        elif r.space_tokens:
+            raise ValueError("space_tokens applies only to the joint token layout")
         if r.key_interface not in {"shared_maps", "direct"}:
             raise ValueError("Invalid key interface")
         if r.key_interface == "direct" and r.independent_routing_query:

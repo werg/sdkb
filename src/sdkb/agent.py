@@ -20,7 +20,7 @@ from .recurrence import (
     SpatialReadSite,
 )
 from .readers import MultiSpaceReader, SetReader
-from .positional import (MultiSpacePositionalReader, PositionalCodec,
+from .positional import (JointTokenCodec, MultiSpacePositionalReader, PositionalCodec,
                          PositionalCompactor, PositionalSetReader)
 from .routing import AdaptiveDistanceGate, cosine_scores, group_plan_loss
 
@@ -128,20 +128,29 @@ class SDKBAgent(nn.Module):
             ) for _ in r.payload_dims
         ]) if r.distance_gating else None
         canonical_dim = r.write_slots * self.width
-        self.codecs = nn.ModuleList([
-            PositionalCodec(self.width, d // r.write_slots)
-            for d in r.payload_dims
-        ] if r.payload_layout == "positional" else [
-            nn.Identity() if d == canonical_dim else nn.Linear(canonical_dim, d)
-            for d in r.payload_dims
-        ])
+        if r.payload_layout == "joint_tokens":
+            if any(d != tokens * self.width
+                   for d, tokens in zip(r.payload_dims, r.space_tokens, strict=True)):
+                raise ValueError("Joint token payloads must store full decoder-width tokens")
+            self.codecs = nn.ModuleList([JointTokenCodec(self.width, tokens)
+                                         for tokens in r.space_tokens])
+        else:
+            self.codecs = nn.ModuleList([
+                PositionalCodec(self.width, d // r.write_slots)
+                for d in r.payload_dims
+            ] if r.payload_layout == "positional" else [
+                nn.Identity() if d == canonical_dim else nn.Linear(canonical_dim, d)
+                for d in r.payload_dims
+            ])
         options = dict(width=r.reader_width, slots=r.read_slots, rounds=r.reader_rounds,
                        kind=r.reader, chunk_size=r.chunk_size, checkpoint_chunks=r.checkpoint_chunks)
-        if r.payload_layout == "positional":
-            self.reader = (PositionalSetReader(r.payload_dims[0], r.write_slots,
+        if r.payload_layout in {"positional", "joint_tokens"}:
+            stored_positions = (list(r.space_tokens) if r.payload_layout == "joint_tokens"
+                                else [r.write_slots] * len(r.payload_dims))
+            self.reader = (PositionalSetReader(r.payload_dims[0], stored_positions[0],
                                                r.key_dim, self.width, **options)
                            if len(r.payload_dims) == 1 else
-                           MultiSpacePositionalReader(r.payload_dims, r.write_slots,
+                           MultiSpacePositionalReader(r.payload_dims, stored_positions,
                                                       r.key_dim, self.width, **options))
         else:
             self.reader = (SetReader(r.payload_dims[0], r.key_dim, self.width, **options)
@@ -252,7 +261,7 @@ class SDKBAgent(nn.Module):
         canonical = self.value_head(tail[:, 1:])
         output = []
         for key, codec in zip(keys, self.codecs, strict=True):
-            encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
+            encoded = codec(canonical if self.config.memory.payload_layout in ('positional', 'joint_tokens')
                             else canonical.flatten(1))
             output.extend((key, encoded))
         return tuple(output)
@@ -292,7 +301,7 @@ class SDKBAgent(nn.Module):
         for key, codec, dim in zip(keys, self.codecs,
                                    self.config.memory.payload_dims, strict=True):
             if canonical.shape[0]:
-                encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
+                encoded = codec(canonical if self.config.memory.payload_layout in ('positional', 'joint_tokens')
                                 else canonical.flatten(1))
                 payload = encoded.new_zeros(len(source_ids), dim).index_copy(
                     0, payload_rows.nonzero().flatten(), encoded)
@@ -310,7 +319,7 @@ class SDKBAgent(nn.Module):
         canonical = self.value_head(states[:, 1:])
         output = []
         for key, codec in zip(keys, self.codecs, strict=True):
-            encoded = codec(canonical if self.config.memory.payload_layout == 'positional'
+            encoded = codec(canonical if self.config.memory.payload_layout in ('positional', 'joint_tokens')
                             else canonical.flatten(1))
             output.extend((key, encoded))
         return tuple(output)

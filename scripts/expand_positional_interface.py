@@ -56,9 +56,19 @@ def _expanded_loss(source, target, episode, *, old_weight: float,
                             target.config.memory.write_slots)
     old_payload, new_payload = query.sum() * 0, query.sum() * 0
     old_values, new_values = [], []
+    joint = target.config.memory.payload_layout == 'joint_tokens'
     for space, (old_dim, new_dim) in enumerate(zip(
             source.config.memory.payload_dims, target.config.memory.payload_dims,
             strict=True)):
+        if joint:
+            # Joint tokens keep their layout; new writer slots only enter through
+            # the codec's attention, so the whole record anchors old behavior.
+            old = torch.cat([record[2 * space + 1] for record in old_records], 0)
+            new = torch.cat([record[2 * space + 1] for record in new_records], 0)
+            old_payload = old_payload + F.mse_loss(new.float(), old.float())
+            old_values.append(old[None])
+            new_values.append(new[None])
+            continue
         channels = old_dim // old_slots
         old = torch.cat([record[2 * space + 1] for record in old_records], 0)
         new = torch.cat([record[2 * space + 1] for record in new_records], 0)
@@ -110,14 +120,17 @@ def run(source_run: Path, episodes_file: Path, output: Path, *, steps: int,
         raise ValueError('Expansion loss weights must be nonnegative')
     source_checkpoint = resolve_checkpoint(source_run, verify=True)
     source_config = config_from_run(source_run)
-    if source_config.memory.payload_layout != 'positional':
-        raise ValueError('Expansion source must be an eight-position positional checkpoint')
+    layout = source_config.memory.payload_layout
+    if layout not in {'positional', 'joint_tokens'}:
+        raise ValueError('Expansion source must be a structured eight-slot checkpoint')
     index = EpisodeIndex(episodes_file)
-    channels = [dim // source_config.memory.write_slots
-                for dim in source_config.memory.payload_dims]
+    channels = ([dim // source_config.memory.write_slots
+                 for dim in source_config.memory.payload_dims]
+                if layout == 'positional' else list(source_config.memory.space_tokens))
     identity = {
         'format': 1,
-        'kind': 'positional-slot-expansion',
+        'kind': ('positional-slot-expansion' if layout == 'positional'
+                 else 'joint-token-slot-expansion'),
         'source_checkpoint': str(source_checkpoint),
         'source_manifest_sha256': file_sha256(source_checkpoint / 'manifest.json'),
         'episodes': str(episodes_file.resolve()),
@@ -142,7 +155,8 @@ def run(source_run: Path, episodes_file: Path, output: Path, *, steps: int,
         target_config = config_from_run(source_run)
         target_config.memory.write_slots = write_slots
         target_config.memory.read_slots = read_slots
-        target_config.memory.payload_dims = [write_slots * width for width in channels]
+        if layout == 'positional':
+            target_config.memory.payload_dims = [write_slots * width for width in channels]
         target_config.train.steps = steps
         target_config.train.checkpoint_every = checkpoint_every
         # This local optimizer updates slices of mixed old/new tensors. Disable

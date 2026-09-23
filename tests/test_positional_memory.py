@@ -179,3 +179,98 @@ def test_flat_to_positional_distillation_is_checkpointed_and_resumable(tmp_path,
     resumed = expansion.run(output, episodes, widened, steps=1, write_slots=4,
                              read_slots=4, checkpoint_every=1, task_weight=0., resume=True)
     assert resumed['steps'] == 1 and not resumed['stopped_early']
+
+
+def _joint_config(tiny_config, slots=2):
+    config = copy.deepcopy(tiny_config)
+    config.memory.write_slots = config.memory.read_slots = slots
+    config.memory.payload_layout = 'joint_tokens'
+    config.memory.space_tokens = [1, 3]
+    config.memory.payload_dims = [32, 96]  # tiny backbone width is 32
+    config.memory.neighbors = [2, 2]
+    config.memory.reader = 'mlp'
+    config.validate()
+    return config
+
+
+def test_joint_tokens_mix_every_writer_slot_into_full_width_tokens(tiny_config):
+    from sdkb.positional import JointTokenCodec
+    codec = JointTokenCodec(32, 3, heads=4)
+    states = torch.randn(2, 5, 32, requires_grad=True)
+    stored = codec(states)
+    assert stored.shape == (2, 96)
+    stored[:, :32].sum().backward()
+    # Every writer slot influences even the first stored token.
+    assert (states.grad.abs().sum(-1) > 0).all()
+    agent = SDKBAgent(_joint_config(tiny_config))
+    produced = agent.produce(agent.text_ids('remember this', source=True))
+    assert produced[1].shape == (1, 32) and produced[3].shape == (1, 96)
+    values = [produced[1][:, None], produced[3][:, None]]
+    tokens = agent.reader(values, torch.randn(1, agent.config.memory.key_dim),
+                          [torch.ones(1, 1), torch.ones(1, 1)])
+    assert tokens.shape == (1, 2, agent.width)
+    assert [reader.source_slots for reader in agent.reader.local] == [1, 3]
+    tokens.square().mean().backward()
+    assert all(codec.queries.grad is not None for codec in agent.codecs)
+
+
+def test_joint_tokens_require_full_width_tokens_per_space(tiny_config):
+    config = copy.deepcopy(tiny_config)
+    config.memory.payload_layout = 'joint_tokens'
+    config.memory.space_tokens = [2, 3]
+    try:
+        config.validate()
+    except ValueError as exc:
+        assert 'one token count per space' in str(exc)
+    else:
+        raise AssertionError('mismatched token counts were accepted')
+    config = _joint_config(tiny_config)
+    config.memory.payload_dims = [16, 48]
+    config.memory.space_tokens = [1, 3]
+    try:
+        SDKBAgent(config)
+    except ValueError as exc:
+        assert 'full decoder-width' in str(exc)
+    else:
+        raise AssertionError('compressed joint tokens were accepted')
+
+
+def test_joint_expansion_keeps_codec_and_token_tables(tiny_config):
+    source = SDKBAgent(_joint_config(tiny_config, slots=2))
+    target = SDKBAgent(_joint_config(tiny_config, slots=4))
+    migration = expand_positional_state(source, target, seed=5)
+    assert 'write_slots' in migration.expanded
+    for old, new in zip(source.codecs, target.codecs, strict=True):
+        torch.testing.assert_close(new.queries, old.queries)
+    torch.testing.assert_close(target.reader.local[1].blocks[0].source_position,
+                               source.reader.local[1].blocks[0].source_position)
+
+
+def test_flat_to_joint_distillation_and_expansion_runners(tmp_path, tiny_config):
+    teacher_run = tmp_path / 'teacher'
+    train(tiny_config, teacher_run)
+    episodes = tmp_path / 'episodes.jsonl'
+    save_episodes(episodes, [make_episode(31, distractors=1)])
+    path = Path(__file__).parents[1] / 'scripts/distill_positional_interface.py'
+    spec = importlib.util.spec_from_file_location('joint_distill', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    output = tmp_path / 'joint'
+    result = module.run(teacher_run, episodes, output, steps=1, checkpoint_every=1,
+                        payload_weight=0., downstream_weight=0., task_weight=0.,
+                        layout='joint_tokens', space_tokens=(3,))
+    assert result['steps'] == 1
+    config = config_from_run(output)
+    assert config.memory.payload_layout == 'joint_tokens'
+    assert config.memory.payload_dims == [96] and config.memory.space_tokens == [3]
+    expansion_path = Path(__file__).parents[1] / 'scripts/expand_positional_interface.py'
+    expansion_spec = importlib.util.spec_from_file_location('joint_expand', expansion_path)
+    expansion = importlib.util.module_from_spec(expansion_spec)
+    expansion_spec.loader.exec_module(expansion)
+    widened = tmp_path / 'joint-wide'
+    expanded = expansion.run(output, episodes, widened, steps=1, write_slots=4,
+                             read_slots=4, checkpoint_every=1, task_weight=0.)
+    assert expanded['steps'] == 1
+    widened_config = config_from_run(widened)
+    assert widened_config.memory.write_slots == widened_config.memory.read_slots == 4
+    assert widened_config.memory.payload_dims == [96]

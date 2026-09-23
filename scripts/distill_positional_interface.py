@@ -64,8 +64,10 @@ def _distillation_loss(teacher, student, episode, *, payload_weight: float,
     teacher_values, student_values = (_payloads(records, spaces)
                                       for records in (teacher_records, student_records))
     weights = [query.new_ones(1, len(sources)) for _ in range(spaces)]
-    payload = sum(F.mse_loss(actual.float(), expected.float())
-                  for actual, expected in zip(student_values, teacher_values, strict=True)) / spaces
+    # A joint-token student stores a different layout; payloads are not comparable.
+    payload = (sum(F.mse_loss(actual.float(), expected.float())
+                   for actual, expected in zip(student_values, teacher_values, strict=True))
+               / spaces if payload_weight else query.new_zeros(()))
     with torch.no_grad(), _autocast(teacher.config):
         expected_tokens = _tokens(teacher.reader, teacher_values, query, weights)
     with _autocast(student.config):
@@ -120,7 +122,8 @@ def run(teacher_run: Path, episodes_file: Path, output: Path, *, steps: int,
         checkpoint_every: int = 250, payload_weight: float = 1.,
         state_weight: float = 1., token_weight: float = 1.,
         downstream_weight: float = .1, task_weight: float = .1,
-        resume: bool = False) -> dict:
+        resume: bool = False, layout: str = 'positional',
+        space_tokens: tuple[int, ...] = ()) -> dict:
     if min(steps, checkpoint_every) < 1 or min(payload_weight, state_weight,
                                                token_weight, downstream_weight,
                                                task_weight) < 0:
@@ -134,7 +137,9 @@ def run(teacher_run: Path, episodes_file: Path, output: Path, *, steps: int,
     index = EpisodeIndex(episodes_file)
     identity = {
         'format': 1,
-        'kind': 'flat-to-eight-position-distillation',
+        'kind': ('flat-to-eight-position-distillation' if layout == 'positional'
+                 else 'flat-to-joint-token-distillation'),
+        'layout': layout, 'space_tokens': list(space_tokens),
         'teacher_checkpoint': str(teacher_checkpoint),
         'teacher_manifest_sha256': file_sha256(teacher_checkpoint / 'manifest.json'),
         'episodes': str(episodes_file.resolve()),
@@ -145,6 +150,10 @@ def run(teacher_run: Path, episodes_file: Path, output: Path, *, steps: int,
                     'task': task_weight},
     }
     fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+    teacher = SDKBAgent(teacher_config).to(teacher_config.train.device).eval()
+    load_model(teacher, str(teacher_checkpoint / 'model.safetensors'),
+               device=teacher_config.train.device)
+    teacher.requires_grad_(False)
     if resume:
         if json.loads((output / 'migration-inputs.json').read_text()) != identity:
             raise ValueError('Distillation inputs or budget changed')
@@ -153,17 +162,19 @@ def run(teacher_run: Path, episodes_file: Path, output: Path, *, steps: int,
         if output.exists():
             raise FileExistsError(output)
         student_config = config_from_run(teacher_run)
-        student_config.memory.payload_layout = 'positional'
+        student_config.memory.payload_layout = layout
+        if layout == 'joint_tokens':
+            if payload_weight:
+                raise ValueError('Joint token students cannot regress flat teacher payloads')
+            width = teacher.width
+            student_config.memory.space_tokens = list(space_tokens)
+            student_config.memory.payload_dims = [tokens * width for tokens in space_tokens]
         student_config.train.steps = steps
         student_config.train.checkpoint_every = checkpoint_every
         student_config.train.wandb_group = 'positional-interface-distillation'
         student_config.validate()
         output.mkdir(parents=True)
         atomic_json(output / 'migration-inputs.json', identity)
-    teacher = SDKBAgent(teacher_config).to(teacher_config.train.device).eval()
-    load_model(teacher, str(teacher_checkpoint / 'model.safetensors'),
-               device=teacher_config.train.device)
-    teacher.requires_grad_(False)
     student = SDKBAgent(student_config).to(student_config.train.device)
     migration = initialize_positional_student(teacher, student)
     for name, parameter in student.named_parameters():
@@ -179,9 +190,9 @@ def run(teacher_run: Path, episodes_file: Path, output: Path, *, steps: int,
         start = 0
         atomic_json(output / 'initialization.json', asdict(migration) | identity)
         atomic_json(output / 'run-identity.json', identity | {
-            'payload_layout': 'positional',
-            'channels': [d // student_config.memory.write_slots
-                         for d in student_config.memory.payload_dims],
+            'payload_layout': layout,
+            'space_tokens': list(student_config.memory.space_tokens),
+            'payload_dims': list(student_config.memory.payload_dims),
         })
         save_checkpoint(student, optimizer, output, 0, rng, cache, fingerprint,
                         keep=student_config.train.keep_checkpoints)
@@ -230,6 +241,8 @@ def main() -> None:
     parser.add_argument('--downstream-weight', type=float, default=.1)
     parser.add_argument('--task-weight', type=float, default=.1)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--layout', choices=('positional', 'joint_tokens'), default='positional')
+    parser.add_argument('--space-tokens', nargs='+', type=int, default=[])
     args = parser.parse_args()
     print(json.dumps(run(args.teacher, args.episodes, args.output, steps=args.steps,
                          checkpoint_every=args.checkpoint_every,
@@ -237,7 +250,8 @@ def main() -> None:
                          state_weight=args.state_weight,
                          token_weight=args.token_weight,
                          downstream_weight=args.downstream_weight,
-                         task_weight=args.task_weight, resume=args.resume), indent=2))
+                         task_weight=args.task_weight, resume=args.resume,
+                         layout=args.layout, space_tokens=tuple(args.space_tokens)), indent=2))
 
 
 if __name__ == '__main__':
