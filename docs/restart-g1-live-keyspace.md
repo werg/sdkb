@@ -135,6 +135,15 @@ payloads. Gate: payload removal and replacement change outputs at least as much
 as the flat teacher's do.
 
 ### R2 — Expand to 64 writer and read slots
+
+**Result (23 September 2026):** `/archive/runs/phase2-restart-20260923/r2-joint-64`,
+1,000 slice-frozen steps. Old-function preservation held (payload loss 0.04,
+old-slot token loss 0.004). On the same 128 validation episodes, answer NLL
+was 3.021 with correct payloads, the swap gap was +0.317 (74% of the teacher's),
+the zero gap was +0.192, and correct beat swapped in 68.0% of episodes. The
+decoder now receives 56 read tokens that the reader has not learned to use.
+R5 must recover this and then exceed it; R3 does not depend on it.
+
 Use slice-frozen expansion for writer slots, reader target positions and
 recurrent workspaces. The joint codec's learned queries do not depend on the
 slot count. R2 changes nothing on the key path. Rebuild trajectory packing
