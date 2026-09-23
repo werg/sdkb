@@ -107,6 +107,7 @@ class TrainConfig:
     retrieval: str = "oracle"  # oracle or learned (candidate-local top-k)
     routing_weight: float = 0.1
     routing_logit_scale: float = 1.0
+    routing_live_weight: float = 0.0
     writer_key_learning_rate: float | None = None
     key_stability_weight: float = 0.0
     routing_warmup: int = 100
@@ -161,6 +162,10 @@ class Config:
             raise ValueError('Key stability weight must be nonnegative and finite')
         if not math.isfinite(t.routing_logit_scale) or t.routing_logit_scale <= 0:
             raise ValueError('Routing logit scale must be positive and finite')
+        if not math.isfinite(t.routing_live_weight) or t.routing_live_weight < 0:
+            raise ValueError('Live-key routing weight must be nonnegative and finite')
+        if t.routing_live_weight and not t.writer_replay_records_per_site:
+            raise ValueError('Live-key routing requires writer replay')
         if t.sampling_policy not in {'random_with_replacement', 'shuffled_passes'}:
             raise ValueError('Unknown episode sampling policy')
         if t.bank_dir is not None:

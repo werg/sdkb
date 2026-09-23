@@ -161,7 +161,7 @@ def test_stored_routing_is_stable_when_live_writer_keys_drift(tiny_config, tmp_p
             for record_id in record_ids:
                 old = index.keys_for_ids('s0', (record_id,), domain='research',
                                          query_time=episode.query_time)
-                key = (-old).requires_grad_()
+                key = (-old if record_id == next(iter(sources)) else old).requires_grad_()
                 leaves[record_id] = key
                 result[record_id] = (key, torch.zeros(
                     1, tiny_config.memory.payload_dims[0]))
@@ -173,8 +173,27 @@ def test_stored_routing_is_stable_when_live_writer_keys_drift(tiny_config, tmp_p
         writer_replay=FakeReplay())
     assert abs(live.metrics['routing_stored_loss']
                - stored.metrics['routing_stored_loss']) < 1e-6
-    assert live.metrics['key_stability_loss'] > 1
+    assert live.metrics['key_stability_loss'] > .9
     live.loss.backward()
+    assert any(key.grad is not None and key.grad.abs().sum() > 0
+               for key in leaves.values())
+
+    # The auxiliary objective must train replayed writer keys even when neither
+    # key stability nor distance gates can supply that gradient.
+    agent.zero_grad(set_to_none=True)
+    agent.config.train.key_stability_weight = 0
+    agent.config.train.routing_live_weight = .5
+    agent.config.memory.distance_gating = False
+    leaves.clear()
+    live_aux = spatial_bank_pipeline_forward(
+        agent, store, index, [row], limits=(2,), routing_candidates=2,
+        microbatch_size=1, inflight=2, routing_teacher=teacher,
+        writer_replay=FakeReplay())
+    assert abs(live_aux.metrics['routing_stored_loss']
+               - stored.metrics['routing_stored_loss']) < 1e-6
+    assert abs(live_aux.metrics['routing_live_loss']
+               - live_aux.metrics['routing_stored_loss']) > 1e-4
+    live_aux.loss.backward()
     assert any(key.grad is not None and key.grad.abs().sum() > 0
                for key in leaves.values())
 

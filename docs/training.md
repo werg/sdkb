@@ -73,6 +73,14 @@ checkpoint. `--maintenance-records-per-step` refreshes a bounded additional set
 of old records, while writer replay refreshes the selected records after every
 step. The offline bank remains a physical bootstrap, not a frozen logical target.
 
+For large candidate fields, `--routing-logit-scale` sharpens the training
+softmax over cosine scores without changing exact-search order or the reader's
+adaptive distance gates. `--routing-live-weight` adds a separate address loss
+through replayed writer keys. The primary routing loss stays on serialized
+stored keys, so its forward result matches search. Live-key loss reaches the
+writer through replay; key-stability loss limits the discrepancy until the
+updated keys are published. Both settings are stage fingerprint inputs.
+
 The curriculum should be judged on source-disjoint validation queries using
 unassisted positive recall at the actual neighborhood budgets, then with correct,
 wrong, and zeroed latent payloads on the same task examples. Lower routing loss or

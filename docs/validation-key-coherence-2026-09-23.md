@@ -76,3 +76,21 @@ scores. This is a testable training correction, not evidence of improved recall.
 The earlier exact-rank probe used a short query prompt rather than the packed
 `memory.search` trajectory used by this stage. Its poor ranks are a warning,
 but the packed training-site unassisted recall is the primary current signal.
+
+## Writer-address supervision gap
+
+The sharpened stage reduced its sampled easy loss from about 2.5 to below 2
+and briefly lifted top-256 recall into the 2–10% range, but recall fell back
+near chance by step 260; top-16/8/4/4 selected support recall remained zero.
+The hard-negative loss declined as its weight ramped, without sustained
+retrieval improvement yet.
+
+The stored-key routing loss has a required limitation: the bank key is a
+serialized, detached revision, so that loss reaches the query projection but
+does not directly train the writer's key projection. The next stage adds an
+auxiliary contrastive loss using replayed live keys for its verified support
+records and stored keys for the other candidates. Its main routing loss still
+uses stored keys, and a key-stability term keeps live and stored geometry close.
+This supplies direct writer-address gradients without pretending the live key
+was used by the actual search. We will measure unassisted packed-trajectory
+recall before treating the change as successful.
