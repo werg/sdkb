@@ -81,6 +81,30 @@ If address learning stalls, a small embedding teacher can supply a richer soft
 similarity target; each space should have its own trainable teacher projection and
 the additional teacher compute and key-refresh cost must be reported.
 
+### Staged whole-bank refresh after measured key drift
+
+The first R3 continuation revealed that selected-record refresh alone can leave a
+large bank incoherent: about 58,757 records had journal heads and 41,243 still used
+the original base keys, while sampled head/base key cosines were near zero in all
+four spaces. Hard search then compares vectors produced by substantially different
+writer states. See [the key-coherence validation record](validation-key-coherence-2026-09-23.md).
+
+`scripts/refresh_training_bank.py` stages a complete all-space rewrite from a
+committed writer checkpoint. It copies the stopped run's journal to external
+storage, encodes sources using the same prompted `memory.write` prefixes as the
+trainer, records chunk progress, and publishes a manifest only after every source
+has a new key and payload in each space. The original run and checkpoint are left
+intact. A new `sdkb` spatial stage can use `--bank-journal` with this complete
+manifest and `--init-from` the matching model checkpoint. The warm start resets
+optimizer state and saves its own bank-aligned step-zero checkpoint.
+
+`--writer-key-learning-rate` can keep the key head and per-space writer address
+maps trainable at a smaller rate than the query maps and reader. This reduces
+global key rotation while preserving continuous key learning. It is not a
+substitute for measuring drift and refreshing the full bank again. The first
+coherent stage should check head age, key similarity, unassisted retrieval, and
+task controls before choosing a refresh cadence.
+
 Document ingestion data should use the helpers in `document_ingestion.py`. Provide
 both complete-document prompts with several model-chosen writes and streaming
 natural/manual parts with one visible write after each part. Store exact source spans,

@@ -10,6 +10,20 @@ from sdkb.optimizers import make_optimizer
 from sdkb.training import train
 
 
+def test_writer_key_learning_rate_keeps_all_parameters_owned(tiny_config):
+    config = copy.deepcopy(tiny_config)
+    config.train.writer_key_learning_rate = 1e-6
+    agent = SDKBAgent(config)
+    optimizer = make_optimizer(agent)
+    rates = {name: group['lr'] for group, names in zip(
+        optimizer.param_groups, optimizer._sdkb_parameter_names, strict=True)
+        for name in names}
+    assert rates['key_head.weight'] == 1e-6
+    assert rates['address_maps.0.weight'] == 1e-6
+    assert rates['query_maps.0.weight'] == config.train.learning_rate
+    assert len(rates) == sum(p.requires_grad for p in agent.parameters())
+
+
 @pytest.mark.skipif(not hasattr(torch.optim, 'Muon'), reason='Native Muon unavailable in this Torch')
 @pytest.mark.parametrize('kind', ['mlp', 'attention'])
 def test_muon_excludes_reader_fallback_token_tables(tiny_config, kind):

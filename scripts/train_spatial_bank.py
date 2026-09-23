@@ -58,7 +58,9 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           maintenance_records_per_step: int = 0,
           routing_episodes_path: Path | None = None,
           routing_weight: float | None = None,
-          inherit_bank: bool = False) -> dict:
+          inherit_bank: bool = False,
+          bank_journal_path: Path | None = None,
+          writer_key_learning_rate: float | None = None) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
             or cache_reclaim_host_reserve_gib < 0
@@ -93,10 +95,14 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         if routing_weight <= 0:
             raise ValueError('Routing weight must be positive')
         config.train.routing_weight = routing_weight
+    if writer_key_learning_rate is not None:
+        config.train.writer_key_learning_rate = writer_key_learning_rate
     if routing_episodes_path is not None and (sources_path is None or not pipeline):
         raise ValueError('Routing curriculum requires source metadata and pipeline')
     if inherit_bank and (init_from is None or resume):
         raise ValueError('Bank journal inheritance needs a warm-start parent')
+    if bank_journal_path is not None and (init_from is None or resume or inherit_bank):
+        raise ValueError('A staged bank refresh needs a fresh warm-start output')
     # Retain enough recovery points for a long unattended trajectory stage.
     config.train.keep_checkpoints = max(config.train.keep_checkpoints, 16)
     config.train.archive_dir = None
@@ -154,11 +160,23 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             'hard_ramp_steps': 3000,
             'lexical_auxiliary_fraction': .05,
         }
+    if config.train.writer_key_learning_rate is not None:
+        settings['writer_key_learning_rate'] = config.train.writer_key_learning_rate
+    refresh_manifest = None
+    if bank_journal_path is not None:
+        refresh_manifest_path = bank_journal_path.parent / 'manifest.json'
+        refresh_manifest = json.loads(refresh_manifest_path.read_text())
+        if not refresh_manifest.get('complete'):
+            raise ValueError('Staged bank refresh is incomplete')
+        settings['bank_refresh_manifest_sha256'] = file_sha256(refresh_manifest_path)
     if resume and (output / 'spatial-inputs.json').exists():
-        inherited = json.loads((output / 'spatial-inputs.json').read_text()).get(
-            'inherit_bank_from')
+        prior = json.loads((output / 'spatial-inputs.json').read_text())
+        inherited = prior.get('inherit_bank_from')
         if inherited is not None:
             settings['inherit_bank_from'] = inherited
+        refreshed = prior.get('bank_refresh_manifest_sha256')
+        if refreshed is not None:
+            settings['bank_refresh_manifest_sha256'] = refreshed
     fingerprint = _fingerprint(data, bank_manifest_path, settings)
 
     if resume:
@@ -213,6 +231,22 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     output / 'training_cache.sqlite') as target:
                 source.backup(target)
             initialization['inherited_bank_state'] = parent_state
+        if bank_journal_path is not None:
+            if (refresh_manifest['writer_checkpoint_sha256']
+                    != initialization['checkpoint_sha256']
+                    or refresh_manifest['bank_manifest_sha256']
+                    != file_sha256(bank_manifest_path)
+                    or refresh_manifest['source_manifest_sha256'] != source_sha):
+                raise ValueError('Refreshed bank and warm-start model differ')
+            staged = DiskStore(bank_journal_path)
+            if staged.mutable_bank_state() != refresh_manifest['journal_state']:
+                raise ValueError('Refreshed bank journal differs from its manifest')
+            with staged.connect() as source, sqlite3.connect(
+                    output / 'training_cache.sqlite') as target:
+                source.backup(target)
+            initialization['bank_refresh_manifest_sha256'] = settings[
+                'bank_refresh_manifest_sha256']
+            initialization['inherited_bank_state'] = refresh_manifest['journal_state']
         atomic_json(output / "initialization.json", initialization)
     atomic_json(output / "spatial-inputs.json", settings | {
         "fingerprint": fingerprint, "data": str(data_path), "data_sha256": data.sha256,
@@ -468,6 +502,8 @@ if __name__ == "__main__":
     parser.add_argument("--routing-episodes", type=Path)
     parser.add_argument("--routing-weight", type=float)
     parser.add_argument("--inherit-bank", action="store_true")
+    parser.add_argument("--bank-journal", type=Path)
+    parser.add_argument("--writer-key-learning-rate", type=float)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -487,4 +523,6 @@ if __name__ == "__main__":
         routing_episodes_path=args.routing_episodes,
         routing_weight=args.routing_weight,
         inherit_bank=args.inherit_bank,
+        bank_journal_path=args.bank_journal,
+        writer_key_learning_rate=args.writer_key_learning_rate,
     ), indent=2))

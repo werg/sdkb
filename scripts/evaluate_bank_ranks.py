@@ -17,12 +17,13 @@ from sdkb.offline_bank import (assert_bank_reader_compatible, canonical_json,
                                publish_offline_generation)
 from sdkb.operations import atomic_json
 from sdkb.store import DiskStore
+from sdkb.training_bank import TrainingBank
 from sdkb.training import autocast_context, config_from_run
 from sdkb.trajectories import file_sha256
 
 
 def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
-             max_episodes: int = 64) -> dict:
+             max_episodes: int = 64, journal: Path | None = None) -> dict:
     if max_episodes < 1 or output.exists() or not output.parent.is_dir():
         raise ValueError('Positive episode count and fresh output path required')
     config = config_from_run(run)
@@ -39,11 +40,25 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
                               generation=manifest['generation'],
                               spaces=tuple(manifest['spaces']),
                               expected_sources=manifest['sources'])
+    journal_state = None
+    if journal is not None:
+        staged_manifest = json.loads((journal.parent / 'manifest.json').read_text())
+        if (not staged_manifest.get('complete')
+                or staged_manifest['bank_manifest_sha256'] != file_sha256(bank_path)):
+            raise ValueError('Rank evaluation needs a complete compatible journal')
+        mutable = DiskStore(journal)
+        if mutable.mutable_bank_state() != staged_manifest['journal_state']:
+            raise ValueError('Rank journal changed since publication')
+        TrainingBank(store, mutable, index)
+        journal_state = staged_manifest['journal_state']
     torch.set_num_threads(config.train.threads)
     agent = SDKBAgent(config).to(config.train.device).eval()
     checkpoint = resolve_checkpoint(run, verify=True)
     compatibility = assert_bank_reader_compatible(
         run, checkpoint, bank_dir, manifest, config)
+    if journal is not None and staged_manifest['writer_checkpoint_sha256'] != \
+            file_sha256(checkpoint / 'model.safetensors'):
+        raise ValueError('Rank journal was written by another model checkpoint')
     load_model(agent, str(checkpoint / 'model.safetensors'), device=config.train.device)
     def forbidden_writer(*_args, **_kwargs):
         raise AssertionError('Routing evaluation must not re-encode sources')
@@ -85,12 +100,13 @@ def evaluate(run: Path, bank_dir: Path, episodes_file: Path, output: Path, *,
                         'recall_at_1': sum(value <= 1 for value in values) / len(values),
                         'recall_at_8': sum(value <= 8 for value in values) / len(values),
                         'recall_at_128': sum(value <= 128 for value in values) / len(values)})
-    result = {'protocol': 'Causal prefix, exact published-key rank; no payload fetch or writer call.',
+    result = {'protocol': 'Causal prefix, exact stored-key rank; no payload fetch or writer call.',
               'episodes': len(rows), 'source_count': manifest['sources'],
               'model_sha256': file_sha256(checkpoint / 'model.safetensors'),
               'bank_manifest_sha256': file_sha256(bank_path),
               'episodes_sha256': file_sha256(episodes_file),
               'bank_compatibility': compatibility,
+              'mutable_journal_state': journal_state,
               'summary': summary, 'rows': rows}
     output.mkdir()
     atomic_json(output / 'results.json', result)
@@ -104,6 +120,8 @@ if __name__ == '__main__':
     parser.add_argument('--episodes', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-episodes', type=int, default=64)
+    parser.add_argument('--journal', type=Path)
     args = parser.parse_args()
     print(json.dumps(evaluate(args.run, args.bank, args.episodes, args.output,
-                              max_episodes=args.max_episodes), indent=2))
+                              max_episodes=args.max_episodes,
+                              journal=args.journal), indent=2))

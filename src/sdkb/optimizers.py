@@ -53,9 +53,24 @@ def make_optimizer(agent):
     config = agent.config.train
     named = dict(agent.named_parameters())
     base = {id(p) for p in agent.backbone.base.parameters()}
-    groups = [dict(params=[p for p in named.values() if p.requires_grad and (id(p) in base) == backbone],
-                   lr=config.backbone_learning_rate if backbone else config.learning_rate)
-              for backbone in (True, False)]
+    key_prefixes = ('key_head.', 'address_maps.')
+    if config.writer_key_learning_rate is None:
+        groups = [dict(params=[p for p in named.values() if p.requires_grad
+                               and (id(p) in base) == backbone],
+                       lr=config.backbone_learning_rate if backbone
+                       else config.learning_rate)
+                  for backbone in (True, False)]
+    else:
+        groups = [
+            dict(params=[p for p in named.values() if p.requires_grad and id(p) in base],
+                 lr=config.backbone_learning_rate),
+            dict(params=[p for name, p in named.items() if p.requires_grad
+                         and id(p) not in base and not name.startswith(key_prefixes)],
+                 lr=config.learning_rate),
+            dict(params=[p for name, p in named.items() if p.requires_grad
+                         and id(p) not in base and name.startswith(key_prefixes)],
+                 lr=config.writer_key_learning_rate),
+        ]
     if config.optimizer == 'adamw':
         optimizer = torch.optim.AdamW(groups, betas=tuple(config.adam_betas),
                                       eps=config.adam_eps, weight_decay=config.weight_decay)
