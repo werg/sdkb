@@ -203,3 +203,51 @@ def test_direct_heads_compute_in_fp32_under_autocast(tiny_config):
         keys = direct.writer_space_keys(states)
         address = direct.routing_address(states, 0)
     assert keys[0].dtype == torch.float32 and address.dtype == torch.float32
+
+
+def test_key_slot_last_isolates_payloads_from_key_training(tiny_config):
+    config = _spatial(tiny_config)
+    config.memory.key_interface = 'direct'
+    config.memory.key_slot_position = 'last'
+    config.memory.key_dims = [16, 8]
+    config.memory.distance_gating = True
+    config.validate()
+    agent = SDKBAgent(config).eval()
+    ids = [torch.tensor([[1, 2, 3, 4]]), torch.tensor([[5, 6]])]
+    with torch.no_grad():
+        before = agent.produce_batch(ids)
+        agent.write_slots[0].add_(1.0)  # the key-slot embedding
+        after = agent.produce_batch(ids)
+    assert before[0].shape[-1] == 16 and before[2].shape[-1] == 8
+    for index in (1, 3):  # payloads
+        torch.testing.assert_close(before[index], after[index])
+    assert not torch.allclose(before[0], after[0])
+    assert [gate.adjust.in_features for gate in agent.distance_gates] == [16, 8]
+    single = agent.produce(ids[0])
+    torch.testing.assert_close(single[1], after[1][:1], rtol=1e-4, atol=1e-4)
+
+
+def test_key_widths_require_direct_heads(tiny_config):
+    config = _spatial(tiny_config)
+    config.memory.key_dims = [16, 8]
+    with pytest.raises(ValueError, match='Per-space key widths'):
+        config.validate()
+
+
+def test_widened_direct_conversion_keeps_folded_rows(tiny_config):
+    config = _spatial(tiny_config)
+    config.memory.distance_gating = True
+    shared = SDKBAgent(config)
+    direct_config = copy.deepcopy(config)
+    direct_config.memory.key_interface = 'direct'
+    direct_config.memory.key_dims = [20, 16]
+    direct = SDKBAgent(direct_config)
+    state = convert_to_direct(shared.state_dict(), 2, (20, 16), seed=3)
+    direct.load_state_dict(state, strict=True)
+    folded = convert_to_direct(shared.state_dict(), 2)
+    key_dim = config.memory.key_dim
+    torch.testing.assert_close(direct.writer_key_heads[0].weight[:key_dim],
+                               folded['writer_key_heads.0.weight'])
+    assert direct.writer_key_heads[1].weight.shape == (16, direct.width)
+    gate = direct.distance_gates[0].adjust.weight
+    assert gate.shape[1] == 20 and float(gate[:, key_dim:].abs().sum()) == 0

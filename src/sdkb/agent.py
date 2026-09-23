@@ -101,7 +101,9 @@ class SDKBAgent(nn.Module):
         if m.freeze_backbone:
             for p in self.backbone.base.parameters():
                 p.requires_grad_(False)
+        # Row 0 is always the key-slot embedding; key_slot_position orders it.
         self.write_slots = nn.Parameter(torch.randn(r.write_slots + 1, self.width) * 0.02)
+        self.space_key_dims = tuple(r.key_dims) or (r.key_dim,) * len(r.payload_dims)
         self.value_head = nn.Sequential(nn.LayerNorm(self.width), nn.Linear(self.width, self.width))
         self.query_head = nn.Linear(self.width, r.key_dim, bias=False)
         if r.key_interface == "direct":
@@ -110,9 +112,9 @@ class SDKBAgent(nn.Module):
             # bias and always run in fp32 (see ``_fp32_head``).
             self.key_head = self.address_maps = self.query_maps = None
             self.writer_key_heads = nn.ModuleList([
-                nn.Linear(self.width, r.key_dim) for _ in r.payload_dims])
+                nn.Linear(self.width, dim) for dim in self.space_key_dims])
             self.query_key_heads = nn.ModuleList([
-                nn.Linear(self.width, r.key_dim) for _ in r.payload_dims])
+                nn.Linear(self.width, dim) for dim in self.space_key_dims])
         else:
             self.key_head = nn.Linear(self.width, r.key_dim, bias=False)
             self.address_maps = nn.ModuleList([nn.Linear(r.key_dim, r.key_dim, bias=False) for _ in r.payload_dims])
@@ -120,12 +122,12 @@ class SDKBAgent(nn.Module):
             self.writer_key_heads = self.query_key_heads = None
         self.distance_gates = nn.ModuleList([
             AdaptiveDistanceGate(
-                r.key_dim, density_k=r.gate_density_k,
+                dim, density_k=r.gate_density_k,
                 min_temperature=r.gate_min_temperature,
                 max_temperature=r.gate_max_temperature,
                 initial_temperature=r.gate_initial_temperature,
                 max_radius_adjustment=r.gate_max_radius_adjustment,
-            ) for _ in r.payload_dims
+            ) for dim in self.space_key_dims
         ]) if r.distance_gating else None
         canonical_dim = r.write_slots * self.width
         if r.payload_layout == "joint_tokens":
@@ -169,6 +171,18 @@ class SDKBAgent(nn.Module):
         self.routing_query_head = copy.deepcopy(self.query_head) if r.independent_routing_query else None
         self.read_count_head = None  # Optional separately trained, frozen inference policy.
         self.read_count_choices = ()
+
+    def writer_slot_embeddings(self) -> Tensor:
+        """Writer slot embeddings in sequence order (key slot first or last)."""
+        if self.config.memory.key_slot_position == 'last':
+            return torch.cat((self.write_slots[1:], self.write_slots[:1]), 0)
+        return self.write_slots
+
+    def split_writer_states(self, states: Tensor) -> tuple[Tensor, Tensor]:
+        """Return (key state, value states) from sequence-ordered writer slots."""
+        if self.config.memory.key_slot_position == 'last':
+            return states[:, -1], states[:, :-1]
+        return states[:, 0], states[:, 1:]
 
     @property
     def device(self) -> torch.device:
@@ -253,12 +267,14 @@ class SDKBAgent(nn.Module):
         boundary replays the writer AND storage transforms, not just raw values.
         """
         tokens = self.backbone.embed(source_ids)
-        embeddings = torch.cat((tokens, self.write_slots[None].expand(tokens.shape[0], -1, -1)), 1)
+        embeddings = torch.cat((tokens, self.writer_slot_embeddings()[None].expand(
+            tokens.shape[0], -1, -1)), 1)
         hidden = self.backbone.hidden(embeddings, torch.ones(embeddings.shape[:2], device=self.device, dtype=torch.long),
                                       loops=self.config.model.writer_loops)
         tail = hidden[:, -(self.config.memory.write_slots + 1):]
-        keys = self.writer_space_keys(tail[:, 0])
-        canonical = self.value_head(tail[:, 1:])
+        key_state, value_states = self.split_writer_states(tail)
+        keys = self.writer_space_keys(key_state)
+        canonical = self.value_head(value_states)
         output = []
         for key, codec in zip(keys, self.codecs, strict=True):
             encoded = codec(canonical if self.config.memory.payload_layout in ('positional', 'joint_tokens')
@@ -282,7 +298,7 @@ class SDKBAgent(nn.Module):
         rows = []
         for ids in source_ids:
             tokens = self.backbone.embed(ids)
-            row = torch.cat((tokens, self.write_slots[None]), 1)
+            row = torch.cat((tokens, self.writer_slot_embeddings()[None]), 1)
             rows.append(F.pad(row, (0, 0, 0, int(lengths.max()) + slots - row.shape[1])))
         embeddings = torch.cat(rows, 0)
         positions = torch.arange(embeddings.shape[1], device=self.device)[None]
@@ -291,12 +307,13 @@ class SDKBAgent(nn.Module):
                                       loops=self.config.model.writer_loops)
         indices = lengths[:, None] + torch.arange(slots, device=self.device)[None]
         tail = hidden.gather(1, indices[..., None].expand(-1, -1, width))
-        keys = self.writer_space_keys(tail[:, 0])
+        key_state, value_states = self.split_writer_states(tail)
+        keys = self.writer_space_keys(key_state)
         if payload_rows is None:
             payload_rows = torch.ones(len(source_ids), dtype=torch.bool, device=self.device)
         if payload_rows.shape != (len(source_ids),) or payload_rows.dtype != torch.bool:
             raise ValueError('payload_rows must be one boolean per source')
-        canonical = self.value_head(tail[payload_rows, 1:])
+        canonical = self.value_head(value_states[payload_rows])
         output = []
         for key, codec, dim in zip(keys, self.codecs,
                                    self.config.memory.payload_dims, strict=True):
@@ -315,8 +332,9 @@ class SDKBAgent(nn.Module):
         slots = self.config.memory.write_slots + 1
         if states.ndim != 3 or states.shape[1:] != (slots, self.width):
             raise ValueError('Trajectory write states have incompatible slots or width')
-        keys = self.writer_space_keys(states[:, 0])
-        canonical = self.value_head(states[:, 1:])
+        key_state, value_states = self.split_writer_states(states)
+        keys = self.writer_space_keys(key_state)
+        canonical = self.value_head(value_states)
         output = []
         for key, codec in zip(keys, self.codecs, strict=True):
             encoded = codec(canonical if self.config.memory.payload_layout in ('positional', 'joint_tokens')
@@ -612,7 +630,7 @@ class SDKBAgent(nn.Module):
                 group = positions[start:start + writer_slots]
                 if (group[-1] - group[0] + 1).item() != writer_slots:
                     raise ValueError('Trajectory write slots must be contiguous')
-                embeddings[row, group] = self.write_slots
+                embeddings[row, group] = self.writer_slot_embeddings()
 
         recurrent = self.backbone.begin(embeddings, attention_mask)
         return SpatialExecution(recurrent, sites, batch)

@@ -32,6 +32,10 @@ class MemoryConfig:
     # shared_maps: one writer/query key head plus per-space linear maps.
     # direct: one writer-state and one query-state key head per space.
     key_interface: str = "shared_maps"
+    # Direct heads only: one stored key width per space (empty means key_dim).
+    key_dims: list[int] = field(default_factory=list)
+    # first: key slot precedes value slots (legacy). last: values cannot see it.
+    key_slot_position: str = "first"
     write_slots: int = 8
     read_slots: int = 8
     payload_dims: list[int] = field(default_factory=lambda: [256])
@@ -290,6 +294,11 @@ class Config:
             raise ValueError("Invalid key interface")
         if r.key_interface == "direct" and r.independent_routing_query:
             raise ValueError("Direct query key heads already separate routing from reading")
+        if r.key_dims and (r.key_interface != "direct" or len(r.key_dims) != len(r.payload_dims)
+                           or min(r.key_dims) < 1):
+            raise ValueError("Per-space key widths need direct heads and one width per space")
+        if r.key_slot_position not in {"first", "last"}:
+            raise ValueError("Key slot position must be first or last")
         if r.payload_layout == "positional":
             if r.reader != "mlp":
                 raise ValueError("The positional interface currently requires the MLP operator")

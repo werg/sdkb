@@ -37,17 +37,38 @@ def direct_head_weights(state: dict[str, Tensor], spaces: int) -> dict[str, Tens
     return result
 
 
-def convert_to_direct(state: dict[str, Tensor], spaces: int) -> dict[str, Tensor]:
+def convert_to_direct(state: dict[str, Tensor], spaces: int,
+                      key_dims: tuple[int, ...] = (), *, seed: int = 0) -> dict[str, Tensor]:
     """Replace shared key parameters; the reader keeps its own ``query_head``.
 
     Direct heads are fp32 parameters regardless of the parent's storage dtype.
+    Wider keys keep the folded rows first; added rows start small and distinct,
+    and distance-gate inputs for added coordinates start at zero.
     """
     heads = direct_head_weights(state, spaces)
+    if key_dims:
+        if len(key_dims) != spaces:
+            raise ValueError('One key width is required per space')
+        generator = torch.Generator().manual_seed(seed)
+        for space, width in enumerate(key_dims):
+            for kind in ('writer_key_heads', 'query_key_heads'):
+                weight = heads[f'{kind}.{space}.weight']
+                if width < weight.shape[0]:
+                    raise ValueError('Key width conversion only widens keys')
+                extra = torch.randn(width - weight.shape[0], weight.shape[1],
+                                    generator=generator) * float(weight.std()) * .1
+                heads[f'{kind}.{space}.weight'] = torch.cat((weight, extra), 0)
+                heads[f'{kind}.{space}.bias'] = weight.new_zeros(width)
+            gate = f'distance_gates.{space}.adjust.weight'
+            if gate in state:
+                old = state[gate].float()
+                heads[gate] = torch.cat((old, old.new_zeros(old.shape[0],
+                                                            width - old.shape[1])), 1)
     shared = ({'key_head.weight', 'routing_query_head.weight'}
               | {f'address_maps.{space}.weight' for space in range(spaces)}
               | {f'query_maps.{space}.weight' for space in range(spaces)})
     converted = {name: value for name, value in state.items() if name not in shared}
-    converted.update(heads)
+    converted.update(heads)  # includes any widened distance-gate inputs
     return converted
 
 

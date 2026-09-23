@@ -122,11 +122,19 @@ as the flat teacher's do.
 ### R2 — Expand to 64 writer and read slots
 Use slice-frozen expansion for writer slots, reader target positions and
 recurrent workspaces. The joint codec's learned queries do not depend on the
-slot count. At the same time, move the key slot to the last write position and
-initialize per-space 256-d direct key heads (fp32, bias). Rebuild trajectory
-packing with 64 read slots.
+slot count. R2 changes nothing on the key path. Rebuild trajectory packing
+with 64 read slots.
 
 ### R3 — Keyspace pretraining (the new core stage)
+R3 owns every key-path change. Its initialization:
+- moves the key slot to the last write position (`key_slot_position: last`);
+- converts the shared 64-d key path into 256-d direct fp32 heads with bias
+  (`convert_to_direct` with widths). The first 64 rows are folded exactly, the
+  added rows start small, and distance-gate inputs are widened with zeros.
+
+Moving the key slot changes what value slots attend to. R3's
+payload-preservation loss against frozen R2 payloads absorbs that shift.
+
 Train the writer to fill the key slot, and train the query side to match it.
 Trainable parameters are the key-slot embedding, the direct writer and query
 key heads, and the recurrent core at a low learning rate (owner decision,

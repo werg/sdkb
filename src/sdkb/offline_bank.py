@@ -24,6 +24,8 @@ def stored_memory_identity(memory: dict) -> dict:
     # Banks published before per-space direct heads used shared key maps.
     result.setdefault('key_interface', 'shared_maps')
     result.setdefault('space_tokens', [])
+    result.setdefault('key_dims', [])
+    result.setdefault('key_slot_position', 'first')
     return result
 
 
