@@ -18,7 +18,13 @@ Each finding is measured, and the evidence is recorded in
    linear head over mean-pooled source-token states and a pooled 64-token causal
    query window reaches 64% recall@16, 89% at 256, and median rank 5. The
    information exists in the backbone. The key slot never learned to collect it.
-   A slot-versus-pooled diagnostic on `g1-live` itself is in progress.
+   On `g1-live` itself (22k-source sampled field, 1,213 held-out level-1 sites,
+   the same linear probe), the key slot reaches 7.1% recall@16 (median rank
+   519), and pooled token states reach 61.9% (median rank 6). The slot holds a
+   little content, but far less than the backbone does. On the same field, the
+   stopped R3 checkpoint's slot is worse (2.7% recall@16, median rank 1,862),
+   while its pooled states are about the same (58.5%). The R3 chain degraded
+   the key slot, which confirms `g1-live` as the rollback point.
 2. **BF16 key heads destroy ranking.** Over those collinear states, a BF16
    query scores all 100,000 stored keys with about five distinct values. Every
    autocast recall metric in R3 and in early warmup evaluations was either
@@ -112,6 +118,15 @@ payloads. Record its slot-versus-pooled diagnostic, fp32 score resolution and
 payload-dependence baseline.
 
 ### R1 — Joint-token distillation at 8 slots
+
+**Result (23 September 2026):** `/archive/runs/phase2-restart-20260923/r1-joint-8`,
+2,000 steps. Token distillation loss fell from 0.72 to 0.07 and downstream loss
+from 1.26 to 0.09. On 128 source-disjoint validation episodes with oracle
+supports, answer NLL was 2.944 with correct payloads (teacher 2.949). Swapping
+in another episode's supports added 0.417 (teacher 0.429), zeroing added 0.267
+(teacher 0.329), and correct beat swapped in 74.2% of episodes (teacher 74.2%).
+Gate passed.
+
 From `g1-live`, keep 8 writer and read slots. Freeze the copied writer and
 backbone, and train the new joint codecs and the per-space operator reader.
 Payload layouts differ from the flat teacher, so distillation matches reader
