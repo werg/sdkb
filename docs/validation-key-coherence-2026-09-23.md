@@ -94,3 +94,19 @@ uses stored keys, and a key-stability term keeps live and stored geometry close.
 This supplies direct writer-address gradients without pretending the live key
 was used by the actual search. We will measure unassisted packed-trajectory
 recall before treating the change as successful.
+
+## External-journal maintenance stall
+
+The live-key stage showed no selected-neighborhood support recall through
+step 110. It then stopped producing its usual ten-step logs for more than
+25 minutes while the external drive showed high read latency and sustained
+I/O pressure. The process remained in kernel page waits and its physical read
+counter advanced by several gigabytes. Investigation found that choosing one
+maintenance source each optimizer step executed `GROUP BY record_id` across
+the complete mutable journal head table, then sorted all source IDs by age.
+That work was disproportionate to one maintenance refresh and amplified disk
+contention. Maintenance now uses the checkpointed rotating position over the
+resident sorted ID array, skipping excluded/ineligible records. It preserves
+fair eventual coverage without a per-step full journal scan. A regression test
+covers the new rotation and exclusions. The next stage must verify that wall
+time and physical read traffic improve on Spark; this is not a keyspace result.

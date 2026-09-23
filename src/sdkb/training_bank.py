@@ -521,30 +521,27 @@ class TrainingBank:
 
     def maintenance_ids(self, count: int, *, exclude: Iterable[str] = (),
                         eligible: Iterable[str] | None = None) -> tuple[str, ...]:
-        """Select old or never-refreshed records with rotating deterministic ties."""
+        """Rotate fairly through eligible IDs without rescanning the journal."""
         if count < 0:
             raise ValueError('Maintenance sample count cannot be negative')
         omitted = set(exclude)
-        ids = set(map(str, next(iter(self.index.spaces.values())).ids)) - omitted
-        if eligible is not None:
-            ids &= set(eligible)
-        ids = sorted(ids)
-        if not ids or count == 0:
+        ids = next(iter(self.index.spaces.values())).ids
+        if not len(ids) or count == 0:
             return ()
+        allowed = set(eligible) if eligible is not None else None
         with self.cache.connect() as db:
             position = int(self._meta(db, 'maintenance_position')) % len(ids)
-            age = dict(db.execute('''SELECT record_id,MAX(cursor)
-                FROM mutable_bank_heads WHERE namespace=? GROUP BY record_id''',
-                (self.index.namespace,)).fetchall())
-            rotated = ids[position:] + ids[:position]
-            rank = {record_id: offset for offset, record_id in enumerate(rotated)}
-            ordered = sorted(ids, key=lambda record_id: (age.get(record_id, 0),
-                                                          rank[record_id]))
-            chosen = tuple(ordered[:min(count, len(ids))])
+            chosen = []
+            inspected = 0
+            while inspected < len(ids) and len(chosen) < count:
+                record_id = str(ids[(position + inspected) % len(ids)])
+                inspected += 1
+                if record_id not in omitted and (allowed is None or record_id in allowed):
+                    chosen.append(record_id)
             db.execute("UPDATE mutable_bank_meta SET value=? "
                        "WHERE key='maintenance_position'",
-                       (str((position + len(chosen)) % len(ids)),))
-        return chosen
+                       (str((position + inspected) % len(ids)),))
+        return tuple(chosen)
 
     def invalidated_records(self) -> tuple[dict, ...]:
         """Return the durable rebuild queue for derived compact records."""

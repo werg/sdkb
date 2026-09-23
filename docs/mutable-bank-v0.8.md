@@ -145,8 +145,8 @@ The durable local executor now implements the lifecycle contract:
 * exact resume truncates an uncheckpointed later branch and reconstructs heads;
 * retained checkpoints pin revision history, while `scripts/gc_mutable_bank.py`
   refuses to collect a pinned cursor;
-* the spatial trainer can rotate maintenance regeneration through old and
-  never-refreshed source records; and
+* the spatial trainer can rotate maintenance regeneration fairly through
+  eligible source records without scanning all journal heads every step; and
 * child revision changes make transitive compact descendants unavailable until a
   caller publishes rebuilt all-space codes with current child revisions.
 

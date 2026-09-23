@@ -92,6 +92,24 @@ def test_training_overlay_is_part_of_exact_checkpoint_resume(tiny_config, tmp_pa
     assert cache.mutable_bank_state()['maintenance_position'] == 0
 
 
+def test_maintenance_rotates_without_scanning_revision_ages(tmp_path):
+    base = DiskStore(tmp_path / 'base.sqlite')
+    for record_id in ('a', 'b', 'c'):
+        base.put(StoredRecord(record_id, torch.tensor([1., 0.]),
+                              torch.tensor([1.]), namespace='corpus', space='s0',
+                              generation='g', created_at=1))
+    cache = DiskStore(tmp_path / 'journal.sqlite')
+    index = PublishedKeyIndex(base, namespace='corpus', generation='g',
+                              spaces=('s0',), expected_sources=3)
+    bank = TrainingBank(base, cache, index)
+    bank.update([StoredRecord('a', torch.tensor([0., 1.]), torch.tensor([2.]),
+                              namespace='corpus', space='s0', generation='g',
+                              created_at=1)])
+    assert bank.maintenance_ids(1) == ('a',)
+    assert bank.maintenance_ids(1, exclude=('b',)) == ('c',)
+    assert bank.maintenance_ids(1) == ('a',)
+
+
 def test_mutable_revision_is_all_space_atomic_and_journaled(tmp_path):
     base = DiskStore(tmp_path / 'base.sqlite')
     for space in ('s0', 's1'):
