@@ -68,13 +68,36 @@ changes ride the same migration, so we pay that cost once.
 
 | Component | g1-live (Phase 1) | Restart target |
 | --- | --- | --- |
-| Value slots / payload | 8 slots, flat `[256,512,1024,2048]` | 32 positional slots, `[1024,2048,4096,8192]` (32 positions × `[32,64,128,256]`) |
-| Reader | pooled MLP set reader | positional block-operator reader |
+| Writer value slots | 8 | **64** |
+| Returned read slots | 8 | **64** |
+| Payload layout | flat `[256,512,1024,2048]` (47% of 8 × 1,024) | **joint full-width tokens**: `[4,8,16,36]` tokens × 1,024 per space, 65,536 scalars = 64 × 1,024 (1:1) |
+| Codec | one dense `Linear(8·1024 → d_s)` per space | per-space joint cross-attention: P_s learned queries over all 64 slot states |
+| Reader | pooled MLP set reader | positional block-operator reader, per-space source-token counts |
 | Key slot position | first write slot, before values | **last** write slot, after the 32 value slots |
 | Key heads | shared `key_head` + per-space maps, BF16 | per-space direct heads with bias, **fp32** |
 | Query heads | shared `query_head` + per-space maps | per-space direct query heads with bias, fp32; reader keeps its own `query_head` |
 | Key width | 64 in every space | **256 in every space** (section 5); key width is independent of payload width |
 | Training logit scale | fixed | learned per space for full-field objectives; ranking and gates use raw cosine |
+
+**Joint token layout (owner decision, 23 September 2026).** The writer's 64
+slot states (64 × 1,024) are reshuffled rather than compressed. Every space is
+a joint mapping of all 64 slots into a few full-width tokens, with counts
+ascending so the four spaces sum to the source size:
+
+| Space | Stored tokens | Scalars | BF16 bytes | Records read (16/8/4/4) | Source tokens per read |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| s0 | 4 | 4,096 | 8 KB | 16 | 64 |
+| s1 | 8 | 8,192 | 16 KB | 8 | 64 |
+| s2 | 16 | 16,384 | 32 KB | 4 | 64 |
+| s3 | 36 | 36,864 | 72 KB | 4 | 144 |
+
+A record is 128 KB (12.8 GB per 100k records), and a query reads about
+670 KB of payload. A joint dense map at this size would need billions of
+parameters. Learned-query cross-attention is joint and content-adaptive at
+about 2M parameters per space, and it is independent of the writer slot count.
+This supersedes v0.7's per-position `[32,64,128,256]`-channel codec, which
+stored about 47% of the slot states. A record read in only some spaces
+contributes just those spaces' shares, by design.
 
 Moving the key slot after the value slots does two things:
 - Under the causal writer, value states no longer depend on the key slot, so
@@ -88,17 +111,20 @@ Root: `g1-live` step 39,504, the bank's exact writer with healthy oracle-read
 payloads. Record its slot-versus-pooled diagnostic, fp32 score resolution and
 payload-dependence baseline.
 
-### R1 — Positional distillation, 8 positions (existing runner)
-Use `distill_positional_interface.py` from `g1-live`. Freeze the copied writer and
-backbone, and distill the flat teacher's payloads, reader states and
-fixed-plan outputs into the eight-position positional student. Gate: payload
-removal and replacement change outputs as much as the flat teacher's do.
+### R1 — Joint-token distillation at 8 slots
+From `g1-live`, keep 8 writer and read slots. Freeze the copied writer and
+backbone, and train the new joint codecs and the per-space operator reader.
+Payload layouts differ from the flat teacher, so distillation matches reader
+states, returned tokens and fixed-plan downstream outputs rather than raw
+payloads. Gate: payload removal and replacement change outputs at least as much
+as the flat teacher's do.
 
-### R2 — Expand to 32 positions and widen payloads (existing runner)
-Use `expand_positional_interface.py` with slice-frozen warmup. At the same time,
-move the key slot to the last write position and initialize per-space direct
-key heads (fp32, bias) by folding the shared heads. Rebuild trajectory packing
-with 32 read slots.
+### R2 — Expand to 64 writer and read slots
+Use slice-frozen expansion for writer slots, reader target positions and
+recurrent workspaces. The joint codec's learned queries do not depend on the
+slot count. At the same time, move the key slot to the last write position and
+initialize per-space 256-d direct key heads (fp32, bias). Rebuild trajectory
+packing with 64 read slots.
 
 ### R3 — Keyspace pretraining (the new core stage)
 Train the writer to fill the key slot, and train the query side to match it.
