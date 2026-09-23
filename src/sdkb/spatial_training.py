@@ -265,7 +265,11 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                 live[record_id][2 * space][0] if record_id in live else stored_keys[position]
                 for position, record_id in enumerate(candidate_ids)
             ])
-            scores = cosine_scores(address[row_index:row_index + 1], stored_keys)[0]
+            # Retrieval sorts by cosine; a sharper training softmax supplies a
+            # useful gradient even when the candidate field is large. Reader
+            # distance gates below continue to use unscaled cosine geometry.
+            scores = (cosine_scores(address[row_index:row_index + 1], stored_keys)[0]
+                      * agent.config.train.routing_logit_scale)
             if agent.config.train.key_stability_weight:
                 state.key_stability_terms.extend(
                     1 - F.cosine_similarity(

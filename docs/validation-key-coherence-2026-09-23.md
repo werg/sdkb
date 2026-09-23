@@ -60,3 +60,19 @@ contrastive routing and retains task gradients through live keys and gates.
 A separate replayed-key stability penalty and a smaller nonzero writer-key
 learning rate are prepared for the next full trajectory stage. This is a
 corrective training hypothesis, not yet a measured retrieval improvement.
+
+## Coherent-bank routing plateau and next stage
+
+The coherent-bank stage reached step 210 with stable roughly 28–30 second
+optimizer steps and 400,000 active space views. Its sampled easy routing loss
+remained around 2.35 and top-256 candidate recall stayed near chance or zero
+in most logged batches. The stored-key objective used raw cosine values as
+softmax logits. Their bounded range gives a shallow probability distribution
+over 32 sampled negatives or hundreds of mined candidates. The next stage
+scales those logits by 10 for the supervised routing and soft lexical losses.
+Cosine ranking and the reader's density-adaptive gates still use unscaled
+scores. This is a testable training correction, not evidence of improved recall.
+
+The earlier exact-rank probe used a short query prompt rather than the packed
+`memory.search` trajectory used by this stage. Its poor ranks are a warning,
+but the packed training-site unassisted recall is the primary current signal.

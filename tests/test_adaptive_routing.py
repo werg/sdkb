@@ -41,3 +41,14 @@ def test_support_anchor_rewards_union_coverage_without_forcing_every_space():
     assert covered < repeated_weak
     covered.backward()
     assert strong.grad is not None
+
+
+def test_scaled_routing_logits_sharpen_a_positive_without_changing_rank():
+    scores = torch.tensor([.3] + [0.] * 63, requires_grad=True)
+    weak = union_support_loss([scores], [(0,)])
+    sharp = union_support_loss([scores * 10], [(0,)])
+    assert sharp < weak
+    assert (scores * 10).argmax() == scores.argmax()
+    sharp.backward()
+    assert scores.grad[0] < 0
+    assert scores.grad[1] > 0

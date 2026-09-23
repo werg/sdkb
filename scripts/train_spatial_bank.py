@@ -62,6 +62,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           bank_journal_path: Path | None = None,
           writer_key_learning_rate: float | None = None,
           key_stability_weight: float | None = None,
+          routing_logit_scale: float | None = None,
           routing_hard_ramp_steps: int = 3000) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
@@ -101,6 +102,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         config.train.writer_key_learning_rate = writer_key_learning_rate
     if key_stability_weight is not None:
         config.train.key_stability_weight = key_stability_weight
+    if routing_logit_scale is not None:
+        config.train.routing_logit_scale = routing_logit_scale
     if routing_episodes_path is not None and (sources_path is None or not pipeline):
         raise ValueError('Routing curriculum requires source metadata and pipeline')
     if inherit_bank and (init_from is None or resume):
@@ -166,6 +169,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         }
     if config.train.key_stability_weight:
         settings['key_stability_weight'] = config.train.key_stability_weight
+    if config.train.routing_logit_scale != 1.0:
+        settings['routing_logit_scale'] = config.train.routing_logit_scale
     if config.train.writer_key_learning_rate is not None:
         settings['writer_key_learning_rate'] = config.train.writer_key_learning_rate
     refresh_manifest = None
@@ -513,6 +518,7 @@ if __name__ == "__main__":
     parser.add_argument("--bank-journal", type=Path)
     parser.add_argument("--writer-key-learning-rate", type=float)
     parser.add_argument("--key-stability-weight", type=float)
+    parser.add_argument("--routing-logit-scale", type=float)
     parser.add_argument("--routing-hard-ramp-steps", type=int, default=3000)
     args = parser.parse_args()
     print(json.dumps(train(
@@ -536,5 +542,6 @@ if __name__ == "__main__":
         bank_journal_path=args.bank_journal,
         writer_key_learning_rate=args.writer_key_learning_rate,
         key_stability_weight=args.key_stability_weight,
+        routing_logit_scale=args.routing_logit_scale,
         routing_hard_ramp_steps=args.routing_hard_ramp_steps,
     ), indent=2))
