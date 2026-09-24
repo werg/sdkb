@@ -26,7 +26,7 @@ from sdkb.key_index import PublishedKeyIndex
 from sdkb.document_ingestion import (grouped_ingestion_prefixes,
                                      source_ingestion_groups, writer_prefix_ids)
 from sdkb.offline_bank import (canonical_json, publish_offline_generation,
-                               stored_memory_identity)
+                               stored_memory_identity, writer_prompt_generation)
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.optimizers import make_optimizer, optimizer_report
 from sdkb.runtime import available_host_memory, reclaim_cuda_cache
@@ -380,7 +380,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     @lru_cache(maxsize=256)
     def ingestion_prefixes(document_id, parts, mode, domain):
         return grouped_ingestion_prefixes(
-            document_id, parts, generation=bank_manifest['generation'],
+            document_id, parts, generation=writer_prompt_generation(bank_manifest),
             scope={'domain': domain}, mode=mode)
 
     @lru_cache(maxsize=2048)

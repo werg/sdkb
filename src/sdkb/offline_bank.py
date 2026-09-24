@@ -8,7 +8,8 @@ from .store import DiskStore, StoredRecord
 
 
 CONSUMER_MEMORY_FIELDS = frozenset({
-    'read_steps', 'distance_gating', 'gate_density_k', 'gate_min_temperature',
+    # neighbors caps how many records a consumer reads; it does not change what is stored.
+    'neighbors', 'read_steps', 'distance_gating', 'gate_density_k', 'gate_min_temperature',
     'gate_max_temperature', 'gate_initial_temperature',
     'gate_max_radius_adjustment',
 })
@@ -288,3 +289,13 @@ def publish_offline_generation(store: DiskStore, *, identity: dict, namespace: s
             db.execute('INSERT INTO offline_generations VALUES (?,?,?)',
                        (namespace, generation, serialized))
     return manifest
+
+
+def writer_prompt_generation(manifest: dict) -> str:
+    """Generation string the writer saw in its ingestion prompts for this bank.
+
+    A bank may record the generation its writer was trained with, so stored keys
+    come from the same prompt distribution as training; otherwise it is the bank's
+    own generation.
+    """
+    return manifest['identity'].get('writer_prompt_generation') or manifest['generation']

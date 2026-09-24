@@ -24,7 +24,7 @@ from sdkb.checkpoints import resolve_checkpoint, stop_on_signal
 from sdkb.document_ingestion import (grouped_ingestion_prefixes,
                                      source_ingestion_groups, writer_prefix_ids)
 from sdkb.key_index import PublishedKeyIndex
-from sdkb.offline_bank import canonical_json, publish_offline_generation
+from sdkb.offline_bank import canonical_json, publish_offline_generation, writer_prompt_generation
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.store import DiskStore
 from sdkb.training import autocast_context, config_from_run
@@ -119,7 +119,7 @@ def refresh(run: Path, bank_dir: Path, sources: Path, output: Path, *,
         @lru_cache(maxsize=256)
         def prefixes(document_id, parts, mode, domain):
             return grouped_ingestion_prefixes(
-                document_id, parts, generation=bank_manifest['generation'],
+                document_id, parts, generation=writer_prompt_generation(bank_manifest),
                 scope={'domain': domain}, mode=mode)
 
         @lru_cache(maxsize=2048)

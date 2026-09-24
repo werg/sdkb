@@ -56,15 +56,20 @@ def msmarco(raw: Path, split: str, limit: int, seed: int):
         for text, selected in zip(passages['passage_text'], passages['is_selected'],
                                   strict=True):
             (positives if selected else negatives).append(_source('msmarco', text))
+        answers = [answer for answer in _literal(row['answers'])
+                   if answer and answer != 'No Answer Present.']
         if positives:
-            yield row['query'], positives, negatives, f"msmarco-{row['query_id']}"
+            yield (row['query'], positives, negatives, f"msmarco-{row['query_id']}",
+                   answers[0] if answers else None)
 
 
 def squad(raw: Path, split: str, limit: int, seed: int):
     for row in _rows(str(raw / f'datasets--rajpurkar--squad/plain_text/{split}-*.parquet'),
                      limit, seed):
         title = row['title'].replace('_', ' ')
-        yield row['question'], [_source('squad', row['context'], title)], [], f"squad-{row['id']}"
+        answers = _literal(row['answers'])['text']
+        yield (row['question'], [_source('squad', row['context'], title)], [],
+               f"squad-{row['id']}", answers[0] if answers else None)
 
 
 def _contains(text: str, aliases: list[str]) -> bool:
@@ -84,7 +89,8 @@ def triviaqa(raw: Path, split: str, limit: int, seed: int):
                 (positives if _contains(text, aliases) else negatives).append(
                     _source('triviaqa', text, title))
         if positives:
-            yield row['question'], positives[:3], negatives[:5], f"triviaqa-{row['question_id']}"
+            yield (row['question'], positives[:3], negatives[:5],
+                   f"triviaqa-{row['question_id']}", answer['value'])
 
 
 def searchqa(raw: Path, split: str, limit: int, seed: int):
@@ -99,7 +105,12 @@ def searchqa(raw: Path, split: str, limit: int, seed: int):
             source = _source('searchqa', match.group(2), match.group(1))
             (positives if _contains(match.group(2), answers) else negatives).append(source)
         if positives:
-            yield row['question'], positives[:3], negatives[:5], f"searchqa-{row['key']}"
+            yield (row['question'], positives[:3], negatives[:5], f"searchqa-{row['key']}",
+                   answers[0] if answers else None)
+
+
+BUILDERS = (('msmarco', msmarco), ('squad', squad), ('triviaqa', triviaqa),
+            ('searchqa', searchqa))
 
 
 def prepare(raw: Path, output: Path, *, limits: dict[str, int], seed: int = 1701) -> dict:
@@ -109,12 +120,11 @@ def prepare(raw: Path, output: Path, *, limits: dict[str, int], seed: int = 1701
     sources: dict[str, dict] = {}
     counts = {}
     with (output / 'queries.jsonl.pending').open('w', encoding='utf-8') as handle:
-        for name, builder in (('msmarco', msmarco), ('squad', squad),
-                              ('triviaqa', triviaqa), ('searchqa', searchqa)):
+        for name, builder in BUILDERS:
             for split, suffix in (('train', 'train'), ('validation', 'validation')):
                 limit = limits[name] if split == 'train' else max(limits[name] // 20, 200)
                 written = 0
-                for query, positives, negatives, identifier in builder(raw, split, limit, seed):
+                for query, positives, negatives, identifier, _ in builder(raw, split, limit, seed):
                     for item in (*positives, *negatives):
                         sources.setdefault(item['record_id'], item)
                     positive_ids = list(dict.fromkeys(item['record_id'] for item in positives))
