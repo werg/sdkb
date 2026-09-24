@@ -264,6 +264,31 @@ routing loss over the retrieved field plus the supports) is unchanged and always
 on. Public-corpus answer targets need spatial trajectories built from those
 corpora; that is still to do.
 
+#### Gate fixes so injected gold receives utility gradient (owner decision, 24 September 2026)
+The adaptive distance gate weights a record by `sigmoid((cos - radius) / T)`.
+The radius sits at the k-th nearest candidate (k = 8) plus a bounded learned
+adjustment. Three properties kept utility gradient away from distant gold:
+
+1. The support floor was `max(w, floor)`, so a floored forced record passed no
+   gradient to its key or query.
+2. With k = 8 and reads of up to 256 records, almost every record read sits
+   below the radius.
+3. The key gradient through the gate is `w(1 - w)/T`, which dies exponentially
+   with distance at the minimum temperature of 0.02.
+
+Distant gold was reached only through the gold contrast loss (a label signal),
+never through task utility. Fixes, all read-side settings outside bank identity:
+
+- `gate_floor_mode: additive`: `floor + (1 - floor) · w`, which keeps the
+  gradient everywhere. The legacy default stays `max`.
+- `gate_density_fraction: 0.25`: the radius sits at `max(k, 0.25 × records
+  read)`, which is 64/32/16/8 at the R5 limits. The gate computes this itself, so
+  inference and training agree.
+- `gate_min_temperature: 0.05`. If forced records still starve, the fallback is
+  a heavy-tailed gate.
+- Logged per space for forced gold, retrieved gold and other records:
+  `gate_weight_*` and `gate_slope_*` (the dw/ds that reaches keys and queries).
+
 #### Even spatial distribution (owner decision, 24 September 2026)
 Permanent regularizers at small weights, kept through every R5 phase and
 especially after the teachers are removed:

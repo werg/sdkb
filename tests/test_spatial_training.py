@@ -448,6 +448,9 @@ def test_pipeline_forced_gold_exploration_and_spreading_terms(tiny_config, tmp_p
     # Forced reads always contain every support; unassisted recall is unchanged.
     assert always.metrics['learned_positive_recall'] == never.metrics['learned_positive_recall']
     assert always.metrics['gate_support_share'][0] >= never.metrics['gate_support_share'][0]
+    for group in ('forced_gold', 'retrieved_gold', 'other'):
+        assert f'gate_slope_{group}' in always.metrics
+    assert never.metrics['gate_weight_forced_gold'] == [None]
     assert load.pending[0] and not load.loads[0].counts.any()
     load.commit()
     assert load.loads[0].counts.sum() > 0

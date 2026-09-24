@@ -30,13 +30,21 @@ class AdaptiveDistanceGate(nn.Module):
     def __init__(self, query_dim: int, *, density_k: int = 8,
                  min_temperature: float = 0.02, max_temperature: float = 0.5,
                  initial_temperature: float = 0.1,
-                 max_radius_adjustment: float = 0.25) -> None:
+                 max_radius_adjustment: float = 0.25,
+                 density_fraction: float = 0.0, floor_mode: str = 'max') -> None:
         super().__init__()
         if (query_dim < 1 or density_k < 1 or not 0 < min_temperature
                 < initial_temperature < max_temperature
-                or max_radius_adjustment < 0):
+                or max_radius_adjustment < 0 or not 0 <= density_fraction <= 1
+                or floor_mode not in {'max', 'additive'}):
             raise ValueError('Invalid adaptive distance-gate configuration')
         self.density_k = density_k
+        # With large reads, a fixed k-th-neighbour radius shuts the gate on almost
+        # every record read. A fraction scales the boundary with the read size.
+        self.density_fraction = density_fraction
+        # 'max' floors supported records but blocks their gate gradient;
+        # 'additive' (floor + (1 - floor) * w) keeps it everywhere.
+        self.floor_mode = floor_mode
         self.min_temperature = min_temperature
         self.max_temperature = max_temperature
         self.max_radius_adjustment = max_radius_adjustment
@@ -63,11 +71,15 @@ class AdaptiveDistanceGate(nn.Module):
         if support_mask is not None and support_mask.shape != selected_scores.shape:
             raise ValueError('Support mask differs from selected records')
         boundaries = []
-        for scores, valid in zip(candidate_scores, candidate_mask, strict=True):
+        for scores, valid, selected in zip(candidate_scores, candidate_mask, selected_mask,
+                                           strict=True):
             available = scores[valid]
             if not available.numel():
                 raise ValueError('Adaptive gating needs at least one candidate per query')
-            k = min(self.density_k, available.numel())
+            k = self.density_k
+            if self.density_fraction:
+                k = max(k, round(self.density_fraction * int(selected.sum())))
+            k = min(k, available.numel())
             boundaries.append(available.topk(k).values[-1])
         boundary = torch.stack(boundaries).detach()
         adjustment_input = F.normalize(query.to(self.adjust.weight.dtype), dim=-1)
@@ -77,14 +89,22 @@ class AdaptiveDistanceGate(nn.Module):
         temperature = self.min_temperature + fraction * (
             self.max_temperature - self.min_temperature)
         weights = ((selected_scores - radius[:, None]) / temperature[:, None]).sigmoid()
+        # Gradient of each weight with respect to its score, before any floor.
+        slope = (weights * (1 - weights) / temperature[:, None]).detach()
         if support_mask is not None and support_floor:
-            floor = torch.full_like(weights, support_floor)
-            weights = torch.where(support_mask, torch.maximum(weights, floor), weights)
+            if self.floor_mode == 'additive':
+                floored = support_floor + (1 - support_floor) * weights
+                slope = torch.where(support_mask, slope * (1 - support_floor), slope)
+            else:
+                floored = torch.maximum(weights, torch.full_like(weights, support_floor))
+                slope = torch.where(support_mask & (weights < support_floor),
+                                    torch.zeros_like(slope), slope)
+            weights = torch.where(support_mask, floored, weights)
         weights = weights * selected_mask.to(weights.dtype)
         mass = weights.sum(-1)
         effective = mass.square() / weights.square().sum(-1).clamp_min(1e-12)
         return weights, {'radius': radius, 'temperature': temperature,
-                         'mass': mass, 'effective_records': effective}
+                         'mass': mass, 'effective_records': effective, 'slope': slope}
 
 
 def union_support_loss(space_scores: list[Tensor],

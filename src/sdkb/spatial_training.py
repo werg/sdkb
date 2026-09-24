@@ -80,6 +80,7 @@ class _SpatialBatchState:
     covariance_terms: list[Tensor]
     koleo_terms: list[Tensor]
     load_terms: list[Tensor]
+    gate_records: list[dict[str, list[float]]] | None = None
     forced_sites: int = 0
     read_sites: int = 0
 
@@ -102,6 +103,7 @@ class _LoadedSpace:
     selected_ids: tuple[tuple[str, ...], ...]
     values: tuple[tuple[Tensor, ...], ...]
     forced: tuple[bool, ...] = ()
+    supplied_ids: tuple[tuple[str, ...], ...] = ()
 
 
 def _validate_layout(agent: SDKBAgent, rows: list[dict[str, Any]],
@@ -169,7 +171,26 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
         [0.0] * len(agent.config.memory.payload_dims),
         [0] * len(agent.config.memory.payload_dims),
         [], [], [], [],
+        [_empty_gate_records() for _ in agent.config.memory.payload_dims],
     )
+
+
+GATE_RECORD_GROUPS = ('forced_gold', 'retrieved_gold', 'other')
+
+
+def _empty_gate_records() -> dict[str, list[float]]:
+    """Per record group: [weight sum, dw/ds sum, count]."""
+    return {group: [0.0, 0.0, 0.0] for group in GATE_RECORD_GROUPS}
+
+
+def _gate_record_summary(records: list[dict[str, list[float]]]) -> dict[str, list[float | None]]:
+    summary = {}
+    for group in GATE_RECORD_GROUPS:
+        summary[f'gate_weight_{group}'] = [
+            space[group][0] / space[group][2] if space[group][2] else None for space in records]
+        summary[f'gate_slope_{group}'] = [
+            space[group][1] / space[group][2] if space[group][2] else None for space in records]
+    return summary
 
 
 def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None:
@@ -250,6 +271,7 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
             query_times=tuple(item["query_time"] for item in wave.metadata),
         )
         candidates, easy_rows, required_rows, found_rows, chosen_plans = [], [], [], [], []
+        supplied_rows = []
         explore_count = (round(exploration_fraction * limit)
                          if load is not None and exploration_fraction else 0)
         for plan, item, force in zip(plans, wave.metadata, forced, strict=True):
@@ -276,7 +298,8 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
                     name, proposed, domain=item['domain'],
                     query_time=item['query_time'])
             candidate_ids = tuple(dict.fromkeys(found + required + easy + explored))
-            chosen, _ = _read_selection(found, required, explored, limit, force)
+            chosen, supplied = _read_selection(found, required, explored, limit, force)
+            supplied_rows.append(supplied)
             candidates.append(candidate_ids)
             easy_rows.append(tuple(dict.fromkeys(required + easy)))
             required_rows.append(required)
@@ -293,6 +316,7 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
                   for plan in chosen_plans),
             tuple(tuple(row) for row in values),
             forced,
+            tuple(supplied_rows),
         ))
     return tuple(loaded)
 
@@ -420,6 +444,17 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                     selected_mask, candidate_mask, required_mask,
                     agent.config.train.support_gate_floor)
                 weight_rows.append(row_weights[0])
+                supplied = set(result.supplied_ids[row_index]) if result.supplied_ids else set()
+                record_weights = row_weights[0].detach().tolist()
+                record_slopes = diagnostics['slope'][0].tolist()
+                for record_id, weight, slope in zip(selected_ids, record_weights,
+                                                    record_slopes, strict=True):
+                    group = ('forced_gold' if record_id in supplied else
+                             'retrieved_gold' if record_id in required_set else 'other')
+                    totals = state.gate_records[space][group]
+                    totals[0] += weight
+                    totals[1] += slope
+                    totals[2] += 1
                 if bool(required_mask.any()):
                     detached = row_weights[0].detach()
                     state.gate_support_share[space] += float(
@@ -564,6 +599,8 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
                                zip(state.gate_uniform_share, state.gate_gold_sites,
                                    strict=True)],
         "gold_forced_fraction": state.forced_sites / denominator,
+        "gate_record_totals": state.gate_records,
+        **_gate_record_summary(state.gate_records),
         "spread_variance": float(variance.detach()),
         "spread_covariance": float(covariance.detach()),
         "koleo": float(koleo.detach()),
@@ -957,6 +994,11 @@ def spatial_bank_pipeline_forward(
                            "gate_temperature", "gate_radius",
                            "gate_support_share", "gate_uniform_share")
         },
+        **_gate_record_summary([
+            {group: [sum(result.metrics['gate_record_totals'][space][group][i]
+                         for result in ordered) for i in range(3)]
+             for group in GATE_RECORD_GROUPS}
+            for space in range(spaces)]),
         "selected_payload_bytes": sum(
             result.metrics["selected_payload_bytes"] * len(chunk)
             for result, chunk in zip(ordered, chunks, strict=True)

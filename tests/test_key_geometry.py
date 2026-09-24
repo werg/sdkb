@@ -123,3 +123,35 @@ def test_read_selection_forces_gold_into_the_tail_and_keeps_size():
     assert _site_uniform(item, 'gold') != _site_uniform(item | {'training_step': 6}, 'gold')
     draws = [_site_uniform(item | {'training_step': i}, 'gold') for i in range(2000)]
     assert 0.45 < sum(d < 0.5 for d in draws) / 2000 < 0.55
+
+
+def test_gate_additive_floor_keeps_gradient_and_density_scales_with_reads():
+    from sdkb.routing import AdaptiveDistanceGate
+    torch.manual_seed(0)
+    query = torch.randn(1, 8)
+    candidates = torch.linspace(0.9, -0.5, 64)[None]
+    selected = candidates.clone().requires_grad_(True)
+    ones = torch.ones_like(candidates, dtype=torch.bool)
+    support = torch.zeros_like(ones)
+    support[0, -1] = True  # a distant forced gold record
+    blocked = AdaptiveDistanceGate(8, min_temperature=.05, floor_mode='max')
+    weights, stats = blocked(query, selected, candidates, ones, ones, support, 0.2)
+    weights[0, -1].backward()
+    assert float(weights[0, -1]) == pytest.approx(0.2) and selected.grad[0, -1] == 0
+    assert stats['slope'][0, -1] == 0
+    selected.grad = None
+    passing = AdaptiveDistanceGate(8, min_temperature=.05, floor_mode='additive')
+    weights, stats = passing(query, selected, candidates, ones, ones, support, 0.2)
+    weights[0, -1].backward()
+    assert weights[0, -1] >= 0.2 and selected.grad[0, -1] > 0
+    assert stats['slope'][0, -1] > 0
+    local = AdaptiveDistanceGate(8, density_k=8)
+    scaled = AdaptiveDistanceGate(8, density_k=8, density_fraction=0.25)
+    local_radius = local(query, candidates, candidates, ones, ones)[1]['radius']
+    scaled_radius = scaled(query, candidates, candidates, ones, ones)[1]['radius']
+    # 0.25 × 64 reads puts the boundary at the 16th record, below the 8th.
+    assert scaled_radius < local_radius
+    assert (scaled(query, candidates, candidates, ones, ones)[0].sum()
+            > local(query, candidates, candidates, ones, ones)[0].sum())
+    with pytest.raises(ValueError):
+        AdaptiveDistanceGate(8, floor_mode='sometimes')

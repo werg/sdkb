@@ -132,6 +132,8 @@ class SDKBAgent(nn.Module):
                 max_temperature=r.gate_max_temperature,
                 initial_temperature=r.gate_initial_temperature,
                 max_radius_adjustment=r.gate_max_radius_adjustment,
+                density_fraction=r.gate_density_fraction,
+                floor_mode=r.gate_floor_mode,
             ) for dim in self.space_key_dims
         ]) if r.distance_gating else None
         canonical_dim = r.write_slots * self.width

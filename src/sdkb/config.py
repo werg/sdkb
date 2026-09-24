@@ -71,6 +71,8 @@ class MemoryConfig:
     independent_routing_query: bool = False
     distance_gating: bool = False
     gate_density_k: int = 8
+    gate_density_fraction: float = 0.0  # radius at max(k, fraction × records read)
+    gate_floor_mode: str = 'max'  # 'additive' keeps gate gradient on floored supports
     gate_min_temperature: float = 0.02
     gate_max_temperature: float = 0.5
     gate_initial_temperature: float = 0.1
@@ -319,7 +321,9 @@ class Config:
         if (not isinstance(r.gate_density_k, int) or isinstance(r.gate_density_k, bool)
                 or r.gate_density_k < 1 or not 0 < r.gate_min_temperature
                 < r.gate_initial_temperature < r.gate_max_temperature
-                or r.gate_max_radius_adjustment < 0):
+                or r.gate_max_radius_adjustment < 0
+                or not 0 <= r.gate_density_fraction <= 1
+                or r.gate_floor_mode not in {'max', 'additive'}):
             raise ValueError('Invalid adaptive distance-gate configuration')
         if (not 0 <= t.support_gate_floor <= 1
                 or not isinstance(t.writer_replay_records_per_site, int)
