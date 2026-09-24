@@ -217,7 +217,7 @@ def train(args) -> dict:
     # Resuming is an execution choice, not part of the scientific identity.
     settings = {key: plain(value) for key, value in vars(args).items()
                 if key not in {'func', 'resume', 'min_host_available_gib',
-                                   'host_pressure_wait_seconds'}}
+                                   'host_pressure_wait_seconds', 'eval_ks'}}
     fingerprint = hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
     random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -355,7 +355,11 @@ def train(args) -> dict:
                     'recall_at_limit': float(np.mean([min(r) <= limit for r in ranks])),
                     'all_at_limit': float(np.mean([max(r) <= limit for r in ranks])),
                     'recall_at_256': float(np.mean([min(r) <= 256 for r in ranks])),
-                    'median_best_rank': float(np.median([min(r) for r in ranks]))}
+                    'median_best_rank': float(np.median([min(r) for r in ranks])),
+                    # Read-count curve: any / every support within k records.
+                    'curve': {str(k): [round(float(np.mean([min(r) <= k for r in ranks])), 4),
+                                       round(float(np.mean([max(r) <= k for r in ranks])), 4)]
+                              for k in args.eval_ks}}
             summary['field'] = len(eval_field)
             summary['sites'] = len(metadata)
         student.train()
@@ -520,6 +524,8 @@ if __name__ == '__main__':
     parser.add_argument('--eval-every', type=int, default=500)
     parser.add_argument('--eval-trajectories', type=int, default=250)
     parser.add_argument('--eval-field', type=int, default=10000)
+    parser.add_argument('--eval-ks', type=int, nargs='+',
+                        default=[1, 2, 4, 8, 16, 32, 64, 128, 256])
     parser.add_argument('--log-every', type=int, default=10)
     parser.add_argument('--checkpoint-every', type=int, default=1000)
     parser.add_argument('--min-host-available-gib', type=float, default=12.0)
