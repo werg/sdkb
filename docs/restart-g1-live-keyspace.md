@@ -183,6 +183,19 @@ public retrieval corpora in the local HF cache (MS MARCO, NQ-open, TriviaQA,
 SQuAD, SearchQA) for query and source diversity. Validation stays Hotpot's
 source-disjoint gate.
 
+R3 result so far (r3-keyspace-b), on 500 level-1 validation sites against a
+field of 12,130 sources, recall at 16/8/4/4:
+
+| Step | s0 | s1 | s2 | s3 | median best rank |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 0.00 | 0.00 | 0.00 | 0.00 | about 4,000 |
+| 500 | 0.26 | 0.19 | 0.13 | 0.14 | about 55 |
+| 1000 | 0.56 | 0.44 | 0.33 | 0.33 | about 11 |
+| 1500 | 0.71 | 0.61 | 0.52 | 0.52 | 4 |
+
+At step 1500, recall@256 is about 0.95 in every space. The payload-preservation
+loss stays at about 0.015.
+
 Gate before R4, on the packed validation sites and a complete key refresh:
 unassisted selected-support recall at 16/8/4/4 of at least 5% in every space
 and at least 10% union (the plan's defaults). The stretch target is the pooled
@@ -203,6 +216,18 @@ Train the spatial curriculum (2 loops, then 3) from R3/R4 with:
 
 Evaluate the gate every 50 steps, plus stored-only transfer and payload
 interventions.
+
+R5 read limits follow the constant read-width rule (architecture section 3.2):
+limit × tokens per record is the same in every space. With stored tokens
+`[4, 8, 16, 36]`, a budget of C tokens per space gives limits of about
+`[C/4, C/8, C/16, C/36]`. The R3 gate cutoff of 16/8/4/4 corresponds to C = 64,
+with s3 rounded up from about 2. That budget is too small: the widest space
+reads so few records that unassisted positives are rarely delivered, which
+starved the earlier learned gates of any signal. C is chosen from the R3
+read-count recall curve (any and every support within k records, per space;
+logged from step 2500) together with the reader's measured cost per token. The
+binding constraint is s3's recall at C/36. Candidates are C = 256 (limits
+64/32/16/7) and C = 512 (limits 128/64/32/14).
 
 ## 5. Decisions
 
