@@ -227,6 +227,54 @@ starved the earlier learned gates of any signal. C is chosen from the R3
 read-count recall curve (any and every support within k records, per space;
 logged from step 2500) together with the reader's measured cost per token.
 
+#### Moving from teacher distillation to utility-driven keys
+Target (adaptive-memory v0.6 §2, mutable-bank v0.8 §4): the answer loss is the
+main teacher, continuous distance gates carry its gradient into queries and
+stored keys, writer replay carries it into the writer, and supporting facts
+remain a gentle anchor. Phases switch on measured gates, not on step counts.
+
+- **R5a, reader and gates adapt.** Teacher distillation and support contrast stay
+  at their R3 weights, supplied supports start at probability 1, and key heads and
+  writer replay train at a reduced learning rate. Exit when the payload swap and
+  zero gaps are back to at least R2's level and gate selectivity (gate mass on
+  supports against distractors) has risen clearly.
+- **R5b, hand-off.** Over a few thousand steps, anneal supplied supports and
+  teacher distillation to zero and reduce support contrast to a small, permanent
+  anchor weight. Key learning rates return to full. Hold the anneal if unassisted
+  recall at the limits falls more than a set margin below its R3 value.
+- **R5c, utility-driven.** The answer loss through the gates and the small support
+  anchor are the only key signals. Teacher agreement is logged as a metric, not a
+  loss.
+
+The public corpora's answers (MS MARCO, SQuAD, TriviaQA) can be restored as
+answer-NLL targets, never as query text, to make the utility signal denser.
+
+#### Even spatial distribution (owner decision, 24 September 2026)
+Permanent regularizers at small weights, kept through every R5 phase and
+especially after the teachers are removed:
+
+1. **Dimensional collapse.** VICReg-style variance and covariance terms on the
+   keys and queries of each space's materialized field. The earlier failure (a
+   mean-direction cosine of 0.9988) was this kind.
+2. **Local clumping.** A KoLeo nearest-neighbour term on field keys, which evens
+   out the local density that top-k retrieval sees.
+3. **Rich-get-richer.** A running retrieval count per record, a load penalty on
+   records far above their expected load (as in mixture-of-experts load
+   balancing), and exploration slots in each read for rarely retrieved records,
+   together with maintenance re-encoding. The density-relative gates already keep
+   dense regions from automatically winning gate mass.
+
+Perfect uniformity is random keys, so recall and teacher agreement decide the
+weights. These act within a space; they do not optimize differences between
+spaces. Cross-space convergence without teachers is an open risk: measure
+cross-space neighbourhood overlap and per-space drop ablations, and if the spaces
+merge, keep a very small per-space teacher anchor.
+
+Metrics, per space: effective rank of keys and queries (entropy of singular
+values), mean-direction cosine, the uniformity statistic, hubness (skew of top-k
+occurrence counts), the Gini of retrieval counts, and the fraction of the bank
+never retrieved. Baseline them on the R3 keys at the R4 bank build.
+
 Owner decision, 24 September 2026: the limits are **256/128/64/32** for s0–s3,
 which is C of about 1,024 tokens per space (s3 reads 1,152) and about 4,200
 stored tokens per read site. The recall curve and the reader's cost per token
