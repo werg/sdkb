@@ -525,7 +525,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval-trajectories', type=int, default=250)
     parser.add_argument('--eval-field', type=int, default=10000)
     parser.add_argument('--eval-ks', type=int, nargs='+',
-                        default=[1, 2, 4, 8, 16, 32, 64, 128, 256])
+                        default=[1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024])
     parser.add_argument('--log-every', type=int, default=10)
     parser.add_argument('--checkpoint-every', type=int, default=1000)
     parser.add_argument('--min-host-available-gib', type=float, default=12.0)
