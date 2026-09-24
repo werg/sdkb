@@ -242,8 +242,12 @@ def train(args) -> dict:
     # Resuming is an execution choice, not part of the scientific identity.
     settings = {key: plain(value) for key, value in vars(args).items()
                 if key not in {'func', 'resume', 'min_host_available_gib',
-                                   'host_pressure_wait_seconds', 'eval_ks'}}
+                                   'host_pressure_wait_seconds', 'eval_ks',
+                                   'cuda_memory_fraction'}}
     fingerprint = hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
+    if args.cuda_memory_fraction and str(args.device).startswith('cuda'):
+        # Unified memory: cached-but-free CUDA blocks are host RAM a co-tenant needs.
+        torch.cuda.set_per_process_memory_fraction(args.cuda_memory_fraction, args.device)
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     reference = SDKBAgent(reference_config).to(args.device).eval()
@@ -391,6 +395,8 @@ def train(args) -> dict:
             summary['field'] = len(eval_field)
             summary['sites'] = len(metadata)
         student.train()
+        del outputs, features
+        torch.cuda.empty_cache()
         return summary
 
     metrics = output / 'metrics.jsonl'
@@ -505,6 +511,11 @@ def train(args) -> dict:
                    'queries': len(queries), 'batch_median_rank': batch_rank,
                    'logit_scales': [round(float(v), 2) for v in scales.detach()],
                    'step_seconds': time.perf_counter() - tick}
+            if torch.cuda.is_available() and str(args.device).startswith('cuda'):
+                row['cuda_peak_allocated_gib'] = round(
+                    torch.cuda.max_memory_allocated(args.device) / 1024 ** 3, 2)
+                row['cuda_reserved_gib'] = round(
+                    torch.cuda.memory_reserved(args.device) / 1024 ** 3, 2)
             if completed % args.eval_every == 0 or completed == args.steps:
                 row['eval'] = evaluate()
             if completed % args.log_every == 0 or 'eval' in row:
@@ -558,6 +569,8 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint-every', type=int, default=1000)
     parser.add_argument('--min-host-available-gib', type=float, default=12.0)
     parser.add_argument('--host-pressure-wait-seconds', type=float, default=900.0)
+    parser.add_argument('--cuda-memory-fraction', type=float, default=0.0,
+                        help='cap the CUDA caching allocator (unified memory is shared)')
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--seed', type=int, default=1701)
     parser.add_argument('--resume', action='store_true')
