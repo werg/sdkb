@@ -29,7 +29,7 @@ from sdkb.offline_bank import (canonical_json, publish_offline_generation,
                                stored_memory_identity, writer_prompt_generation)
 from sdkb.operations import atomic_json, run_lock, stop_requested
 from sdkb.optimizers import make_optimizer, optimizer_report
-from sdkb.runtime import available_host_memory, reclaim_cuda_cache
+from sdkb.runtime import available_host_memory, configure_memory, reclaim_cuda_cache
 from sdkb.spatial_data import SpatialTrajectoryIndex
 from sdkb.spatial_training import spatial_bank_forward, spatial_bank_pipeline_forward
 from sdkb.routing_curriculum import RoutingCandidateIndex
@@ -250,6 +250,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             raise ValueError("A spatial stage needs an explicit compatible warm start")
         output.mkdir(parents=True, exist_ok=False)
 
+    # Unified memory: cap the caching allocator before any CUDA allocation.
+    memory_report = configure_memory(config.train)
     random.seed(config.train.seed)
     torch.manual_seed(config.train.seed)
     torch.set_num_threads(config.train.threads)
@@ -270,10 +272,13 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         allowed_missing = {name for name in missing if name.startswith('distance_gates.')}
         if set(missing) != allowed_missing or unexpected:
             raise ValueError(f"Spatial warm start is incompatible: {missing=}, {unexpected=}")
-        if loops == 2 and file_sha256(checkpoint / "model.safetensors") != \
-                bank_manifest["identity"]["writer_checkpoint_sha256"]:
+        bank_writer_exact = (file_sha256(checkpoint / "model.safetensors")
+                             == bank_manifest["identity"]["writer_checkpoint_sha256"])
+        if loops == 2 and not bank_writer_exact:
             raise ValueError("Initial spatial stage must start from the bank writer snapshot")
-        if loops > 2:
+        # A deeper stage may also start from the exact writer that built this bank
+        # (for example a keyspace-pretrained writer that already ran deeper loops).
+        if loops > 2 and not bank_writer_exact:
             parent_inputs = init_from / "spatial-inputs.json"
             if (not parent_inputs.is_file()
                     or json.loads(parent_inputs.read_text())["bank_manifest_sha256"]
@@ -281,7 +286,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 raise ValueError("Deeper spatial stages require a parent trained on this bank")
         initialization = {"checkpoint": str(checkpoint),
                           "checkpoint_sha256": file_sha256(checkpoint / "model.safetensors"),
-                          "optimizer_reset": True, "bank_writer_exact": loops == 2}
+                          "optimizer_reset": True, "bank_writer_exact": bank_writer_exact}
         if inherit_bank:
             parent_state = json.loads((checkpoint / 'bank-state.json').read_text())
             parent_cache = DiskStore(init_from / 'training_cache.sqlite')
@@ -425,6 +430,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
             "retain_writer_replay_activations": retain_writer_replay_activations,
             "cache_reclaim_host_reserve_gib": cache_reclaim_host_reserve_gib,
             "min_host_available_gib": min_host_available_gib,
+            "memory": memory_report,
         }
         atomic_json(output / "environment.json", environment)
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as log:

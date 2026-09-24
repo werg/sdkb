@@ -9,7 +9,7 @@ from .store import DiskStore, StoredRecord
 
 CONSUMER_MEMORY_FIELDS = frozenset({
     # neighbors caps how many records a consumer reads; it does not change what is stored.
-    'neighbors', 'read_steps', 'distance_gating', 'gate_density_k', 'gate_min_temperature',
+    'neighbors', 'read_steps', 'checkpoint_chunks', 'distance_gating', 'gate_density_k', 'gate_min_temperature',
     'gate_max_temperature', 'gate_initial_temperature',
     'gate_max_radius_adjustment', 'gate_density_fraction', 'gate_floor_mode',
 })

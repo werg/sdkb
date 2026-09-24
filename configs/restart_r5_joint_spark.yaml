@@ -53,7 +53,7 @@ memory:
   reader_rounds: 3
   reader: mlp
   chunk_size: 16
-  checkpoint_chunks: false
+  checkpoint_chunks: true
   storage_dtype: bfloat16
   compaction: none
   compact_records: 2
@@ -130,7 +130,7 @@ train:
   support_gate_floor: 0.15
   writer_replay_records_per_site: 4
   threads: 8
-  cuda_memory_fraction: 0.35
+  cuda_memory_fraction: 0.3
   min_system_available_bytes: 8589934592
   stall_timeout_seconds: 300
   optimization_scope: all
