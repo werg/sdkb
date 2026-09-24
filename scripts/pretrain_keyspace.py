@@ -247,7 +247,8 @@ def train(args) -> dict:
     fingerprint = hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
     if args.cuda_memory_fraction and str(args.device).startswith('cuda'):
         # Unified memory: cached-but-free CUDA blocks are host RAM a co-tenant needs.
-        torch.cuda.set_per_process_memory_fraction(args.cuda_memory_fraction, args.device)
+        torch.cuda.set_per_process_memory_fraction(args.cuda_memory_fraction,
+                                                   torch.device(args.device).index or 0)
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     reference = SDKBAgent(reference_config).to(args.device).eval()
