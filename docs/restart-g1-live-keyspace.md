@@ -236,10 +236,10 @@ into the writer (adaptive-memory v0.6 §2, mutable-bank v0.8 §4).
 
 - **R3 stops at its first clear plateau.** It does not run to its nominal step
   count.
-- **R5 anneals teacher distillation to zero within its first 1,000 steps,
-  unconditionally.** Hold the anneal only if unassisted recall at the limits
-  collapses (falls more than a set margin below its R3 value). Teacher agreement
-  stays a logged metric, never a loss after that.
+- **R5 carries no teacher-distillation term.** R3 is the whole bootstrap, which
+  is the earliest possible phase-out. If unassisted recall at the limits
+  collapses (falls more than a set margin below its R3 value), fall back to a
+  short, decaying distillation term rather than restarting R3.
 - **Gold retrieval is kept wherever a dataset provides source documents.** A
   permanent gold-support contrast loss (verified supports against the full
   eligible field) remains at a moderate weight in every phase.
@@ -252,6 +252,17 @@ into the writer (adaptive-memory v0.6 §2, mutable-bank v0.8 §4).
 - **Answer targets are restored** for the public corpora that have them
   (MS MARCO, SQuAD, TriviaQA and SearchQA answers), as answer-NLL targets only,
   never in query text. This makes the utility signal denser than Hotpot's alone.
+
+Implemented in `scripts/train_spatial_bank.py` and `src/sdkb/spatial_training.py`:
+`--gold-force START FLOOR ANNEAL_STEPS` sets the linear forced-gold schedule. Each
+read site takes one draw, reproducible from the episode, call, position and step,
+and the draw is shared across spaces. Forced supports displace the lowest-ranked
+non-support records. `learned_positive_*` metrics count unassisted retrieval
+only. `gold_forced_fraction` reports the draw rate, and `gate_support_share`
+against `gate_uniform_share` reports gate selectivity. The gold contrast (the
+routing loss over the retrieved field plus the supports) is unchanged and always
+on. Public-corpus answer targets need spatial trajectories built from those
+corpora; that is still to do.
 
 #### Even spatial distribution (owner decision, 24 September 2026)
 Permanent regularizers at small weights, kept through every R5 phase and
@@ -273,6 +284,17 @@ weights. These act within a space; they do not optimize differences between
 spaces. Cross-space convergence without teachers is an open risk: measure
 cross-space neighbourhood overlap and per-space drop ablations, and if the spaces
 merge, keep a very small per-space teacher anchor.
+
+Implemented (`src/sdkb/key_geometry.py`, wired into the spatial trainer):
+`--spread-variance-weight` and `--spread-covariance-weight` act on each wave's
+query addresses. `--koleo-weight` acts on each read's candidate keys and reaches
+live replayed keys. `--load-penalty-weight`, `--load-decay` and
+`--load-threshold` configure a per-space retrieval-count tracker; retrievals
+recorded during a step are committed after it, and the tracker is checkpointed
+beside each model checkpoint. `--exploration-fraction` replaces that share of
+each read's tail with eligible records drawn in inverse proportion to their
+load. Stored bank keys are detached, so key-side spreading reaches only
+replayed records; query-side spreading reaches every read.
 
 Metrics, per space: effective rank of keys and queries (entropy of singular
 values), mean-direction cosine, the uniformity statistic, hubness (skew of top-k

@@ -80,3 +80,46 @@ def test_retrieval_load_penalizes_only_hubs_and_explores_cold_records():
     assert torch.equal(restored.counts, load.counts)
     with pytest.raises(ValueError):
         RetrievalLoad(11, decay=0.9, threshold=3.0).load_state_dict(load.state_dict())
+
+
+def test_bank_load_uses_step_snapshots_and_restores_by_bank_identity():
+    from sdkb.key_geometry import BankLoad
+    load = BankLoad(['a', 'b', 'c', 'd'], spaces=2, decay=0.5, threshold=1.5)
+    load.begin_step()
+    load.record(0, ['a', 'a', 'b'])
+    assert (load.overload(0, ['a']) == 0).all()  # snapshot is still empty
+    load.commit()
+    load.begin_step()
+    assert load.overload(0, ['a'])[0] > 0 and load.overload(0, ['c'])[0] == 0
+    assert (load.overload(1, ['a']) == 0).all()
+    picks = [record for seed in range(200) for record in load.explore(0, 1, seed)]
+    assert picks.count('a') < picks.count('c')
+    assert 'c' not in load.explore(0, 3, 0, exclude={'c'})
+    assert load.explore(0, 2, 7) == load.explore(0, 2, 7)
+    stats = load.statistics()
+    assert stats[0]['gini'] > 0 and stats[1]['cold_fraction'] == 1.0
+    restored = BankLoad(['a', 'b', 'c', 'd'], spaces=2, decay=0.5, threshold=1.5)
+    restored.load_state_dict(load.state_dict())
+    assert torch.equal(restored.loads[0].counts, load.loads[0].counts)
+    with pytest.raises(ValueError):
+        BankLoad(['a', 'b', 'c', 'e'], spaces=2, decay=0.5,
+                 threshold=1.5).load_state_dict(load.state_dict())
+
+
+def test_read_selection_forces_gold_into_the_tail_and_keeps_size():
+    from sdkb.spatial_training import _read_selection, _site_uniform
+    found = ('x1', 'g1', 'x2', 'x3', 'x4')
+    chosen, missing = _read_selection(found, ('g1', 'g2'), (), 4, True)
+    assert missing == ('g2',) and chosen == ('g1', 'g2', 'x1', 'x2')
+    chosen, missing = _read_selection(found, ('g1', 'g2'), (), 4, False)
+    assert missing == () and chosen == ('g1', 'x1', 'x2', 'x3')
+    chosen, _ = _read_selection(found, ('g1',), ('e1',), 4, False)
+    assert chosen == ('g1', 'x1', 'x2', 'e1')
+    # Always forcing reproduces the supplied-support reference ordering.
+    reference = (('g1', 'g2') + tuple(r for r in found if r not in ('g1', 'g2')))[:4]
+    assert _read_selection(found, ('g1', 'g2'), (), 4, True)[0] == reference
+    item = {'episode_id': 'e', 'call_id': 'c', 'query_position': 3, 'training_step': 5}
+    assert _site_uniform(item, 'gold') == _site_uniform(dict(item), 'gold')
+    assert _site_uniform(item, 'gold') != _site_uniform(item | {'training_step': 6}, 'gold')
+    draws = [_site_uniform(item | {'training_step': i}, 'gold') for i in range(2000)]
+    assert 0.45 < sum(d < 0.5 for d in draws) / 2000 < 0.55

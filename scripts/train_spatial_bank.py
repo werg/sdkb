@@ -21,6 +21,7 @@ from sdkb.bank_replay import BankWriterReplay
 from sdkb.checkpoints import (resolve_checkpoint, restore_checkpoint, save_checkpoint,
                               stop_on_signal)
 from sdkb.config import load_config
+from sdkb.key_geometry import BankLoad
 from sdkb.key_index import PublishedKeyIndex
 from sdkb.document_ingestion import (grouped_ingestion_prefixes,
                                      source_ingestion_groups, writer_prefix_ids)
@@ -66,7 +67,9 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
           routing_live_weight: float | None = None,
           routing_hard_ramp_steps: int = 3000,
           min_host_available_gib: float = 0.0,
-          host_pressure_wait_seconds: float = 600.0) -> dict:
+          host_pressure_wait_seconds: float = 600.0,
+          gold_force: tuple[float, float, int] | None = None,
+          spreading: dict | None = None) -> dict:
     if (steps < 1 or batch_size < 1 or loops < 2 or checkpoint_every < 1
             or max_unused_cuda_gib < 0 or profile_steps < 0
             or cache_reclaim_host_reserve_gib < 0
@@ -111,6 +114,16 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         config.train.routing_logit_scale = routing_logit_scale
     if routing_live_weight is not None:
         config.train.routing_live_weight = routing_live_weight
+    for name, value in (spreading or {}).items():
+        if value is not None:
+            setattr(config.train, name, value)
+    # Forced gold: probability anneals linearly from start to a floor, never zero
+    # unless asked, so gates keep seeing gold records and keys keep their gradient.
+    if gold_force is not None:
+        force_start, force_floor, force_steps = gold_force
+        if not 0 <= force_floor <= force_start <= 1 or force_steps < 0:
+            raise ValueError('Invalid forced-gold schedule')
+        config.train.gold_force_probability = force_start
     if routing_episodes_path is not None and (sources_path is None or not pipeline):
         raise ValueError('Routing curriculum requires source metadata and pipeline')
     if inherit_bank and (init_from is None or resume):
@@ -195,6 +208,16 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         settings['routing_live_weight'] = config.train.routing_live_weight
     if config.train.writer_key_learning_rate is not None:
         settings['writer_key_learning_rate'] = config.train.writer_key_learning_rate
+    if gold_force is not None:
+        settings['gold_force'] = {'start': gold_force[0], 'floor': gold_force[1],
+                                  'anneal_steps': gold_force[2]}
+    spread = {name: getattr(config.train, name) for name in (
+        'exploration_fraction', 'spread_variance_weight', 'spread_covariance_weight',
+        'koleo_weight', 'load_penalty_weight', 'load_decay', 'load_threshold')}
+    if any((spread['exploration_fraction'], spread['spread_variance_weight'],
+            spread['spread_covariance_weight'], spread['koleo_weight'],
+            spread['load_penalty_weight'])):
+        settings['spreading'] = spread
     refresh_manifest = None
     if bank_journal_path is not None:
         refresh_manifest_path = bank_journal_path.parent / 'manifest.json'
@@ -306,6 +329,32 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
         spaces=tuple(bank_manifest["spaces"]), expected_sources=bank_manifest["sources"],
     )
     training_bank = TrainingBank(store, cache, index)
+    bank_load = None
+    if config.train.exploration_fraction or config.train.load_penalty_weight:
+        bank_load = BankLoad(next(iter(index.spaces.values())).ids, len(limits),
+                             decay=config.train.load_decay,
+                             threshold=config.train.load_threshold)
+        if resume and start:
+            saved = output / f'bank-load-{start:09d}.pt'
+            if not saved.is_file():
+                raise ValueError('Retrieval-load state is missing for the resumed step')
+            bank_load.load_state_dict(torch.load(saved, weights_only=True))
+
+    def save_all(step_count):
+        save_checkpoint(agent, optimizer, output, step_count, rng, cache,
+                        fingerprint, keep=config.train.keep_checkpoints)
+        if bank_load is not None:
+            torch.save(bank_load.state_dict(), output / f'bank-load-{step_count:09d}.pt')
+            for old in sorted(output.glob('bank-load-*.pt'))[:-config.train.keep_checkpoints]:
+                old.unlink()
+
+    def force_probability(step_index):
+        if gold_force is None:
+            return config.train.gold_force_probability
+        force_start, force_floor, force_steps = gold_force
+        if not force_steps:
+            return force_start
+        return force_floor + (force_start - force_floor) * max(0.0, 1 - step_index / force_steps)
     source_rows = {}
     if sources_path is not None:
         with sources_path.open(encoding='utf-8') as handle:
@@ -353,8 +402,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
     writer_inputs = WriterInputs()
     sampler = EpisodeSampler(len(data), seed=config.train.seed)
     if not resume:
-        save_checkpoint(agent, optimizer, output, 0, rng, cache, fingerprint,
-                        keep=config.train.keep_checkpoints)
+        save_all(0)
     completed, last_saved = start, 0 if not resume else None
     began = time.perf_counter()
 
@@ -404,11 +452,15 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                         optimizer.zero_grad(set_to_none=True)
                         reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
                                            force=True)
-                        save_checkpoint(agent, optimizer, output, completed, rng, cache,
-                                        fingerprint, keep=config.train.keep_checkpoints)
+                        save_all(completed)
                     break
                 rows = [data[sampler.index(step * batch_size + offset)]
                         for offset in range(batch_size)]
+                for row in rows:
+                    row['training_step'] = step
+                    row['gold_force_probability'] = force_probability(step)
+                if bank_load is not None:
+                    bank_load.begin_step()
                 if routing_teacher is not None:
                     for row in rows:
                         row['routing_step'] = step
@@ -445,6 +497,7 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                             pad_token_id=agent.tokenizer.pad_token_id or 0,
                             writer_replay=replay,
                             routing_teacher=routing_teacher,
+                            load=bank_load,
                         )
                     else:
                         result = spatial_bank_forward(
@@ -463,6 +516,8 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     config.train.clip_grad_norm,
                 )
                 optimizer.step()
+                if bank_load is not None:
+                    bank_load.commit()
                 finish_phase('optimizer')
                 maintenance_ids = (() if replay is None else training_bank.maintenance_ids(
                     maintenance_records_per_step, exclude=replay.record_ids,
@@ -495,6 +550,9 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                     "replayed_records": replayed_records,
                     "maintenance_records": len(maintenance_ids),
                     "refreshed_record_views": refreshed_views,
+                    "gold_force_probability": force_probability(step),
+                    **({"retrieval_load": bank_load.statistics()}
+                       if bank_load is not None else {}),
                     "bank_active_views": training_bank.sizes()['views'],
                     "bank_journal_cursor": training_bank.cursor,
                     **cache_metrics, **phase_seconds,
@@ -514,14 +572,12 @@ def train(config_path: Path, data_path: Path, bank_dir: Path, output: Path,
                 if completed % checkpoint_every == 0:
                     reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
                                        force=True)
-                    save_checkpoint(agent, optimizer, output, completed, rng, cache,
-                                    fingerprint, keep=config.train.keep_checkpoints)
+                    save_all(completed)
                     last_saved = completed
             if completed == steps and last_saved != completed:
                 reclaim_cuda_cache(config.train.device, max_unused_cuda_bytes,
                                    force=True)
-                save_checkpoint(agent, optimizer, output, completed, rng, cache,
-                                fingerprint, keep=config.train.keep_checkpoints)
+                save_all(completed)
                 last_saved = completed
     summary = {
         "completed_steps": completed, "requested_steps": steps,
@@ -568,6 +624,15 @@ if __name__ == "__main__":
     parser.add_argument("--routing-hard-ramp-steps", type=int, default=3000)
     parser.add_argument("--min-host-available-gib", type=float, default=0.0)
     parser.add_argument("--host-pressure-wait-seconds", type=float, default=600.0)
+    parser.add_argument("--gold-force", nargs=3, metavar=("START", "FLOOR", "ANNEAL_STEPS"),
+                        help="forced-gold probability schedule, e.g. 1.0 0.1 3000")
+    parser.add_argument("--exploration-fraction", type=float)
+    parser.add_argument("--spread-variance-weight", type=float)
+    parser.add_argument("--spread-covariance-weight", type=float)
+    parser.add_argument("--koleo-weight", type=float)
+    parser.add_argument("--load-penalty-weight", type=float)
+    parser.add_argument("--load-decay", type=float)
+    parser.add_argument("--load-threshold", type=float)
     args = parser.parse_args()
     print(json.dumps(train(
         args.config, args.data, args.bank, args.output, args.init_from,
@@ -595,4 +660,10 @@ if __name__ == "__main__":
         routing_hard_ramp_steps=args.routing_hard_ramp_steps,
         min_host_available_gib=args.min_host_available_gib,
         host_pressure_wait_seconds=args.host_pressure_wait_seconds,
+        gold_force=(None if args.gold_force is None else
+                    (float(args.gold_force[0]), float(args.gold_force[1]),
+                     int(args.gold_force[2]))),
+        spreading={name: getattr(args, name) for name in (
+            'exploration_fraction', 'spread_variance_weight', 'spread_covariance_weight',
+            'koleo_weight', 'load_penalty_weight', 'load_decay', 'load_threshold')},
     ), indent=2))

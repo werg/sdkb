@@ -5,6 +5,7 @@ from collections import deque
 from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
+import hashlib
 import time
 from typing import Any, Callable
 
@@ -14,6 +15,7 @@ from torch.nn import functional as F
 
 from .agent import SDKBAgent
 from .bank_replay import BankWriterReplay
+from .key_geometry import BankLoad, koleo_loss, variance_covariance_loss
 from .recurrence import SpatialReadSite
 from .routing import cosine_scores, cosine_similarities, union_support_loss
 from .routing_curriculum import (RoutingCandidateIndex, lexical_alignment_loss,
@@ -30,6 +32,7 @@ class SpatialForwardResult:
     routing: Tensor
     metrics: dict[str, Any]
     write_outputs: tuple[Tensor, ...] | None = None
+    geometry: Tensor | None = None
 
 
 def _trajectory_write_outputs(agent: SDKBAgent, hidden: Tensor,
@@ -70,6 +73,14 @@ class _SpatialBatchState:
     gate_effective_records: list[float]
     gate_temperature: list[float]
     gate_radius: list[float]
+    gate_support_share: list[float]
+    gate_uniform_share: list[float]
+    gate_gold_sites: list[int]
+    variance_terms: list[Tensor]
+    covariance_terms: list[Tensor]
+    koleo_terms: list[Tensor]
+    load_terms: list[Tensor]
+    forced_sites: int = 0
     read_sites: int = 0
 
 
@@ -90,6 +101,7 @@ class _LoadedSpace:
     found_ids: tuple[tuple[str, ...], ...]
     selected_ids: tuple[tuple[str, ...], ...]
     values: tuple[tuple[Tensor, ...], ...]
+    forced: tuple[bool, ...] = ()
 
 
 def _validate_layout(agent: SDKBAgent, rows: list[dict[str, Any]],
@@ -153,6 +165,10 @@ def _begin_batch(agent: SDKBAgent, rows: list[dict[str, Any]], *,
         [0.0] * len(agent.config.memory.payload_dims),
         [0.0] * len(agent.config.memory.payload_dims),
         [0.0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
+        [0.0] * len(agent.config.memory.payload_dims),
+        [0] * len(agent.config.memory.payload_dims),
+        [], [], [], [],
     )
 
 
@@ -164,7 +180,11 @@ def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None
             level = state.execution.recurrent.completed
             metadata = tuple(
                 (state.rows[row]["sites"][site] | {
-                    'routing_step': state.rows[row].get('routing_step', 0)})
+                    'routing_step': state.rows[row].get('routing_step', 0),
+                    'training_step': state.rows[row].get('training_step', 0),
+                    'gold_force_probability': state.rows[row].get(
+                        'gold_force_probability',
+                        agent.config.train.gold_force_probability)})
                 for site in state.site_indices[level]
                 for row in range(len(state.rows))
             )
@@ -178,12 +198,48 @@ def _issue_wave(agent: SDKBAgent, state: _SpatialBatchState) -> _ReadWave | None
     return None
 
 
+def _site_uniform(item: Mapping[str, Any], tag: str) -> float:
+    """Reproducible uniform draw per read site, step and purpose."""
+    text = '\0'.join((str(item.get('episode_id', '')), str(item.get('call_id', '')),
+                      str(item.get('query_position', '')), str(item.get('training_step', 0)),
+                      tag))
+    return int.from_bytes(hashlib.sha256(text.encode()).digest()[:8], 'big') / 2 ** 64
+
+
+def _read_selection(found: tuple[str, ...], required: tuple[str, ...],
+                    explored: tuple[str, ...], limit: int,
+                    forced: bool) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Top-ranked records, exploration in the tail, and optionally forced gold.
+
+    Forced supports that were not retrieved displace the lowest-ranked
+    non-support records, so every read keeps its size. Supports come first,
+    as in the always-supplied reference.
+    """
+    chosen = list(found[:limit - len(explored)]) + [
+        record_id for record_id in explored if record_id not in found[:limit]]
+    chosen = chosen[:limit]
+    missing = tuple(record_id for record_id in required if record_id not in chosen) if forced else ()
+    while len(chosen) + len(missing) > limit:
+        for position in range(len(chosen) - 1, -1, -1):
+            if chosen[position] not in required:
+                del chosen[position]
+                break
+        else:
+            raise ValueError('A read cannot hold every forced support')
+    chosen.extend(missing)
+    support = [record_id for record_id in required if record_id in chosen]
+    return tuple(support + [record_id for record_id in chosen if record_id not in support]), missing
+
+
 def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _ReadWave, *,
                limits: tuple[int, ...], routing_candidates: int,
                routing_teacher: RoutingCandidateIndex | None = None,
+               load: BankLoad | None = None, exploration_fraction: float = 0.0,
                ) -> tuple[_LoadedSpace, ...]:
     """Perform selection and serialized payload reads without touching the GPU graph."""
     loaded = []
+    forced = tuple(_site_uniform(item, 'gold') < item['gold_force_probability']
+                   for item in wave.metadata)
     for space, limit in enumerate(limits):
         name = f"s{space}"
         plans = index.search_batch(
@@ -194,9 +250,19 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
             query_times=tuple(item["query_time"] for item in wave.metadata),
         )
         candidates, easy_rows, required_rows, found_rows, chosen_plans = [], [], [], [], []
-        for plan, item in zip(plans, wave.metadata, strict=True):
+        explore_count = (round(exploration_fraction * limit)
+                         if load is not None and exploration_fraction else 0)
+        for plan, item, force in zip(plans, wave.metadata, forced, strict=True):
             found = tuple(selection.record_id for selection in plan.selections)
             required = tuple(item["required_ids"])
+            explored = ()
+            if explore_count:
+                seed = int(_site_uniform(item, f'explore-{space}') * 2 ** 62)
+                proposals = load.explore(space, 4 * explore_count, seed,
+                                         exclude=set(found[:limit]) | set(required))
+                explored = index.eligible_ids(
+                    name, proposals, domain=item['domain'],
+                    query_time=item['query_time'])[:explore_count]
             easy = ()
             if routing_teacher is not None:
                 sampled = routing_teacher.sample(
@@ -209,9 +275,8 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
                 easy = index.eligible_ids(
                     name, proposed, domain=item['domain'],
                     query_time=item['query_time'])
-            candidate_ids = tuple(dict.fromkeys(found + required + easy))
-            chosen = (required + tuple(record_id for record_id in found
-                                       if record_id not in required))[:limit]
+            candidate_ids = tuple(dict.fromkeys(found + required + easy + explored))
+            chosen, _ = _read_selection(found, required, explored, limit, force)
             candidates.append(candidate_ids)
             easy_rows.append(tuple(dict.fromkeys(required + easy)))
             required_rows.append(required)
@@ -227,6 +292,7 @@ def _load_wave(store: StoredReadBackend, index: BatchKeyIndexBackend, wave: _Rea
             tuple(tuple(selection.record_id for selection in plan.selections)
                   for plan in chosen_plans),
             tuple(tuple(row) for row in values),
+            forced,
         ))
     return tuple(loaded)
 
@@ -237,8 +303,10 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                   limits: tuple[int, ...],
                   writer_replay: BankWriterReplay | None = None,
                   live: Mapping[str, tuple[Tensor, ...]] | None = None,
-                  routing_teacher: RoutingCandidateIndex | None = None) -> None:
+                  routing_teacher: RoutingCandidateIndex | None = None,
+                  load: BankLoad | None = None) -> None:
     memory = agent.config.memory
+    train = agent.config.train
     replay_budget = agent.config.train.writer_replay_records_per_site
     if live is None:
         live = {}
@@ -257,6 +325,10 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
             zip(memory.payload_dims, limits, loaded, strict=True)):
         address = wave.addresses[space]
         device_rows, weight_rows = [], []
+        if (train.spread_variance_weight or train.spread_covariance_weight) and len(address) > 1:
+            variance, covariance = variance_covariance_loss(address)
+            state.variance_terms.append(variance)
+            state.covariance_terms.append(covariance)
         for row_index, (candidate_ids, required, found, selected_ids, values, item) in enumerate(zip(
                 result.candidate_ids, result.required_ids, result.found_ids,
                 result.selected_ids, result.values, wave.metadata, strict=True)):
@@ -283,6 +355,13 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                         stored_keys[position].float()[None])[0]
                     for position, record_id in enumerate(candidate_ids)
                     if record_id in live)
+            if train.koleo_weight and any(record_id in live for record_id in candidate_ids):
+                state.koleo_terms.append(koleo_loss(keys))
+            if load is not None:
+                if train.load_penalty_weight:
+                    state.load_terms.append(load.penalty(
+                        space, address[row_index:row_index + 1], keys, candidate_ids))
+                load.record(space, found[:limit])
             hard_ids = tuple(dict.fromkeys(found + required))
             hard_positions = [candidate_ids.index(record_id) for record_id in hard_ids]
             support_scores[row_index].append(scores[hard_positions])
@@ -341,6 +420,12 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                     selected_mask, candidate_mask, required_mask,
                     agent.config.train.support_gate_floor)
                 weight_rows.append(row_weights[0])
+                if bool(required_mask.any()):
+                    detached = row_weights[0].detach()
+                    state.gate_support_share[space] += float(
+                        (detached * required_mask[0]).sum() / detached.sum().clamp_min(1e-12))
+                    state.gate_uniform_share[space] += float(required_mask.float().mean())
+                    state.gate_gold_sites[space] += 1
                 state.gate_mass[space] += float(diagnostics['mass'].detach())
                 state.gate_effective_records[space] += float(
                     diagnostics['effective_records'].detach())
@@ -381,6 +466,7 @@ def _consume_wave(agent: SDKBAgent, index: BatchKeyIndexBackend,
                     easy_weight * live_easy + hard_weight * live_hard)
             state.lexical_terms.append(torch.stack(lexical_terms[row_index]).mean())
     state.read_sites += len(wave.metadata)
+    state.forced_sites += sum(loaded[0].forced) if loaded[0].forced else len(wave.metadata)
     results = agent._read_padded_batch(payloads, weights, wave.query)
     state.execution = agent.advance_spatial_recurrent(
         state.execution, wave.active, results)
@@ -426,7 +512,17 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
     routing = (stored_routing + agent.config.train.routing_live_weight * live_routing
                + .05 * lexical
                + agent.config.train.key_stability_weight * key_stability)
-    loss = nll + agent.config.train.routing_weight * routing
+    train = agent.config.train
+
+    def mean(terms: list[Tensor]) -> Tensor:
+        return torch.stack(terms).mean() if terms else stored_routing.new_zeros(())
+
+    variance, covariance = mean(state.variance_terms), mean(state.covariance_terms)
+    koleo, load_penalty = mean(state.koleo_terms), mean(state.load_terms)
+    geometry = (train.spread_variance_weight * variance
+                + train.spread_covariance_weight * covariance
+                + train.koleo_weight * koleo + train.load_penalty_weight * load_penalty)
+    loss = nll + train.routing_weight * routing + geometry
     denominator = state.read_sites
     metrics = {
         "read_sites": state.read_sites,
@@ -459,13 +555,26 @@ def _finish_batch(agent: SDKBAgent, state: _SpatialBatchState) -> SpatialForward
                                    for value in state.gate_effective_records],
         "gate_temperature": [value / denominator for value in state.gate_temperature],
         "gate_radius": [value / denominator for value in state.gate_radius],
+        # Gate selectivity: share of gate mass on gold records present in the read,
+        # against the share a uniform gate would give them.
+        "gate_support_share": [value / max(count, 1) for value, count in
+                               zip(state.gate_support_share, state.gate_gold_sites,
+                                   strict=True)],
+        "gate_uniform_share": [value / max(count, 1) for value, count in
+                               zip(state.gate_uniform_share, state.gate_gold_sites,
+                                   strict=True)],
+        "gold_forced_fraction": state.forced_sites / denominator,
+        "spread_variance": float(variance.detach()),
+        "spread_covariance": float(covariance.detach()),
+        "koleo": float(koleo.detach()),
+        "load_penalty": float(load_penalty.detach()),
         "selected_payload_bytes": sum(
             count * width * 2 for count, width in
             zip(state.selected_counts, agent.config.memory.payload_dims, strict=True)
         ) / len(state.rows),
         "supervised_tokens": int(supervised.sum()),
     }
-    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs)
+    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs, geometry)
 
 
 def spatial_bank_forward(agent: SDKBAgent, store: StoredReadBackend,
@@ -681,7 +790,8 @@ def spatial_bank_pipeline_forward(
         routing_candidates: int, microbatch_size: int, inflight: int,
         pad_token_id: int = 0,
         writer_replay: BankWriterReplay | None = None,
-        routing_teacher: RoutingCandidateIndex | None = None) -> SpatialForwardResult:
+        routing_teacher: RoutingCandidateIndex | None = None,
+        load: BankLoad | None = None) -> SpatialForwardResult:
     """Overlap retained microbatch graphs with CPU search and serialized payload I/O.
 
     GPU continuations execute in deterministic round-robin order. Retrieval workers
@@ -718,7 +828,8 @@ def spatial_bank_pipeline_forward(
         started = time.perf_counter()
         loaded = _load_wave(store, index, wave, limits=limits,
                             routing_candidates=routing_candidates,
-                            routing_teacher=routing_teacher)
+                            routing_teacher=routing_teacher, load=load,
+                            exploration_fraction=agent.config.train.exploration_fraction)
         return loaded, started, time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=min(inflight, len(chunks)),
@@ -764,7 +875,7 @@ def spatial_bank_pipeline_forward(
                 live = writer_replay.capture(record_ids)
             for index_in_step, state, wave, loaded in wavefront:
                 _consume_wave(agent, index, state, wave, loaded, limits=limits,
-                              live=live, routing_teacher=routing_teacher)
+                              live=live, routing_teacher=routing_teacher, load=load)
                 following = _issue_wave(agent, state)
                 if following is None:
                     results.append((index_in_step, _finish_batch(agent, state)))
@@ -785,7 +896,9 @@ def spatial_bank_pipeline_forward(
               for result in ordered) / supervised
     routing = sum(result.routing * result.metrics["read_sites"]
                   for result in ordered) / read_sites
-    loss = nll + agent.config.train.routing_weight * routing
+    geometry = sum(result.geometry * result.metrics["read_sites"]
+                   for result in ordered) / read_sites
+    loss = nll + agent.config.train.routing_weight * routing + geometry
     spaces = len(agent.config.memory.payload_dims)
     metrics = {
         "read_sites": read_sites,
@@ -831,7 +944,9 @@ def spatial_bank_pipeline_forward(
             for name in ('routing_stored_loss', 'routing_live_loss',
                          'key_stability_loss',
                          'routing_easy_loss', 'routing_hard_loss',
-                         'routing_easy_weight', 'routing_hard_weight')
+                         'routing_easy_weight', 'routing_hard_weight',
+                         'gold_forced_fraction', 'spread_variance', 'spread_covariance',
+                         'koleo', 'load_penalty')
         },
         **{
             name: [
@@ -839,7 +954,8 @@ def spatial_bank_pipeline_forward(
                     for result in ordered) / read_sites
                 for space in range(spaces)
             ] for name in ("gate_mass", "gate_effective_records",
-                           "gate_temperature", "gate_radius")
+                           "gate_temperature", "gate_radius",
+                           "gate_support_share", "gate_uniform_share")
         },
         "selected_payload_bytes": sum(
             result.metrics["selected_payload_bytes"] * len(chunk)
@@ -863,4 +979,4 @@ def spatial_bank_pipeline_forward(
         write_outputs = tuple(torch.cat([result.write_outputs[index]
                                          for result in ordered], 0)
                               for index in range(len(ordered[0].write_outputs)))
-    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs)
+    return SpatialForwardResult(loss, nll, routing, metrics, write_outputs, geometry)

@@ -7,6 +7,7 @@ one space and never reward differences between spaces.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 
 import torch
@@ -147,3 +148,97 @@ class RetrievalLoad:
             raise ValueError('Retrieval-load state does not match this bank')
         self.counts = state['counts'].clone()
         self.updates = int(state['updates'])
+
+
+class BankLoad:
+    """Per-space retrieval load over one bank's record identities.
+
+    Exploration and the load penalty read a snapshot frozen at the start of each
+    optimizer step, and retrievals recorded during the step are committed after
+    it, so pipelined retrieval threads cannot make a step nondeterministic.
+    """
+
+    def __init__(self, record_ids, spaces: int, decay: float = 0.999,
+                 threshold: float = 4.0) -> None:
+        self.ids = [str(record_id) for record_id in record_ids]
+        self.position = {record_id: i for i, record_id in enumerate(self.ids)}
+        self.loads = [RetrievalLoad(len(self.ids), decay, threshold) for _ in range(spaces)]
+        self.snapshots = [load.counts.clone() for load in self.loads]
+        self.pending: list[list[Tensor]] = [[] for _ in range(spaces)]
+
+    def begin_step(self) -> None:
+        self.snapshots = [load.counts.clone() for load in self.loads]
+        self.pending = [[] for _ in self.loads]
+
+    def positions(self, record_ids) -> Tensor:
+        return torch.tensor([self.position[record_id] for record_id in record_ids],
+                            dtype=torch.long)
+
+    def record(self, space: int, record_ids) -> None:
+        if record_ids:
+            self.pending[space].append(self.positions(record_ids))
+
+    def commit(self) -> None:
+        for load, pending in zip(self.loads, self.pending, strict=True):
+            load.update(torch.cat(pending) if pending else torch.zeros(0, dtype=torch.long))
+        self.pending = [[] for _ in self.loads]
+
+    def overload(self, space: int, record_ids) -> Tensor:
+        load = self.loads[space]
+        counts = self.snapshots[space]
+        expected = counts.sum() / len(counts)
+        if expected <= 0:
+            return torch.zeros(len(record_ids), dtype=torch.float32)
+        ratio = counts[self.positions(record_ids)] / (load.threshold * expected)
+        return ratio.clamp_min(1e-12).log().clamp_min(0).float()
+
+    def penalty(self, space: int, query: Tensor, keys: Tensor, record_ids) -> Tensor:
+        weight = self.overload(space, record_ids).to(keys.device)
+        if not bool(weight.any()):
+            return keys.sum() * 0
+        similarity = (F.normalize(query.float(), dim=-1)
+                      @ F.normalize(keys.float(), dim=-1).T).mean(0)
+        return (similarity * weight).sum() / weight.gt(0).sum()
+
+    def explore(self, space: int, count: int, seed: int, exclude=()) -> list[str]:
+        """Draw proposals with probability proportional to 1/(1 + load); the caller
+        filters them for causal and authorization eligibility."""
+        if count <= 0:
+            return []
+        weights = 1.0 / (1.0 + self.snapshots[space].float())
+        for record_id in exclude:
+            position = self.position.get(record_id)
+            if position is not None:
+                weights[position] = 0
+        generator = torch.Generator().manual_seed(seed)
+        drawn = torch.multinomial(weights, min(count, int((weights > 0).sum())),
+                                  replacement=False, generator=generator)
+        return [self.ids[i] for i in drawn.tolist()]
+
+    def statistics(self) -> list[dict]:
+        rows = []
+        for load in self.loads:
+            counts = load.counts.float()
+            ordered = counts.sort().values
+            n = len(counts)
+            rank = torch.arange(1, n + 1, dtype=torch.float32)
+            gini = float(((2 * rank - n - 1) * ordered).sum()
+                         / (n * ordered.sum()).clamp_min(1e-12))
+            rows.append({'gini': gini, 'cold_fraction': float((counts < 1e-3).float().mean()),
+                         'max_share': float(counts.max() / counts.sum().clamp_min(1e-12))})
+        return rows
+
+    def state_dict(self) -> dict:
+        return {'ids_sha256': self._ids_digest(),
+                'loads': [load.state_dict() for load in self.loads]}
+
+    def _ids_digest(self) -> str:
+        return hashlib.sha256('\n'.join(self.ids).encode()).hexdigest()
+
+    def load_state_dict(self, state: dict) -> None:
+        if (len(state['loads']) != len(self.loads)
+                or state['ids_sha256'] != self._ids_digest()):
+            raise ValueError('Bank load state belongs to another bank or space count')
+        for load, saved in zip(self.loads, state['loads'], strict=True):
+            load.load_state_dict(saved)
+        self.begin_step()

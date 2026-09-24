@@ -122,6 +122,18 @@ class TrainConfig:
     key_stability_weight: float = 0.0
     routing_warmup: int = 100
     support_gate_floor: float = 0.0
+    # Spatial bank reads (R5). Forced gold: with this probability per read site,
+    # verified supports that were not retrieved replace the lowest-ranked records.
+    gold_force_probability: float = 1.0
+    exploration_fraction: float = 0.0  # share of each read drawn by low retrieval load
+    # Small spreading regularizers (key_geometry): query-address variance and
+    # covariance, KoLeo over each read's candidate keys, and a hub-load penalty.
+    spread_variance_weight: float = 0.0
+    spread_covariance_weight: float = 0.0
+    koleo_weight: float = 0.0
+    load_penalty_weight: float = 0.0
+    load_decay: float = 0.999
+    load_threshold: float = 4.0
     writer_replay_records_per_site: int = 0
     threads: int = 4
     cuda_memory_fraction: float | None = None
@@ -314,6 +326,12 @@ class Config:
                 or isinstance(t.writer_replay_records_per_site, bool)
                 or t.writer_replay_records_per_site < 0):
             raise ValueError('Invalid support floor or key replay budget')
+        if (not 0 <= t.gold_force_probability <= 1 or not 0 <= t.exploration_fraction < 1
+                or any(not math.isfinite(w) or w < 0 for w in (
+                    t.spread_variance_weight, t.spread_covariance_weight,
+                    t.koleo_weight, t.load_penalty_weight))
+                or not 0 < t.load_decay < 1 or t.load_threshold <= 1):
+            raise ValueError('Invalid gold forcing, exploration or spreading settings')
         if t.writer_replay_records_per_site and not r.distance_gating:
             raise ValueError('Continuous record replay requires distance gating')
         if len(r.payload_dims) > 1 and r.compaction != "none":

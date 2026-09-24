@@ -394,3 +394,72 @@ def test_spatial_pipeline_replays_selected_writer_keys_and_payloads(
     assert agent.key_head.weight.grad is not None
     assert agent.value_head[1].weight.grad is not None
     assert agent.distance_gates[0].adjust.weight.grad is not None
+
+
+def test_pipeline_forced_gold_exploration_and_spreading_terms(tiny_config, tmp_path):
+    from sdkb.key_geometry import BankLoad
+    tiny_config.model.loops = 2
+    tiny_config.model.recurrence_mode = 'middle_block'
+    tiny_config.model.recurrent_start = 0
+    tiny_config.model.recurrent_end = 1
+    tiny_config.memory.read_timing = 'loop_boundary'
+    tiny_config.memory.neighbors = [3]
+    tiny_config.memory.distance_gating = True
+    tiny_config.train.writer_replay_records_per_site = 3
+    tiny_config.train.routing_live_weight = 1.0
+    agent = SDKBAgent(tiny_config)
+    episodes = [make_episode(index, distractors=3) for index in range(3)]
+    rows = [pack_spatial_trajectory(
+        StableChatTokenizer(), [episode], read_slots=2, generation='g1')
+        for episode in episodes]
+    sources = {source.record_id: source for episode in episodes for source in episode.supports}
+    writer_inputs = {record_id: agent.text_ids(source.text, source=True)
+                     for record_id, source in sources.items()}
+    with torch.no_grad():
+        outputs = agent.produce_batch(list(writer_inputs.values()))
+    store = DiskStore(tmp_path / 'bank.sqlite')
+    store.put_many(StoredRecord(
+        record_id, outputs[0][position], outputs[1][position].bfloat16(),
+        namespace='corpus', space='s0', generation='g1', created_at=source.created_at,
+    ) for position, (record_id, source) in enumerate(sources.items()))
+    index = PublishedKeyIndex(store, namespace='corpus', generation='g1', spaces=('s0',),
+                              expected_sources=len(sources))
+
+    def run(probability, microbatch=1, **train):
+        for name, value in train.items():
+            setattr(agent.config.train, name, value)
+        batch = copy.deepcopy(rows)
+        for row in batch:
+            row['gold_force_probability'] = probability
+            row['training_step'] = 3
+        bank = TrainingBank(store, DiskStore(tmp_path / f'cache-{probability}.sqlite'), index)
+        load = BankLoad(next(iter(index.spaces.values())).ids, 1, decay=.5, threshold=1.5)
+        load.begin_step()
+        replay = BankWriterReplay(agent, writer_inputs)
+        result = spatial_bank_pipeline_forward(
+            agent, bank, index, batch, limits=(2,), routing_candidates=3,
+            microbatch_size=microbatch, inflight=2, writer_replay=replay, load=load)
+        return result, load, replay
+
+    never, load, _ = run(0.0)
+    assert never.metrics['gold_forced_fraction'] == 0
+    always, _, _ = run(1.0)
+    assert always.metrics['gold_forced_fraction'] == 1
+    # Forced reads always contain every support; unassisted recall is unchanged.
+    assert always.metrics['learned_positive_recall'] == never.metrics['learned_positive_recall']
+    assert always.metrics['gate_support_share'][0] >= never.metrics['gate_support_share'][0]
+    assert load.pending[0] and not load.loads[0].counts.any()
+    load.commit()
+    assert load.loads[0].counts.sum() > 0
+
+    spread, spread_load, replay = run(
+        1.0, microbatch=2, spread_variance_weight=.1, spread_covariance_weight=.1,
+        koleo_weight=.1, load_penalty_weight=.1, exploration_fraction=.5)
+    assert spread.geometry is not None and spread.geometry.isfinite()
+    assert spread.metrics['koleo'] != 0 and spread.metrics['spread_variance'] > 0
+    agent.zero_grad(set_to_none=True)
+    spread.geometry.backward(retain_graph=True)
+    replay.backward()
+    # Query-address spreading reaches the query side; KoLeo reaches live writer keys.
+    assert agent.query_maps[0].weight.grad.abs().sum() > 0
+    assert agent.key_head.weight.grad.abs().sum() > 0
