@@ -227,27 +227,31 @@ starved the earlier learned gates of any signal. C is chosen from the R3
 read-count recall curve (any and every support within k records, per space;
 logged from step 2500) together with the reader's measured cost per token.
 
-#### Moving from teacher distillation to utility-driven keys
-Target (adaptive-memory v0.6 §2, mutable-bank v0.8 §4): the answer loss is the
-main teacher, continuous distance gates carry its gradient into queries and
-stored keys, writer replay carries it into the writer, and supporting facts
-remain a gentle anchor. Phases switch on measured gates, not on step counts.
+#### Moving from teacher distillation to utility-driven keys (owner decision, 24 September 2026)
+Teacher distillation is a bootstrap only. The spaces the system needs will
+differ from the reference embedding spaces, so distillation is removed as early
+as possible. The answer loss is the main teacher: continuous distance gates
+carry its gradient into queries and stored keys, and writer replay carries it
+into the writer (adaptive-memory v0.6 §2, mutable-bank v0.8 §4).
 
-- **R5a, reader and gates adapt.** Teacher distillation and support contrast stay
-  at their R3 weights, supplied supports start at probability 1, and key heads and
-  writer replay train at a reduced learning rate. Exit when the payload swap and
-  zero gaps are back to at least R2's level and gate selectivity (gate mass on
-  supports against distractors) has risen clearly.
-- **R5b, hand-off.** Over a few thousand steps, anneal supplied supports and
-  teacher distillation to zero and reduce support contrast to a small, permanent
-  anchor weight. Key learning rates return to full. Hold the anneal if unassisted
-  recall at the limits falls more than a set margin below its R3 value.
-- **R5c, utility-driven.** The answer loss through the gates and the small support
-  anchor are the only key signals. Teacher agreement is logged as a metric, not a
-  loss.
-
-The public corpora's answers (MS MARCO, SQuAD, TriviaQA) can be restored as
-answer-NLL targets, never as query text, to make the utility signal denser.
+- **R3 stops at its first clear plateau.** It does not run to its nominal step
+  count.
+- **R5 anneals teacher distillation to zero within its first 1,000 steps,
+  unconditionally.** Hold the anneal only if unassisted recall at the limits
+  collapses (falls more than a set margin below its R3 value). Teacher agreement
+  stays a logged metric, never a loss after that.
+- **Gold retrieval is kept wherever a dataset provides source documents.** A
+  permanent gold-support contrast loss (verified supports against the full
+  eligible field) remains at a moderate weight in every phase.
+- **Forced gold retrieval gets gradient flowing.** With some probability per read
+  site, verified supports that were not retrieved replace the lowest-ranked
+  retrieved records, so reads keep their size. The probability starts high and
+  anneals to a small floor instead of zero, so the gates always see gold records
+  and their keys keep receiving utility gradient. Telemetry separates supplied
+  from unassisted positives.
+- **Answer targets are restored** for the public corpora that have them
+  (MS MARCO, SQuAD, TriviaQA and SearchQA answers), as answer-NLL targets only,
+  never in query text. This makes the utility signal denser than Hotpot's alone.
 
 #### Even spatial distribution (owner decision, 24 September 2026)
 Permanent regularizers at small weights, kept through every R5 phase and
