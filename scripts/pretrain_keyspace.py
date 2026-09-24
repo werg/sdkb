@@ -85,6 +85,31 @@ class Targets:
         return self.project(space, self.queries[space][rows].to(device))
 
 
+def _restore(student, optimizer, output: Path, rng: random.Random, fingerprint: str) -> int:
+    """Resume; early checkpoints lack optimizer names, so check group shapes instead."""
+    checkpoint = resolve_checkpoint(output, verify=True)
+    state = torch.load(checkpoint / 'training_state.pt', map_location='cpu', weights_only=True)
+    if state.get('optimizer_parameter_names') is not None:
+        return restore_checkpoint(student, optimizer, output, rng, fingerprint)
+    manifest = json.loads((checkpoint / 'manifest.json').read_text())
+    if manifest['dataset_sha256'] != fingerprint:
+        raise ValueError('Settings changed since checkpoint')
+    saved = state['optimizer']
+    shapes = [[tuple(p.shape) for p in g['params']] for g in optimizer.param_groups]
+    saved_shapes = [[tuple(saved['state'][i]['exp_avg'].shape) for i in g['params']
+                     if i in saved['state']] for g in saved['param_groups']]
+    if saved_shapes != shapes:
+        raise ValueError('Optimizer groups changed; refusing mismatched momentum')
+    load_model(student, str(checkpoint / 'model.safetensors'), device=student.config.train.device)
+    optimizer.load_state_dict(saved)
+    rng.setstate(state['python_rng'])
+    random.setstate(state['global_python_rng'])
+    torch.set_rng_state(state['torch_rng'])
+    if state['cuda_rng']:
+        torch.cuda.set_rng_state_all(state['cuda_rng'])
+    return int(state['step'])
+
+
 def fit_projections(targets_dir: Path, spaces: list[tuple[str, str, str]],
                     pairs: list[tuple[str, tuple[str, ...]]], key_dims: list[int],
                     output: Path, *, steps: int, device: str, seed: int = 1701) -> dict:
@@ -318,9 +343,12 @@ def train(args) -> dict:
         {'params': [log_scales], 'lr': 1e-2},
     ]
     optimizer = torch.optim.AdamW(groups, weight_decay=0.0)
+    names = {id(p): n for n, p in trainable} | {id(log_scales): 'logit_scales'}
+    optimizer._sdkb_parameter_names = [[names[id(p)] for p in g['params']]
+                                       for g in optimizer.param_groups]
     cache = DiskStore(output / 'training_cache.sqlite')
     rng = random.Random(args.seed)
-    start = (restore_checkpoint(student, optimizer, output, rng, fingerprint)
+    start = (_restore(student, optimizer, output, rng, fingerprint)
              if args.resume else 0)
     if not args.resume:
         save_checkpoint(student, optimizer, output, 0, rng, cache, fingerprint, keep=4)
