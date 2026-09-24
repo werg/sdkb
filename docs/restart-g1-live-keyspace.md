@@ -225,9 +225,12 @@ with s3 rounded up from about 2. That budget is too small: the widest space
 reads so few records that unassisted positives are rarely delivered, which
 starved the earlier learned gates of any signal. C is chosen from the R3
 read-count recall curve (any and every support within k records, per space;
-logged from step 2500) together with the reader's measured cost per token. The
-binding constraint is s3's recall at C/36. Candidates are C = 256 (limits
-64/32/16/7) and C = 512 (limits 128/64/32/14).
+logged from step 2500) together with the reader's measured cost per token.
+
+Owner decision, 24 September 2026: the limits are **256/128/64/32** for s0–s3,
+which is C of about 1,024 tokens per space (s3 reads 1,152) and about 4,200
+stored tokens per read site. The recall curve and the reader's cost per token
+confirm that this is affordable in R5; they do not reopen the choice.
 
 ## 5. Decisions
 
