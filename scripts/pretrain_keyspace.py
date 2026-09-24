@@ -47,7 +47,7 @@ from sdkb.document_ingestion import (grouped_ingestion_prefixes, source_ingestio
 from sdkb.keyspace_distillation import (convert_to_direct, field_kl, flat_positives,
                                         support_ranks, union_field_loss)
 from sdkb.operations import atomic_json, run_lock, stop_requested
-from sdkb.runtime import available_host_memory
+from sdkb.runtime import available_host_memory, reclaim_cuda_cache
 from sdkb.spatial_data import SYSTEM_PROMPT, SpatialTrajectoryIndex, _call, _tokens
 from sdkb.store import DiskStore
 from sdkb.training import autocast_context, config_from_run
@@ -216,7 +216,8 @@ def train(args) -> dict:
         return value
     # Resuming is an execution choice, not part of the scientific identity.
     settings = {key: plain(value) for key, value in vars(args).items()
-                if key not in {'func', 'resume'}}
+                if key not in {'func', 'resume', 'min_host_available_gib',
+                                   'host_pressure_wait_seconds'}}
     fingerprint = hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
     random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -372,8 +373,21 @@ def train(args) -> dict:
                 handle.write(json.dumps(row) + '\n')
             print(json.dumps(row), flush=True)
         for step in range(start, args.steps):
-            if signal['signal'] is not None or stop_requested(output) or (
-                    min_host and (available_host_memory() or min_host) < min_host):
+            # A peer's transient host-memory peak should not end the run: release
+            # cached blocks and wait; stop with a checkpoint only if it persists.
+            pressure = False
+            if min_host and (available_host_memory() or min_host) < min_host:
+                reclaim_cuda_cache(args.device, 0, force=True)
+                waited = 0.0
+                while (waited < args.host_pressure_wait_seconds
+                       and (available_host_memory() or min_host) < min_host
+                       and signal['signal'] is None and not stop_requested(output)):
+                    time.sleep(15)
+                    waited += 15
+                pressure = (available_host_memory() or min_host) < min_host
+                print(json.dumps({'host_pressure_wait_seconds': waited, 'step': step,
+                                  'stopping': pressure}), flush=True)
+            if signal['signal'] is not None or stop_requested(output) or pressure:
                 save_checkpoint(student, optimizer, output, completed, rng, cache,
                                 fingerprint, keep=4)
                 break
@@ -508,7 +522,8 @@ if __name__ == '__main__':
     parser.add_argument('--eval-field', type=int, default=10000)
     parser.add_argument('--log-every', type=int, default=10)
     parser.add_argument('--checkpoint-every', type=int, default=1000)
-    parser.add_argument('--min-host-available-gib', type=float, default=18.0)
+    parser.add_argument('--min-host-available-gib', type=float, default=12.0)
+    parser.add_argument('--host-pressure-wait-seconds', type=float, default=900.0)
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--seed', type=int, default=1701)
     parser.add_argument('--resume', action='store_true')
